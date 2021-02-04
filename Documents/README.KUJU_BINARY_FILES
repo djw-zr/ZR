@@ -1,0 +1,33 @@
+README.KUJU_BINARY_FILES
+========================
+
+    These start with the normal MSTS compressed header.  This 16 characters starting "SIMISA@F", followed by a four byte binary integer giving the size of the uncompressed file, followed by "@@@@".
+
+    When handling files in a command shell this can be stripped off with the linux tail command.
+      >tail -c +17 file_with_header > file_without_header
+
+     The next 2 bytes are "0x78 0x9c" indicating that it is a zlib compressed stream.  This can by uncompressed with my program zpipe.
+       >./zpipe -d < file_without_header > uncompressed_file
+
+     The uncompressed file then starts with the 16 characters of the MSTS sub-header.  The exception are the ace files (*.ace) which contain textures.  These do not contain the MSTS sub-header.  See README.ACEFILE for details.
+
+     Openrails file SBR.cs indicates that 'world' files, with 'w' in sub-header [5] position, use an 300 offset in the table of tokens.  This means that when reading world files 300 has to be added to the tokens when looking up the meaning in the 'enum' table.  This implies that the original MSTS program uses a different set of enums for world files and other files.
+
+OpenRails handling of binary files
+==================================
+
+     Reading the header section and setting up the offset is carried out by 'SBR Open' in file SBR.cs.  This then starts a new Binary File reader with the file pointer, filename and offset as parameters.
+
+     The binary file reader asumes that
+        fb is positioned just after the SIMISA@F header
+        filename is provided for error reporting purposes
+
+    The binary file is split into blocks.  Each block starts with a tokenID, whose value corresponds to one of the TokenID enums.  The comment says that for some file types, the token value is offset by the value given - but only refers to the world files although the 'some' implies there might be others.
+
+    Note:  In C# the enum structure stores both the enum and the associated string, so it is easy to convert between the two.  In my c code, enum.h contains the same information.
+
+    The comment also states that "Every block must be closed with either Skip() or VerifyEndOfBlock()".  This is true for both unicode and binary files so it is possible that some of the subroutines are to promote symmetry between the two sets of routines.  In fact it looks as if a switch is set so that the subroutines reading the file do not care whether it is a binary or unicode file - read_int returning the correct value whatever scheme is chosen.
+
+    This means that the "name ( data ... )" structure is reproduced in binary - the brackets being skipped and the position of the final bracket being assumed when the end of block has been reached, all the expected data has been read or no more tokens are found at the same level.  As the data is ordered in a hierarchical structure, it is usually possible to determine whether the next token is another token 'at the same level within the brackets' or a token 'at the previous or higher level'.
+
+    The end of block is reached when PeekChar() in C# returns a -1.  The C# routine Skip(), calls Peek() until and of block is found.  However the call VerifyEndOfBlock appears to close the file whatever is found there.

@@ -1,0 +1,81 @@
+Program ZR
+==========
+
+Introduction
+============
+
+    Program ZR is intended initially to be a GNU version of OpenRails, the open source program based on MSTS (MicroSoft Train Simulator), using Mesa/OpenGL and X11 for the 3D graphics and GLUT for the window and user interfaces.  It is written in C, but as OpenGL is also available on other systems, such as Windows and OS 11, there is no reason why it should not be converted.
+
+    The basic design principal is the engineers' KISS (Keep It Simple Stupid).  GNU does not support C#, so as ZR is a bit-shoving program we are limited to C or C++.  ZR started as a C++ project but I was concerned about speed (not helped by some comments in Stroustrup's book) and I was not convinced that the extensions (overtyping etc) were optimal (or needed) for a relatively small project like OpenRails.  So I chose C.
+
+    I have thought about the name and after some thought junked either GLOR or GOR (Gnu-Linux OpenRails or the Great Ocean Railroad), for ZR (Zero Rails).  Zero is the typographical sibling of 'O' and it means that any special names can start with the shorter 'zr' or 'zr_' without possibly confusion with dictionary words.
+
+    Be warned that in its present state, nothing moves.  Many OpenRails files, including MTST style compressed and binary files can be read, and the landscape and the fixed shapes (stations, tracks, buildings, rail crossings, signals, etc.) displayed.  There are also compiler options which separately display wagons/engines, shapes and textures.  However the remaining OpenRails code, which includes all the dynamics, still has to be converted.
+
+Version  Status
+===============
+
+    The program has been developed using the "Great Zig Zag Railway" route available from:
+       https://www.zigzag.coalstonewcastle.com.au/
+    With this route the program successfully displays the route, topography and fixed structures but with some exceptions.  The exceptions are:
+       No textures are applied to the topography.
+       Forests are not displayed.
+       Water is not displayed.
+
+     Display rates can be low - but will depend on the graphics card being used.  At present the code does not store vertex arrays on the graphics card, so this is an obvious next step.  It also tends to plot everything nearby - even if it is not in the viewport.
+
+     At this stage of development, the code is also likely to contain further bugs and hit problems with common mis-spellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
+
+Compilation
+===========
+
+     The program is designed to be compiled and run from a linux bash shell. It uses a GNU style makefile to compile the program and the shell command "./zr -p" to run the program.
+
+     More details are given in file "Documents/README.COMPILE".  This also contains information on generating the config file which contains information on the location on the route directory and the other directories needed by the program.
+
+Running the program
+===================
+
+    You can move around the 3D scene using the arrow keys.  If the -Dkb_dev option is used in the makefile, the arrow keys will move the viewpoint forwards, backwards and sideways at the same level.  The keys page-up and page down will move up and down.  The normal steps are 32 m, increased to 1024m if the 'Shift' key is depressed and reduced to 1 m if 'Alt' is depressed.  The arrow keys with 'Ctrl' depressed turn the direction of view to the left, right, up or down in steps of 1 degree. If both 'Ctrl' and 'Shift' are pressed the step is 30 degrees.
+
+    Without the -Dkb_dev option, the behaviour is nearer the standard MSTS behaviour, the arrow keys moving forward and backward but not necessarily at the same level.  In this case the default steps are 1 m (10 m with Shift) and 0.1 degree.
+
+    These values are defined by the variables del_d and del_a in file keyboard.c.
+
+    As with the MSTS keyboard, 'Shift-Z' gives an estimate of frames per second.  The value displayed is an cumulative average over the previous 5 seconds - so it takes 5 seconds to stabalise.
+
+Other Options
+=============
+
+     Main compiler options in makefile:
+
+       #CFLAGS  += -Dsketch_tracks_and_roads
+         This option plots the path of railway tracks and road at an additional elevation of 1 meter above the actual path.  This option also provides data on the model index of each section of track.
+
+       #CFLAGS  += -Dgrid_lines
+         The generates a rectangular grid, with a spacing of 2048 m, which spans the model region and shows the boundaries of model tiles.  Not all tiles are used, but those that are in use have associated files specifying the topography and the fixed structures within the tile.
+
+       #CFLAGS  += -Dfull_topog
+         Because of the time taken to display the contents of each tile, MTST, OpenRails and ZR usually only display the 9 tiles immediately surrounding the viewpoint - the 9 tiles changing as the viewpoint moves from one tile to the next.  If the comment sign '#' is removed and the program is recompiled, this option displays the full topography.
+
+       CFLAGS  += -Dkb_dev
+         Discussed above.
+
+     There are three additional compiler options.  These can be triggered, one at a time, by removing the '#' comment tag at the beginning of one of the lines in the makefile and recompiling the program:
+        #CFLAGS  += -D_Display_Shapes #         For fixed structures
+        #CFLAGS  += -D_Display_Wagons #         Engines and trucks
+        #CFLAGS  += -D_Display_Textures #       Textures
+    These options display the 3D figures and 2D textures on a regular grid.  The names of the 3D figures are also displayed.
+
+Contributing
+============
+
+    Obviously a lot more work is needed - and at the moment I'm running out of steam.  Most of the software needed to read and decode the MSTS format ascii and binary, compressed and uncompressed files is provided.
+
+    I admit that the organisation of the code is poor, it needs improvements, it is also not easy to read (also true of OpenRails) and my OpenGL knowledge is still limited to version 2.1.  However despite all of that, I hope that there is enough here to attract other people to develop the project.
+
+    Of course if you just want to take a copy and do your own thing - that's fine.  However if you are interested in collaborating, it would be a good idea to first have a look at the OpenRails code and then let me know of which aspects of the model you would like to develop.
+
+    Three simpler things that currently need development are water, forests and adding texture to topography.  After that it should be primarily about the user interface and dynamics.
+
+    djw - February 2021

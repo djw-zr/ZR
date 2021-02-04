@@ -1,0 +1,65 @@
+README.COMPILE
+==============
+
+Required Software
+=================
+
+    The program has been developed using the OpenSUSE 15.1 version of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard linux distributions such as Debian, Ubuntu and Fedora.
+
+    Compilation and linking of the program is carried out by the makefile.  This requires installation of the programs:
+      make   ::  Gnu make program of equivalent
+      gcc    ::  GNU C compiler
+
+    In addition the program needs the following libraries
+      glibc   ::  This is a group standard C libraries including libm (-lm on the compile line).
+      libz    ::  Library implementing the deflate compression algorithm (-lz).
+      libX11  ::  Core X11 library (-lX11)
+      libXext ::  X11 extension library (-lXext)
+      libXmu  ::  X11 extensions (-lXmu)
+      libGL   ::  OpenGL library (-lGL)
+      libGLU  ::  Extensions for GLU (-lGLU)
+      libglut ::  GLUT library (-lglut)
+    The libraries glibc and X11, Xext and Xmu should be installed by default.  The others may need to be installed using a package manager.  Unfortunately the name of the package can change from one system to another so you may need to obtain expert help.
+
+    Often the library exists in directory '/usr/lib64' with a name such as "libXmu.so.6".  However the program linker will be looking for "libXmu.so" so if the latter does not exist it will fail.  The solution is to change directories to '/usr/lib' and use the superuser command to create the link:
+      sudo ln -s libXmu.so.6 libXmu.so
+
+    To compile the program, the header (*.h) files for these libraries will also be needed.  These are usually held in packages with similar names but with the addition of '-devel'  Thus in OpenSUSE 15.1 the GLU and glut packages are:
+      libGLU1      ::  Installs the GLU library files
+      glu-devel    ::  Installs the header files
+      libglut3     ::  Installs the glut library files
+      freeglut-devel :: Installs the header files
+      zlib-devel   ::  Header file for the deflate compression algorithm.
+
+Compiling
+=========
+
+    To compile open a console window, and use the 'cd' command to change to the ZR directory.  Then type
+       make
+    This prints the compiler command.  Compilation should then proceed and end after only a few seconds without any error messages.  The resulting program file is file 'zr' in the same directory.
+
+Starting the program
+====================
+
+    The program needs a file "$HOME/.zrails/config" which contains information on 'ORroutedir' the route to use and 'ORdir', the directory containing both the 'Routes' directory containing different routes and the 'Global', 'Sound' and 'Trains' directories.  The 'Trains' directory contains specifications of the engines and wagons being used.
+
+    If the file does not exist when the program is first run, it is created with the
+    lines starting:
+      MSTSdir    =
+      ORdir      =
+      ORroutedir =
+    left otherwise blank.  The lines need to be completed.  At present 'MSTSdir' is not used but it is there to allow the standard MSTS routes to be added later.  In my test system:
+      MSTSdir    =
+      ORdir      = / ... /Open_Rails_Train_Simulator/
+      ORroutedir = / ... /Open_Rails_Train_Simulator/Routes/au_great_zig_zag/
+
+    The program can now been run from the ZR directory:
+      ./zr -help   :: Request help.
+      ./zr         :: Check loading of data files.
+      ./zr -p      :: Load data files and run.
+
+
+
+
+
+

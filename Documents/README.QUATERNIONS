@@ -1,0 +1,64 @@
+README.QUATERNIONS
+==================
+
+OR and Rotations
+
+  The OR files can either use 3x3 rotation matrices or quaternions to represent the rotation of objects.  According to wikipedia (https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation) quaternions have the advantage of being more compact and more numerically stable than rotation matrices.
+
+  They are defined by four numbers.  If these are A, B, C and D, the quaternion is A + Bi + Cj + Dk,  where i, j and k are the unit vectors along the X, Y and Z axes.  A, a scalar, is the cosine of half the  angle of rotation about the axis defined by Bi + Cj + Dk.
+
+  Given a unit quaternion (bb+cc+dd = 1??), the corresponding rotation matrix is (possibly):
+      aa+bb-cc-dd  2bc-2ad      2bd+2ac      0
+      2bc+2ad      aa-bb+cc-dd  2cd-2ab      0
+      2bd-2ac      2cd-2ab      aa-bb-cc+dd  0
+      0            0            0            1
+
+  For use with OpenGL, ZR converts the queternion into a unit vector and the angle of rotation.
+
+glRotate Definition
+===================
+      void glRotated( GLdouble angle, GLdouble x, GLdouble y, GLdouble z )
+      void glRotatef( GLfloat angle,  GLfloat x,  GLfloat y,  GLfloat z )
+
+      angle    Specifies the angle of rotation, in degrees.
+      x, y, z  Specify the x, y, and z coordinates of a vector, respectively.
+
+      glRotate produces a rotation of angle degrees around the vector (x,y,z).  The current matrix (see glMatrixMode) is multiplied by a rotation matrix with the product replacing the current matrix, as if glMultMatrix were called with the following matrix as its argument:
+                 x2(1−c)+c   xy(1−c)−zs  xz(1−c)+ys    0
+                 yx(1−c)+zs  y2(1−c)+c   yz(1−c)−xs    0
+                 xz(1−c)−ys  yz(1−c)+xs  z2(1−c)+c     0
+                 0           0           0             1
+      Where c=cos(angle), s=sin(angle), and ||(x,y,z)||=1 (if not, the GL will normalize this vector).
+
+      If  the  matrix  mode  is  either  GL_MODELVIEW  or  GL_PROJECTION, all objects drawn after glRotate is called are rotated.  Use glPushMatrix and glPopMatrix to save and restore the unrotated coordinate system.
+
+      This rotation follows the right-hand rule, so if the vector (x,y,z) points toward the user, the rotation will  be  counterclockwise.
+
+      GL_INVALID_OPERATION  is  generated if glRotate is executed between the execution of glBegin and the corresponding execution of glEnd.  This is true for any matrix operation.  However glRotate can be used in display lists.
+
+OpenGl 4x4 matrix
+=================
+
+    OpenGl transformation matrices are stored in a non-standard order.  A vector v1 (x1,y1,z1,1.0) is transformed to v2 with the operation:
+
+    x2     /  m0  m4  m8  m12 \   x1
+    y2  =  |  m1  m5  m9  m13 | * y1
+    z2     |  m2  m6  m10 m14 |   z1
+    w2     \  m3  m7  m11 m15/    w1
+
+    Usually  w1 and w2 both equal 1
+
+   If the current matrix is C and the coordinates to be transformed are v = v0 v1 v2 v3, then the current transformation is C × v , or
+
+    c0 c4 c8  c12    v0
+    c1 c5 c9  c13 ×  v1
+    c2 c6 c10 c14    v2
+    c3 c7 c11 c15    v3
+
+   Calling glMultMatrix with an argument of m = m0 m1 ... m15 replaces the current transformation with C × M × v , or
+
+    c0 c4 c8  c12   m0 m4 m8  m12   v0
+    c1 c5 c9  c13 × m1 m5 m9  m13 × v1
+    c2 c6 c10 c14   m2 m6 m10 m14   v2
+    c3 c7 c11 c15   m3 m7 m11 m15   v3
+
