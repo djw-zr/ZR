@@ -93,6 +93,11 @@ static TileListNode *tiledata_new(int i, int j)
       tiledata->needed    = 0 ;
       tiledata->gl_display_list = 0    ;
       tiledata->next            = NULL ;
+      tiledata->terrain_data.va_vertex  = NULL ;
+      tiledata->terrain_data.va_normal  = NULL ;
+      tiledata->terrain_data.va_texture = NULL ;
+      tiledata->terrain_data.va_index1  = NULL ;
+      tiledata->terrain_data.va_index2  = NULL ;
       return tiledata ;
 }
 

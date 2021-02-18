@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
+#include <sys/dir.h>
 //#include <udunits2.h>
 
 #define GL_GLEXT_PROTOTYPES  // Needed for glWindowPos2f()
@@ -46,6 +47,7 @@
 #include "functions.h"
 #include "display_info.h"
 
+extern int versionsort(const struct dirent **, const struct dirent **);
 /*
  *  Script to convert SWITCH statements into a series of if-elseif statements
  *  SWITCH and CASE cannot be used within a similar SWITCH block.  Within the

@@ -495,6 +495,28 @@ typedef struct tilepatchset{
   TilePatch         *tile_patch                    ; //  Array
 } TilePatchSet  ;
 
+typedef struct vanode{               //  Vertex array node
+  float            xa[2]          ;  //  Min and max x coordinate
+  float            ya[2]          ;  //  Min and max y
+  float            za[2]          ;  //  Min and max z
+  int              ncx            ;  //  Cells in x direction
+  int              ncy            ;  //  Cells in y direction
+  int              in_use         ;  //  Flag
+//  Vector array pointers
+  GLfloat             *va_vertex  ;  //  Vertex array
+#ifdef normal_byte
+  GLbyte              *va_normal  ;  //  Normal array
+#else
+  GLfloat             *va_normal  ;
+#endif
+#ifdef texture_short
+  GLshort             *va_texture ;  // Texture array
+#else
+  GLfloat             *va_texture ;
+#endif
+  GLuint              nva_index   ;  //  Number of indices
+  GLuint              *va_index   ;  //  Index array
+} VANode  ;
 
 typedef struct terraindata{
   float             terrain_errthreshold_scale     ;
@@ -518,6 +540,25 @@ typedef struct terraindata{
   TileShader        *tile_shader                   ;  // Array
   TilePatchSet      *tile_patchset                 ;  // Array
   unsigned short    *elevations                    ;  // Array of heights (Y file)
+//  Vertex array pointers
+  GLfloat             *va_vertex                   ;
+#ifdef normal_byte
+  GLbyte              *va_normal                   ;
+#else
+  GLfloat             *va_normal                   ;
+#endif
+#ifdef texture_short
+  GLshort             *va_texture                  ;
+#else
+  GLfloat             *va_texture                  ;
+#endif
+  GLuint              nva_index1                   ;
+  GLuint              *va_index1                   ;
+  GLuint              nva_index2                   ;
+  GLuint              *va_index2                   ;
+  int                 nbx                          ;  // Nodes in x direction
+  int                 nby                          ;  // Nodes in y direction
+  VANode              *va_node                     ;  // Vertex array nodes
 } TerrainData ;
 
 /*

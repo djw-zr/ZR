@@ -103,6 +103,8 @@ void reshape(int w, int h)
                lookat_up_x,lookat_up_y,lookat_up_z) ;
       glLightfv(GL_LIGHT0, GL_POSITION, position) ;  //  REQUIRED after MODELVIEW CHANGE
       initialise_eye_vectors() ;
+      initialise_clip_planes(clip_a) ;
+      check_topographic_blocks() ;
     }
 //    new_viewpoint = 1 ;   // graphics_cull() not needed with reshape
     if(l_pd || ip)printf(" Exit  reshape()\n");
@@ -332,43 +334,96 @@ char      my_name[]="initialise_eye_vectors";
  *     Radius of object      :       r
  *     Out of sight distance :       d  (idnored if d is zero)
  *  NOTE: During development this assumes tile units
+ *
+ *     returns 0 if out of range
+ *             1 if within range
  */
 
 int   check_in_scene(GLdouble x, GLdouble y, GLdouble z, GLdouble r, GLdouble d){
 
-int       ip = 1;
-GLdouble  xx0, yy0, zz0, xx1, yy1, zz1, xx, yy,
-          r0, rr ;
+int  k ;
+double  sum ;
 char      my_name[]="check_in_scene" ;
 
-      ip = ipp ;
-      ipp = 0 ;
-      if(ip)printf("\n  Enter %s\n",my_name) ;
-      if(ip)printf("  x,                          y,               z    = %f %f %f,  r,  d = %f %f\n",x,y,z,r,d) ;
-      if(ip)printf("  lookat_eye_x,    lookat_eye_y,    lookat_eye_z    = %f %f %f\n",lookat_eye_x,lookat_eye_y,lookat_eye_z) ;
-      xx1 = x - lookat_eye_x ;
-      yy1 = y - lookat_eye_y ;
-      zz1 = z - lookat_eye_z ;
-      if(ip)printf("  xx1,                      yy1,              zz1   = %f %f %f\n",xx1,yy1,zz1) ;
-      xx0 = eye_x_x*xx1 + eye_x_y*yy1 + eye_x_z*zz1 ;
-      yy0 = eye_y_x*xx1 + eye_y_y*yy1 + eye_y_z*zz1 ;
-      zz0 = eye_z_x*xx1 + eye_z_y*yy1 + eye_z_z*zz1 ;
-      if(ip)printf("  xx0,                      yy0,              zz0   = %f %f %f\n",xx0,yy0,zz0) ;
-
-      rr = xx0*xx0 + yy0*yy0 + zz0*zz0 ;
-      r0 = 200.0/plot_scale       ;                                          // 200 m in units of tile
-      if(rr < r0*r0) return 1 ;                                          // Plot everything within 200m
-      if(zz0 < 0.0)  return 0 ;                                          // Object behind eye/camera
-      if(d != 0.0 && zz0 > d) return 0 ;                                 // Object to far away
-
-      xx = xx0/zz0 ; yy = yy0/zz0 ;  rr = r/zz0  ;
-      if(ip)printf("                      screen_hw_x,     screen_hw_y  = %f %f \n",screen_hw_x,screen_hw_y) ;
-      if(ip)printf("  AA                           xx,              yy  = %f %f \n",xx,yy) ;
-
-      if(xx < (screen_hw_x + rr) && xx > -(screen_hw_x + rr) &&
-         yy < (screen_hw_y + rr) && xx > -(screen_hw_y + rr) ) return 1 ;  // Within enlaged window
-      return 0 ;                                                           // Outside window
+/*
+ *  Use clip planes
+ */
+      for(k=0;k<6;k++){
+        sum = x*clip_a[k][0] + y*clip_a[k][1] + z*clip_a[k][2] + clip_a[k][3] ;
+        if(sum + r < 0.0) return 0 ;
+      }
+      return 1 ;
 }
+
+int   check_topog_in_scene(TileListNode *tnode){
+
+int     i, j, k, l ;
+double  xa[2], ya[2], x, y, z, sum ;
+char    my_name[]="check_topog_in_scene" ;
+
+      xa[0] = tnode->tilex - tile_x0 ;  xa[1] = xa[0] + 1.0 ;
+      ya[0] = tnode->tiley - tile_y0 ;  ya[1] = ya[0] + 1.0 ;
+      z = lookat_eye_z ;
+/*
+ *  Loop over clip planes
+ *  To pass every clip plane test must be satified by at least one
+ *  of the limits of the tile
+ */
+// Loop over tests
+      for(k=0;k<6;k++){
+        l = 0 ;
+        for(i=0;i<2;i++){
+          x = xa[i] ;
+          for(j=0;j<2;j++){
+            y = ya[j] ;
+            sum = x*clip_a[k][0] + y*clip_a[k][1] + z*clip_a[k][2] + clip_a[k][3] ;
+            if(sum > 0.0){ l++ ; break ;}
+          }
+        }
+// test l
+        if(0==l)return 0;
+      }
+      return 1 ;
+}
+/*
+ *   Routine to check if object cube is visible in viewport
+ */
+int   check_topog_in_scene2(GLfloat xa[2], GLfloat ya[2], GLfloat za[2]){
+
+int     i, j, k, l, m ;
+double  x, y, z, sum ;
+char    my_name[]="check_topog_in_scene2" ;
+
+/*
+ *  Loop over clip planes
+ *  To pass every clip plane test must be satified by at least one
+ *  of the corner points of the brick
+ */
+// Loop over tests
+      for(l=0;l<6;l++){
+        m = 0 ;
+        for(i=0;i<2;i++){
+          x = xa[i] ;
+          for(j=0;j<2;j++){
+            y = ya[j] ;
+            for(k=0;k<2;k++){
+              z = za[k] ;
+              sum = x*clip_a[l][0] + y*clip_a[l][1] + z*clip_a[l][2] + clip_a[l][3] ;
+              if(sum > 0.0){ m++ ; break ;}
+            }
+          }
+        }
+// test m
+        if(0==m)return 0;
+      }
+      return 1 ;
+}
+
+
+
+
+
+
 /*
  *  Routines to transform from MSTS coordinates to the local coordinates
  *  introduced to reduce rounding errors when displaying the 3-D scene.

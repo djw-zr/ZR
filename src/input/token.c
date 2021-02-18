@@ -539,7 +539,7 @@ void zerr(int ret)
 int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip)
 {
   int   iret ;
-  char  tmpfile[] = "unzlib.tmp"    ;
+  char  tmp_file[] = "unzlib.tmp"    ;
   char  myname[] = "zlib_uncompress" ;
   FILE  *fp_out,  *fp_in ;
 
@@ -552,9 +552,10 @@ int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip)
       fp_in = msfile->fp ;
       if(ip)printf(" Z1\n");
 /*
- *  Open 'temporary# file - but keep it for debugging
+ *  Open 'temporary' file
  */
-      fp_out = gopen(tmpfile,"w+") ;
+      fp_out = tmpfile() ;
+//      fp_out = gopen(tmp_file,"w+") ;  //  keep file at program end
       if(ip)printf(" Z2  %p\n",(void *)fp_out);
 /*
  *  Decompress

@@ -43,6 +43,14 @@ int      ip = 1   ;  // 0 = no printing
 char     string[128];
 TileListNode    *tnode ;
 
+clock_t       tile_t_beg,  tile_t_end  ;
+clock_t       shape_t_beg, shape_t_end ;
+clock_t       track_t_beg, track_t_end ;
+static double tile_time_used, shape_time_used, track_time_used  ;
+int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
+
+//  Note light0_ values can be modified by the keyboard (see keyboard.c).
+
 GLfloat  mat_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
 GLfloat  mat_dif[]  = {light0_diff, light0_diff, light0_diff, 1.0} ;  //  Value lighted
 GLfloat  mat_spc[]  = {light0_spec, light0_spec, light0_spec, 1.0} ;  //  Highlights
@@ -69,18 +77,8 @@ GLfloat  v4[4] ;
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_NORMALIZE) ;
       glDisable(GL_LINE_STIPPLE) ;
+      glDisable(GL_TEXTURE_2D) ;
 
-/*
- *  checks on the clip planes
- */
-      glClipPlane(GL_CLIP_PLANE0, clip_0);
-      if(iclip_on){
-        if(ip)printf(" clip_0 = %f  %f  %f  %f\n",(float)clip_0[0],(float)clip_0[1],(float)clip_0[2],(float)clip_0[3]);
-        glEnable(GL_CLIP_PLANE0);
-      }else{
-        glDisable(GL_CLIP_PLANE0);
-      }
-        glDisable(GL_TEXTURE_2D) ;
 /*
  *  Define light0
  */
@@ -93,8 +91,6 @@ GLfloat  v4[4] ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,mat_dif)  ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_spc) ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, mid_shininess) ;
-
-
 /*
  *==============================================================================
  * Draw Outline of Tiles
@@ -139,10 +135,15 @@ GLfloat  v4[4] ;
       sketch_track_routes() ;
       sketch_road_routes() ;
 #endif
+
 /*
+ *==============================================================================
  *   Call the topography Display List for each of the tiles
+ *==============================================================================
  */
+#if 1
       glShadeModel(GL_SMOOTH) ;
+//      glShadeModel(GL_FLAT) ;
       glEnable(GL_LIGHTING);
 
       glCullFace(GL_BACK) ;
@@ -157,12 +158,57 @@ GLfloat  v4[4] ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
       }
+      tile_t_beg = clock() ;
+      n_tiles_plotted = 0 ;
+
+#ifdef use_vertex_arrays
+/*
+ *   Enable Vertex Arrays
+ */
+        glEnableClientState(GL_VERTEX_ARRAY) ;
+        glEnableClientState(GL_NORMAL_ARRAY) ;
+        glEnableClientState(GL_TEXTURE_COORD_ARRAY) ;
+#endif
+
       for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
-        if(0!=tnode->gl_display_list)
-                     glCallList((GLuint) tnode->gl_display_list) ;
+        if(0==tnode->needed) continue ;
+        if(0==check_topog_in_scene(tnode)) continue ;
+#ifdef use_vertex_arrays
+        display_tile_vertex_array(tnode) ;
+#else
+        glCallList((GLuint) tnode->gl_display_list) ;
+#endif
+        n_tiles_plotted++ ;
       }
+/*
+ *   Disable Cleint States.  Reset Lights and Material Properties
+ */
+#ifdef use_vertex_arrays
+        glDisableClientState(GL_VERTEX_ARRAY) ;
+        glDisableClientState(GL_NORMAL_ARRAY) ;
+        glDisableClientState(GL_TEXTURE_COORD_ARRAY) ;
+        zr_setp4(v4,light0_altde,light0_polar) ;
+        glLightfv(GL_LIGHT0, GL_POSITION, v4);
+/*
+ *  Define default material
+ */
+      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,mat_amb)  ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,mat_dif)  ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_spc) ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, mid_shininess) ;
+#endif
+//      glFinish() ; // Clear GPU
+      tile_t_end   = clock() ;
       if(0 && l_pp)printf(" PLOT TOPOGRAPHY.  Tiles plotted = %i\n",j) ;
       check_glerror2("My routine 'display', after plotting topography\n") ;
+#endif
+/*
+ *==============================================================================
+ *  End of topography
+ *==============================================================================
+ */
+
+
 /*
  *==============================================================================
  *  Loop over the world files
@@ -196,7 +242,12 @@ GLfloat a, b, c, d ;
 //  are then missing.
       glCullFace(GL_BACK) ;
       glEnable(GL_CULL_FACE) ;
+      glEnable(GL_RESCALE_NORMAL) ;
+//      glEnable(GL_NORMALIZE) ;
 
+//      glFlush() ;
+//      glFinish() ; // Clear GPU
+      shape_t_beg = clock() ;
       for(wnode=worldlist_beg; wnode != NULL; wnode=wnode->next){
         if(0 == wnode->in_use) continue ;
         if(0 && l_pp)printf(" New tile tile_x, tile_y, in_use = %i %i %i\n",
@@ -213,6 +264,7 @@ GLfloat a, b, c, d ;
           if(DYNTRACK == witem->worldtype)continue ;
           if(306 == witem->worldtype)continue ;
 
+
 //  Debug printing if new position and and first time with debug statements
 //  String 'test_shape' is defined in "zr.c".
 
@@ -220,14 +272,14 @@ GLfloat a, b, c, d ;
                                       !strncmp(snode->name,test_shape,12)  ;
           if(ip)printf(" New world item : shape name  = %s\n",snode->name) ;
 /*
- *   Translate ModelView to origin of tile
+ *   Convert from MSTS location to coordinates used for graphics
  */
             global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                          wnode->tile_x,wnode->tile_y,
                          witem->X, witem->Y, witem->Z, &x, &y, &z) ;
 /*
  *  Check if item is within window
- *  At this point the program is using MSTS axis convention
+ *  At this point the program is using the MSTS axis convention
  */
   int  iret ;
             iret = check_in_scene( (GLdouble) x,  (GLdouble) y, (GLdouble) z,
@@ -235,6 +287,8 @@ GLfloat a, b, c, d ;
 
             if(0==iret) continue ;
             if(ip)printf(" New world item : shape is in view\n") ;
+            n_shapes_plotted++ ;
+
             glMatrixMode(GL_MODELVIEW) ;
             glPushMatrix() ;
 /*
@@ -243,7 +297,7 @@ GLfloat a, b, c, d ;
  *  Note apparent reversal of order of transformations
  */
             glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
-            glEnable(GL_NORMALIZE) ;
+//            glEnable(GL_NORMALIZE) ;
             a = witem->ANG ;
             b = witem->AX ;
             c = witem->AY ;
@@ -325,6 +379,10 @@ GLfloat a, b, c, d ;
           }
         }
       }   // END of plot shapes block
+//      glFlush() ;
+//      glFinish() ; // Clear GPU
+      shape_t_end = clock() ;
+      glDisable(GL_RESCALE_NORMAL) ;
 //  Disable culling
       glDisable(GL_CULL_FACE) ;
 //  Restore counter-clockwise default for front-facing polygons
@@ -332,10 +390,22 @@ GLfloat a, b, c, d ;
 
 #endif
 /*
+ *==============================================================================
+ *    End of fixed shapes
+ *==============================================================================
+ */
+/*
+ *==============================================================================
  *   Display dynamic tracks
+ *==============================================================================
  */
 #if 1
+      track_t_beg = clock() ;
       display_dynamic_tracks() ;
+//      glFlush() ;
+//      glFinish() ; // Clear GPU
+      track_t_end   = clock() ;
+      n_tracks_plotted = 0 ;
 #endif
 
 /*
@@ -422,19 +492,36 @@ TrkSectionNode *trk_sec_node   ;
  *   It averages over five seconds but takes the first five
  *   seconds to initialise.
  */
+#ifdef _Display_Normal
       if(l_fps){
         glDisable(GL_LIGHTING) ;
         glDisable(GL_TEXTURE_2D) ;
         k = calls_per_second() ;
         if(k>0) fps = k ;
-        sprintf(string,"Frames per second = %i",fps) ;
+        tile_time_used = 0.98*tile_time_used +  0.02*
+                       1000.0*((double)(tile_t_end-tile_t_beg))/CLOCKS_PER_SEC ;
+        shape_time_used = 0.95*shape_time_used +  0.05*
+                       1000.0*((double)(shape_t_end-shape_t_beg))/CLOCKS_PER_SEC ;
+        track_time_used = 0.95*track_time_used +  0.05*
+                       1000.0*((double)(track_t_end-track_t_beg))/CLOCKS_PER_SEC ;
+//        sprintf(string,"Frames per second = %i.  Tiles %i, time %7.3f  "
+//                                               " Shapes %i, time %7.3f  "
+//                                               " Dy Track %i, time %7.3 ms.",
+        sprintf(string,"Frames per second = %i.  Tiles %i time %7.3f "
+                                                "Shapes %i time %7.3f "
+                                                "Tracks %i %7.3f",
+                                     fps, n_tiles_plotted, tile_time_used,
+                                          n_shapes_plotted, shape_time_used,
+                                          n_tracks_plotted, track_time_used) ;
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window((GLfloat)20.0,(GLfloat)20.0,string) ;
       }
+#endif
 /*
  * Clean up at end of routine display
  */
       glutSwapBuffers();
+      glFlush() ;
       glFinish();     /* Wait until drawing done  */
 
       check_glerror2("My routine 'display', at end returns GL error\n") ;
@@ -655,6 +742,8 @@ char       string[128];
 
 
 //      printf(" PLOTTING  SHAPES :: Routine display_shapes\n") ;
+      glEnable(GL_LIGHTING) ;
+
       for(snode=shapelist_beg, i=0, j=0; snode!=NULL; snode=snode->next, i++){
         if(30==i){
           j = j + 1;
@@ -671,7 +760,7 @@ char       string[128];
         glScalef(scale,scale,scale) ;
 #else
         glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
-       glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
+        glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
 #endif
 
 
@@ -732,6 +821,7 @@ GLfloat    x1, y1,
 int        i, j, ierr, ip = 0 ;
 char       string[128]     ;
 
+      glEnable(GL_LIGHTING) ;
       glFrontFace(GL_CW) ;
 //  Cull back faces
       glCullFace(GL_BACK) ;
@@ -742,7 +832,7 @@ char       string[128]     ;
       glAlphaFunc(GL_GREATER,0.5);
       glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
@@ -796,8 +886,7 @@ char       string[128]     ;
 
 /*
  *==============================================================================
- *    Routine to display all the wagons in one of the unused tiles
- *    Using the display lists
+ *    Routine to display textures near the origin of the tile display
  *==============================================================================
  */
 int display_textures(void){
@@ -826,11 +915,11 @@ TextureNode  *tnode ;
         if(ip)printf(" tnode = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
                      " %f %f :: %i\n",(void *)tnode,i,j,
                                         x1,y1,x2,y2,tnode->gl_tex_ref_no);
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
 
         glBegin(GL_QUADS) ;
           glTexCoord2f((GLfloat) 0.0,(GLfloat) 0.0) ;

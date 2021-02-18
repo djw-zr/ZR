@@ -2,22 +2,20 @@
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
- *   File:  topog_dlist.c
+ *   File:  topog_cva.c
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
  *   Routines to set up the display lists for topography
+ *   Using vertex arrays and buffer objects.
  *
  *==============================================================================
  */
 /*
  *==============================================================================
- *   Generate a topography display list for each of the tiles.
- *
- *   The calculation of normals appears to be computationally expensive so the
- *   use of display lists saves a lot of time.
+ *   Routine to create vertex arrays for each of the tiles.
  *
  *   In the MSTS ascii files, positions are given in terms of a tile, specified
  *   by the integers tile_x and tile_y for east and north, and floating points
@@ -41,47 +39,83 @@
  *==============================================================================
 */
 
-//  Values used for debugging
+int make_tile_vertex_arrays(){
 
-static int      tx_chk =  1451,
-                ty_chk = 10331,
-                i_chk  =   153,
-                j_chk  =    25  ;
-static double   x_chk  =  5.597613,
-                y_chk  = 12.902323;
+int          ip = 1 ;  // Debug
+int          ix, iy ;
+TileListNode *tnode ;
+char         my_name[] = "make_tile_vertex_arrays" ;
 
-int make_tile_topog_display_list(TileListNode *tile_node, GLuint klist){
+      if(ip)printf(" Enter: %s\n",my_name) ;
+      for(tnode=tilelist_head;tnode!=NULL;tnode=tnode->next){
+        ix = tnode->tilex ;
+        iy = tnode->tiley ;
+        if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
+        tnode->needed          = 1     ;
+        make_tile_vertex_array(tnode)  ;
+      }
+      return 0;
+}
 
-int            i, j, k, l1, l2, n1, n2, n3, n4, i3, j3, m3 ;
+int make_tile_vertex_array(TileListNode *tnode){
+
+int            i, j, k, l, kt, l1, l2, n1, n2, n3, n4, i3, j3, m3 ;
 int            tile_x, tile_y ;
-int            ip = 0     ;  // Dbug printing
+int            ip = 0     ;  // Debug printing
 int            nht        ;  // Number of tile heights in each direction
 double         dx_topog   ;  // Horizontal spacing in plot space units
 double         dm_topog   ;  // Horizontal spacing in metres
-double         dd_texture = 100 ;  // Size of texture in plot space units
+double         dd_texture ;  // Texture repeats per topographic sample
 double         floor, scale, v1[3], v2[3], v3[3], vv, av ;
 GLdouble       tx1, tx2, ty1, ty2, x1, x2, y1, y2, h1, h2, h3, h4 ;
 GLdouble       ttx1, ttx2, tty1, tty2 ; // Texture coordinates
 GLdouble       *normals, *heights ;
 int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
 unsigned short *elevations  ;
-char           my_name[] = "make_tile_topog_display_list" ;
+char           my_name[] = "make_tile_vertex_array" ;
+
+int            max_i, max_v ;
+int            nbx, nby, ncx, ncy, ib, jb, nvt, ii, jj, ij;
+VANode         *va_node ;
+
+TerrainData    *terrain = &(tnode->terrain_data) ;
+GLfloat        *vertex ;
+#ifdef normal_byte
+  GLbyte         *normal  ;
+#else
+  GLfloat        *normal  ;
+#endif
+#ifdef texture_short
+  GLshort        *texture ;
+#else
+  GLfloat        *texture ;
+#endif
+GLuint         *index1, *index ;
+GLfloat        xa[2],ya[2],za[2] ;
+GLdouble       scalei = 1.0/plot_scale ;
 
 GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
 GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
 GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 
-      if(ip)printf(" Enter routine %s\n",my_name) ;
-      floor      = tile_node->terrain_data.terrain_sample_floor    ;
-      scale      = tile_node->terrain_data.terrain_sample_scale    ;
-      elevations = tile_node->terrain_data.elevations ;
-      nht  = tile_node->terrain_data.terrain_nsamples ;
-      dx_topog = 1.0/nht            ;
-      dm_topog = dx_topog*tile_size ;
-      dd_texture = nht*0.5          ;
 
-      tile_x = tile_node->tilex ;
-      tile_y = tile_node->tiley ;
+      if(ip)printf(" Enter routine %s\n",my_name) ;
+
+
+      floor      = tnode->terrain_data.terrain_sample_floor ;
+      scale      = tnode->terrain_data.terrain_sample_scale ;
+      elevations = tnode->terrain_data.elevations           ;
+      nht        = tnode->terrain_data.terrain_nsamples     ;
+
+      dx_topog = 1.0/nht               ;  // Spacing in tile units
+      dm_topog = tile_size/nht         ;  // Spacing in m
+      dd_texture = 2.0                 ;  // Texture distance per terrain spacing
+
+      tile_x = tnode->tilex ;
+      tile_y = tnode->tiley ;
+      if(ip)printf("  Tile_x = %i %i, tile_y = %i %i :: %i\n",
+                                 tile_x,tile_x0,tile_y,tile_y0,tnode->needed) ;
+      if(ip)printf("  plot_scale = %f %f\n",(double)plot_scale,(double)scalei) ;
 /*
  *  Define material properties of land.
  *  Determines surface light values before textures are applied.
@@ -238,168 +272,192 @@ double hh  ;
         }
       }
 /*
- *  Generate Tile display List
- */
-      glNewList(klist,GL_COMPILE) ;
-      glBindTexture(GL_TEXTURE_2D, land_texture->gl_tex_ref_no) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
-/*
- * Loop over tile
+ *==============================================================================
+ *  Initilise vertex arrays
  *
- * 1.  North - south loop over tile
- *     Most southern row includes one vertex from next tile
+ *  Low level graphics cards may struggle with GPU storage for the full
+ *  256 by 256 topographic array data.  The code therefor includes the option
+ *  of splitting the data into nbx*nby blocks, each containing ncx*ncy cells.
+ *==============================================================================
  */
-      for(j=0;j<nht;j++){     // Tile plus one row on tile to south
-        ty1 =     j*dx_topog - 1     ;  //  Northern row of strip, tile y location
-        ty2 = (j+1)*dx_topog - 1      ;  //  Southern row
-        y1  = tile_y - tile_y0 - ty1 ;  //  Northern row of strip, world y location
-        y2  = tile_y - tile_y0 - ty2 ;  //  Southerm row
-        tty1 = y1*dd_texture ;
-        tty2 = y2*dd_texture ;
 /*
- *  2.  East - west loop over tile + 1
- *
- *  2.1  Start strip - add first two points
+ *  Determine limits
  */
-        x2   = tile_x - tile_x0 ;
-        ttx2 = x2*dd_texture    ;
-        n3   = (j+1)*m3 + 1     ;
-        n4   = n3 + m3          ;
-        h3 = (heights[n3] - tile_h0)/plot_scale ;
-        h4 = (heights[n4] - tile_h0)/plot_scale ;
+      glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, &max_v) ;
+      if(ip)printf("  GL_MAX_ELEMENTS_VERTICES = %i\n",max_v) ;
+      glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &max_i) ;
+      if(ip)printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",max_i) ;
 
-        glBegin(GL_TRIANGLE_STRIP) ;
-
-        glTexCoord2d(ttx2, tty1) ;
-        glNormal3dv(&normals[3*n3]) ;
-        glVertex3d(x2, y1, h3) ;
-
-        glTexCoord2d(ttx2, tty2) ;
-        glNormal3dv(&normals[3*n4]) ;
-        glVertex3d(x2, y2, h4) ;
-
-        check_glerror2(" topog_dlist AA : after starting GL_TRIANGLE_STRIP\n") ;
+      nbx = 1 ;
+      nby = 1 ;
+      for(;;){
+        ncx = nht/nbx ;
+        ncy = nht/nby ;
+        nvt = (ncx+1)*(ncy+1) ;
+        if((3*nvt <= max_v && 6*ncx*ncy <= max_i) || 8 == i)break ;
+        if(nbx == nby)  nbx = nbx*2 ;
+        else            nby = nbx   ;
+      }
+      if(ip)printf("  Topography split into %i by %i blocks\n",nbx,nby) ;
 /*
- *   Cycle over cells of strip - including overlap
+ *  Allocate Vertex array nodes
  */
-        for(i=0;i<nht;i++){     // Cycle over cells of strip
-          l1 = (i == nht-1) ;   // End cell of row
+      terrain->nbx = nbx ;
+      terrain->nby = nby ;
+      terrain->va_node = (VANode *)malloc(nbx*nby*sizeof(VANode)) ;
+      for(jb=0;jb<nby;jb++){
+        for(ib=0;ib<nbx;ib++){
+          va_node = &terrain->va_node[jb*nby+ib] ;
+          va_node->ncx       = ncx ;
+          va_node->ncy       = ncy ;
+          va_node->nva_index = 6*ncx*ncy ;
+          va_node->in_use    = 1   ;
+//  Allocate memory
+          vertex  = va_node->va_vertex  = (GLfloat *)malloc(3*nvt*sizeof(GLfloat)) ;
+#ifdef normal_byte
+          normal  = va_node->va_normal  = (GLbyte *)malloc(3*nvt*sizeof(GLbyte)) ;
+#else
+          normal  = va_node->va_normal  = (GLfloat *)malloc(3*nvt*sizeof(GLfloat)) ;
+#endif
 
-          x1   = x2   ;
-          ttx1 = ttx2 ;
-          n1   = n3   ;
-          n2   = n4   ;
-          h1   = h3   ;
-//        h2   = h4   ;    //  Not normally used
+#ifdef texture_short
+          texture = va_node->va_texture = (GLshort *)malloc(2*nvt*sizeof(GLshort)) ;
+#else
+          texture = va_node->va_texture = (GLfloat *)malloc(2*nvt*sizeof(GLfloat)) ;
+#endif
+          index   = va_node->va_index  = (GLuint *)malloc(6*ncx*ncy*sizeof(GLuint)) ;
 
-          x2   = x1 + dx_topog ;
-          ttx2 = x2*dd_texture ;
-          n3   = n1 + 1 ;
-          n4   = n2 + 1 ;
-          h3 = (heights[n3] - tile_h0)/plot_scale ;
-          h4 = (heights[n4] - tile_h0)/plot_scale ;
-// Flag possible track regions needing a break in the triangle strip
-          av = (heights[n4] + heights[n1])*0.5  ;
-          l2 = ( ((fabs(heights[n4]-heights[n1])/dm_topog) < 0.04)
-              && ((fabs(heights[n2]-heights[n3])/dm_topog) > 0.04)
-              && ( ((fabs(heights[n2]-av)/dm_topog) < 0.02)
-                || ((fabs(heights[n3]-av)/dm_topog) < 0.02) ) ) ;
-
-          if(ip && (fabs(x1-x_chk)<0.015) && (fabs(y1-y_chk)<0.015) && 1){
-            printf(" Logic  tile = %4i %4i :: i, j = %4i %4i :: x1, x2, y1, y2= %7.3f %7.3f  %7.3f %7.3f :: height = %7.3f %7.3f  %7.3f %7.3f\n",
-                   tile_x,tile_y,i,j,x1,x2,y1,y2,(
-                   double)heights[n1],(double)heights[n2],(double)heights[n3],(double)heights[n4]);
-            printf(" Logic  tile = %4i %4i :: i, j = %4i %4i :: l1, l2, = %i %i :: funcs = %7.3f %7.3f  %7.3f %7.3f :: %f  %f\n",
-                   tile_x,tile_y,i,j, l1, l2,
-                   (double)fabs(heights[n4]-heights[n1])/dm_topog,
-                   (double)fabs(heights[n2]-heights[n3])/dm_topog,
-                   (double)fabs(heights[n2]-av)/dm_topog,
-                   (double)fabs(heights[n3]-av)/dm_topog, av, dm_topog);
+          if(ip){
+            printf("  AA  ib, jb = %i %i\n",ib,jb) ;
+            printf("  AA vertex  = %p %p\n",(void *)vertex, (void *)va_node->va_vertex);
+            printf("  AA normal  = %p %p\n",(void *)normal, (void *)va_node->va_normal);
+            printf("  AA texture = %p %p\n",(void *)texture, (void *)va_node->va_texture);
+            printf("  AA index   = %p %p\n",(void *)index, (void *)va_node->va_index);
           }
+/*
+ *  2.  Initialise vertices and textures
+ *        i,j   index of cell in sub-arrays
+ *        ii,jj index in full array
+ *        k = index of first coordinate of 3-vectors (vertex, normal)
+ *        l = index of first vertex of 2-vectors (texture)
+ *        k = index of first coordinate describing vertex
+ */
+          for(j=0,k=0,l=0;j<ncy+1;j++){
+            jj = jb*ncy + j ;
+            for(i=0;i<ncx+1;i++,k+=3,l+=2){
+              ii = ib*ncx + i ;
+              ij = (jj+1)*m3 + ii + 1 ;
 
-          if(l2 && 1){
-//  Special case.
-//  This is to prevent some land overlying rail track.  The break in GL_TRIANGLE_STRIP may be
-//      computationally expensive as it is used everywhere.  A better scheme may be to only
-//      use the scheme when a rail track is nearby - once a "find nearest track point" routine is
-//      available.
-//
-//  Complete triangle n1, n2, n4
-            glTexCoord2d(ttx2, tty2) ;
-            glNormal3dv(&normals[3*n4]) ;
-            glVertex3d(x2, y2, h4) ;
-            glEnd() ;
-//  Draw triangle n1, n4, n3
-            glBegin(GL_TRIANGLES) ;
-
-            glTexCoord2d(ttx1, tty1) ;
-            glNormal3dv(&normals[3*n1]) ;
-            glVertex3d(x1, y1, h1) ;
-
-            glTexCoord2d(ttx2, tty2) ;
-            glNormal3dv(&normals[3*n4]) ;
-            glVertex3d(x2, y2, h4) ;
-
-            glTexCoord2d(ttx2, tty1) ;
-            glNormal3dv(&normals[3*n3]) ;
-            glVertex3d(x2, y1, h3) ;
-
-            glEnd() ;
-
-//  Restart GL_TRIANGLE_STRIP
-            if(!l1){
-              glBegin(GL_TRIANGLE_STRIP) ;
-
-              glTexCoord2d(ttx2, tty1) ;
-              glNormal3dv(&normals[3*n1]) ;
-              glVertex3d(x2, y1, h3) ;
-
-              glTexCoord2d(ttx2, tty2) ;
-              glNormal3dv(&normals[3*n4]) ;
-              glVertex3d(x2, y2, h4) ;
+              vertex[k  ] = (tile_x - tile_x0)     +  dx_topog*ii ;
+              vertex[k+1] = (tile_y - tile_y0 + 1) -  dx_topog*jj ;
+              vertex[k+2] = (heights[ij]-tile_h0)*scalei ;
+//  Track limits
+              if(0==k){
+                xa[0] = xa[1] = vertex[0] ;
+                ya[0] = ya[1] = vertex[1] ;
+                za[0] = za[1] = vertex[2] ;
+              }else{
+                if(vertex[k]<xa[0])xa[0] = vertex[k];
+                if(vertex[k]>xa[1])xa[1] = vertex[k];
+                if(vertex[k+1]<ya[0])ya[0] = vertex[k+1];
+                if(vertex[k+1]>ya[1])ya[1] = vertex[k+1];
+                if(vertex[k+2]<za[0])za[0] = vertex[k+2];
+                if(vertex[k+2]>za[1])za[1] = vertex[k+2];
+              }
+#ifdef normal_byte
+              normal[k  ] =   0 ;
+              normal[k+1] =   0 ;
+              normal[k+2] = 127 ;
+#else
+              normal[k  ] = normals[3*ij]   ;
+              normal[k+1] = normals[3*ij+1] ;
+              normal[k+2] = normals[3*ij+2] ;
+#endif
+#ifdef texture_short
+              texture[l  ]  = i ;
+              texture[l+1]  = j ;
+#else
+              texture[l  ] = dd_texture*i     ;
+              texture[l+1] = dd_texture*j     ;
+#endif
             }
-//  Normal case
-          }else{
-            glTexCoord2d(ttx2, tty1) ;
-            glNormal3dv(&normals[3*n3]) ;
-            glVertex3d(x2, y1, h3) ;
+          }
+          for(j=0,k=0;j<ncy;j++){
+            for(i=0;i<ncx;i++,k+=6){
+              ij = j*(ncx+1) + i ;
+              index[k  ] = ij           ;
+              index[k+1] = ij + ncx + 1 ;
+              index[k+2] = ij + ncx + 2 ;
+              index[k+3] = ij           ;
+              index[k+4] = ij + ncx + 2 ;
+              index[k+5] = ij + 1       ;
+            }
+          }
+/*
+ *  save limits
+ */
+          va_node->xa[0] = xa[0] ; va_node->xa[1] = xa[1] ;
+          va_node->ya[0] = ya[0] ; va_node->ya[1] = ya[1] ;
+          va_node->za[0] = za[0] ; va_node->za[1] = za[1] ;
+          va_node->in_use = 1 ;    //  Tests not availale at this stage
 
-            glTexCoord2d(ttx2, tty2) ;
-            glNormal3dv(&normals[3*n4]) ;
-            glVertex3d(x2, y2, h4) ;
+
+          if(ip>1 && tile_x==1448 && tile_y == 10331){
+            printf("  Vertex Array  tile_x, tile_y = %i %i\n",tile_x,tile_y) ;
+            for(i=0;i<ncx+1;i++){
+              j = 0 ;
+              k = j*(ncx+1) + i ;
+              printf(" i, j = %3i %3i  vertex = %f %f %f\n",
+                     i,j, vertex[3*k],vertex[3*k+1],vertex[3*k+2]) ;
+            }
+            printf("\n");
+            for(j=0;j<ncy+1;j++){
+              i = 0 ;
+              k = j*(ncx+1) + i ;
+              printf(" i, j = %3i %3i  vertex = %f %f %f\n",
+                     i,j,vertex[3*k],vertex[3*k+1],vertex[3*k+2]) ;
+            }
+            printf("\n");
+            for(k=0;k<6*ncx;k++){
+              i = 3*index[k] ;
+              printf("  k, i = %4i %4i :: x, y, h = %f %f %f\n",
+                                 k,i,vertex[i],vertex[i+1],vertex[i+2]);
+            }
+            printf("\n");
           }
         }
-        if(!l2)glEnd() ;
       }
-/*
- * Option to plot normal vectors - length 1 m.
- */
-#if 0
-      glDisable(GL_LIGHTING) ;
-      glDisable(GL_TEXTURE_2D) ;
-      glColor3f(1.0,1.0,1.0) ;
-      glBegin(GL_LINES) ;
-      for(j=0;j<nht;j++){
-      for(i=0;i<nht;i++){
-        y1 = tile_y - tile_y0 - j*dx_topog + 1.0 ;
-        x1 = tile_x - tile_x0 + i*dx_topog ;
-        n1 =  (j + 1)*m3 + i + 1 ;
-        h1  = (heights[n1] - tile_h0)/plot_scale ;
-        glVertex3d(x1, y1, h1) ;
-        x1 = x1 + normals[3*n1]*1.0/plot_scale ;
-        y1 = y1 + normals[3*n1+1]*1.0/plot_scale ;
-        h1 = h1 + normals[3*n1+2]*1.0/plot_scale ;
-        glVertex3d(x1, y1, h1) ;
-      }
-      }
-      glEnd() ;
-      glEnable(GL_LIGHTING) ;
-      glEnable(GL_TEXTURE_2D) ;
-#endif
-      glEndList() ;
       free(normals) ;
       free(heights) ;
       free(flata) ;
       return 0 ;
+}
+
+int check_topographic_blocks(){
+
+int          ip = 1       ;  // Debug
+int          ix, iy, k, n ;
+TileListNode *tnode       ;
+VANode       *va_node     ;
+char         my_name[] = "make_tile_vertex_arrays" ;
+
+      if(ip)printf(" Enter: %s\n",my_name) ;
+      for(tnode=tilelist_head;tnode!=NULL;tnode=tnode->next){
+        ix = tnode->tilex ;
+        iy = tnode->tiley ;
+        if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
+        tnode->needed          = 1     ;
+        n = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+        for(k=0;k<n;k++){
+          va_node = &(tnode->terrain_data.va_node[k]) ;
+          va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
+        }
+
+      }
+
+
+
+
+
+       return 0 ;
 }

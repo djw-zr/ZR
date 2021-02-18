@@ -13,11 +13,12 @@
  *==============================================================================
  */
 
+
 /**
  *   Function to compare two strings ignoring case.
  *   Returns 0 if the strings match and 1 if the comparison fails.
  */
-int strcmp_ic(char *s1, char *s2){
+int strcmp_ic(const char *s1, const char *s2){
 
 int  i, l1 ;
 char c1, c2 ;

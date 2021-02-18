@@ -51,7 +51,7 @@ char  string[256] ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
                                      GL_NEAREST_MIPMAP_NEAREST) ;
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
       width  = tnode->width  ;
       height = tnode->height ;
 

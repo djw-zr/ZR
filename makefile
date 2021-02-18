@@ -29,13 +29,16 @@ CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 
 #  Specify pre-processor options
 #CFLAGS  += -Dsketch_tracks_and_roads #  Plot outline of roads/tracks
-#CFLAGS  += -Dgrid_lines #          Outline tiles
+CFLAGS  += -Dgrid_lines #          Outline tiles
 #CFLAGS  += -Dfull_topog #          Plot all topography
 CFLAGS  += -Dkb_dev #              Keyboard with modified 'flying' keys
 #CFLAGS  += -Dgeo_coord #           Use x=east, y=north, z=up for shapes
 #CFLAGS  += -D_Display_Shapes #
 #CFLAGS  += -D_Display_Wagons  #
 #CFLAGS  += -D_Display_Textures #
+CFLAGS  += -Duse_vertex_arrays
+#CFLAGS  += -Dtexture_short
+#CFLAGS  += -Dnormal_byte
 
 #  Specify libraries
 LIBGL   = -lglut -lGLU -lGL

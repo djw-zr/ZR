@@ -14,7 +14,7 @@
  */
 
 // system.c
-int  strcmp_ic(char *s1, char *s2) ;  // strcmp ignoring case.
+int  strcmp_ic(const char *s1, const char *s2) ;  // strcmp ignoring case.
 char *zr_basename(char *fname)     ;  // basename replacement
 char *zr_extension(char *fname)    ;  // Return filename extension
 char *zr_corename(char *fname)     ;  // Return filename without extension
@@ -45,6 +45,10 @@ void  init_track_section(TrkSectionNode *tracknode) ;
 int   list_track_section(TrkSectionNode *tnode) ;
 
 int   init_tsec_db() ;
+
+int   make_tile_vertex_arrays()       ;
+int   make_tile_vertex_array(TileListNode *tnode)       ;
+int   display_tile_vertex_array(TileListNode *tnode) ;
 
 int   make_needed_track_road_shapes() ;
 int   make_track_shapes() ;

@@ -37,6 +37,7 @@ void graphics_init(void)
 {
 
 int      ip = 1  ;  //  0 = no printing
+int      ivec[10] ;
 GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
 GLfloat  l0_dif[]  = {light0_diff, light0_diff, light0_diff, 1.0} ;  //  Value lighted
 GLfloat  l0_spc[]  = {light0_spec, light0_spec, light0_spec, 1.0} ;  //  Highlights
@@ -48,6 +49,14 @@ float    v4[4] ;
         printf("***********************************************************\n") ;
       }
 /*
+ *  Determine limits
+ */
+       glGetIntegerv(GL_MAX_ELEMENTS_VERTICES, ivec) ;
+       printf("  GL_MAX_ELEMENTS_VERTICES = %i\n",ivec[0]) ;
+       glGetIntegerv(GL_MAX_ELEMENTS_INDICES, ivec) ;
+       printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",ivec[0]) ;
+
+/*
  *  Initialise graphic variables
  */
       radian_to_north = atan2(lookat_centre_x-lookat_eye_x,
@@ -57,12 +66,8 @@ float    v4[4] ;
                                sqrt(pow( lookat_centre_x-lookat_eye_x, 2)
                                    +pow( lookat_centre_y-lookat_eye_y, 2)) ) ;
       angle_to_up     = degree*radian_to_up  ;
-#if 0
-      lookat_centre_z = lookat_eye_z + cos(radian_to_up) ;
-      lookat_centre_x = lookat_eye_x + sin(radian_to_up)*sin(radian_to_north) ;
-      lookat_centre_y = lookat_eye_y + sin(radian_to_up)*cos(radian_to_north) ;
-#endif
-      clip_0[0]= clip_x ; clip_0[1]= clip_y ; clip_0[2]= clip_z ; clip_0[3]= clip_c ;
+
+      initialise_clip_planes(clip_a) ;
 /*
  *   In case of changes : re-initialise viewport variables
  */
@@ -92,10 +97,12 @@ float    v4[4] ;
       tile_eye_y0 = tile_y0 + lookat_eye_y ;
 /*
  *   Initialise Lighting
- */
-      GLfloat lmodel_ambient[] = { 0.4, 0.4, 0.4, 1.0 };
-      GLfloat local_view[] = { 0.0 };
-/*
+ *   Defaults for glLightModel are
+ *       Two sided lighting - off,
+ *       Background ambient light = (0.2, 0.2, 0.2, 1.0)
+ *       Local specular reflection - off
+ *       Separate specular colour  - off
+ *
  *  Define light0
  */
       zr_setp4(v4,light0_altde,light0_polar) ;
@@ -128,9 +135,14 @@ float    v4[4] ;
  *  Generate Topography Display List for each Tile
  */
 #ifdef _Display_Normal
-     if(ip)printf("   Make tile display lists\n");
+      if(ip)printf("   Make tile display lists\n");
 //     make_tile_topog_display_lists() ;
-     load_topography_display_lists() ;
+# ifdef use_vertex_arrays
+      make_tile_vertex_arrays()       ;
+#else
+      load_topography_display_lists() ;
+#endif
+
 #endif
 /*
  *  Initialise display lists for track sections when
@@ -235,35 +247,26 @@ int         ip = 0 ;
 WorldNode   *wnode ;
 WorldItem   *witem ;
 ShapeNode   *snode ;
-int tile_x = tile_x0 + lookat_eye_x ; //  i coordinate of central tile
-int tile_y = tile_y0 + lookat_eye_y ; //  j coordinate of central tile
 
 int it, jt ;
 
       if(ip){
         printf("   Enter mark_shapes\n");
-        printf("     tile_x = %i %i %.3f %i\n",tile_x, tile_x0,
-                                          lookat_eye_x, tile_eye_x0) ;
-        printf("     tile_y = %i %i %.3f %i\n",tile_y, tile_y0,
-                                          lookat_eye_y, tile_eye_y0) ;
+        printf("     tile_x = %i %i %.3f %i\n",tile_eye_x0 - tile_x0,
+                                      tile_x0, lookat_eye_x, tile_eye_x0) ;
+        printf("     tile_y = %i %i %.3f %i\n",tile_eye_y0 - tile_y0,
+                                      tile_y0, lookat_eye_y, tile_eye_y0) ;
       }
 #if defined _Display_Normal
       if(ip)printf(" Display Normal\n") ;
 /*
- *  Option (1) Process 9 tiles around viewpoint
+ *  Option (1) Process tiles around viewpoint
  */
       for(wnode = worldlist_beg;wnode!=NULL;wnode=wnode->next){
-        it = wnode->tile_x - tile_x ;
-        jt = wnode->tile_y - tile_y ;
-//        printf(" Processing world tile:  %i %i  ::  %i %i  ::  %i %i  ::  %i %i\n",
-//               wnode->tile_x, wnode->tile_y, tile_x0,  tile_y0,
-//               (int) lookat_eye_x, (int)lookat_eye_y, it, jt) ;
-        wnode->in_use = 0 ;
-        if(it<-1 || it>1 || jt<-1 || jt>1) continue ;  // Skip distant tiles
-        wnode->in_use = 1 ;
-        if(ip)printf("     Processing tile:  %i %i  ::  %i %i  ::  %i %i\n",
-               it, jt, wnode->tile_x, wnode->tile_y, tile_x0,  tile_y0);
-// Loop though world items and mark as needed
+        wnode->in_use = use_tile(wnode->tile_x, wnode->tile_y) ;
+/*
+ * Loop though world items and mark as needed
+ */
         for(witem = wnode->world_item; witem!=NULL;witem = witem->next){
           snode = witem->snode ;
           if(snode != NULL){
@@ -434,17 +437,34 @@ void cull_topography_display_lists(void){
 int           ix, iy ;
 int           ip = 0 ;
 TileListNode *tnode ;
+TerrainData  *tdata ;
 
       if(ip)printf("   Enter cull_topography_display_lists\n");
       for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
+#ifdef use_vertex_arrays
+        tdata = &(tnode->terrain_data) ;
+        if(NULL == tdata->va_vertex) continue ;
+#else
         if(0 == tnode->gl_display_list) continue ;
+#endif
         ix = tnode->tilex ;
         iy = tnode->tiley ;
         if(use_tile(ix,iy)) continue ;
+#ifdef use_vertex_arrays
+# ifdef cull_vertex_arrays
+          free(tdata->va_vertex)  ; tdata->va_vertex  = NULL ;
+          free(tdata->va_normal)  ; tdata->va_normal  = NULL ;
+          free(tdata->va_texture) ; tdata->va_texture = NULL ;
+          free(tdata->va_index1)  ; tdata->va_index1  = NULL ;
+# endif
+#else
+# ifdef cull_display_lists
         glDeleteLists(tnode->gl_display_list, (GLsizei) 1)  ;
-        tnode->needed          = 0 ;
         tnode->gl_display_list = 0 ;
-        if(ip>1)printf(" Cull topog for tile %i %i :: %i\n", ix, iy,
+# endif
+#endif
+        tnode->needed          = 0 ;
+        if(ip>1)printf("     Cull topog for tile %i %i :: %i\n", ix, iy,
                                                      use_tile(ix,iy)) ;
       }
       return ;
@@ -456,25 +476,34 @@ TileListNode *tnode ;
  */
 void load_topography_display_lists(void){
 
-int          ix, iy, klist ;
+int          k, n, ix, iy, klist ;
 int          ip = 0 ;
 TileListNode *tnode ;
+VANode       * va_node ;
 
       if(ip)printf("   Enter load_topography_display_lists\n");
-      if(ip)printf("   land_texture = %p\n",(void *)land_texture) ;
+      if(ip)printf("     land_texture = %p\n",(void *)land_texture) ;
       for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
-        if(0 != tnode->gl_display_list) continue ;
         ix = tnode->tilex ;
         iy = tnode->tiley ;
-        if(!use_tile(ix,iy)) continue ;
-
+        if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
+        tnode->needed          = 1     ;
+#ifdef use_vertex_arrays
+        if(NULL == tnode->terrain_data.va_vertex)make_tile_vertex_array(tnode) ;
+        else{
+          n = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+          for(k=0;k<n;k++){
+            va_node = &(tnode->terrain_data.va_node[k]) ;
+            va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
+          }
+        }
+#else
+        if(0 != tnode->gl_display_list) continue ;
         klist = glGenLists(1) ;
         make_tile_topog_display_list(tnode, klist) ;
-
-        tnode->needed          = 1     ;
         tnode->gl_display_list = klist ;
-        if(ip>1)printf(" Load topog for tile %i %i :: %i\n", ix, iy,
-                                                     use_tile(ix,iy)) ;
+#endif
+        if(ip>1)printf("     Initialise topog for tile %i %i \n", ix, iy) ;
       }
       return ;
 }
@@ -537,6 +566,8 @@ int            ip = 0 ;
  *     are to be used.  This occurs if tile_cull_r (graphics.h)
  *     is zero of if the distance from the eye tile is less than
  *     tile_cull_r.
+ *
+ *     ix, iy  absolute tile indices
  */
 
 int use_tile(int ix, int iy){

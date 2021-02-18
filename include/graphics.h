@@ -95,6 +95,14 @@ GLdouble lookat_centre_x =   1.0  ;
 GLdouble lookat_centre_y =   0.61 ;
 GLdouble lookat_centre_z =   0.0  ;
 #elif 0
+//  Position at Origin
+GLdouble lookat_eye_x    =   0.000  ;     //  Initial position of eye
+GLdouble lookat_eye_y    =   0.000  ;
+GLdouble lookat_eye_z    =   0.000  ;
+GLdouble lookat_centre_x =   1.000  ;     //  Initial losition looked at
+GLdouble lookat_centre_y =   0.000  ;
+GLdouble lookat_centre_z =   0.000 ;
+#elif 0
 //  Position at bridge
 GLdouble lookat_eye_x    =   2.805  ;     //  Initial position of eye
 GLdouble lookat_eye_y    =  12.708  ;
@@ -171,23 +179,13 @@ float  lookat_x =   0.0 ;
 float  lookat_y =   0.0 ;
 float  lookat_z =  -0.3 ;
 
-float  clip_near=   0.01;  // Near clipping point
-float  clip_far =  10.0 ;  // Far clipping point
-float  clip_x   =   0.0 ;  // Clipping plane x
-float  clip_y   =   0.0 ;  // Clipping plane y
-float  clip_z   =   0.0 ;  // Clipping plane z
-float  clip_c   =  -1.0 ;  // Clipping plane constant
-int  clip_i_min =  0    ;
-int  clip_i_max =  0    ;
-int  clip_j_min =  0    ;
-int  clip_j_max =  0    ;
-int  clip_k_min =  0    ;
-int  clip_k_max =  0    ;
-GLdouble  clip_0[4]= {0.0, 0.0, 0.0, 0.0} ; // Also initialised by graphics_init
-                                            //   to agree with clipping plane.
+GLfloat clip_a[6][4]    ;  //  Clip planes in display units
+int   initialise_clip_planes(GLfloat clipa[6][4]) ;
+int   check_topog_in_scene2(GLfloat xa[2], GLfloat ya[2], GLfloat za[2]) ;
+int   check_topographic_blocks() ;
+
 float  lookat_t[3] ;
 int    lookat_opt = 0 ;    //  Used in plotting lookat point
-int    iclip_on   = 0 ;    //  Clipping plane off/on
 
 //int    lookat_el =    45.0 ;
 //int    lookat_az =   355.0 ;

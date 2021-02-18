@@ -33,6 +33,19 @@ void error_s3(char *f, int i)  ;
 void init_sub_object(SubObject *s)  ;
 void init_tri_list(TriList *t)      ;
 
+/*
+ *  Function to test a directory entry for ".s" filename extension
+ *  (*.h, *.ace etc.)
+ */
+
+
+int file_is_shape( const struct dirent *p){
+
+  int len = strlen(p->d_name);
+      if(len<3) return 0 ;
+      if(strcmp_ic((char *)&p->d_name[len-2],".s")== 0) return 1;
+      return 0;
+}
 
 /*
  * Routine to create a shape node for each shape file in directory SHAPES
@@ -40,13 +53,14 @@ void init_tri_list(TriList *t)      ;
 
 int load_shape_filenames() {
 
-int    len1, len2, len3, idir ;
+int    len1, len2, len3, idir, i, n ;
 int    ip = 0        ;      // 0 = no printing
 char   *sdir_name    ;
 DIR    *sdir         ;
 FILE   *f            ;
 char   my_name[] = "load_shape_filenames" ;
 struct dirent *f_entry;
+struct dirent **namelist;
 ShapeNode *shape ;
 
       for(idir=0;idir<2;idir++){
@@ -64,13 +78,21 @@ ShapeNode *shape ;
         if(ip)printf(" Directory SHAPES = %s\n",sdir_name) ;
         sdir = opendir(sdir_name) ;
         if(sdir == NULL) error_s1(sdir_name) ;
-        while ((f_entry = readdir(sdir)) != NULL) {
-          len2 = strlen(f_entry->d_name) ;
-          if(strcmp(".s",&(f_entry->d_name[len2-2]))!= 0 &&
-            strcmp(".S",&(f_entry->d_name[len2-2]))!= 0) continue ;
+
+//        while ((f_entry = readdir(sdir)) != NULL) {
+//          len2 = strlen(f_entry->d_name) ;
+//          if(strcmp(".s",&(f_entry->d_name[len2-2]))!= 0 &&
+//            strcmp(".S",&(f_entry->d_name[len2-2]))!= 0) continue ;
+        n = scandir(sdir_name, &namelist, file_is_shape, versionsort);
+        if (n == -1) {
+          perror("scandir");
+          exit(EXIT_FAILURE);
+        }
+        printf("  Shapes from directory %s\n",sdir_name );
 /*
  * Initialise new shapenode
  */
+        for(i=0;i<n;i++){
           shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
           init_shape_node(shape) ;
 
@@ -84,8 +106,9 @@ ShapeNode *shape ;
 /*
  *  Save name and filename
  */
+          len2 = strlen(namelist[i]->d_name) ;
           shape->name = (char *)malloc(len2-1) ;
-          strncpy(shape->name,f_entry->d_name,len2-2);
+          strncpy(shape->name,namelist[i]->d_name,len2-2);
           shape->name[len2-2] = '\0' ;
           if(ip)printf(" Found shape file : %s\n",shape->name) ;
 /*
@@ -93,7 +116,7 @@ ShapeNode *shape ;
  */
           shape->sfile = (char *)malloc(len1 + len2 ) ;
           strcpy(shape->sfile,sdir_name) ;
-          strcat(shape->sfile,f_entry->d_name);
+          strcat(shape->sfile,namelist[i]->d_name);
 
           f=gopen(shape->sfile,"r") ;
           if(f!=NULL ){
@@ -136,7 +159,9 @@ ShapeNode *shape ;
             }
           }
           if(f != NULL)gclose(f) ;
+          free(namelist[i]) ;
         }
+        free(namelist);
         closedir(sdir) ;
         free(sdir_name) ;
       }

@@ -29,13 +29,22 @@ enum colour_type{
     BLUE  = 5,
     ALPHA = 6 } ;
 
+int file_is_ace( const struct dirent *p){
+
+  int len = strlen(p->d_name);
+      if(len<5) return 0 ;
+      if(strcmp_ic((char *)&p->d_name[len-4],".ace")== 0) return 1;
+      return 0;
+}
+
 int load_texture_filenames() {
 
-  int         idir, len1, len2 ;
+  int         idir, len1, len2, i, n ;
   int         ip = 0 ;                // Control printing : 0 = no printing
   char        *tdir_name ;
   DIR         *tdir;
   struct dirent *f_entry;
+  struct dirent **namelist;
   TextureNode *texture ;
   char        myname[] = "load_texture_filenames" ;
 
@@ -73,15 +82,31 @@ int load_texture_filenames() {
           exit(1) ;
         }
 /*
+ * 1.5  Generate an ordered list
+ */
+         n = scandir(tdir_name, &namelist, file_is_ace, versionsort);
+         if (n == -1) {
+           perror("scandir");
+           exit(EXIT_FAILURE);
+         }
+         printf("  Textures from directory %s\n",tdir_name );
+//        for(i=0;i<n;i++){
+//           printf("%s\n", namelist[i]->d_name);
+//           free(namelist[i]);
+//         }
+//         free(namelist);
+
+/*
  *  2.  Loop through files
  */
-        while ((f_entry = readdir(tdir)) != NULL) {
-          len2 = strlen(f_entry->d_name) ;
-          if(strcmp_ic(".ace",&(f_entry->d_name[len2-4]))!= 0) continue ;
-          if(ip)printf("  Found texture file = %s\n", f_entry->d_name);
+//        while ((f_entry = readdir(tdir)) != NULL) {
+//          len2 = strlen(f_entry->d_name) ;
+//          if(strcmp_ic(".ace",&(f_entry->d_name[len2-4]))!= 0) continue ;
+//          if(ip)printf("  Found texture file = %s\n", f_entry->d_name);
 /*
  * Initialise new texture node
  */
+        for(i=0;i<n;i++){
           texture = (TextureNode *)malloc(sizeof(TextureNode)) ;
           if(texturelist_beg == NULL){
             texturelist_beg = texture       ;
@@ -94,8 +119,10 @@ int load_texture_filenames() {
 /*
  *  Save name and filename  (strip off 4 characters '.ace')
  */
+          len2 = strlen(namelist[i]->d_name) ;
           texture->name = (char *)malloc(len2-3) ;
-          strncpy(texture->name,f_entry->d_name,len2-4);
+//          strncpy(texture->name,f_entry->d_name,len2-4);
+          strncpy(texture->name,namelist[i]->d_name, len2-4);
           texture->name[len2-4] = '\0' ;
           if(ip)printf("                name = %s\n", texture->name);
 /*
@@ -103,8 +130,11 @@ int load_texture_filenames() {
  */
           texture->filename = (char *)malloc(len1 + len2 ) ;
           strcpy(texture->filename,tdir_name) ;
-          strcat(texture->filename,f_entry->d_name);
+//          strcat(texture->filename,f_entry->d_name);
+          strcat(texture->filename,namelist[i]->d_name);
+          free(namelist[i]) ;
         }
+      free(namelist);
       closedir(tdir) ;
       free(tdir_name);
       }

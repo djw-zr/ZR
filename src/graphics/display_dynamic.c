@@ -42,7 +42,7 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
       glEnable(GL_CULL_FACE) ;
 
 //  All dynamic track normals should have unit length
-      glDisable(GL_NORMALIZE) ;
+      glEnable(GL_RESCALE_NORMAL) ;  // Faster : for use with uniform scaling
 
 //  Specify texture properties
       glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
@@ -131,6 +131,8 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
         }   // end loop over world items
       }   // end loop over tiles
       if(ifirst>0)ifirst-- ;
+      glDisable(GL_RESCALE_NORMAL) ;
+
 
       return 0;
 }

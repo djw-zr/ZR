@@ -22,9 +22,9 @@ Version  Status
        Forests are not displayed.
        Water is not displayed.
 
-     Display rates can be low - but will depend on the graphics card being used.  At present the code does not store vertex arrays on the graphics card, so this is an obvious next step.  It also tends to plot everything nearby - even if it is not in the viewport.
+     Display rates can be low - but will depend on the graphics card being used.  The latest version of teh code includes an option to use vertex arrays for the topography, which should speed things up.  The code also makes a start at using viewport clip planes, again to reduce the amount of data processed by the graphics card.
 
-     At this stage of development, the code is also likely to contain further bugs and hit problems with common mis-spellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
+     At this stage of development, the code is also likely to contain bugs and hit problems with common mis-spellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
 
 Compilation
 ===========
@@ -36,7 +36,7 @@ Compilation
 Running the program
 ===================
 
-    You can move around the 3D scene using the arrow keys.  If the -Dkb_dev option is used in the makefile, the arrow keys will move the viewpoint forwards, backwards and sideways at the same level.  The keys page-up and page down will move up and down.  The normal steps are 32 m, increased to 1024m if the 'Shift' key is depressed and reduced to 1 m if 'Alt' is depressed.  The arrow keys with 'Ctrl' depressed turn the direction of view to the left, right, up or down in steps of 1 degree. If both 'Ctrl' and 'Shift' are pressed the step is 30 degrees.
+    You can move around the 3D scene using the arrow keys.  If the "-Dkb_dev" option is used in the makefile, the arrow keys will move the viewpoint forwards, backwards and sideways at the same level.  The keys page-up and page down will move up and down.  The normal steps are 32 m, increased to 1024m if the 'Shift' key is depressed and reduced to 1 m if 'Alt' is depressed.  The arrow keys with 'Ctrl' depressed turn the direction of view to the left, right, up or down in steps of 1 degree. If both 'Ctrl' and 'Shift' are pressed the step is 30 degrees.
 
     Without the -Dkb_dev option, the behaviour is nearer the standard MSTS behaviour, the arrow keys moving forward and backward but not necessarily at the same level.  In this case the default steps are 1 m (10 m with Shift) and 0.1 degree.
 

@@ -417,7 +417,10 @@ int   nn, ni ;
  * List Tile data
  */
 #if 0
-      if(ip){
+      ip = 1 ;
+      if(ip || 1){
+  int   i, j, k, kmin, kmax, n ;
+  unsigned short  *kp ;
         printf(" List tile data\n") ;
         for(tlnode = tilelist_head;tlnode!=NULL;tlnode=tlnode->next){
           if(tlnode->t_found==0) continue ;
@@ -429,6 +432,7 @@ int   nn, ni ;
           }
 
           n = tlnode->terrain_data.terrain_nsamples ;
+          printf("    nsamples = %i\n",n) ;
           kp = tlnode->terrain_data.elevations      ;
           kmin = kmax = *kp ;
 #if 1

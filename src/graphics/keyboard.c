@@ -70,7 +70,7 @@ GLfloat v4[4] ;
             zr_setv4(v4,light0_spec,light0_spec,light0_spec,1.0) ;
             glLightfv(GL_LIGHT0,GL_SPECULAR,v4);
             break ;
-//  Change position of light0q
+//  Change position of light0
           case 'q':
           case 'Q':
             light0_altde = zr_fclip(light0_altde +isign * 10.0, 0.0, 90.0) ;
@@ -376,7 +376,7 @@ float c_dist ;  // i.e. 200 m away
 #ifdef kb_dev
 int     tile_e, tile_n ;
 float   e, n, h        ;
-       if(display_info){
+       if(display_info || ip){
          local2msts(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                    lookat_centre_x, lookat_centre_y, lookat_centre_z,
                    &tile_e, &tile_n, &e, &n, &h );
@@ -407,8 +407,14 @@ float   e, n, h        ;
       zr_setp4(v4,light0_altde,light0_polar) ;
       glLightfv(GL_LIGHT0, GL_POSITION, v4);
     }                                 // End of gluPerspective option
+
     initialise_eye_vectors() ;
-    new_viewpoint = 1 ;               //  Trigger graphics_cull checks
+    initialise_clip_planes(clip_a) ;
+
+//    if(ip) check_clip_planes() ;
+
+//  Trigger graphics_cull checks (myGlutIdle in graphics.c)
+    new_viewpoint = 1 ;
     glutPostRedisplay() ;
 }
 
