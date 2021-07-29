@@ -15,22 +15,24 @@
  */
 
 
-typedef struct wagonnode {
+typedef struct rawwagonnode {
 
-struct wagonnode *next       ;
+struct rawwagonnode *next    ;
 int              is_engine   ;      //  True if engine
 char             *name       ;
 char             *file       ;      // *.eng or *.wag file
 char             *s_file     ;      // Shape file
 char             *sd_file    ;      // Additional information file
 char             *image      ;      // Silhouette image file (*.jpg)
-struct wagonnode *tender     ;      //  For engines only pointer to tender
-} WagonNode  ;
+WagonNode        *wagon      ;      // Summary node used to construct trains
+ShapeNode        *shape      ;      // Corresponding shape node
+struct rawwagonnode *tender  ;      //  For engines only pointer to tender
+} RawWagonNode  ;
 
 typedef struct wagondir {
 struct wagondir  *next      ;
 char             *name      ;       //  Directory name
 char             *path_name ;       //  Full path name for this directory
-WagonNode        *wagon     ;       //  Engines/Wagons in this directory
+RawWagonNode     *raw_wagon ;       //  Engines/Wagons in this directory
 TextureNode      *texture   ;       //  List of textures in this directory
 } WagonDir   ;

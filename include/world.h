@@ -14,12 +14,29 @@
  * =============================================================================
  */
 
+/*
+ *  World files 'Static Flag' constants defined in OpenRails as enums.
+ */
+static uint   SF_RoundShadow       = 0x00002000 ;
+static uint   SF_RectangularShadow = 0x00004000 ;
+static uint   SF_TreelineShadow    = 0x00008000 ;
+static uint   SF_DynamicShadow     = 0x00010000 ;
+static uint   SF_AnyShadow         = 0x0001E000 ;
+static uint   SF_Terrain           = 0x00040000 ;
+static uint   SF_Animate           = 0x00080000 ;
+static uint   SF_Global            = 0x00200000 ;
+/*
+ *  World files 'Platform Data Flag' constants defined in OpenRails as enums.
+ */
+static uint   PD_PlatformLeft      = 0x00000002 ;
+static uint   PD_PlatformRight     = 0x00000004 ;
+
 typedef struct dyntracksect {
   uint            is_curved          ;  // SubBlock 1 = curved, 0 = straight
   uint            uid                ;  // Id
   float           param_1            ;  // Length (m) for straight,
                                         // Arc (radians) for curved
-  float           param_2            ;  // 0 for strait,
+  float           param_2            ;  // 0 for straight,
                                         // Radius (m) for curved
   float           delta_y            ;  // Elevation change for this subsection
 } DynTrackSect ;
@@ -31,7 +48,7 @@ typedef struct dyntrackobj {
   float           dist_level[3]      ;
   float           elevation          ;
   DynTrackSect    dyn_trk_sect[5]    ;
-  TrkSectionNode  *tsnode            ;  // Generated track section used to create
+  TrkNetNode      *tsnode            ;  // Generated node used to hold
                                         //   display list for dynamic track
 } DynTrackObj ;
 
@@ -129,21 +146,21 @@ typedef struct worlditem {
   int              worldtype       ;   //  Forest, Speedpost etc
   char             *filename       ;   //  Shape file name from world file
   ShapeNode        *snode          ;   //  Pointer to shape node
-  uint             static_flags    ;
+  uint             static_flags    ;   //  See SD constants (at start of file)
 // Vector and Quaternon defining objects position and orientation in tile
-  float            X               ;   //  X position in tile, geographic coords
-  float            Y               ;   //  Y position in tile
-  float            Z               ;   //  Z position in tile
+  double           X               ;   //  X position in tile, geographic coords
+  double           Y               ;   //  Y position in tile
+  double           Z               ;   //  Z position in tile
 
-  float            A               ;   //  Quaternion used by OR
-  float            B               ;   //
-  float            C               ;   //
-  float            D               ;   //
+  double           A               ;   //  Quaternion used by OR
+  double           B               ;   //
+  double           C               ;   //
+  double           D               ;   //
 
-  float            AX              ;   //  X coordinate of rotation vector
-  float            AY              ;   //  Y coordinate of rotation vector
-  float            AZ              ;   //  Z coordinate of rotation vector
-  float            ANG             ;   //  Angle of rotation
+  double           AX              ;   //  X coordinate of rotation vector
+  double           AY              ;   //  Y coordinate of rotation vector
+  double           AZ              ;   //  Z coordinate of rotation vector
+  double           ANG             ;   //  Angle of rotation (degrees)
 
   int              vdb_id          ;
   uint             static_detail_level ;

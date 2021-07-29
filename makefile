@@ -15,7 +15,7 @@ SHELL      = /bin/sh
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
-SRC_DIR   := src/core src/graphics src/input
+SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout
 
 #  Specify Compiler and Compiler Options
 CC       = gcc
@@ -24,6 +24,7 @@ CFLAGS   = -m64 -march=native -Iinclude
 #CFLAGS  += -g -Og #            For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wno-unused-variable
+CFLAGS  += -I/usr/include/freetype2
 CFLAGS  += $(foreach dir, $(INC_DIR), $(addprefix -I, $(dir)))
 CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 
@@ -39,9 +40,11 @@ CFLAGS  += -Dkb_dev #              Keyboard with modified 'flying' keys
 CFLAGS  += -Duse_vertex_arrays
 #CFLAGS  += -Dtexture_short
 #CFLAGS  += -Dnormal_byte
+CFLAGS   += -Dzr_freetype  #  -Dfreetype would rename directory
+
 
 #  Specify libraries
-LIBGL   = -lglut -lGLU -lGL
+LIBGL   = -lglut -lGLU -lGL -lfreetype
 #LIBGL  += -lportaudio #                Sound library
 LIBX    = -lXmu -lXext -lX11 -lXi -lz -lm
 LDFLAGS = $(LIBGL) $(LIBX)

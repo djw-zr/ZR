@@ -90,7 +90,7 @@ int               index         ;  //
 float             gauge         ;  //
 float             length        ;  //
 float             radius        ;  //
-float             angle         ;  //
+float             angle         ;  //  Radians as in DynTrackSect
 float             skew          ;
 int               water_scoop   ;  //
 } ;

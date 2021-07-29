@@ -39,15 +39,29 @@ void display(void){
 
 int      ierr ;
 int      i, j, k  ;
-int      ip = 1   ;  // 0 = no printing
+int      ip = 0   ;  // DEBUG
 char     string[128];
 TileListNode    *tnode ;
 
 clock_t       tile_t_beg,  tile_t_end  ;
 clock_t       shape_t_beg, shape_t_end ;
 clock_t       track_t_beg, track_t_end ;
-static double tile_time_used, shape_time_used, track_time_used  ;
+clock_t       dtrack_t_beg, dtrack_t_end ;
+static double tile_time_used, shape_time_used, track_time_used,
+              dtrack_time_used  ;
 int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
+
+        tile_t_beg  = 0.0 ;
+        tile_t_end  = 0.0 ;
+        shape_t_beg = 0.0 ;
+        shape_t_end = 0.0 ;
+        track_t_beg = 0.0 ;
+        track_t_end = 0.0 ;
+        dtrack_t_beg = 0.0 ;
+        dtrack_t_end = 0.0 ;
+        n_tiles_plotted  = 1 ;
+        n_shapes_plotted = 1 ;
+        n_tracks_plotted = 1 ;
 
 //  Note light0_ values can be modified by the keyboard (see keyboard.c).
 
@@ -64,6 +78,12 @@ GLfloat  v4[4] ;
 //      printf(" Enter display :: %i\n",i_display++) ;
 //      printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       i_display++ ;
+      zr_clock_gettime(zr_clock_1) ;
+      l_fps = 1 ;
+/*
+ *  If position has changed - update viewpoint
+ */
+      if(camera_changed)camera_new_position() ;
 /*
  *   Initialise graphics
  *   Clear-colour normally set to light blue (sky)
@@ -132,8 +152,11 @@ GLfloat  v4[4] ;
  *    Sketch routes of roads and tracks
  */
 #ifdef sketch_tracks_and_roads
+      track_t_beg = clock() ;
       sketch_track_routes() ;
       sketch_road_routes() ;
+      track_t_end = clock() ;
+      n_tracks_plotted = 1 ;
 #endif
 
 /*
@@ -142,6 +165,9 @@ GLfloat  v4[4] ;
  *==============================================================================
  */
 #if 1
+      tile_t_beg = clock() ;
+      n_tiles_plotted = 0  ;
+
       glShadeModel(GL_SMOOTH) ;
 //      glShadeModel(GL_FLAT) ;
       glEnable(GL_LIGHTING);
@@ -158,8 +184,6 @@ GLfloat  v4[4] ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
       }
-      tile_t_beg = clock() ;
-      n_tiles_plotted = 0 ;
 
 #ifdef use_vertex_arrays
 /*
@@ -170,6 +194,7 @@ GLfloat  v4[4] ;
         glEnableClientState(GL_TEXTURE_COORD_ARRAY) ;
 #endif
 
+      n_vanodes_d = 0 ;
       for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
         if(0==tnode->needed) continue ;
         if(0==check_topog_in_scene(tnode)) continue ;
@@ -298,6 +323,15 @@ GLfloat a, b, c, d ;
  */
             glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
 //            glEnable(GL_NORMALIZE) ;
+# if 0
+            if(wnode->tile_x == 1448 && wnode->tile_y == 10332
+              && (witem->uid == 6 || witem->uid == 7)){
+              printf(" GGG tile_x = %i, tile_y = %i, uid = %i, shape = %s\n",
+                     wnode->tile_x, wnode->tile_y, witem->uid, witem->filename) ;
+              printf(" HHH  X, Y, Z = %f %f %f, ANG : AX AY AZ = %f : %f %f %f\n",
+                     witem->X, witem->Y, witem->Z, witem->ANG, witem->AX, witem->AY, witem->AZ) ;
+            }
+#endif
             a = witem->ANG ;
             b = witem->AX ;
             c = witem->AY ;
@@ -400,13 +434,157 @@ GLfloat a, b, c, d ;
  *==============================================================================
  */
 #if 1
-      track_t_beg = clock() ;
+      dtrack_t_beg = clock() ;
       display_dynamic_tracks() ;
 //      glFlush() ;
 //      glFinish() ; // Clear GPU
-      track_t_end   = clock() ;
-      n_tracks_plotted = 0 ;
+      dtrack_t_end   = clock() ;
 #endif
+/*
+ *==============================================================================
+ *   Display traveller
+ *==============================================================================
+ */
+#if 1
+{
+int     it1 = 0,  //  Debug traveller
+        it = 0 ;
+float   x, y, z ;
+float   rail_height = 0.27 ;  // Best fit placing wheels on track
+GLfloat a, b, c, d ;
+GLfloat scalei = 1.0/plot_scale ;
+TravellerNode *t   ;
+TrkVectorNode *vn  ;
+WorldItem     *witem   ;
+LodControl *lod_control    ;
+DistLevel  *dist_level     ;
+int        gl_display_list ;
+
+        it = it1 && l_disp1 ;
+
+        t     = &trav_node_0   ;
+        vn    = t->vn ;
+/*
+ *   Convert from MSTS location to coordinates used for graphics
+ */
+        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+                         vn->tile_east_x, vn->tile_north_z,
+                         vn->east_x , vn->north_z, vn->height_y+rail_height,
+                         &x, &y, &z) ;
+        if(it)printf("\n TTTA  x, y, z = %f %f %f :: %i %i  :: %f %f %f : %f \n",
+                         (double)x,(double)y,(double)z,
+                         vn->tile_east_x, vn->tile_north_z,
+                         vn->east_x, vn->height_y, vn->north_z, scale) ;
+
+        glMatrixMode(GL_MODELVIEW) ;
+        glPushMatrix() ;
+        glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
+
+        glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
+        glScalef(scalei,scalei,-scalei) ;
+
+        a = degree*vn->a_east_x   ;
+        b = degree*vn->a_height_y ;
+        c = degree*vn->a_north_z  ;
+
+        if(it)printf(" TTTB ax, ay, az = %f %f %f, "
+                     "length, radius = %f %f, angle = %f, ang_deg = %f\n",
+          a,b,c, vn->length, vn->radius, vn->angle, vn->angle*degree) ;
+// Direction - Yaw
+        glRotatef((GLfloat)b,(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+// Slope - Pitch
+        glRotatef((GLfloat)a,(GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+// Camber - Roll
+        glRotatef((GLfloat)c,(GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
+
+        if(it)printf(" TTTC x, y, z, ang_deg= %f %f %f : %f\n",
+                                               t->x,t->y,t->z,t->ang_deg) ;
+
+        glTranslatef((GLfloat)(t->x),(GLfloat)(t->y),(GLfloat)(t->z)) ;
+        glRotatef((GLfloat)(-t->ang_deg),(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+/*
+ * Draw traveller !!
+ */
+//  Define front face polygons as going clockwise
+//  Needed for MSTS shapes after transforms
+        glFrontFace(GL_CW) ;
+
+        lod_control = &(t->wagon->lod_control[0]) ;
+        dist_level = &(lod_control->dist_level[0])  ;
+        gl_display_list = dist_level->gl_display_list ;
+        glEnable(GL_TEXTURE_2D) ;
+        glEnable(GL_BLEND) ;
+        glEnable(GL_ALPHA_TEST) ;
+        glAlphaFunc(GL_GREATER,0.5);
+        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
+
+        glCallList(gl_display_list) ;
+
+        glDisable(GL_BLEND) ;
+        glDisable(GL_ALPHA_TEST);
+        glDisable(GL_TEXTURE_2D) ;
+//  Disable culling
+        glDisable(GL_CULL_FACE) ;
+//  Restore counter-clockwise default for front-facing polygons
+        glFrontFace(GL_CCW) ;
+/*
+ *  Draw location lines
+ */
+        glDisable(GL_LIGHTING) ;
+        glDisable(GL_TEXTURE_2D) ;
+        glLineWidth(5.0) ;
+//  Location of traveller
+//        using traveller modelview matrix
+#if 0
+        glBegin(GL_LINES);
+        glColor3f((GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+        glVertex3f((GLfloat) -1.0, (GLfloat)4.0,(GLfloat)0.0) ;
+        glVertex3f((GLfloat)  5.0, (GLfloat)4.0,(GLfloat)0.0) ;
+
+        glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+        glVertex3f((GLfloat) 0.0, (GLfloat)-1.0,(GLfloat)0.0) ;
+        glVertex3f((GLfloat) 0.0, (GLfloat) 5.0,(GLfloat)0.0) ;
+
+        glColor3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
+        glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat)-1.0) ;
+        glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat) 5.0) ;
+
+        glEnd() ;
+#endif
+        glPopMatrix() ;
+        glPushMatrix() ;
+//  Draw origin of current vector element
+//  - using gluLookAt modelview matrix
+#if 0
+        {
+  GLfloat x1, x2, y1, y2, z1, z2 ;
+          glBegin(GL_LINES);
+          x1 = x ;
+          y1 = y ;
+          z1 = z - scalei*1.0 ;
+          z2 = z + scalei*10.0 ;
+          glColor3f((GLfloat)0.5,(GLfloat)0.5,(GLfloat)0.0) ;
+          glVertex3f(x1, y1, z1) ;
+          glVertex3f(x1, y1, z2) ;
+          glEnd() ;
+        }
+        glLineWidth(1.0) ;
+        glEnable(GL_LIGHTING) ;
+#endif
+        glPopMatrix() ;
+        glLineWidth(1.0) ;
+        glEnable(GL_LIGHTING) ;
+        glEnable(GL_TEXTURE_2D) ;
+}
+#endif       //  End of traveller option
+
+
 
 /*
  *   Plot default rail tracks.  Used when no track shapes available
@@ -424,7 +602,7 @@ GLfloat a, b, c, d ;
 
 {
 int            gl_display_list ;
-TrkSectionNode *trk_sec_node   ;
+TrkNetNode *trk_sec_node   ;
 
       for(i=0;i<track_db.trk_sections_array_size;i++){
         trk_sec_node = &(track_db.trk_sections_array[i])       ;
@@ -483,7 +661,9 @@ TrkSectionNode *trk_sec_node   ;
  *  Plot extra information on world and track items near to the
  *  observer
  */
+#if 1
       display_extra_data() ;   //  display_info.c
+#endif
 
 #endif                 //  End of Normal 3D Display Section
 /*
@@ -504,30 +684,98 @@ TrkSectionNode *trk_sec_node   ;
                        1000.0*((double)(shape_t_end-shape_t_beg))/CLOCKS_PER_SEC ;
         track_time_used = 0.95*track_time_used +  0.05*
                        1000.0*((double)(track_t_end-track_t_beg))/CLOCKS_PER_SEC ;
+        dtrack_time_used = 0.95*dtrack_time_used +  0.05*
+                     1000.0*((double)(dtrack_t_end-dtrack_t_beg))/CLOCKS_PER_SEC ;
 //        sprintf(string,"Frames per second = %i.  Tiles %i, time %7.3f  "
 //                                               " Shapes %i, time %7.3f  "
 //                                               " Dy Track %i, time %7.3 ms.",
         sprintf(string,"Frames per second = %i.  Tiles %i time %7.3f "
                                                 "Shapes %i time %7.3f "
-                                                "Tracks %i %7.3f",
+                                                "Tracks %i %7.3f %7.3f",
                                      fps, n_tiles_plotted, tile_time_used,
                                           n_shapes_plotted, shape_time_used,
-                                          n_tracks_plotted, track_time_used) ;
+                                          n_tracks_plotted, track_time_used,
+                                          dtrack_time_used
+               ) ;
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window((GLfloat)20.0,(GLfloat)20.0,string) ;
+
+        sprintf(string,"Run time = %9.2f     Speed = %7.2f",
+                           run_seconds, eng_speed );
+        print_string_in_window((GLfloat)20.0,(GLfloat)40.0,string) ;
+double  t[4] ;
+        zr_clock_gettime(zr_clock_2) ;
+        for(i=0;i<4;i++){
+          t[i] = (zr_clock_2[i].tv_sec - zr_clock_1[i].tv_sec)
+                +(zr_clock_2[i].tv_nsec - zr_clock_1[i].tv_nsec)*0.000000001 ;
+          zr_clock_time[i][0] = 0.95*zr_clock_time[i][0] + 0.05*t[i] ;
+        }
+        sprintf(string," %f %f %f %f :: %i",
+                         zr_clock_time[0][0],zr_clock_time[1][0],
+                         zr_clock_time[2][0],zr_clock_time[3][0],n_vanodes_d) ;
+        print_string_in_window((GLfloat)20.0,(GLfloat)60.0,string) ;
+        if(0)printf(" Times AA %f %f %f %f\n",
+                         zr_clock_time[0][0],zr_clock_time[1][0],
+                         zr_clock_time[2][0],zr_clock_time[3][0]) ;
       }
+#endif
+/*
+ *  Special Panels for Normal Display
+ *  These use gluOrtho to generate a 2D image in front of the main 3D screeen
+ *  This is scaled so that one unit equals one pixel
+ */
+#ifdef _Display_Normal
+{
+GLfloat w = viewport_width ;
+GLfloat h = viewport_height ;
+//  Set up projection
+      glMatrixMode(GL_PROJECTION) ;
+      glPushMatrix() ;
+      glLoadIdentity() ;
+      gluOrtho2D(0.0,w,0.0,h) ;
+      glViewport(0,0,viewport_width,viewport_height) ;
+      glMatrixMode(GL_MODELVIEW) ;
+      glPushMatrix() ;
+      glLoadIdentity() ;
+      glEnable(GL_BLEND) ;
+
+//  Call special 2-D displays
+      if(display_track_info_on) display_track_info(&trav_node_0) ;
+      if(display_help_on)       display_help() ;
+      if(display_switches_on)   display_switches(&trav_node_0) ;
+//  Restore defaults
+
+      glPopMatrix() ;  //  Pop GL_MODELVIEW
+      glMatrixMode(GL_PROJECTION) ;
+      glPopMatrix() ;  //  Pop GL_PROJECTION
+      glMatrixMode(GL_MODELVIEW) ;
+}
 #endif
 /*
  * Clean up at end of routine display
  */
+//      glFlush() ;
+//      glFinish();     /* Wait until drawing done  */
       glutSwapBuffers();
-      glFlush() ;
-      glFinish();     /* Wait until drawing done  */
+      {
+double t[4] ;
+        zr_clock_gettime(zr_clock_2) ;
+        for(i=0;i<4;i++){
+          t[i] = (zr_clock_2[i].tv_sec - zr_clock_1[i].tv_sec)
+                +(zr_clock_2[i].tv_nsec - zr_clock_1[i].tv_nsec)*0.000000001 ;
+          zr_clock_time[i][1] = 0.95*zr_clock_time[i][1] + 0.05*t[i] ;
+        }
+        if(0)printf(" Times BB %f %f %f %f\n\n",
+                         zr_clock_time[0][1],zr_clock_time[1][1],
+                         zr_clock_time[2][1],zr_clock_time[3][1]) ;
+
+      }
 
       check_glerror2("My routine 'display', at end returns GL error\n") ;
       icount ++ ;
       if(l_pd)printf(" Exit  display()\n");
-      l_pp = 0 ;  //  Turn off flag for: new display after position move
+      l_pp = 0    ;  //  Turn off flag for: new display after position move
+      l_disp1 = 0 ;  //                     printing
       return ;
 }
 
@@ -582,67 +830,94 @@ GLfloat xx, yy ;
  */
 int sketch_track_routes(void){
 
-int      i, j    ;
+int      i, j, k    ;
 double   scale = 1.0/plot_scale ;
 GLfloat  x = 0., y=0.0 , z=0.0 ;
-TrkVectorNode   *vec ;
-TrkSectionNode  *trk_sec_node  ;
+TrkVectorNode   *vec, *v ;
+TrkNetNode      *trk_sec_node  ;
+WorldItem       *w ;
+DynTrackSect    *d ;
 char     string[256] ;
 
       for(i=0;i<(int)track_db.trk_sections_array_size;i++){
-         trk_sec_node = &track_db.trk_sections_array[i] ;
-
-         if(2 > trk_sec_node->length_of_vector) continue ;
-
-         vec = trk_sec_node->vector ;
-         glShadeModel(GL_FLAT) ;
-         for(j=0;j<(int)trk_sec_node->length_of_vector;j++){
-           global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                 vec[j].tile_east_x, vec[j].tile_north_z,
-                 vec[j].east_x, vec[j].north_z, vec[j].height_y + 1.0,
-                 &x, &y, &z );
-
-           ortho_col++ ;
-           if(0 == j){
-             glBegin(GL_LINE_STRIP) ;
-             glColor3f(1.0,1.0,1.0) ;
-             ortho_col = 0 ;
-           }else if(1 == j)glColor3f(1.0,1.0,1.0) ;
-           else if(1 == ortho_col)glColor3f(0.5,0.5,0.5) ;
-           else if(2 == ortho_col)glColor3f(0.0,0.0,1.0) ;
-           else if(3 == ortho_col)glColor3f(0.0,1.0,0.0) ;
-           else if(4 == ortho_col)glColor3f(1.0,0.0,0.0) ;
-           else if(5 == ortho_col)glColor3f(0.0,1.0,1.0) ;
-           else if(6 == ortho_col)glColor3f(1.0,1.0,0.0) ;
-           else if(7 == ortho_col){
-             glColor3f(1.0,0.0,1.0) ;
-             ortho_col = 0;
+        trk_sec_node = &track_db.trk_sections_array[i] ;
+        vec = trk_sec_node->vector ;
+        if(0 < trk_sec_node->length_of_vector) {
+          glShadeModel(GL_FLAT) ;
+          for(j=0;j<(int)trk_sec_node->length_of_vector;j++){
+            global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+                  vec[j].tile_east_x, vec[j].tile_north_z,
+                  vec[j].east_x, vec[j].north_z, vec[j].height_y + 1.0,
+                  &x, &y, &z );
+            ortho_col++ ;
+            if(0 == j){
+              glBegin(GL_LINE_STRIP) ;
+              glColor3f(1.0,1.0,1.0) ;
+              ortho_col = 0 ;
+            }else if(1 == j)glColor3f(1.0,1.0,1.0) ;
+            else if(1 == ortho_col)glColor3f(0.5,0.5,0.5) ;
+            else if(2 == ortho_col)glColor3f(0.0,0.0,1.0) ;
+            else if(3 == ortho_col)glColor3f(0.0,1.0,0.0) ;
+            else if(4 == ortho_col)glColor3f(1.0,0.0,0.0) ;
+            else if(5 == ortho_col)glColor3f(0.0,1.0,1.0) ;
+            else if(6 == ortho_col)glColor3f(1.0,1.0,0.0) ;
+            else if(7 == ortho_col){
+              glColor3f(1.0,0.0,1.0) ;
+              ortho_col = 0;
+            }
+            glVertex3d(x, y, z) ;
           }
-          glVertex3d(x, y, z) ;
+          glEnd();
         }
-        glEnd();
 /*
  *  Code to identify track sections in 3D scene
  */
-#if 0
-        glColor3f(0.8,0.8,0.8) ;
-        glBegin(GL_LINES) ;
-          glVertex3d(x, y, z) ;
-          z = z + 5.0*scale ;
-          glVertex3d(x, y, z) ;
-        glEnd() ;
-        glColor3f(1.0,1.0,1.0) ;
+#if 1
+        for(j=0;j<(int)trk_sec_node->length_of_vector;j++){
+          v = &vec[j] ;
+          w = v->world_item ;
+//          if(v->flag1<2 && v->flag2<2) continue ;
+          global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+                vec[j].tile_east_x, vec[j].tile_north_z,
+                vec[j].east_x, vec[j].north_z, vec[j].height_y,
+                &x, &y, &z );
+            glColor3f(0.8,0.8,0.8) ;
+          glBegin(GL_LINES) ;
+            glVertex3d(x, y, z) ;
+            z = z + 6.0*scale ;
+            glVertex3d(x, y, z) ;
+          glEnd() ;
+          glColor3f(1.0,1.0,1.0) ;
+#if 1
+          sprintf(string," - %i  %i  %i  %i ::F %i %i\n",
+                  trk_sec_node->index_of_node,trk_sec_node->type_of_node,
+                  trk_sec_node->length_of_vector,j,v->flag1, v->flag2) ;
+          print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string) ;
 
-        j = 1 ;
-        sprintf(string," - %i  %i  %i  %i\n",trk_sec_node->index_of_node,
-               trk_sec_node->type_of_node, trk_sec_node->length_of_vector, j ) ;
-        print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string) ;
-
-        sprintf(string," - TRACK %i %i :: %f %f\n",
-                vec[j-1].tile_east_x,vec[j-1].tile_north_z,
-                vec[j-1].east_x,vec[j-1].north_z);
-        z = z - 2.0*scale ;
-        print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+          sprintf(string," - TRACK %i %i :: %10.3f  %10.3f  %10.3f\n",
+                  vec[j].tile_east_x,vec[j].tile_north_z,
+                  vec[j].east_x,vec[j].north_z,vec[j].height_y);
+          z = z - 1.0*scale ;
+          print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+          if(w->worldtype==306){
+            for(k=0;k<5;k++){
+              d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
+              if(d->uid==-1)continue ;
+              sprintf(string," - %i %i  (%i %.2f %.1f)",v->flag1,v->flag2,d->is_curved, d->param_1,d->param_2);
+              z = z - 1.0*scale ;
+              glColor3f((GLfloat)v->flag1/3.0,0.0,(GLfloat)v->flag2/3.0) ;
+              print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+              glColor3f(1.0,1.0,1.0) ;
+            }
+          }else{
+              glColor3f(0.6,0.6,0.6) ;
+              sprintf(string," - World Type = %i %s",w->worldtype,token_idc[w->worldtype]);
+              z = z - 1.0*scale ;
+              print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+              glColor3f(1.0,1.0,1.0) ;
+          }
+#endif
+        }
 #endif
       }
       return 0 ;
@@ -662,7 +937,7 @@ int    i, j ;
 double   scale = 1.0/plot_scale ;
 GLfloat  x, y, z ;
 TrkVectorNode   *vec ;
-TrkSectionNode  *road_sec_node ;
+TrkNetNode  *road_sec_node ;
 
       for(i=0;i<(int)road_db.trk_sections_array_size;i++){
         road_sec_node = &road_db.trk_sections_array[i] ;
@@ -759,8 +1034,13 @@ char       string[128];
 #ifdef geo_coord
         glScalef(scale,scale,scale) ;
 #else
+# if 1
+        glRotatef((GLfloat) d_rotate, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
+        glScalef(scale,scale,d_reflect*scale) ;  // Change from left hand to right hand axes
+#else
         glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
         glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
+# endif
 #endif
 
 
@@ -815,9 +1095,9 @@ ShapeNode  *snode          ;
 LodControl *lod_control    ;
 DistLevel  *dist_level     ;
 int        gl_display_list ;
-GLfloat    x1, y1,
-          x0 = 0, y0 = 0,
-          scale = 1.0/plot_scale ;
+GLfloat    x1, y1, z1, x2, y2, z2,
+           x0 = 0, y0 = 0,
+           scale = 1.0/plot_scale ;
 int        i, j, ierr, ip = 0 ;
 char       string[128]     ;
 
@@ -865,13 +1145,36 @@ char       string[128]     ;
               " gl_display_list = %i\n", i,j,snode->name,i,j,gl_display_list);
 
         glCallList(gl_display_list) ;
+/*
+ * Plot bounding box
+ */
+        glDisable(GL_TEXTURE_2D) ;
+        glDisable(GL_LIGHTING) ;
+        glColor3f(1.0,1.0,1.0) ;
+        x1 = snode->esd_bounding_box_xmin ;
+        x2 = snode->esd_bounding_box_xmax ;
+        y1 = snode->esd_bounding_box_ymin ;
+        y2 = snode->esd_bounding_box_ymax ;
+        z1 = snode->esd_bounding_box_zmin ;
+        z2 = snode->esd_bounding_box_zmax ;
+        glBegin(GL_LINE_STRIP) ;
+          glVertex3d(x1, y1, z1) ;
+          glVertex3d(x2, y1, z1) ;
+          glVertex3d(x2, y2, z1) ;
+          glVertex3d(x1, y2, z1) ;
+          glVertex3d(x1, y1, z1) ;
+
+          glVertex3d(x1, y1, z2) ;
+          glVertex3d(x2, y1, z2) ;
+          glVertex3d(x2, y2, z2) ;
+          glVertex3d(x1, y2, z2) ;
+          glVertex3d(x1, y1, z2) ;
+        glEnd() ;
 
         glPopMatrix() ;
 /*
  *  Add name
  */
-        glDisable(GL_TEXTURE_2D) ;
-        glDisable(GL_LIGHTING) ;
         sprintf(string," - WAGON %s",snode->name);
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window2((GLfloat) x1+0.001, (GLfloat) y1, (GLfloat) 0.0, string);

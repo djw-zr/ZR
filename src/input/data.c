@@ -36,6 +36,7 @@ TileListNode   *tlnode ;
 ShapeNode      *snode  ;
 WorldNode      *wnode  ;
 WorldItem      *witem  ;
+TrkNetNode     *tnnode ;
 int            wtype   ;
 TextureNode    *tnode  ;
 DynProfile     *dnode  ;
@@ -144,6 +145,23 @@ char           my_name[] = "init_data_structures" ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
+ *  3.   Link track vector nodes to their matching world item
+ *       The  add vector length, angle and radius to each track vector node
+ */
+      printf("   Link world files to track vectors\n") ;
+      for(i=0;i<track_db.trk_sections_array_size;i++){
+        tnnode = &(track_db.trk_sections_array[i]) ;
+        add_world_item_pointers_to_track_vectors(tnnode) ;
+      }
+/*
+ *  4.   Set junction data : left/right handed and index of branch node
+ */
+      printf("   Link world files to track vectors\n") ;
+      for(i=0;i<track_db.trk_sections_array_size;i++){
+        tnnode = &(track_db.trk_sections_array[i]) ;
+        if(tnnode->type_of_node == JUNCTION)set_junction_path(tnnode) ;
+      }
+/*
  * *****************************************************************************
  *  Process the files describing engines and wagons.
  * *****************************************************************************
@@ -179,8 +197,9 @@ char           my_name[] = "init_data_structures" ;
  *   2.  Load the Shape (*.s) and Additional data (*.sd) files
  */
       printf("   Read and load wagon shape files\n");
+      ip = 1 ;
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        if(ip)printf(" Call load_shape :: shape name = %s\n",snode->name) ;
+        if(ip || 0)printf(" Call load_shape :: shape name = %s\n",snode->name) ;
         load_shape(snode) ;
         if(ip)printf(" Call load_shape_d :: sdfile = %s\n",snode->sdfile) ;
         load_shape_d(snode) ;
@@ -368,14 +387,86 @@ int   nn, ni ;
       }
 #endif
 // List track sections
+//   NOTE node N is in trk_sections_array[N-1]
 #if 0
       printf("   List track sections\n");
       for(i=0;i<(int)track_db.trk_sections_array_size;i++){
-        printf("  Track section %3i,  type of item = %2i :: %s\n", i,track_db.trk_sections_array[i].type_of_node,
-         token_trackdb[track_db.trk_sections_array[i].type_of_node]) ;
-        if(1){
-         list_track_section(&track_db.trk_sections_array[i]) ;
+TrkNetNode    *t ;
+//        if(130 != i+1)continue ;
+//        if(565 != i+1)continue ;
+        if(377 != i+1)continue ;
+        t = &track_db.trk_sections_array[i] ;
+
+        printf("  Track section %3i :: %3i,  type of item = %2i :: %s\n",
+               i,t->index_of_node,t->type_of_node,token_trackdb[t->type_of_node]) ;
+        printf("        Junction Node data = %i,%i,%i\n",
+                 t->jn[0],t->jn[1],t->jn[2]) ;
+        printf("        End Node data      = %i\n",t->en) ;
+        printf("        Number of vectors  = %i,\n",t->length_of_vector) ;
+        printf("        Number of items    = %i,\n",t->trk_item_number)  ;
+        printf("        Pin types and links= %i %i :: %i %i %i :: %i %i %i\n",
+                  t->type_of_pin[0],t->type_of_pin[1],
+                  t->pin_to_section[0],t->pin_to_section[1],t->pin_to_section[2],
+                  t->pin_info[0],t->pin_info[1],t->pin_info[2]) ;
+        printf("        Dyn Node profile   = %p\n",(void *)t->profile);
+        printf("        LOD method         = %i\n",t->lod_method) ;
+
+#if 1
+        if(track_db.trk_sections_array[i].type_of_node == 1){
+int j,k,uid ;
+TrkVectorNode *v ;
+WorldItem     *w ;
+DynTrackSect  *d ;
+          for(j=0;j<t->length_of_vector;j++){
+            v = &t->vector[j] ;
+            w = v->world_item ;
+            printf("      %3i :: %5i  %5i  :: %i %i :: %i %i :: %9.3f %9.3f %9.3f :: %i %i :: %9.3f %9.3f %9.3f :: %4i %3i :: %s",j,
+                   v->tsec_section_index,v-> tsec_shape_index,
+                   v->flag1, v->flag2,
+                   v->tile_east_x,v->tile_north_z,
+                   v->east_x,v->north_z,v->height_y,
+                   v->wfname_east_x,v->wfname_north_z,
+                   (double)w->X,(double)w->Y,(double)w->Z,
+                   w->uid,w->worldtype,w->filename) ;
+             if(w->worldtype==306){
+               for(k=0;k<5;k++){
+                 d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
+
+                 printf(" %i",d->uid);
+                 if(d->uid!=-1)printf(" (%i %.2f %.1f)",d->is_curved, d->param_1,d->param_2);
+               }
+             }
+             printf("\n") ;
+          }
+#if 1
+          printf("\n==========================================\n");
+          for(j=0;j<t->length_of_vector;j++){
+            v = &t->vector[j] ;
+            w = v->world_item ;
+            printf("      %3i :: %5i  %5i  :: %i %i : %i %i :: %c %c ::"
+                   "  %8.3f %8.3f %6.3f :: %4i %3i :: %s",j,
+                   v->tsec_section_index,v-> tsec_shape_index,
+                   v->flag1, v->flag2, v->is_curved, v->is_dynamic,
+                   v->string[0],v->string[1],
+                   v->length,v->radius,v->angle,
+                   w->uid,w->worldtype,w->filename) ;
+             if(w->worldtype==306){
+               for(k=0;k<5;k++){
+                 d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
+
+                 printf(" %i",d->uid);
+                 if(d->uid!=-1)printf(" (%i %.2f %.1f)",d->is_curved, d->param_1,d->param_2);
+               }
+             }
+             printf("\n") ;
+           }
+#endif
         }
+#else
+        if(130 == i+1 || 1){
+//         list_track_section(&track_db.trk_sections_array[i]) ;
+        }
+#endif
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 #endif
@@ -389,9 +480,9 @@ int   nn, ni ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 #endif
 //   List and/or print shape data
-//   Shape 'test_shape' is defined in file 'zr.h'.
+//   Shape 'test_shape' is defined in file 'zr.c'.
 #if 0
-      printf("   List textures\n");
+      printf("   List Shapes :: Test shape = %s\n",test_shape);
       for(snode=shapelist_beg,i=0; snode!=NULL; snode=snode->next,i++){
         printf("   Shape : %3i : %s\n",i,snode->name);
         if(0 == strcmp_ic(snode->name,test_shape)){
@@ -417,7 +508,7 @@ int   nn, ni ;
  * List Tile data
  */
 #if 0
-      ip = 1 ;
+      ip = 0 ;
       if(ip || 1){
   int   i, j, k, kmin, kmax, n ;
   unsigned short  *kp ;
@@ -468,6 +559,13 @@ int   nn, ni ;
       printf("  tile_north = %i\n",tile_north) ;
       printf("  tile_south = %i\n",tile_south) ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+#if 0
+/*
+ *  Carry out tests
+ */
+      printf("  Routine %s : call test_trav()\n",my_name) ;
+      test_trav() ;
+#endif
       return 0 ;
 }
 

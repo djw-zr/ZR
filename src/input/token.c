@@ -361,7 +361,7 @@ int  is_rbr(char *token){
 /*
  *  Tokens starting with '_' may be used for comments.
  *  Here they are scanned and ignored.
- *  As far as is known that always contain matching
+ *  As far as is known these always contain matching
  *  brackets '(' and ')' but these may not be separated
  *  from other text by white space
  */

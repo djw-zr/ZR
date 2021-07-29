@@ -16,7 +16,7 @@
 
 int read_road_item(TrkItemNode *road_item, MSfile *msfile)
 {
-char   myname[] = "read_road_section" ;
+char   myname[] = "read_road_item" ;
 char *token = NULL ;
 
 /*

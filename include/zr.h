@@ -44,8 +44,12 @@
 #include "track.h"
 #include "wagon.h"
 #include "world.h"
-#include "functions.h"
 #include "display_info.h"
+#include "train.h"
+#include "freetype.h"
+#include "camera.h"
+
+#include "functions.h"    //  Call this last
 
 extern int versionsort(const struct dirent **, const struct dirent **);
 /*
@@ -96,13 +100,22 @@ int  __switch_next2__ ;
  *  Special Variables
  */
 
+
 char    *MSTSdir    ;        // Top directory for MSTS files (if any)
 char    *ORdir      ;        // Top directory for OR routes (if any)
 char    *ORroutedir ;        // Top directory of current route (if any)
-char    *ZRconfig   ;        // Location of user config file ($Home/.zroutes/config)
+char    *ZRconfig   ;        // Location of user config file ($Home/.zr/config)
+char    *ZRfonts    ;        // Location of user font file ($Home/.zr/fonts)
 char    eof_mark[] = "******Z" ;   // Use to flag end-of-file in text files.
 
 int     n_open_files = 0  ; // used by gopen and gclose
+
+struct timespec run_clock0  ;      //  Start time
+struct timespec run_clock1  ;      //  Current time
+struct timespec zr_clock_1[4] ;
+struct timespec zr_clock_2[4] ;
+double zr_clock_time[4][5]  ;      //  Arrays to use for timing
+double   run_seconds        ;      //  Difference in seconds
 
 /*
  * Control/debug array
@@ -114,6 +127,8 @@ int     i_control1[200],
         i_control2[200] ;
 int     i_control1_old[200],
         i_control2_old[200] ;
+int     l_disp0 = 1,            //  True for printing during display()
+        l_disp1 = 0 ;           //  True if new position
 
 // Top level pointers to structures
 
@@ -142,14 +157,17 @@ int        load_shape_filenames()   ;
 int        load_shape(ShapeNode *s) ;
 int        current_block_level = -1 ;  // Used while reading shape files
 
-// Wagons and Engines
+// Trains, Wagons and Engines
 
-WagonNode  *wagonlist_beg  = NULL    ;  // Pointer to first node in list of wagons
-WagonNode  *wagonlist_end  = NULL    ;  // Pointer to last node
-ShapeNode  *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
-ShapeNode  *wshapelist_end = NULL    ;  // Pointer to last node
-TextureNode *wtexturelist_beg = NULL ;
-TextureNode *wtexturelist_end = NULL ;
+TrainNode    *trainnode_beg  = NULL ;
+TrainNode    *trainnode_end  = NULL ;
+
+RawWagonNode *wagonlist_beg  = NULL    ;  // Pointer to first node in list of wagons
+RawWagonNode *wagonlist_end  = NULL    ;  // Pointer to last node
+ShapeNode    *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
+ShapeNode    *wshapelist_end = NULL    ;  // Pointer to last node
+TextureNode  *wtexturelist_beg = NULL ;
+TextureNode  *wtexturelist_end = NULL ;
 
 //World
 
@@ -158,6 +176,7 @@ WorldNode  *worldlist_end = NULL    ;  // Pointer to last node in list
 int        load_world_filenames()   ;
 int        load_world(WorldNode *w) ;
 int        world_token_offset = 300 ;
+int        list_wfile_item(WorldItem *wi) ;
 
 // Textures
 TextureNode *texturelist_beg = NULL ;
@@ -203,4 +222,6 @@ float  m2g[16] = {0, 1, 0, 0,  0, 0, 1, 0,
                   1, 0, 0, 0,  0, 0, 0, 1 };
 float  g2m[16] = {0, 0, 1, 0,  1, 0, 0, 0,
                   0, 1, 0, 0,  0, 0, 0, 1 };
+
+
 

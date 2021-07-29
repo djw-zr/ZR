@@ -27,7 +27,12 @@ void keyboard(unsigned char key, int x, int y){
 int  ip = 0                       ;  // 0 = no printing
 int  isign = 1                    ;
 int  imod, l_shift, l_ctrl, l_alt ;
-int  i  ;
+int  i, n  ;
+int  new_camera = 0 ;
+double scalei = 1.0/plot_scale ;
+CameraNode    *camera           ;
+TravellerNode *t = &trav_node_0 ;
+TrkNetNode  *tn1, *tn2, *tn = t->tn ;
 GLfloat v4[4] ;
 
       imod = glutGetModifiers();
@@ -44,7 +49,9 @@ GLfloat v4[4] ;
       if(l_shift) isign = -1 ;
 
       if(ip)printf(" Routine keyboard.  Key : 0x%x  :%c: \n",key,key);
-
+/*
+ *   1.  Keys using 'alt'
+ */
       if(l_alt){
         switch (key) {
 #ifdef kb_dev
@@ -106,25 +113,97 @@ GLfloat v4[4] ;
             break ;
           case 'm':
             if(display_info){
-              lookat_centre_x = lookat_eye_x + 1.3*(lookat_centre_x - lookat_eye_x) ;
-              lookat_centre_y = lookat_eye_y + 1.3*(lookat_centre_y - lookat_eye_y) ;
+              offset_center_x = offset_eye_x + 1.3*(offset_center_x - offset_eye_x) ;
+              offset_center_y = offset_eye_y + 1.3*(offset_center_y - offset_eye_y) ;
             }
             break ;
           case 'b':
             if(display_info){
-              lookat_centre_x = lookat_eye_x + (lookat_centre_x - lookat_eye_x)/1.3 ;
-              lookat_centre_y = lookat_eye_y + (lookat_centre_y - lookat_eye_y)/1.3 ;
+              offset_center_x = offset_eye_x + (offset_center_x - offset_eye_x)/1.3 ;
+              offset_center_y = offset_eye_y + (offset_center_y - offset_eye_y)/1.3 ;
             }
+            break ;
+/*
+ *   Track Info
+ */
+          case 't':
+            display_track_info_on = !display_track_info_on ;
             break ;
 #endif
         }
       }else{
         switch (key) {
-  /*
-  *  Switch frame rate on/off
-  */
+//  Increase speed backwards
+          case 'a':
+            eng_speed = eng_speed - 2.0 ;
+            break ;
+//  Increase speed
+          case 'd':
+            eng_speed = eng_speed + 2.0 ;
+            break ;
+//  Stop
+          case 's':
+            eng_speed = 0.0 ;
+            break ;
+//  Change Switch/Points in front of traveller
+          case 'g':
+            n = tn->pin_to_section[t->idirect ? 1 : 0] ;
+            tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+            if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+            break ;
+//  Change Switch/Points behind traveller
+          case 'G':
+            n = tn->pin_to_section[t->idirect ? 0 : 1] ;
+            tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+            if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+            break ;
+//  Switch frame rate on/off
           case 'Z':
             l_fps = !l_fps ;
+            break ;
+//  Switch to camera "n"
+          case '1':
+            new_camera     = 1 ;
+            break ;
+          case '2':
+            new_camera     = 2 ;
+            break ;
+          case '3':
+            new_camera     = 3 ;
+            break ;
+          case '4':
+            new_camera     = 4 ;
+            break ;
+          case '5':
+            new_camera     = 5 ;
+            break ;
+          case '6':
+            new_camera     = 6 ;
+            break ;
+          case '7':
+            new_camera     = 7 ;
+            cameras[7].offset_eye_x = -cameras[7].offset_eye_x ;
+            offset_eye_x = cameras[7].offset_eye_x ;
+            break ;
+          case '8':
+            new_camera     = 8 ;
+            break ;
+          case '9':
+            new_camera     = 9 ;
+            break ;
+//  Switch d_reflect
+          case '-':
+//#ifdef D_Display_Shapes
+            d_reflect = -d_reflect ;
+            printf("  d_reflect = %f\n",d_reflect) ;
+//#endif
+            break ;
+//  Switch  d_rotate
+          case '=':
+//#ifdef D_Display_Shapes
+            d_rotate = (d_rotate>0.0)? 0.0 : 90.0 ;
+            printf("  d_rotate = %f\n",d_rotate) ;
+//#endif
             break ;
   /*
   *   'Esc' ends program
@@ -133,6 +212,14 @@ GLfloat v4[4] ;
             exit(0);
           default:
             break;
+        }
+        if(new_camera){
+          if(ip)printf(" Routine keyboard : New Camera\n") ;
+          camera_last    = current_camera ;
+          if(new_camera>8)new_camera = 0  ;
+          current_camera = new_camera     ;
+          camera_changed = 1              ;
+          camera_new_position()           ;
         }
       }
 }
@@ -161,104 +248,76 @@ GLfloat v4[4] ;
  *       glutmousefunc(3),     glutmousewheelfunc(3).
  *   See man pages.
  *
+ * Available GLUT_KEY_* special keys are:
+ * GLUT_KEY_F1, GLUT_KEY_F2, GLUT_KEY_F3, GLUT_KEY_F4, GLUT_KEY_F5,
+ * GLUT_KEY_F6, GLUT_KEY_F7, GLUT_KEY_F8, GLUT_KEY_F9, GLUT_KEY_F10,
+ * GLUT_KEY_F11,     GLUT_KEY_F12,
+ * GLUT_KEY_LEFT,    GLUT_KEY_UP,    GLUT_KEY_RIGHT,  GLUT_KEY_DOWN,
+ * GLUT_KEY_PAGE_UP, GLUT_KEY_PAGE_DOWN,
+ * GLUT_KEY_HOME,    GLUT_KEY_END,   GLUT_KEY_INSERT
+ *
  *==============================================================================
  */
 
 void  specialkey(int key, int ixm, int iym)
 {
-int     i      ;
-int     ip = 0 ;                      // 0 = no printing
-int     imod, l_shift, l_ctrl, l_alt ;
-double  zz1, zz2, c, s ;
-double  del_d,                        // delta distance (plot_scale units)
-        del_a ;                       // delta angle (degrees)
-GLfloat v4[4] ;
-double  scalei = 1.0/plot_scale ;
+  int     i      ;
+  int     ip = 0 ;                      // 0 = no printing
+  int     imod, l_shift, l_ctrl, l_alt ;
+  double  zz1, zz2, c, s ;
+  double  del_d,                        // delta distance (plot_scale units)
+          del_a ;                       // delta angle (degrees)
+  GLfloat v4[4] ;
+  double  scalei = 1.0/plot_scale ;
 #ifndef kb_dev
-double  cu, su ;
+  double  cu, su ;
 #endif
 
 
-    if(ip>1){
-      printf("  ZR - special key %x",key) ;
-      printf("  ZR - special key ")       ;
-      for(i=0;i<16;i++)printf("%i",((key >> (15-i)) & 1)) ;
-      printf("\n");
-    }
+      if(ip>1){
+        printf("\n") ;
+        printf("  ZR - special key %x",key) ;
+        printf("  ZR - special key ")       ;
+        for(i=0;i<16;i++)printf("%i",((key >> (15-i)) & 1)) ;
+        printf("\n");
+      }
 
-    imod = glutGetModifiers();
-    if(ip>1){
-      printf("  ZR - Modifier %x",imod) ;
-      printf("  ZR - Modifier ")       ;
-      for(i=0;i<16;i++)printf("%i",((imod >> (15-i)) & 1)) ;
-      printf("\n\n");
-    }
-    l_ctrl  = imod & GLUT_ACTIVE_CTRL  ;
-    l_shift = imod & GLUT_ACTIVE_SHIFT ;
+      imod = glutGetModifiers();
+      if(ip>1){
+        printf("  ZR - Modifier %x",imod) ;
+        printf("  ZR - Modifier ")       ;
+        for(i=0;i<16;i++)printf("%i",((imod >> (15-i)) & 1)) ;
+        printf("\n");
+        printf(" offset_eye    = %10.6f  %10.6f  %10.6f\n",
+               offset_eye_x, offset_eye_y, offset_eye_z) ;
+        printf(" offset_centre = %10.6f  %10.6f  %10.6f\n",
+               offset_center_x, offset_center_y, offset_center_z) ;
+        printf(" angle to north %10.6f,  to up %10.5f\n",
+               angle_to_north, angle_to_up);
+      }
+
+//      if(current_camera>0 && current_camera<8)scalei = 1.0 ;
+
+      l_ctrl  = imod & GLUT_ACTIVE_CTRL  ;
+      l_shift = imod & GLUT_ACTIVE_SHIFT ;
 #ifdef kb_dev
-    l_alt   = imod & GLUT_ACTIVE_ALT   ;
+      l_alt   = imod & GLUT_ACTIVE_ALT   ;
 // Values for while developing code
-    del_d = 32.0*scalei ;     //  Step 32 m
-    del_a = 1.0 ;             //  Step 1 degrees
-    if(l_shift){ del_d *= 32.0 ; del_a  = 30.0 ; }
-    if(l_alt)    del_d /= 32.0 ;
+      del_d = 32.0*scalei ;     //  Step 32 m
+      del_a = 1.0 ;             //  Step 1 degrees
+      if(l_shift){ del_d *= 32.0 ; del_a  = 30.0 ; }
+      if(l_alt)    del_d /= 32.0 ;
 #else
 //  MSS values ?
-    del_d = 1.0*scalei ;      //  Step 1 m
-    del_a = 0.1 ;             //  Step 0.1 degree
-    if(l_shift){ del_d *= 10.0 ; del_a  = 10.0 ; }
+      del_d = 1.0*scalei ;      //  Step 1 m
+      del_a = 0.1 ;             //  Step 0.1 degree
+      if(l_shift){ del_d *= 10.0 ; del_a  = 10.0 ; }
 #endif
-/*
- *==============================================================================
- *    Code for Orthographic (parallel lines) projection
- *==============================================================================
- */
-    if(o_plot){
-      zz1 = ortho_right - ortho_left   ;
-      zz2 = ortho_top   - ortho_bottom ;
-//    if(zz2 < zz1) zz1 = zz2 ;
-      if(100 == key){
-        ortho_left = ortho_left   - 0.05*zz1 ;
-        ortho_right = ortho_right - 0.05*zz1 ;
-      }else if(102 == key){
-        ortho_left = ortho_left   + 0.05*zz1 ;
-        ortho_right = ortho_right + 0.05*zz1 ;
-      }else if(103 == key){
-        ortho_top    = ortho_top    - 0.05*zz2 ;
-        ortho_bottom = ortho_bottom - 0.05*zz2 ;
-      }else if(101 == key){
-        ortho_top    = ortho_top    + 0.05*zz2 ;
-        ortho_bottom = ortho_bottom + 0.05*zz2 ;
-      }else if(104 == key){                   //  Zoom in
-        ortho_left = ortho_left     - 0.05*zz1 ;
-        ortho_right = ortho_right   + 0.05*zz1 ;
-        ortho_top    = ortho_top    + 0.05*zz2 ;
-        ortho_bottom = ortho_bottom - 0.05*zz2 ;
-      }else if(105 == key){                  //  Zoom out
-        ortho_left   = ortho_left   + 0.05*zz1 ;
-        ortho_right  = ortho_right  - 0.05*zz1 ;
-        ortho_top    = ortho_top    - 0.05*zz2 ;
-        ortho_bottom = ortho_bottom + 0.05*zz2 ;
-      }else if(70==key || 72 == key || 74 == key){
-// Do nothing shift, ctrl or alt keys
-//   but we need to redisplay
-      }
-      if(l_pd || ip)printf(" Ortho %f %f %f %f %f %f\n",
-                            (double)ortho_left,(double)ortho_right,
-                            (double)ortho_bottom,(double)ortho_top,
-                            (double)ortho_near,(double)ortho_far);
-      glMatrixMode(GL_PROJECTION);
-      glLoadIdentity();
-      glOrtho(ortho_left, ortho_right, ortho_bottom, ortho_top,
-                                      ortho_near,   ortho_far) ;
-      glScalef(1.0,1.0,-1.0) ;
-      glMatrixMode(GL_MODELVIEW);
 /*
  *==============================================================================
  *    Code for Projective (natural) projection
  *==============================================================================
  */
-    }else{
       if(!l_ctrl){
         c = cos(radian_to_north) ;
         s = sin(radian_to_north) ;
@@ -275,36 +334,36 @@ double  cu, su ;
         if(l_ctrl){
           angle_to_north = angle_to_north - del_a ;
         }else{
-          lookat_eye_x    = lookat_eye_x    - del_d*c ;
-          lookat_centre_x = lookat_centre_x - del_d*c ;
-          lookat_eye_y    = lookat_eye_y    + del_d*s ;
-          lookat_centre_y = lookat_centre_y + del_d*s ;
+          offset_eye_x    = offset_eye_x    - del_d*c ;
+          offset_center_x = offset_center_x - del_d*c ;
+          offset_eye_y    = offset_eye_y    + del_d*s ;
+          offset_center_y = offset_center_y + del_d*s ;
         }
       }else if(key == GLUT_KEY_RIGHT){
         if(l_ctrl){
           angle_to_north = angle_to_north + del_a ;
         }else{
-          lookat_eye_x    = lookat_eye_x    + del_d*c ;
-          lookat_centre_x = lookat_centre_x + del_d*c ;
-          lookat_eye_y    = lookat_eye_y    - del_d*s ;
-          lookat_centre_y = lookat_centre_y - del_d*s ;
+          offset_eye_x    = offset_eye_x    + del_d*c ;
+          offset_center_x = offset_center_x + del_d*c ;
+          offset_eye_y    = offset_eye_y    - del_d*s ;
+          offset_center_y = offset_center_y - del_d*s ;
         }
       }else if(key == GLUT_KEY_UP){
         if(l_ctrl){
           angle_to_up = angle_to_up - del_a ;
         }else{
 #ifdef kb_dev
-          lookat_eye_x    = lookat_eye_x    + del_d*s ;
-          lookat_centre_x = lookat_centre_x + del_d*s ;
-          lookat_eye_y    = lookat_eye_y    + del_d*c ;
-          lookat_centre_y = lookat_centre_y + del_d*c ;
+          offset_eye_x    = offset_eye_x    + del_d*s ;
+          offset_center_x = offset_center_x + del_d*s ;
+          offset_eye_y    = offset_eye_y    + del_d*c ;
+          offset_center_y = offset_center_y + del_d*c ;
 #else
-          lookat_eye_x    = lookat_eye_x    + del_d*s*su ;
-          lookat_centre_x = lookat_centre_x + del_d*s*su ;
-          lookat_eye_y    = lookat_eye_y    + del_d*c*su ;
-          lookat_centre_y = lookat_centre_y + del_d*c*su ;
-          lookat_eye_z    = lookat_eye_z    + del_d*cu ;
-          lookat_centre_z = lookat_centre_z + del_d*cu ;
+          offset_eye_x    = offset_eye_x    + del_d*s*su ;
+          offset_center_x = offset_center_x + del_d*s*su ;
+          offset_eye_y    = offset_eye_y    + del_d*c*su ;
+          offset_center_y = offset_center_y + del_d*c*su ;
+          offset_eye_z    = offset_eye_z    + del_d*cu ;
+          offset_center_z = offset_center_z + del_d*cu ;
 #endif
         }
       }else if(key == GLUT_KEY_DOWN){
@@ -312,45 +371,69 @@ double  cu, su ;
           angle_to_up = angle_to_up + del_a ;
         }else{
 #ifdef kb_dev
-          lookat_eye_x    = lookat_eye_x    - del_d*s ;
-          lookat_centre_x = lookat_centre_x - del_d*s ;
-          lookat_eye_y    = lookat_eye_y    - del_d*c ;
-          lookat_centre_y = lookat_centre_y - del_d*c ;
+          offset_eye_x    = offset_eye_x    - del_d*s ;
+          offset_center_x = offset_center_x - del_d*s ;
+          offset_eye_y    = offset_eye_y    - del_d*c ;
+          offset_center_y = offset_center_y - del_d*c ;
 #else
-          lookat_eye_x    = lookat_eye_x    - del_d*s*su ;
-          lookat_centre_x = lookat_centre_x - del_d*s*su ;
-          lookat_eye_y    = lookat_eye_y    - del_d*c*su ;
-          lookat_centre_y = lookat_centre_y - del_d*c*su ;
-          lookat_eye_z    = lookat_eye_z    - del_d*cu ;
-          lookat_centre_z = lookat_centre_z - del_d*cu ;
+          offset_eye_x    = offset_eye_x    - del_d*s*su ;
+          offset_center_x = offset_center_x - del_d*s*su ;
+          offset_eye_y    = offset_eye_y    - del_d*c*su ;
+          offset_center_y = offset_center_y - del_d*c*su ;
+          offset_eye_z    = offset_eye_z    - del_d*cu ;
+          offset_center_z = offset_center_z - del_d*cu ;
 #endif
         }
       }else if(key == GLUT_KEY_PAGE_UP){
-        lookat_eye_z    = lookat_eye_z    + del_d ;
-        lookat_centre_z = lookat_centre_z + del_d ;
+        offset_eye_z    = offset_eye_z    + del_d ;
+        offset_center_z = offset_center_z + del_d ;
       }else if(key == GLUT_KEY_PAGE_DOWN){
-        lookat_eye_z    = lookat_eye_z    - del_d ;
-        lookat_centre_z = lookat_centre_z - del_d ;
+        offset_eye_z    = offset_eye_z    - del_d ;
+        offset_center_z = offset_center_z - del_d ;
 #ifndef kb_dev
 // Stop the viewpoint dropping too far
 //   This should be just above the local land surface level
-        if(lookat_eye_z < 0.0){
-          lookat_eye_z    =   0.1*scalei ;  // 0.1 m above baseline
-          lookat_centre_z =   0.1*scalei ;
+        if(offset_eye_z < 0.0){
+          offset_eye_z    =   0.1*scalei ;  // 0.1 m above baseline
+          offset_center_z =   0.1*scalei ;
         }
 #endif
+      }else if(key == GLUT_KEY_F1){
+        display_help_on = !display_help_on ;
+        return ;
+      }else if(key == GLUT_KEY_F8){
+        display_switches_on = !display_switches_on ;
+        return ;
+      }else{
+        if(ip)printf(" Keyboard : No action required\n\n");
+        return ;
       }
 /*
  *  Update direction variables
  */
-float c_dist ;  // i.e. 200 m away
-      c_dist = sqrt((lookat_centre_x - lookat_eye_x)
-                                  *(lookat_centre_x - lookat_eye_x)
-                  + (lookat_centre_y - lookat_eye_y)
-                                  *(lookat_centre_y - lookat_eye_y)
-                  + (lookat_centre_z - lookat_eye_z)
-                                  *(lookat_centre_z - lookat_eye_z)) ;
+      if(ip){
+        printf(" New values\n") ;
+        printf(" offset_eye    = %10.6f  %10.6f  %10.6f\n",
+               offset_eye_x, offset_eye_y, offset_eye_z) ;
+        printf(" offset_centre = %10.6f  %10.6f  %10.6f\n",
+               offset_center_x, offset_center_y, offset_center_z) ;
+      }
+#ifdef _Display_Textures
+      angle_to_north = 0 ;
+      angle_to_up    = 0 ;
+      radian_to_north = 0 ;
+      radian_to_up    = 0 ;
+#else
       if(l_ctrl){
+  float c_dist ;  // i.e. 200 m away
+        c_dist = sqrt((offset_center_x - offset_eye_x)
+                                  *(offset_center_x - offset_eye_x)
+                  + (offset_center_y - offset_eye_y)
+                                  *(offset_center_y - offset_eye_y)
+                  + (offset_center_z - offset_eye_z)
+                                  *(offset_center_z - offset_eye_z)) ;
+        angle_to_up    = nint((double)angle_to_up) ;
+        angle_to_north = nint((double)angle_to_north) ;
         if(angle_to_up < 2.0)   angle_to_up =   2.0 ;
         if(angle_to_up > 178.0) angle_to_up = 178.0 ;
         if(angle_to_north <   0.0) angle_to_north = angle_to_north + 360.0 ;
@@ -358,12 +441,13 @@ float c_dist ;  // i.e. 200 m away
         radian_to_north = radian*angle_to_north ;
         radian_to_up    = radian*angle_to_up ;
 
-        lookat_centre_z = lookat_eye_z + c_dist*cos(radian_to_up) ;
-        lookat_centre_x = lookat_eye_x +
+        offset_center_z = offset_eye_z + c_dist*cos(radian_to_up) ;
+        offset_center_x = offset_eye_x +
                           c_dist*sin(radian_to_up)*sin(radian_to_north) ;
-        lookat_centre_y = lookat_eye_y +
+        offset_center_y = offset_eye_y +
                           c_dist*sin(radian_to_up)*cos(radian_to_north) ;
       }
+#endif
 /*
  *  Code to check that the transformations are sensible and to provide
  *  information on the positions of the eye and look_at locations.
@@ -374,17 +458,17 @@ float c_dist ;  // i.e. 200 m away
  *  of the local tile.
  */
 #ifdef kb_dev
-int     tile_e, tile_n ;
-float   e, n, h        ;
+  int     tile_e, tile_n ;
+  float   e, n, h        ;
        if(display_info || ip){
          local2msts(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                   lookat_centre_x, lookat_centre_y, lookat_centre_z,
+                   offset_center_x, offset_center_y, offset_center_z,
                    &tile_e, &tile_n, &e, &n, &h );
           printf(" New position : eye = %f %f %f : centre = %f %f %f :"
-                 " tile = %i %i : posn = %f %f %f\n",
-                  lookat_eye_x, lookat_eye_y, lookat_eye_z,
-                  lookat_centre_x,lookat_centre_y,lookat_centre_z,
-                  tile_e, tile_n, e, n, h) ;
+                 " tile = %i %i : posn = %f %f %f : north, up = %f %f\n",
+                  offset_eye_x, offset_eye_y, offset_eye_z,
+                  offset_center_x,offset_center_y,offset_center_z,
+                  tile_e, tile_n, e, n, h, angle_to_north, angle_to_up) ;
           l_pp = 1 ;     //  Flag new position for debug statements
        }
 #endif
@@ -392,35 +476,45 @@ float   e, n, h        ;
  *  Generate new OpenGL Projection and Modelview matrices
  */
       viewport_aspect = (GLfloat)viewport_width/(GLfloat)viewport_height ;
+#if defined _Display_Shapes || defined _Display_Wagons
+      viewport_near = 1.0/plot_scale ;
+      viewport_far  = 4096.0/plot_scale ;
+#elif _Display_Textures
+      viewport_near =  0.1 ;
+      viewport_far  = 10.0 ;
+#else
       viewport_near   = viewport_near_m/plot_scale ;
       viewport_far    = viewport_far_m/plot_scale  ;
+#endif
 
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       gluPerspective(viewport_fovy,viewport_aspect,viewport_near,viewport_far);
+#if 0
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
-      gluLookAt(lookat_eye_x,lookat_eye_y,lookat_eye_z,
-               lookat_centre_x,lookat_centre_y,lookat_centre_z,
-               lookat_up_x,lookat_up_y,lookat_up_z) ;
+      gluLookAt(offset_eye_x,offset_eye_y,offset_eye_z,
+               offset_center_x,offset_center_y,offset_center_z,
+               offset_up_x,offset_up_y,offset_up_z) ;
 //  REQUIRED after MODELVIEW CHANGE
       zr_setp4(v4,light0_altde,light0_polar) ;
       glLightfv(GL_LIGHT0, GL_POSITION, v4);
-    }                                 // End of gluPerspective option
 
-    initialise_eye_vectors() ;
-    initialise_clip_planes(clip_a) ;
-
+      initialise_eye_vectors() ;
+      initialise_clip_planes(clip_a) ;
 //    if(ip) check_clip_planes() ;
-
+#else
+      camera_changed = 1 ;
+      camera_new_position() ;
+#endif
 //  Trigger graphics_cull checks (myGlutIdle in graphics.c)
-    new_viewpoint = 1 ;
-    glutPostRedisplay() ;
+      new_viewpoint = 1 ;
+      glutPostRedisplay() ;
 }
 
 float zr_fclip(float x, float xmin, float xmax){
 
-float ans = x ;
+  float ans = x ;
       if(xmax<xmin) return ans ;
       if(ans>xmax) ans = xmax ;
       if(ans<xmin) ans = xmin ;

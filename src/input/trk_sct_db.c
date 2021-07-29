@@ -15,6 +15,7 @@
  *
  * *****************************************************************************
  */
+int  add_distances_to_track_vectors(TrkVectorNode *v, TrkNetNode *t, int n) ;
 
 int init_track_db(char * filename){
 int    i, j      ;
@@ -70,13 +71,13 @@ MSfile msfile  ;
  */
       track_db.trk_sections_array_size = itoken(&msfile) ;
 //    printf("  trk_sec_array_size = %i\n",track_db.trk_sections_array_size);
-      track_db.trk_sections_array = (TrkSectionNode *)
-              malloc(track_db.trk_sections_array_size*sizeof(TrkSectionNode));
+      track_db.trk_sections_array = (TrkNetNode *)
+              malloc(track_db.trk_sections_array_size*sizeof(TrkNetNode));
 /*
  *   Cycle over the set of track sections
  */
       for(i=0;i<(int)track_db.trk_sections_array_size;i++){
-        read_track_section(&track_db.trk_sections_array[i],&msfile) ;
+        read_track_path(&track_db.trk_sections_array[i],&msfile) ;
       }
       skip_rbr(&msfile) ;
 /*
@@ -119,13 +120,13 @@ MSfile msfile  ;
 uint            ie = 0, iw = 0, in = 0, is = 0 ;
 double          de = 0, dw = 0, dn = 0, ds = 0 ,
                  h0 = 100000.0, h1 = 0.0 ;;
-TrkSectionNode  *trk_sec_node ;
-TrkVectorNode   *vec          ;
+TrkNetNode   *trk_path_node ;
+TrkVectorNode *vec          ;
 
       for(i=0;i<(int)track_db.trk_sections_array_size;i++){
-        trk_sec_node = &track_db.trk_sections_array[i];
-        vec = trk_sec_node->vector ;
-        for(j=0;j<(int)trk_sec_node->length_of_vector;j++){
+        trk_path_node = &track_db.trk_sections_array[i];
+        vec = trk_path_node->vector ;
+        for(j=0;j<(int)trk_path_node->length_of_vector;j++){
 #if 0
           printf(" vec = %6i %6i %8.2f %8.2f %8.2f %6i %6i %8.2f %8.2f %8.2f \n",
                                     vec[j].tile_east_x,vec[j].tile_north_z,
@@ -211,11 +212,11 @@ TrkVectorNode   *vec          ;
  * **********************************************************************
  */
 
-void read_track_section(TrkSectionNode *trk_section, MSfile *msfile){
+void read_track_path(TrkNetNode *trk_path, MSfile *msfile){
 
 int    j, n ;             // loop integers
 char   *token    ;
-char   myname[] = "read_track_section" ;
+char   myname[] = "read_track_path" ;
 char   ffname[] = "__FILE__"      ;
 TrkVectorNode  *trk_vec_node ;
 /*
@@ -226,8 +227,8 @@ TrkVectorNode  *trk_vec_node ;
                     error2(myname,ffname,msfile->filename,(char *)"TrackNode");;
 //  Save node index
       skip_lbr(msfile) ;
-      init_track_section(trk_section) ;
-      trk_section->index_of_node = itoken(msfile) ;
+      init_track_path(trk_path) ;
+      trk_path->index_of_node = itoken(msfile) ;
 /*
  *  Loop through all possible second level TrackNode tokens
  *   TrJunctionNode, TrEndNode, TrVectorNode,  UiD, TrPins,
@@ -238,24 +239,24 @@ TrkVectorNode  *trk_vec_node ;
 
         SWITCH(token)
           CASE("TrJunctionNode")
-            trk_section->type_of_node = JUNCTION ;
+            trk_path->type_of_node = JUNCTION ;
             skip_lbr(msfile) ;
-              trk_section->jn[0]=itoken(msfile) ;
-              trk_section->jn[1]=itoken(msfile) ;
-              trk_section->jn[2]=itoken(msfile) ;
+              trk_path->jn[0]=itoken(msfile) ;  //  Shape describing this junction ?
+              trk_path->jn[1]=itoken(msfile) ;
+              trk_path->jn[2]=itoken(msfile) ;
             skip_rbr(msfile) ;
             break ;
           CASE("TrEndNode")
-            trk_section->type_of_node = END_SECTION ;
+            trk_path->type_of_node = END_SECTION ;
             skip_lbr(msfile) ;
-              trk_section->en = itoken(msfile) ;
+              trk_path->en = itoken(msfile) ;
             skip_rbr(msfile) ;
             break ;
 /*
  * Track Vector Node
  */
           CASE("TrVectorNode")
-            trk_section->type_of_node = VECTOR_SECTION ;
+            trk_path->type_of_node = VECTOR_SECTION ;
             skip_lbr(msfile) ;
             for(;;){         // Also Start Inner Switch Block *************
               token = new_tmp_token(msfile);
@@ -264,19 +265,19 @@ TrkVectorNode  *trk_vec_node ;
                 CASE("TrVectorSections")
                   skip_lbr(msfile);
                   n = itoken(msfile) ;
-                  trk_section->length_of_vector =  n ;
-                  trk_section->vector = (TrkVectorNode *)malloc(n*sizeof(TrkVectorNode)) ;
+                  trk_path->length_of_vector =  n ;
+                  trk_path->vector = (TrkVectorNode *)malloc(n*sizeof(TrkVectorNode)) ;
                   for(j=0;j<n;j++){
                     token = new_tmp_token(msfile);
                     if(is_rbr(token)) break ;
-                    trk_vec_node = &trk_section->vector[j];
-                    trk_vec_node->tsec_section_index  = atoi(token) ;
+                    trk_vec_node = &trk_path->vector[j];
+                    trk_vec_node->tsec_section_index  = atoi(token)    ;
                     trk_vec_node->tsec_shape_index    = itoken(msfile) ;
                     trk_vec_node->wfname_east_x       = itoken(msfile) ;
                     trk_vec_node->wfname_north_z      = itoken(msfile) ;
                     trk_vec_node->worldfileuid        = itoken(msfile) ;
-                    trk_vec_node->flag1               = itoken(msfile) ;
-                    trk_vec_node->flag2               = itoken(msfile) ;
+                    trk_vec_node->flag1               = itoken(msfile) ; // 0, 1 if flipped  Sometimes 2
+                    trk_vec_node->flag2               = itoken(msfile) ; // 1, 0                       3
                     token = new_tmp_token(msfile);
                     trk_vec_node->string[0]           = token[0] ;
                     trk_vec_node->string[1]           = token[1] ;
@@ -288,19 +289,26 @@ TrkVectorNode  *trk_vec_node ;
                     trk_vec_node->a_east_x            = dtoken(msfile) ;
                     trk_vec_node->a_height_y          = dtoken(msfile) ;
                     trk_vec_node->a_north_z           = dtoken(msfile) ;
+
+                    trk_vec_node->world_item = NULL ;
+                    trk_vec_node->is_curved  = 0    ;
+                    trk_vec_node->is_dynamic = 0    ;
+                    trk_vec_node->length     = 0.0  ;
+                    trk_vec_node->radius     = 0.0  ;
+                    trk_vec_node->angle      = 0.0  ;
                   }
                   skip_rbr(msfile) ;
                   break;
                 CASE("TrItemRefs")
                   skip_lbr(msfile);
                   n = itoken(msfile);                  // Number of Track Items
-                  trk_section->trk_item_number = n;
-                  trk_section->trk_item_vec = (uint *)malloc(n*sizeof(uint));
+                  trk_path->trk_item_number = n;
+                  trk_path->trk_item_vec = (uint *)malloc(n*sizeof(uint));
                   for(j=0;j<n;j++){
                       token = new_tmp_token(msfile);  //  TrItemRef
                       if(is_rbr(token)) break ;
                       skip_lbr(msfile);
-                      trk_section->trk_item_vec[j] = itoken(msfile) ;
+                      trk_path->trk_item_vec[j] = itoken(msfile) ;
                       skip_rbr(msfile) ;
                   }
                   skip_rbr(msfile) ;
@@ -315,9 +323,9 @@ TrkVectorNode  *trk_vec_node ;
  */
           CASE("UiD")
             skip_lbr(msfile) ;
-            trk_section->length_of_vector = 1 ;
-            trk_section->vector = (TrkVectorNode *)malloc(sizeof(TrkVectorNode)) ;
-            trk_vec_node         = trk_section->vector;
+            trk_path->length_of_vector = 1 ;
+            trk_path->vector = (TrkVectorNode *)malloc(sizeof(TrkVectorNode)) ;
+            trk_vec_node         = trk_path->vector;
 
             trk_vec_node->wfname_east_x  = itoken(msfile) ;
             trk_vec_node->wfname_north_z = itoken(msfile) ;
@@ -339,15 +347,15 @@ TrkVectorNode  *trk_vec_node ;
           CASE("TrPins")
             skip_lbr(msfile) ;
             for(j=0;j<2;j++){
-              trk_section->type_of_pin[j] = itoken(msfile);
+              trk_path->type_of_pin[j] = itoken(msfile);
             }
             for(j=0;;j++){
               token = new_tmp_token(msfile);
               if(is_rbr(token)) break ;
               if(0 == strcmp(token,"TrPin")){
                 skip_lbr(msfile) ;
-                trk_section->pin_to_section[j] = itoken(msfile) ;
-                trk_section->pin_info[j]       = itoken(msfile) ;
+                trk_path->pin_to_section[j] = itoken(msfile) ;
+                trk_path->pin_info[j]       = itoken(msfile) ;
                 skip_rbr(msfile) ;
               }else{
                 printf("   TrPin : token not recognised %s\n",token);
@@ -364,17 +372,17 @@ TrkVectorNode  *trk_vec_node ;
       return ;
 }
 
-void init_track_section(TrkSectionNode *tracknode){
+void init_track_path(TrkNetNode *track_path){
 int  i;
 
-      tracknode->index_of_node    = 0;
-      tracknode->type_of_node     = 0;
-      tracknode->length_of_vector = 0 ;
+      track_path->index_of_node    = 0;
+      track_path->type_of_node     = 0;
+      track_path->length_of_vector = 0 ;
 
       for(i=1;i<3;i++){
-        tracknode->type_of_pin[0]    = 0 ;
-        tracknode->pin_to_section[i] = 0 ;
-        tracknode->pin_info[i]       = 0 ;
+        track_path->type_of_pin[0]    = 0 ;
+        track_path->pin_to_section[i] = 0 ;
+        track_path->pin_info[i]       = 0 ;
       }
       return ;
 }
@@ -397,10 +405,12 @@ void error2(char *routine, char *file, char *datafile, char *string)
       exit(1) ;
 }
 
-int list_track_section(TrkSectionNode *tnode){
+int list_track_section(TrkNetNode *tnode){
 
 int  i;
 TrkVectorNode *vnode ;
+WorldNode     *wn    ;
+WorldItem     *wi    ;
       printf("  Track section.  Index = %i\n",tnode->index_of_node);
       printf("  Type = %i :: %s\n",tnode->type_of_node,
                                    token_trackdb[tnode->type_of_node]) ;
@@ -417,10 +427,241 @@ TrkVectorNode *vnode ;
         vnode = &tnode->vector[i] ;
         printf("   Vector %3i,  world east = %5i,  north   = %5i\n", i,
                                   vnode->wfname_east_x,vnode->wfname_north_z) ;
+        printf("                world_item = %p\n",(void *)vnode->world_item);
         printf("                tile east  = %5i,  north   = %5i",
                                   vnode->tile_east_x,vnode->tile_north_z) ;
         printf("      east_x = %f,  north_z = %f\n",
                                   vnode->east_x,vnode->north_z) ;
+        printf("      tsec_section_index    = %i\n", vnode->tsec_section_index) ;
+        printf("      tsec_shape_index      = %i\n", vnode->tsec_shape_index)   ;
+        printf("      worldfileuid          = %i\n", vnode->worldfileuid)   ;
+        printf("      flag1, flag2, string  = %i  %i %2s\n", vnode->flag1, vnode->flag2, vnode->string)   ;
+
+        if(vnode->tsec_section_index != 0){
+          print_tsec_section( vnode->tsec_section_index) ;
+        }
+        if(vnode->tsec_shape_index != 0){
+          print_tsec_shape( vnode->tsec_shape_index) ;
+        }
+        if(vnode->worldfileuid != 0){
+          for(wn=worldlist_beg;wn!=NULL;wn=wn->next){
+            if(wn->tile_x != vnode->wfname_east_x || wn->tile_y != vnode->wfname_north_z) continue ;
+            for(wi=wn->world_item;wi!=NULL;wi=wi->next){
+              if(wi->uid != vnode->worldfileuid)continue ;
+              list_wfile_item(wi) ;
+            }
+          }
+        }
+        printf("\n") ;
       }
       return 0 ;
 }
+
+int add_world_item_pointers_to_track_vectors(TrkNetNode *tnnode) {
+
+int            ip = 0 ;  // Debug
+int            iret = 0 ;
+int            nvec ;
+uint           wtile_x, wtile_y, w_uid ;
+TrkVectorNode  *vec ;
+WorldNode      *wnode  ;
+WorldItem      *witem  ;
+char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
+/*
+ *  Loop over track vectors
+ */
+      if(ip)printf(" Enter %s, track node = %i %i %i %p\n",my_name,
+                          tnnode->index_of_node,tnnode->type_of_node,
+                          tnnode->length_of_vector,(void *)tnnode) ;
+      for(nvec=0;nvec<tnnode->length_of_vector;nvec++){
+        vec = &(tnnode->vector[nvec]) ;
+/*
+ *  For each vector find world Node
+ */
+        wtile_x = vec->wfname_east_x  ;
+        wtile_y = vec->wfname_north_z ;
+        w_uid   = vec->worldfileuid ;
+        for(wnode=worldlist_beg;wnode!=NULL;wnode=wnode->next){
+          if(wnode->tile_x == wtile_x && wnode->tile_y == wtile_y)break ;
+        }
+        if(wnode->tile_x != wtile_x || wnode->tile_y != wtile_y){
+          printf("  ERROR. Routine %s unable to find world node for %i %i\n",
+                                my_name,wtile_x,wtile_y) ;
+          exit(0) ;
+        }
+/*
+ *  ... and then world item
+ */
+        for(witem=wnode->world_item;witem!=NULL;witem=witem->next){
+          if(witem->uid == w_uid)break ;
+        }
+        if(witem->uid != w_uid){
+          printf("  ERROR. Routine %s unable to find world item %i\n",
+                                my_name,w_uid) ;
+          exit(0) ;
+        }
+/*
+ *  Save pointer to world item
+ */
+        vec->world_item = witem ;
+        vec->ax         =witem->AX ;
+        vec->ay         =witem->AZ ;  //  Axes ...
+        vec->az         =witem->AY ;  //       ... swapped
+        vec->ang        =witem->ANG ;
+
+        if(iret)continue ;
+        if(tnnode->type_of_node == VECTOR_SECTION){
+          iret = add_distances_to_track_vectors(vec,tnnode,nvec) ;
+        }
+      }
+      return 0 ;
+}
+
+/*
+ *  Add track length, radius and angle to each track_vector_node.
+ */
+
+int  add_distances_to_track_vectors(TrkVectorNode *v, TrkNetNode *t, int nvec){
+
+int  ip = 0 ;
+int  k, kk ;
+int  flag1  = v->flag1 ;
+int  flag2  = v->flag2 ;
+int  is_normal = v->world_item->worldtype != 306 ;
+int  ns     = v->tsec_section_index ;
+
+TrackSection   *ts ;
+WorldItem      *w=v->world_item ;
+DynTrackObj    *dto ;
+DynTrackSect   *dts ;
+
+static int ndt = 0 ;  //  Number of dynamic track sections to process
+static int idt = 0 ;  //  Current dynamic track section being processed
+static WorldItem  *ws = NULL ;
+char my_name[] = "add_distances_to_track_vectors" ;
+
+      if(ip)printf("  Add distances :  track node = %4i, vector = %i, flags = %i %i, is_normal = %i, ns = %i, ndt = %i, idt = %i, w = %p, ws = %p\n",t->index_of_node,nvec,flag1,flag2,is_normal,ns,ndt,idt,(void *)w,(void *)ws) ;
+//      printf("  worldtype = %i\n",v->world_item->worldtype) ;
+      if(is_normal){
+        if(ndt != 0){
+          printf("  ERROR in %s.  Normal track found while processing dynamic track\n",my_name);
+          exit(0) ;
+        }
+        for(ts = track_section_beg; ts != NULL; ts = ts->next){
+          if(ts->index == ns)break ;
+        }
+        if(ts->index != ns){
+          printf("  ERROR in %s.  Cannot find track section %i\n",my_name,ns);
+          exit(0) ;
+        }
+/*
+ *d  Case flag1 ==2 and flag2 == 0 comes from zig-zag track section 565
+ */
+#if 1
+        v->length = ts->length ;
+        v->radius = ts->radius ;
+        v->angle  = ts->angle  ;
+        if(ip && !( (0 == flag1 && 1 == flag2) || (0 == flag1 && 1 == flag2))){
+          printf(" Routine %s.  Unusual sector:\n",my_name) ;
+        }
+#else
+        if((0 == flag1 && 1 == flag2) /*|| (2 == flag1 && 0 == flag2)*/){
+          v->length = ts->length ;
+          v->radius = ts->radius ;
+          v->angle  = ts->angle  ;
+        }else if((1 == flag1 && 0 == flag2) /*|| (0 == flag1 && 2 == flag2)*/){
+          v->length = ts->length ;
+          v->radius = ts->radius ;
+          v->angle  = -ts->angle  ;
+        }else{
+          v->length = ts->length ;
+          v->radius = ts->radius ;
+          v->angle  = -ts->angle  ;
+          if(ip || 0)printf(" Routine %s.  Unusual sector:\n",my_name) ;
+        }
+#endif
+        v->is_dynamic = 0 ;
+        v->is_curved = (v->angle != 0.0) ;
+        if(ip)printf("  NORMAL SECTION :: length = %f, radius = %f, angle = %f\n",
+                 ts->length,ts->radius,  ts->angle) ;
+/*
+ *  Dynamic track
+ */
+      }else{
+        w = v->world_item ;
+        dto = &(w->u.dyn_track_obj) ;
+//  New dynamic track object
+        if(ndt == 0){
+          for(k=0;k<5;k++){
+            if(dto->dyn_trk_sect[k].uid == -1)continue ;
+            ndt = ndt + 1 ;
+          }
+          idt = 0 ;
+          ws = w ;
+        }
+//  Process
+        if(ws != w){
+          printf("  ERROR in %s.  New world file while processing dynamic sections\n",my_name);
+          exit(0) ;
+        }
+        if(0 == flag1 && (1 == flag2 || 2 == flag2)){
+          kk = 0 ;
+          for(k=0;k<5;k++){
+            if(dto->dyn_trk_sect[k].uid == -1)continue ;
+            if(kk == idt)break ;
+            kk = kk + 1 ;
+          }
+          if(dto->dyn_trk_sect[k].is_curved){
+            v->angle  = dto->dyn_trk_sect[k].param_1 ;
+            v->radius = dto->dyn_trk_sect[k].param_2 ;
+            v->length = fabs(v->angle*v->radius) ;
+            v->is_curved  = 1 ;
+            v->is_dynamic = 1 ;
+          }else{
+            v->length = dto->dyn_trk_sect[k].param_1 ;
+            v->radius = 0.0 ;
+            v->angle  = 0 ;
+            v->is_curved  = 0 ;
+            v->is_dynamic = 1 ;
+          }
+        }else if((1 == flag1 || 2 == flag1) && 0 == flag2){
+          kk = 0 ;
+          for(k=4;k>-1;k--){
+            if(dto->dyn_trk_sect[k].uid == -1)continue ;
+            if(kk == idt)break ;
+            kk = kk + 1 ;
+          }
+          if(dto->dyn_trk_sect[k].is_curved){
+            v->angle  = -dto->dyn_trk_sect[k].param_1 ;
+            v->radius = dto->dyn_trk_sect[k].param_2 ;
+            v->length = fabs(v->angle*v->radius) ;
+            v->is_curved  = 1 ;
+            v->is_dynamic = 1 ;
+          }else{
+            v->length = dto->dyn_trk_sect[k].param_1 ;
+            v->radius = 0.0 ;
+            v->angle  = 0 ;
+            v->is_curved  = 0 ;
+            v->is_dynamic = 1 ;
+          }
+        }else{
+          printf(" Routine %s.  Unusual dynamic track sector:\n",my_name) ;
+          printf("  Flag1 = %i, Flag2 = %i, Param_1 = %f, Param_2 = %f\n",
+                    flag1, flag2, dto->dyn_trk_sect[k].param_1,  dto->dyn_trk_sect[k].param_2) ;
+          return 1 ;
+        }
+        if(ndt>0)ndt = ndt - 1;
+        idt = idt + 1 ;
+        if(ip)printf("                      v = %p, Flag1 = %i, Flag2 = %i, Length = %f, Radius = %f, Angle = %f\n",
+                  (void *)v, flag1, flag2, v->length, v->radius, v->angle) ;
+      }
+
+      if(v->length == 0.0){
+        printf("  %s, LENGTH ERROR :  Track Index = %4i, Type = %i,"
+               " vector = %3i, is_normal = %i\n",
+               my_name, t->index_of_node, t->type_of_node, nvec, is_normal) ;
+      }
+      return 0;
+}
+
+#include "junction.c"

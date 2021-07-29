@@ -22,9 +22,13 @@ Version  Status
        Forests are not displayed.
        Water is not displayed.
 
-     Display rates can be low - but will depend on the graphics card being used.  The latest version of teh code includes an option to use vertex arrays for the topography, which should speed things up.  The code also makes a start at using viewport clip planes, again to reduce the amount of data processed by the graphics card.
+    As of July 2021 the program also displays a single engine, which can be used to explore the track, responding to the position of points.  These can be changed using the keyboard.  Information on the options may be toggled using the 'F1' key.
 
-     At this stage of development, the code is also likely to contain bugs and hit problems with common mis-spellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
+    Note - for the moment the wheels do not turn!
+
+    Display rates can be low - but will depend on the graphics card being used.  The latest version of the code includes an option to use vertex arrays for the topography, which should speed things up.  The code also makes a start at using viewport clip planes, again to reduce the amount of data processed by the graphics card.
+
+    At this stage of development, the code is also likely to contain bugs and hit problems with common mis-spellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
 
 Compilation
 ===========
@@ -36,13 +40,18 @@ Compilation
 Running the program
 ===================
 
-    You can move around the 3D scene using the arrow keys.  If the "-Dkb_dev" option is used in the makefile, the arrow keys will move the viewpoint forwards, backwards and sideways at the same level.  The keys page-up and page down will move up and down.  The normal steps are 32 m, increased to 1024m if the 'Shift' key is depressed and reduced to 1 m if 'Alt' is depressed.  The arrow keys with 'Ctrl' depressed turn the direction of view to the left, right, up or down in steps of 1 degree. If both 'Ctrl' and 'Shift' are pressed the step is 30 degrees.
+    The program starts with the camera fixed, looking at the side of the engine.  You can move around the 3D scene using the arrow keys.  If the "-Dkb_dev" option is used in the makefile, the arrow keys will move the viewpoint forwards, backwards and sideways at the same level.  The keys page-up and page down will move up and down.  The normal steps are 32 m, increased to 1024m if the 'Shift' key is depressed and reduced to 1 m if 'Alt' is depressed.  The arrow keys with 'Ctrl' depressed turn the direction of view to the left, right, up or down in steps of 1 degree. If both 'Ctrl' and 'Shift' are pressed the step is 30 degrees.
 
     Without the -Dkb_dev option, the behaviour is nearer the standard MSTS behaviour, the arrow keys moving forward and backward but not necessarily at the same level.  In this case the default steps are 1 m (10 m with Shift) and 0.1 degree.
 
     These values are defined by the variables del_d and del_a in file keyboard.c.
 
     As with the MSTS keyboard, 'Shift-Z' gives an estimate of frames per second.  The value displayed is an cumulative average over the previous 5 seconds - so it takes 5 seconds to stabalise.
+
+    Key 'F1' displays a help panel.
+    Key 'F8' displays the position of the points/switches in front and behind the engine.  (Strictly speaking relative to the origin of the engine shape).
+
+    The keys '1', '2', '3', '4', '5', '6' and '7' reproduce the standard MSTS camera positions which are all defined relative to the current position of the engine.
 
 Other Options
 =============
@@ -70,12 +79,12 @@ Other Options
 Contributing
 ============
 
-    Obviously a lot more work is needed - and at the moment I'm running out of steam.  Most of the software needed to read and decode the MSTS format ascii and binary, compressed and uncompressed files is provided.
+    Obviously a lot more work is needed.  Most of the software needed to read and decode the MSTS format ascii and binary, compressed and uncompressed files is provided.
 
     I admit that the organisation of the code is poor, it needs improvements, it is also not easy to read (also true of OpenRails) and my OpenGL knowledge is still limited to version 2.1.  However despite all of that, I hope that there is enough here to attract other people to develop the project.
 
     Of course if you just want to take a copy and do your own thing - that's fine.  However if you are interested in collaborating, it would be a good idea to first have a look at the OpenRails code and then let me know of which aspects of the model you would like to develop.
 
-    Three simpler things that currently need development are water, forests and adding texture to topography.  After that it should be primarily about the user interface and dynamics.
+    Three simpler things that currently need development are water, forests and adding texture to topography.  After that it should be primarily about the user interface, the makeup of trains, interaction with track features and better dynamics.
 
-    djw - February 2021
+    djw - July 2021

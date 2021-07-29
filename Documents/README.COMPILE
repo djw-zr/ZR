@@ -4,7 +4,7 @@ README.COMPILE
 Required Software
 =================
 
-    The program has been developed using the OpenSUSE 15.1 version of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard linux distributions such as Debian, Ubuntu and Fedora.
+    The program has been developed using the OpenSUSE 15.* versions of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard linux distributions such as Debian, Ubuntu and Fedora.
 
     Compilation and linking of the program is carried out by the makefile.  This requires installation of the programs:
       make   ::  Gnu make program of equivalent
@@ -19,6 +19,7 @@ Required Software
       libGL   ::  OpenGL library (-lGL)
       libGLU  ::  Extensions for GLU (-lGLU)
       libglut ::  GLUT library (-lglut)
+      libfreetype :: freetype
     The libraries glibc and X11, Xext and Xmu should be installed by default.  The others may need to be installed using a package manager.  Unfortunately the name of the package can change from one system to another so you may need to obtain expert help.
 
     Often the library exists in directory '/usr/lib64' with a name such as "libXmu.so.6".  However the program linker will be looking for "libXmu.so" so if the latter does not exist it will fail.  The solution is to change directories to '/usr/lib' and use the superuser command to create the link:
@@ -30,6 +31,7 @@ Required Software
       libglut3     ::  Installs the glut library files
       freeglut-devel :: Installs the header files
       zlib-devel   ::  Header file for the deflate compression algorithm.
+      freetype2-devel :: Installs the header file
 
 Compiling
 =========
@@ -38,10 +40,17 @@ Compiling
        make
     This prints the compiler command.  Compilation should then proceed and end after only a few seconds without any error messages.  The resulting program file is file 'zr' in the same directory.
 
+Fonts
+=====
+
+    The program uses freetype routines together with the Microsoft font files 'tachoma.ttf' and 'verdana.ttf'.  In a linux system the freetype library is usally in a package named 'libfreetype#' where # is the number of the release.  The file 'ft2build.h' which is also needed is usually in package 'freetype2-devel'.
+
+    The two font files should either be in the syftem font directory '/usr/share/fonts/webcore' or in the user directory '~/.zr/fonts'.  If the above two fonts are not available they can be replaced by changing the two font names in file 'freetype.c'.
+
 Starting the program
 ====================
 
-    The program needs a file "$HOME/.zrails/config" which contains information on 'ORroutedir' the route to use and 'ORdir', the directory containing both the 'Routes' directory containing different routes and the 'Global', 'Sound' and 'Trains' directories.  The 'Trains' directory contains specifications of the engines and wagons being used.
+    The program needs a file "$HOME/.zr/config" which contains information on 'ORroutedir' the route to use and 'ORdir', the directory containing both the 'Routes' directory containing different routes and the 'Global', 'Sound' and 'Trains' directories.  The 'Trains' directory contains specifications of the engines and wagons being used.
 
     If the file does not exist when the program is first run, it is created with the
     lines starting:

@@ -67,7 +67,7 @@ char   my_name[] = "make_dynamic_display_lists" ;
         tile_x = wnode->tile_x ;
         tile_y = wnode->tile_y ;
 //  Switch on debug pringing for a particular tile
-//        ip = ((tile_x == 1449) && (tile_y = 10331)) ;
+//        ip = ((tile_x == 1448) && (tile_y = 10332)) ;
         if(ip)printf("  ++ World tile node = %p\n",(void *)wnode) ;
         if(ip)printf("  ++ World tile %i  %i\n",tile_x, tile_y) ;
         for(witem = wnode->world_item ; witem != NULL; witem = witem->next){

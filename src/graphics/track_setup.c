@@ -16,7 +16,7 @@
  *==============================================================================
  */
 
-TrkSectionNode  *next_track_node(TrkSectionNode *track_section) ;
+TrkNetNode  *next_track_node(TrkNetNode *track_section) ;
 static int ipp_track = 0 ;           //  Debug
 
 /*
@@ -394,7 +394,7 @@ char            my_name[]="make_default_track_profile" ;
 int  make_track_shapes(){
 int  i ;
 int  ip = 0, ipp = 0 ;                        // Debug printing = 1
-TrkSectionNode  *track_node       ;  // Track section needing shape
+TrkNetNode  *track_node       ;  // Track section needing shape
 DynProfile      *track_profile    ;  // Track Profile to use
 char            my_name[]="make_track_shapes" ;
 
@@ -425,7 +425,7 @@ int       i_asntt = 20 ;      //  Used for debug printing
  *  Routine to add extra track nodes on curves.  Needed when using a track profile
  */
 
-int  add_sub_nodes_to_track(TrkSectionNode *track_section, DynProfile *profile){
+int  add_sub_nodes_to_track(TrkNetNode *track_section, DynProfile *profile){
 
 int           i, j, n                            ;
 int           ip = 0 ;                                // Debug printing = 1
@@ -449,7 +449,7 @@ double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
               xc1  = 0.1, yc1  = 0.0  ;
 TrkVectorNode *tv0,               //  Current track vector node
               *tv1  ;             //  Next track vector
-TrkSectionNode *ts1 = NULL ;      //  Next track section
+TrkNetNode *ts1 = NULL ;      //  Next track section
 char          *my_name="add_sub_nodes_to_track" ;
 
       ip = ipp_track ;
@@ -670,12 +670,12 @@ int ii, jj ;
  *  This is normally a junction node or an end node
  */
 
-TrkSectionNode  *next_track_node(TrkSectionNode *track_section){
+TrkNetNode  *next_track_node(TrkNetNode *track_section){
 
 int             next_node_index, n ;
 int             ip = 0 ;                      // Dubug printing when ip = 1
 char            my_name[] = "next_track_node" ;
-TrkSectionNode  *t              ;
+TrkNetNode  *t              ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -719,7 +719,7 @@ TrkSectionNode  *t              ;
  *          triangle strips on the vertices at the sub-object level.
  */
 
-int   make_track_shape(TrkSectionNode *tracknode, DynProfile *profile){
+int   make_track_shape(TrkNetNode *tracknode, DynProfile *profile){
 
 int        i, n           ;
 int        ip = 0         ;  // Debug printing

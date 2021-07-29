@@ -447,6 +447,15 @@ DynTrackSect *dyn_trk_sect ;
                                      dyn_trk_sect->uid,dyn_trk_sect->param_1,
                                       dyn_trk_sect->param_2,dyn_trk_sect->delta_y);
                 end_block(msfile,3) ;
+                if(-1 != dyn_trk_sect->uid && !dyn_trk_sect->is_curved &&
+                  0.0 != dyn_trk_sect->param_2 && 0.0 !=  dyn_trk_sect->param_1){
+                  printf("  Routine %s : Dynamic track section has inconsistant values:\n",my_name);
+                  printf("    is_curved = %i, param_1 = %f, param_2 = %f, uid = %i\n",
+                               dyn_trk_sect->is_curved,dyn_trk_sect->param_1,
+                               dyn_trk_sect->param_2,dyn_trk_sect->uid);
+                  dyn_trk_sect->is_curved = 1 ;
+                  printf("    is_curved set to %i\n",dyn_trk_sect->is_curved) ;
+                }
               }
             }else if((DYNTRACK == itoken|| 306 == itoken) && SECTIONIDX == itoken2){
               world_item->u.dyn_track_obj.section_idx      = read_uint32(fp) ;
@@ -634,4 +643,22 @@ int add_shape_pointers_to_world_items(){
   return 0 ;
 }
 
+int  list_wfile_item(WorldItem *wi){
 
+      printf("   WorldItem     uid   = %i \n",wi->uid) ;
+      printf("   WorldItem     type  = %i %s\n",wi->worldtype, token_idc[wi->worldtype]) ;
+      printf("   WorldItem     static flags = %8x \n",wi->static_flags) ;
+      if(wi->static_flags & SF_RoundShadow)printf("                   Round Shadow\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Rectangular Shadow\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Treeline Shadow\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Dynamic Shadow\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Any Shadow\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Terrain\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Animate\n");
+      if(wi->static_flags & SF_RoundShadow)printf("                   Global\n");
+      printf("   WorldItem     position = %f %f %f\n",wi->X,wi->Y,wi->Z) ;
+      printf("   WorldItem     rotation = %f %f %f %f\n",wi->AX,wi->AY,wi->AZ,wi->ANG) ;
+
+
+      return 0;
+}

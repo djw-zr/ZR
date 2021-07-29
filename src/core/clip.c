@@ -154,9 +154,9 @@ GLfloat  x, y, z, sum[6] ;
         printf("  check_clip_planes : eye    :: k = %i,  sum = %9.6f\n",k,(double)sum[k]);
       }
 
-      x = lookat_centre_x ;
-      y = lookat_centre_y ;
-      z = lookat_centre_z ;
+      x = lookat_center_x ;
+      y = lookat_center_y ;
+      z = lookat_center_z ;
 
       printf("\n") ;
       for(k=0;k<6;k++){

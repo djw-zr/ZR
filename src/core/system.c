@@ -13,6 +13,20 @@
  *==============================================================================
  */
 
+int   nint(double d){
+
+int    i ;
+double dd ;
+
+     if(d >= 0.0){
+       i = d + 0.5 ;
+       return i ;
+     }
+     i = 0.5 - d ;
+     return -i ;
+}
+
+
 
 /**
  *   Function to compare two strings ignoring case.
@@ -81,14 +95,45 @@ char *zr_corename(char *fname){
 
 int  n   ;
 char *pz ;
-      if(fname == NULL) return strdup("")   ;
+      if(fname == NULL) return strdup("")   ;   // malloc
       pz = strrchr(fname,'.')               ;
-      if(pz == NULL) return strdup(fname)   ;
+      if(pz == NULL) return strdup(fname)   ;   // malloc
       n = strlen(fname) - strlen(pz)        ;
 //      printf(" zr_corename  strlen(fname) = %i\n",(int)strlen(fname)) ;
 //      printf(" zr_corename  strlen(pz)    = %i\n",(int)strlen(pz)) ;
       return strndup(fname, n) ;
 }
+
+/**
+ *  char *zr_parentdir(char *fname)
+ *
+ *  Routine to return name of parent directory
+ *    If fname is "A/B/C", returns "B".
+ *    If fname is NULL or "C" returns NULL.
+ */
+
+char *zr_parentdir(char *fname){
+
+  char *string1, *string2 ;
+  char *pz ;
+
+      if(fname == NULL) return strdup("")   ;
+      string1 = strdup(fname) ;                 //malloc
+      pz = strrchr(string1,'/') ;
+      if(pz==NULL){free(string1); return NULL ;}
+
+      *pz = '\0' ;
+      pz = strrchr(string1,'/') ;
+      if(pz==NULL){free(string1); return NULL ;}
+      pz++ ;
+      string2 = strdup(pz) ;                    // malloc
+//      printf(" zr_parentdir : string1 = %s\n",string1) ;
+//      printf(" zr_parentdir : string2 = %s\n",string2) ;
+      free(string1) ;
+      return string2 ;
+}
+
+
 
 /**
  *  char *zr_filename_MS2L(char *fname)

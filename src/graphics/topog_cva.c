@@ -41,7 +41,7 @@
 
 int make_tile_vertex_arrays(){
 
-int          ip = 1 ;  // Debug
+int          ip = 0 ;  // Debug
 int          ix, iy ;
 TileListNode *tnode ;
 char         my_name[] = "make_tile_vertex_arrays" ;
@@ -127,8 +127,8 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
  *  Check texture reference exists
  */
       if(!land_texture->gl_tex_ref_no){
-        printf("  ERROR.  Routine %s called when land_texture not installed\n",
-                                                                       my_name);
+        printf("  ERROR.  Routine %s called for tile (%i, %i) "
+        "when land_texture not installed.\n",my_name,tile_x,tile_y);
       }
 /*
  *   Create oversize arrays including halo rows and columns
@@ -278,6 +278,11 @@ double hh  ;
  *  Low level graphics cards may struggle with GPU storage for the full
  *  256 by 256 topographic array data.  The code therefor includes the option
  *  of splitting the data into nbx*nby blocks, each containing ncx*ncy cells.
+ *
+ *  Implementations denote recommended maximum amounts of vertex and index data, which may be queried by calling glGet with argument GL_MAX_ELEMENTS_VERTICES and GL_MAX_ELEMENTS_INDICES. If end−start+1 is greater than the value of GL_MAX_ELEMENTS_VERTICES, or if count is greater than the value of GL_MAX_ELEMENTS_INDICES, then the call may operate at reduced performance. There is no requirement that all vertices in the range [start,end] be referenced. However, the implementation may partially process unused vertices, reducing performance from what could be achieved with an optimal index set.
+ *
+ *
+ *
  *==============================================================================
  */
 /*
@@ -287,6 +292,10 @@ double hh  ;
       if(ip)printf("  GL_MAX_ELEMENTS_VERTICES = %i\n",max_v) ;
       glGetIntegerv(GL_MAX_ELEMENTS_INDICES, &max_i) ;
       if(ip)printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",max_i) ;
+/*
+ *   Number of vertices = number of
+ *   Number of indices = 6 * number of cells
+ */
 
       nbx = 1 ;
       nby = 1 ;
@@ -294,11 +303,11 @@ double hh  ;
         ncx = nht/nbx ;
         ncy = nht/nby ;
         nvt = (ncx+1)*(ncy+1) ;
-        if((3*nvt <= max_v && 6*ncx*ncy <= max_i) || 8 == i)break ;
+        if(nvt <= max_v && 6*ncx*ncy <= max_i)break ;
         if(nbx == nby)  nbx = nbx*2 ;
         else            nby = nbx   ;
       }
-      if(ip)printf("  Topography split into %i by %i blocks\n",nbx,nby) ;
+      if(ip || 0)printf("  Topography split into %i by %i blocks\n",nbx,nby) ;
 /*
  *  Allocate Vertex array nodes
  */
@@ -435,29 +444,38 @@ double hh  ;
 
 int check_topographic_blocks(){
 
-int          ip = 1       ;  // Debug
+int          ip = 0       ;  // Debug
 int          ix, iy, k, n ;
 TileListNode *tnode       ;
 VANode       *va_node     ;
-char         my_name[] = "make_tile_vertex_arrays" ;
+char         my_name[] = "check_topographic_blocks" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
       for(tnode=tilelist_head;tnode!=NULL;tnode=tnode->next){
         ix = tnode->tilex ;
         iy = tnode->tiley ;
+        if(ip)printf("  tile_x, tile_y, use_tile = %i %i %i :: %i %i :: %i %i :: %i\n",
+        ix,iy,use_tile(ix,iy), tile_eye_x0, tile_x0, tile_eye_x0, tile_y0, tile_cull_r);
         if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
         tnode->needed          = 1     ;
+
+        if(ip)printf(" name = %s, nbx = %i, nby = %i\n",tnode->name,
+               tnode->terrain_data.nbx,
+               tnode->terrain_data.nby ) ;
         n = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+        if(ip)printf(" n = %i\n",n) ;
+        if(n != 256){
+          tnode->needed = 0;
+          continue ;
+        }
         for(k=0;k<n;k++){
+          if(ip)printf(" %i",k) ;
           va_node = &(tnode->terrain_data.va_node[k]) ;
           va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
         }
-
+        if(ip)printf("\n") ;
       }
+      if(ip)printf(" Exit: %s\n",my_name) ;
 
-
-
-
-
-       return 0 ;
+      return 0 ;
 }

@@ -17,7 +17,7 @@
 #include <sys/stat.h>
 #include <ftw.h>
 
-int init_wagon_node(WagonNode *w) ;
+int init_raw_wagon_node(RawWagonNode *w) ;
 int process_wagon_files(const char *fpath, const struct stat *sb,
                         int typeflag) ;
 
@@ -31,6 +31,7 @@ int generate_wagon_list(){
   int    ip = 0          ;              // Debug printing
   int    l1, iret        ;
   char   *top_dir ;
+  char  my_name[] = "generate_wagon_list" ;
 
       l1      = strlen(ORdir) + strlen("Trains/Trainset/") + 1 ;
       top_dir = (char *)malloc(l1*sizeof(char)) ;
@@ -41,6 +42,7 @@ int generate_wagon_list(){
       iret = ftw(top_dir, process_wagon_files, 5) ;
 
       free(top_dir) ;
+      if(ip)printf(" Return from routine %s\n",my_name) ;
       return iret ;
 }
 
@@ -49,19 +51,19 @@ int generate_wagon_list(){
 int process_wagon_files(const char *fpath, const struct stat *sb,
                         int typeflag){
 
-int    ip = 0          ;     // Debug printing
-int    n               ;
-FILE   *fp             ;
-char   *file_name,           //  Full filename
-       *base_name,           //  Base name inc extension
-       *core_name,           //  Base name without extension
-       *extension,           //  Extension
-       *string = NULL  ;     //  Temporary string
-
-char  my_name[] = "process_wagon_files" ;
-WagonNode   *wagon_node   ;
-ShapeNode   *shape_node   ;
-TextureNode *texture_node ;
+  int    ip = 0          ;     // Debug printing
+  int    n               ;
+  FILE   *fp             ;
+  char   *file_name,           //  Full filename
+        *base_name,           //  Base name inc extension
+        *core_name,           //  Base name without extension
+        *extension,           //  Extension
+        *string = NULL  ;     //  Used with malloc to construct filenames
+                              //     ... freed when name not needed later
+  char  my_name[] = "process_wagon_files" ;
+  RawWagonNode *wagon_node   ;
+  ShapeNode    *shape_node   ;
+  TextureNode  *texture_node ;
 /*
  *  Return if not a regular file
  */
@@ -74,6 +76,11 @@ TextureNode *texture_node ;
       base_name = zr_basename(file_name)     ;  // malloc
       core_name = zr_corename(base_name)     ;  // malloc
       extension = zr_extension(base_name)    ;  // malloc
+/*
+ *  Skip lowest level directories "OpenRails".  These contain extra
+ *  wag and eng data only supported by OpenRails
+ */
+
 
       if(ip)printf("\n") ;
       if(ip)printf(" Program %s :: fpath = %s :: %s\n",my_name,
@@ -84,12 +91,26 @@ TextureNode *texture_node ;
  * *****************************************************************************
  */
       if(!strcmp(extension,"eng")|| !strcmp(extension,"wag") ){
-        if(ip)printf("  Found wagon file        : %s\n",file_name) ;
         if(ip)printf("  Name of engine or wagon : %s\n",core_name) ;
+        if(ip)printf("  Found wagon file        : %s\n",file_name) ;
+/*
+ *  Check this is not below directory named OpenRails (used for extra OR data)
+ */
+        string = zr_parentdir(file_name) ;       // malloc
+        if(strcmp(string,"OpenRails")==0){
+          if(ip)printf("  Exit because of parent\n") ;
+          free(file_name) ;
+          free(string)    ;
+          free(base_name) ;
+          free(core_name) ;
+          free(extension) ;
+          return 0;
+        }
+        free(string) ;                           // parent no longer needed
 /*
  *  Create new engine/wagon structure
  */
-        wagon_node = (WagonNode *)malloc(sizeof(WagonNode)) ;
+        wagon_node = (RawWagonNode *)malloc(sizeof(RawWagonNode)) ;
         if(wagonlist_beg == NULL){
           wagonlist_beg = wagon_node       ;
         }else{
@@ -98,61 +119,70 @@ TextureNode *texture_node ;
         wagonlist_end     = wagon_node     ;
         wagon_node->next  = NULL           ;
 
-        init_wagon_node(wagon_node)                      ;
+        init_raw_wagon_node(wagon_node)                      ;
         wagon_node->file = strdup(file_name)             ;
         wagon_node->name = strdup(core_name)             ;
         wagon_node->is_engine = !strcmp(extension,"eng") ;
 /*
- *  Sarch for corresponding *.jpg file
+ *  Search for corresponding *.jpg file
  */
         string = strdup(file_name)   ;
         n = strlen(string)           ;
         string[n-4] = '\0'           ;
         strcat(string,".jpg")        ;
         if((fp = gopen(string,"r"))!= NULL){
-          wagon_node->image = strdup(string) ;
-          gclose(fp)                         ;
-          if(ip)printf("  Found     *.jpg file : %s\n",string) ;
+          wagon_node->image = string ;
+          gclose(fp)                 ;
+          if(ip)printf("  Found     *.jpg file    : %s\n",string) ;
         }else{
-          if(ip)printf("  Not found *.jpg file : %s\n",string) ;
+          if(ip)printf("  Not found *.jpg file    : %s\n",string) ;
+          free(string)               ;
         }
 /*
-* *****************************************************************************
-*    Process Shape files *.s plus any *.sd files
-* *****************************************************************************
-*/
-      }else if(!strcmp(extension,"s")){
-        if(ip)printf("  Found *.s   file        : %s\n",file_name) ;
-        if(ip)printf("  Name of engine or wagon : %s\n",core_name) ;
-/*
-*  Create new shape structure
-*/
-        shape_node = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
-        init_shape_node(shape_node)            ;
-
-        if(wshapelist_beg == NULL){
-          wshapelist_beg = shape_node          ;
+ *  Search for corresponding *.s file
+ */
+        string = strdup(file_name)   ;     // malloc but may be kept
+        n = strlen(string)           ;
+        string[n-4] = '\0'           ;
+        strcat(string,".s")          ;
+        if((fp = gopen(string,"r"))== NULL){
+          if(ip)printf("  Not found *.s file      : %s\n",string) ;
+          free(string)               ;     // not needed
         }else{
-          wshapelist_end->next = shape_node    ;
-        }
-        wshapelist_end    = shape_node ;
-        shape_node->next  = NULL       ;
-
-        shape_node->sfile = strdup(file_name)  ;
-        shape_node->name  = strdup(core_name)  ;
+          if(ip)printf("  Found *.s file          : %s\n",string) ;
 /*
-*  Sarch for corresponding *.sd file
-*/
-        n = strlen(file_name) ;
-        string = (char *)malloc((n+2)*sizeof(char))        ;
-        strcpy(string,file_name) ;
-        strcat(string,"d")       ;
+ *  Create new shape structure
+ */
+          shape_node = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
+          init_shape_node(shape_node)            ;
+          if(wshapelist_beg == NULL){
+            wshapelist_beg = shape_node          ;
+          }else{
+            wshapelist_end->next = shape_node    ;
+          }
+          wshapelist_end    = shape_node ;
+          shape_node->next  = NULL       ;
+
+          shape_node->sfile =  string ;    // malloc kept
+          wagon_node->s_file = string ;
+          wagon_node->shape = shape_node         ;
+          shape_node->name  = strdup(core_name)  ;
+        }
+/*
+ *  Sarch for corresponding *.sd file
+ */
+        string = strdup(file_name)   ;
+        n = strlen(string)           ;
+        string[n-4] = '\0'           ;
+        strcat(string,".sd")         ;
         if((fp = gopen(string,"r"))!= NULL){
-          shape_node->sdfile = strdup(string);
+          if(ip)printf("  Found *.sd file         : %s\n",string) ;
+          shape_node->sdfile  = string ;  // malloc used
+          wagon_node->sd_file = string ;
           gclose(fp) ;
-          if(ip)printf("  Found     *.sd file : %s\n",string) ;
         }else{
-          if(ip)printf("  Not found *.sd file : %s\n",string) ;
+          if(ip)printf("  Not found *.sd file     : %s\n",string) ;
+          free(string)               ;     // not needed
         }
 /*
 * *****************************************************************************
@@ -180,11 +210,11 @@ TextureNode *texture_node ;
         texture_node->filename = strdup(file_name) ;
         texture_node->name     = strdup(core_name) ;
       }
-      free(string)    ;
       free(extension) ;
       free(core_name) ;
       free(base_name) ;
       free(file_name) ;
+      if(ip)printf(" Return from routine %s\n",my_name) ;
       return 0 ;
 }
 
@@ -208,10 +238,10 @@ TextureNode *texture_node ;
 #endif
 
 /*
- *  Routine to initialise wagon structure to NULLs etc
+ *  Routine to initialise raw wagon structure to NULLs etc
  */
 
-int init_wagon_node(WagonNode *w){
+int init_raw_wagon_node(RawWagonNode *w){
 
       w->is_engine  = 0  ;
       w->name       = NULL ;
@@ -219,8 +249,32 @@ int init_wagon_node(WagonNode *w){
       w->s_file     = NULL ;
       w->sd_file    = NULL ;
       w->image      = NULL ;
+      w->wagon      = NULL ;
+//      w->shape      = NULL ;
       w->tender     = NULL ;
       return 0;
+}
+
+/*
+ *  Routine to add Shapes and basic WagonNodes to Raw WagonNodes
+ */
+int init_raw_wagon_nodes(){
+
+  RawWagonNode  *raw  ;
+  WagonNode     *w    ;
+  ShapeNode     *s    ;
+
+        for(raw = wagonlist_beg; raw != NULL; raw = raw->next){
+            for(s = wshapelist_beg; s != NULL; s = s->next){
+
+
+            }
+
+
+        }
+
+
+      return 0 ;
 }
 
 /*
@@ -326,4 +380,19 @@ int check_wagon_textures(int k){
           printf(" ==============================================================\n");
         }
       return 0 ;
+}
+
+ShapeNode *find_wagon(char *name){
+
+char       my_name[] = "find_wagon" ;
+ShapeNode  *shape ;
+
+      for(shape = wshapelist_beg; shape != NULL; shape = shape->next){
+        if(strcmp(name,shape->name)==0)break ;
+      }
+      if(shape == NULL){
+        printf("  Routine %s unable to find wagon %s\n",my_name,name) ;
+        exit(0) ;
+      }
+      return shape ;
 }

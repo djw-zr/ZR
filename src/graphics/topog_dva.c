@@ -41,9 +41,9 @@ GLbyte         *normal  ;
 GLfloat        *normal  ;
 #endif
 #ifdef texture_short
-  GLshort        *texture ;
+  GLshort        *texture, *texture0 = NULL ;
 #else
-  GLfloat        *texture ;
+  GLfloat        *texture, *texture0 = NULL ;
 #endif
 GLuint         *index1, nindex1;
 
@@ -79,7 +79,12 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       nv = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
       for(iv=0;iv<nv;iv++){
         va_node = &(tnode->terrain_data.va_node[iv]) ;
-        if(0== va_node->in_use) continue ;
+        if(0 == va_node->in_use) continue ;
+/*
+ *  Check clip planes
+ */
+        if(!check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za))continue ;
+
         vertex  = va_node->va_vertex  ;
         normal  = va_node->va_normal  ;
         texture = va_node->va_texture ;
@@ -108,14 +113,19 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 #else
         glNormalPointer(GL_FLOAT, 0, normal)       ;
 #endif
+
+        if(texture != texture0){
 #ifdef texture_short
-        glTexCoordPointer(2, GL_SHORT, 0, texture) ;
+          glTexCoordPointer(2, GL_SHORT, 0, texture) ;
 #else
-        glTexCoordPointer(2, GL_FLOAT, 0, texture) ;
+          glTexCoordPointer(2, GL_FLOAT, 0, texture) ;
 #endif
+          texture0= texture ;
+        }
 /*
  *  Draw Elements
  */
+        n_vanodes_d++ ;
         glDrawElements(GL_TRIANGLES,nindex1,GL_UNSIGNED_INT,index1) ;
       }
       return 0 ;

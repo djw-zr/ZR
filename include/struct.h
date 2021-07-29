@@ -18,6 +18,7 @@ typedef struct dynprofile        DynProfile     ;
 typedef struct trackdistacelevel TrackDistLevel ;
 typedef struct tracksubobject    TrackSubObject ;
 typedef struct railprofile       RailProfile    ;
+typedef struct wagonnode         WagonNode      ;
 
 /**
  *  MSblock structure.  MSTS files are structured as a series of
@@ -128,9 +129,17 @@ uint                    tsec_shape_index     ;    //  Index of the track shape i
 uint                    wfname_east_x        ;    //  Tile east (MSTS x) location in the world file
 uint                    wfname_north_z       ;    //  TileZ north (MSTS Z) location in the world file
 uint                    worldfileuid         ;    //  UID of this piece of track in the worldfile
-                                                  //  Pointer to track in the worldfile
+                                                  //  Note world file may differ from tile
+struct worlditem        *world_item          ;    //  Pointer to corresponding world item node
+double                  ax           ;  //  Rotation axis
+double                  ay           ;
+double                  az           ;
+double                  ang          ;  //  Angle of rotation (degrees)
+
 uint                    flag1                ;    //  Usually 0 may point to conecting pin in junction, sometimes 2
-uint                    flag2                ;    //  Usually 1, set to 0 when track is flipped around, sometimes 2
+uint                    flag2                ;    //  Usually 1, set to 0 when track is flipped around, sometimes 2 or 3
+uint                    is_curved            ;    //  0 = straight,  1 = Curved with radius and angle as well as length
+uint                    is_dynamic           ;    //  0 = normal track, 1 = dynamic track
 char                    string[2]            ;    //  Usually 00
 uint                    tile_east_x          ;    //  East  (MSTS X) value of the location-tile
 uint                    tile_north_z         ;    //  North (MSTS Z)value of the location-tile
@@ -140,6 +149,11 @@ double                  north_z              ;    //  North (MSTS Z) location wi
 double                  a_east_x             ;    //  Angle around east describing the initial direction of the node
 double                  a_height_y           ;    //  Angle around vertical axis describing the initial direction of the node
 double                  a_north_z            ;    //  Angle around north axis describing the initial direction of the node
+
+double                  length               ;
+double                  radius               ;
+double                  angle                ;
+
 /*
  *   Sub modes are added to better represent curved tracks.  The first sub-node corresponds to the current node
  *   (a_east_x, a_height_y, a_north_z).  The remainder represent extra nodes added between between the current
@@ -155,9 +169,9 @@ Vector3                 *left_vector         ;    //  Unit vector to the left ac
 Vector3                 *tangent_vector      ;    //  Unit vector along the track  (including any gradient)
 } TrkVectorNode ;
 
-typedef struct trksectionnode
+typedef struct trknetitem
 {
-  struct trksectionnode  *next ;
+  struct trknetitem     *next ;
   uint                   index_of_node       ;  //  This is used to link sections so must be unique
   enum trackdb           type_of_node        ;  //  [ NONE, VECTOR_SECTION, END_SECTION, JUNCTION ]]
   uint                   jn[3]               ;  //  Data for Junction Node
@@ -169,13 +183,14 @@ typedef struct trksectionnode
   uint                   type_of_pin[2]      ;  //  Number of: [0] InPins. [1] OutPins
   uint                   pin_to_section[3]   ;  //  Index of connected (pinned) Track Section.
   uint                   pin_info[3]         ;  //  Extra pin data (??)
-
+  uint                   straight            ;  //  Index (1 or 2) of straight branch in junction
+  uint                   branch              ;  //  Index (1 or 2) of current switched branch
   DynProfile             *profile            ;  //  Profile used for this track
   int                    n_dist_levels       ;  //  Number of distance levels
   float                  distance[3]         ;  //  Distances (Copied from profile)
   int                    opengl_display_list[3] ;  //  Corresponding display list
   enum LODMethod         lod_method          ;  // Scheme for combining LOD data (Copied from profile)
-} TrkSectionNode ;
+} TrkNetNode ;
 
 typedef struct trkitemnode
 {
@@ -233,7 +248,7 @@ typedef struct trkdatabase
   uint                  serial_number ;
   uint                  trk_sections_array_size ;
   uint                  trk_items_array_size   ;
-  TrkSectionNode        *trk_sections_array     ;
+  TrkNetNode            *trk_sections_array     ;
   TrkItemNode           *trk_items_array       ;
 } TrkDataBase ;
 

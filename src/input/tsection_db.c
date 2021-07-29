@@ -27,7 +27,7 @@
  *   'T') and contain Tracksection and SectionCurve tokens, but with a
  *   new format for the tokens following SectionCurve.  In fact the format
  *   is that same as the TRACKSECTION section of the world files - indicating
- *   that the file shoud be read as a world file or a world file include.
+ *   that the file should be read as a world file or a world file include.
  *
  *   The great_zig_zag files are similar, but with an additional tsection.dat
  *   file in the route directory OpenRails.  This is an ascii text file
@@ -206,14 +206,17 @@ int          *section       = NULL ;
                       SWITCH(token3)
                         CASE("SectionSize")
                           skip_lbr(msfile) ;
-                          track_section->gauge  = dtoken(msfile)  ;
+                          track_section->gauge  = dtoken(msfile) ;
                           track_section->length = dtoken(msfile) ;
                           skip_rbr(msfile) ;
                           break ;
                         CASE("SectionCurve")
                           skip_lbr(msfile) ;
-                          track_section->radius = dtoken(msfile)  ;
-                          track_section->angle  = dtoken(msfile) ;
+                          track_section->radius = dtoken(msfile) ;
+// Store angle in radians
+                          track_section->angle  = radian*dtoken(msfile) ;
+                          track_section->length =
+                            fabs(track_section->radius*track_section->angle) ;
                           skip_rbr(msfile) ;
                           break ;
                         CASE("SectionSkew")
@@ -360,4 +363,57 @@ int          *section       = NULL ;
       return 0 ;
 }
 
+int print_tsec_section(int section_index){
+
+int          found = 0 ;
+TrackSection *t ;
+
+      for(t = track_section_beg; t!=NULL;t=t->next){
+        if(section_index != t->index)continue ;
+          found = 1 ;
+          printf("    TrkSection:  gauge  = %f\n",t->gauge)  ;
+          printf("    TrkSection:  length = %f\n",t->length) ;
+          printf("    TrkSection:  radius = %f\n",t->radius) ;
+          printf("    TrkSection:  angle  = %f\n",t->angle)  ;
+          printf("    TrkSection:  skew   = %f %i\n",t->skew,t->water_scoop) ;
+      }
+      if(0 == found){
+        printf("    TrkSection:  Shape index %i, not found.\n",section_index);
+      }
+      return 0 ;
+}
+
+int print_tsec_shape(int shape_index){
+
+int          i, found = 0 ;
+TrackShape *t ;
+SectionIdx *s ;
+
+      for(t = track_shape_beg; t!=NULL;t=t->next){
+        if(shape_index != t->index)continue ;
+        found = 1;
+        printf("    TrkShape:    num_paths  = %i\n",t->num_paths)  ;
+        printf("    TrkShape:    filename   = %s\n",t->filename) ;
+        printf("    TrkShape:    main_route = %i\n",t->main_route) ;
+        printf("    TrkShape:    clearance  = %f\n",t->clearance_dist)  ;
+        printf("    TrkShape:    shapes     = %i %i %i %i\n",t->tunnel_shape,t->road_shape,
+                                              t->manual_junction_shape, t->crossover_shape) ;
+        printf("    TrkShape:    num_xover  = %i\n",t->num_xover) ;
+        s = t->section_idx ;
+        printf("      SectionIdx : num_sections = %i\n",s->num_sections) ;
+        printf("                   position, x, y, z, ang = %f %f %f %f\n",
+                                                          s->east_x,s->north_z,s->east_x,s->angle);
+        if(s->num_sections>0){
+          printf("                   Sections:  ");
+          for(i=0;i<s->num_sections;i++){
+            printf("  %i",s->section[i]) ;
+          }
+          printf("\n") ;
+        }
+      }
+      if(0 == found){
+        printf("    TrkShape:    Shape index %i, not found.\n",shape_index);
+      }
+      return 0 ;
+}
 

@@ -14,9 +14,13 @@
  * =============================================================================
  */
 
-int   display_info = 0 ;      //  When set display extra information on world
-                               //    and track items.
+int display_info = 0 ;      //  When set display extra information on world
+                            //    and track items.
 GLfloat display_info_radius = 100.0 ;
 GLfloat display_info_height =  4.0 ;
+
+int display_track_info_on = 0 ; // When set display extra track data, see:
+                                //  'display_track_info' (display_info.c)
+                                // Toggle using 'alt'-'t'
 
 

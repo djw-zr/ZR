@@ -33,15 +33,18 @@
  * Routine to initialise OpenGL graphics and useful constants
  *==============================================================================
  */
+
 void graphics_init(void)
 {
 
-int      ip = 1  ;  //  0 = no printing
+int      ip = 2  ;  //  0 = no printing
+int      i, j ;
 int      ivec[10] ;
 GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
 GLfloat  l0_dif[]  = {light0_diff, light0_diff, light0_diff, 1.0} ;  //  Value lighted
 GLfloat  l0_spc[]  = {light0_spec, light0_spec, light0_spec, 1.0} ;  //  Highlights
 float    v4[4] ;
+char     my_name[] = "graphics_init" ;
 
       if(ip){
         printf("***********************************************************\n") ;
@@ -55,19 +58,10 @@ float    v4[4] ;
        printf("  GL_MAX_ELEMENTS_VERTICES = %i\n",ivec[0]) ;
        glGetIntegerv(GL_MAX_ELEMENTS_INDICES, ivec) ;
        printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",ivec[0]) ;
-
 /*
- *  Initialise graphic variables
+ * Initialise truetype
  */
-      radian_to_north = atan2(lookat_centre_x-lookat_eye_x,
-                              lookat_centre_y-lookat_eye_y) ;
-      angle_to_north  = degree*radian_to_north  ;
-      radian_to_up    = 0.5*M_PI - atan2( lookat_centre_z-lookat_eye_z,
-                               sqrt(pow( lookat_centre_x-lookat_eye_x, 2)
-                                   +pow( lookat_centre_y-lookat_eye_y, 2)) ) ;
-      angle_to_up     = degree*radian_to_up  ;
-
-      initialise_clip_planes(clip_a) ;
+       freetype_init() ;
 /*
  *   In case of changes : re-initialise viewport variables
  */
@@ -93,8 +87,6 @@ float    v4[4] ;
       tile_h0 = 100.0*floor(trk_min_height/100.0) ;
       if(ip)printf("   Origin for 3D graphics:  Tile = %i, %i.  Height = %.2f m.\n",
                                           tile_x0, tile_y0, tile_h0) ;
-      tile_eye_x0 = tile_x0 + lookat_eye_x ;
-      tile_eye_y0 = tile_y0 + lookat_eye_y ;
 /*
  *   Initialise Lighting
  *   Defaults for glLightModel are
@@ -117,6 +109,35 @@ float    v4[4] ;
 
       glEnable(GL_DEPTH_TEST);
       glShadeModel(GL_SMOOTH) ;
+      glShadeModel(GL_FLAT) ;
+#ifdef _Display_Normal
+GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
+
+      glEnable(GL_FOG) ;
+      glHint(GL_FOG_HINT,GL_FASTEST) ;
+      glFogfv(GL_FOG_COLOR,fogColor) ;
+      glFogi(GL_FOG_MODE,GL_LINEAR) ;
+      glFogf(GL_FOG_DENSITY,0.5) ;
+      glFogf(GL_FOG_START,0.20)   ;
+      glFogf(GL_FOG_END,1.0)     ;
+#endif
+/*
+ *  Initialise cameras  array
+ */
+       cameras_init() ;
+/*
+ *  Start with camera  '0'
+ */
+      current_camera = 0 ;
+      camera_changed = 1 ;
+      camera_new_position() ;
+/*
+ *  Initialise clocks
+ */
+      for(j=0;j<5;j++){
+        for(i=0;i<4;i++)
+          zr_clock_time[i][j] = 0.0 ;
+      }
 
 /*
  *  Initialise shapes and textures
@@ -128,8 +149,11 @@ float    v4[4] ;
       if(ip>1)printf(" Call mark_shapes\n") ;
       mark_shapes()            ;
 #endif
+      if(ip>1)printf(" Call mark_textures\n") ;
       mark_textures()          ;
+      if(ip>1)printf(" Call load_needed_textures\n") ;
       load_needed_textures()   ;
+      if(ip>1)printf(" Call load_needed_display_lists\n") ;
       load_needed_display_lists() ;
 /*
  *  Generate Topography Display List for each Tile
@@ -162,10 +186,14 @@ float    v4[4] ;
       make_dynamic_display_lists();
 #endif
 
-
-
-
-
+/*
+ *  Initialise tests
+ */
+      if(ip)printf("***********************************************************\n") ;
+      printf("  Routine %s, call init_trav_1\n",my_name) ;
+      init_trav_1(&trav_node_0) ;
+      graphics_cull() ;
+      if(ip)printf("  Exit graphics_init\n");
       if(ip)printf("***********************************************************\n") ;
 
       return  ;
@@ -181,10 +209,11 @@ void graphics_cull(void)
 {
 int  ip = 0                   ;  //  = 0 for no debug printing
 
+      if(ip)printf("  ===================================================\n");
       if(ip)printf("  Enter graphics_cull\n");
 #if defined _Display_Normal
-      tile_eye_x0 = tile_x0 + lookat_eye_x ;
-      tile_eye_y0 = tile_y0 + lookat_eye_y ;
+//      tile_eye_x0 = tile_x0 + lookat_eye_x ;
+//      tile_eye_y0 = tile_y0 + lookat_eye_y ;
       if(ip)printf("   GC Call clear_needed_flags\n") ;
       clear_needed_flags()     ;
       if(ip)printf("   GC Call mark_shapes\n") ;
@@ -220,12 +249,14 @@ TextureNode    *tnode  ;
       for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
           tnode->needed = tnode->basic ;
       }
+#if 0
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         snode->needed = 0 ;
       }
       for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
         tnode->needed = 0 ;
       }
+#endif
       return ;
 }
 
@@ -247,6 +278,7 @@ int         ip = 0 ;
 WorldNode   *wnode ;
 WorldItem   *witem ;
 ShapeNode   *snode ;
+char        my_name[] = "mark_shapes" ;
 
 int it, jt ;
 
@@ -274,23 +306,35 @@ int it, jt ;
               snode->needed = 1;
               if(0 == ip) continue ;
               if(snode->name == NULL){
-                printf("     Set needed for shape :: NONAME\n") ;
+                if(ip)printf("     Set needed for shape :: NONAME\n") ;
               }else{
-                printf("     Set needed for shape :: %s\n",snode->name) ;
+                if(ip)printf("     Set needed for shape :: %s\n",snode->name) ;
               }
             }
           }
         }
       }
+/*
+ *  Process wagons - for the moment process traveller trav_node_0 only
+ */
+      if(ip)printf("  ====================  Routine %s, process trav_node_0\n",my_name) ;
+      if(ip)trv_print(&trav_node_0) ;
+      if(trav_node_0.wagon != NULL){
+        trav_node_0.wagon->needed = 1 ;
+        if(ip)printf("  ==================   trav_node_0.wagon->needed = 1\n") ;
+      }
+      if(ip)trv_print(&trav_node_0) ;
+
+
 // For options -D_Display_Shapes and  -D_Display_Wagons mark all as needed
 #elif defined _Display_Shapes
-      printf(" Display Shapes\n") ;
+      if(ip)printf(" Display Shapes\n") ;
       for(snode= shapelist_beg; snode!=NULL;snode=snode->next){
         snode->needed = 1 ;
 //        printf(" Shape %s.  Needed = %i\n",snode->name, snode->needed) ;
       }
 #elif defined _Display_Wagons
-      printf(" Display Wagons\n") ;
+      if(ip)printf(" Display Wagons\n") ;
       for(snode= wshapelist_beg; snode!=NULL;snode=snode->next){
         snode->needed = 1 ;
 //        printf(" Wagon %s.  Needed = %i\n",snode->name, snode->needed) ;
@@ -370,6 +414,7 @@ int         ip = 0 ;
         glDeleteTextures((GLsizei) 1, &(tnode->gl_tex_ref_no) ) ;
         tnode->loaded = 0 ;
       }
+#if 0
       for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
         if(1 == tnode->needed || 0 == tnode->loaded) continue ;
         if(ip>1)printf("     Cull texture BB %i  %s\n",
@@ -377,6 +422,7 @@ int         ip = 0 ;
         glDeleteTextures((GLsizei) 1, &(tnode->gl_tex_ref_no) ) ;
         tnode->loaded = 0 ;
       }
+#endif
       return ;
 }
 /*
@@ -409,6 +455,7 @@ int            ip = 0        ;
         }
         snode->loaded = 0 ;
       }
+#if 0
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         if(1 == snode->needed || 0 == snode->loaded) continue ;
         if(ip>1)printf("     Cull wagon display list %s\n",snode->name) ;
@@ -422,6 +469,7 @@ int            ip = 0        ;
         }
         snode->loaded = 0 ;
       }
+#endif
       return ;
 }
 /*
@@ -527,10 +575,12 @@ int            ip = 0 ;
       }
 
       for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
+        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tnode->name,tnode->needed, tnode->loaded);
         if(0 == tnode->needed || 1 == tnode->loaded) continue ;
         if(ip>1)printf("     Install wagon texture : %s\n",tnode->name) ;
         make_texture_resident(tnode) ;
         tnode->loaded = 1 ;
+        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tnode->name,tnode->needed, tnode->loaded);
       }
       return ;
 }
@@ -554,10 +604,12 @@ int            ip = 0 ;
       }
 
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
+        if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
         if(0 == snode->needed || 1 == snode->loaded) continue ;
         generate_shape_display_list(snode) ;
         snode->loaded = 1 ;
         if(ip>1)printf("     Install wagon : %s\n",snode->name) ;
+        if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
       }
       return ;
 }
@@ -573,6 +625,16 @@ int            ip = 0 ;
 int use_tile(int ix, int iy){
 
       if(0 == tile_cull_r) return 1 ;
-      return  abs(ix-tile_eye_x0)<tile_cull_r &&
-              abs(iy-tile_eye_y0)<tile_cull_r ;
+#if 0
+      printf("  tile_x, tile_y = %i %i   :: %i %i :: %i %i :: %i :: %i %i :: %i %i\n",
+        ix,iy, tile_eye_x0, tile_x0, tile_eye_y0, tile_y0, tile_cull_r,
+        (abs(ix-tile_eye_x0-tile_x0)),(abs(ix-tile_eye_x0-tile_x0)<tile_cull_r),
+        (abs(iy-tile_eye_y0-tile_y0)),(abs(iy-tile_eye_y0-tile_y0)<tile_cull_r)
+        );
+#endif
+//      return  abs(ix-tile_eye_x0-tile_x0)<tile_cull_r &&
+//              abs(iy-tile_eye_y0-tile_y0)<tile_cull_r ;
+      if ( (abs(ix-tile_eye_x0-tile_x0)<tile_cull_r) &&
+           (abs(iy-tile_eye_y0-tile_y0)<tile_cull_r) )return 1;
+      return 0 ;
 }

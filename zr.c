@@ -28,10 +28,12 @@
 #include "zr.h"
 #include "graphics.h"
 
-char my_file[] = "__FILE__" ;
-int  l_pd = 0              ;  // l_pd = 1 to print debug information
-int  l_pp = 0              ;  // l_pp = 1 to print after a new position
-int  i_count = 0           ;  // Used to count number of debug print statements
+char  my_file[] = "__FILE__" ;
+int   l_pd = 0              ;  // l_pd = 1 to print debug information
+int   l_pp = 0              ;  // l_pp = 1 to print after a new position
+int   i_count = 0           ;  // Used to count number of debug print statements
+float d_rotate  = 90.0      ;  // Deug : default rotation angle (0, 90)
+float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 //char test_shape[] = "AU_Ash_20m" ;
 //char test_shape[] = "BBS-NSW-RoadBridge5span" ;
 //char test_shape[] = "BBS-BlockofShops4" ;
@@ -40,6 +42,7 @@ int  i_count = 0           ;  // Used to count number of debug print statements
 //char test_shape[] = "BBS-BlockofShops4" ;
 //char test_shape[] = "AU_GumClump2" ;  //  Used to track processing of shape
 //char test_shape[] = "NSW_SemLQJct-M-L" ;  //  Used to track error in prim_state
+//char test_shape[] = "a1t100mStrt" ;  //  Used to track error in track orientation
 char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;
@@ -56,6 +59,7 @@ char my_name[] = "zr" ;
       printf(" Program %s starting ...\n",my_name);
       process_args(argc, argv) ;
 
+      clock_gettime(CLOCK_MONOTONIC, &run_clock0) ; //  Run clock
       process_defaults() ;
       init_data_structures() ;
 
@@ -78,7 +82,7 @@ char my_name[] = "zr" ;
 //        printf("  GL_EXT_texture_compression_s3tc = %i\n",GL_EXT_texture_compression_s3tc);
 //        printf("  GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = %i\n",GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
 
-        glutIdleFunc( myGlutIdle );
+        glutIdleFunc( glut_idle );
         glutKeyboardFunc( keyboard );
         glutReshapeFunc( reshape );
         glutSpecialFunc( specialkey );
@@ -138,6 +142,7 @@ char string[256] ;
 #include "system.c"
 #include "process.c"
 #include "data.c"
+#include "transform.c"
 #include "tsection_db.c"
 #include "road_itm_db.c"
 #include "road_sct_db.c"
@@ -147,7 +152,9 @@ char string[256] ;
 #include "trk_sct_db.c"
 #include "dynamic.c"
 #include "make_texture_resident.c"
+#include "freetype.c"
 #include "graphics_init.c"
+#include "graphics_idle.c"
 #include "graphics.c"
 #include "clip.c"
 #include "display_info.c"
@@ -161,6 +168,7 @@ char string[256] ;
 #include "shape_dlist.c"
 #include "track_dlist.c"
 #include "road_dlist.c"
+#include "camera.c"
 #include "dynamic_dlist.c"
 #include "display_dynamic.c"
 #include "texture.c"
@@ -172,4 +180,8 @@ char string[256] ;
 #include "token.c"
 #include "token_b.c"
 #include "token_tb.c"
+
+#include "train.c"
+#include "traveller.c"
+#include "traveller2.c"
 

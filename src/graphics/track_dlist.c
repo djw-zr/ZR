@@ -12,13 +12,13 @@
  *
  *==============================================================================
  */
-int   make_track_display_list(TrkSectionNode *section, DynProfile *profile) ;
+int   make_track_display_list(TrkNetNode *section, DynProfile *profile) ;
 
 int   make_track_display_lists(){
 
 int  i ;
 int  ip = 0 ;                        // Debug printing = 1
-TrkSectionNode  *track_node       ;  // Track section needing shape
+TrkNetNode  *track_node       ;  // Track section needing shape
 DynProfile      *profile          ;  // Profile to use
 char            my_name[]="make_track_display_lists" ;
 
@@ -48,7 +48,7 @@ char            my_name[]="make_track_display_lists" ;
  *  increase in the x-direction.
  */
 
-int   make_track_display_list(TrkSectionNode *track_section, DynProfile *track_profile){
+int   make_track_display_list(TrkNetNode *track_section, DynProfile *track_profile){
 
 int    i, j, k, l0, l1, m, n ;
 int    n_track_nodes   ;

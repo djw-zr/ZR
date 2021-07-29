@@ -13,7 +13,7 @@
 
 
 /*
- *  Routine to initialise or process the defaults file $HOME/.zrails/config
+ *  Routine to initialise or process the defaults file $HOME/.zr/config
  */
 void process_defaults(){
 
@@ -21,13 +21,15 @@ int    i             ;
 int    ip = 0        ;     // 0 = no printing
 size_t slen, nread, ll=128 ;
 char   *home         ;     // Full name of user's home directory
-char   *dotdir       ;     // Full name of .zrails directory
+char   *dotdir       ;     // Full name of .zr directory
 char   *config       ;     // Full name of config file
+char   *fonts        ;     // Full name of fonts file
 char   *line = NULL  ;
 char   *token_a[3]   ;
 char   *token        ;
 FILE   *fptr = NULL  ;     // Pointer to config file
-DIR    *dotzrails    ;     // DIR pointer to .zrails cirectory
+DIR    *dotzr        ;     // DIR pointer to .zr directory
+DIR    *fontdir      ;     // DIR pointer to fonts directory
 
 //  Find users home directory
 
@@ -40,21 +42,48 @@ DIR    *dotzrails    ;     // DIR pointer to .zrails cirectory
       }
       if(ip)printf(" HOME = %s\n",home);
 
-//  Does $HOME/.zrails exist?  If not create it.
+//  Does $HOME/.zr exist?  If not create it.
 
-      slen = strlen(home) + strlen("/.zrails");
+      slen = strlen(home) + strlen("/.zr");
       dotdir = (char *)malloc((slen+1)*sizeof(char));
       strcpy(dotdir,home)         ;
-      strcat(dotdir,"/.zrails")   ;
+      strcat(dotdir,"/.zr")   ;
 
-      dotzrails = opendir(dotdir) ;
-      if(dotzrails == NULL){
-        printf(" Creating new .zrails directory in users home folder\n");
+      dotzr = opendir(dotdir) ;
+      if(dotzr == NULL){
+        printf(" Creating new .zr directory in users home folder\n");
         mkdir(dotdir, 0777);
       }else{
-        if(ip)printf(" Users .zrails directory exists\n");
+        if(ip)printf(" Users .zr directory exists.\n");
       }
-      closedir(dotzrails) ;
+      closedir(dotzr) ;
+
+//  Does fonts directory exist?
+
+      slen = strlen(dotdir) + strlen("/fonts");
+      fonts = (char *)malloc((slen+1)*sizeof(char));
+      strcpy(fonts,dotdir)     ;
+      strcat(fonts,"/fonts")  ;
+
+      fontdir = opendir(fonts) ;
+      if(ip)printf(" Testing for fonts directory: %s %p\n",fonts,(void *)fontdir);
+      if(fontdir == NULL){
+// Look for webcore fonts in system fonts directory
+        free(fonts) ;
+        slen = strlen("/usr/share/fonts/webcore");
+        fonts = (char *)malloc((slen+1)*sizeof(char));
+        strcpy(fonts,"/usr/share/fonts/webcore")     ;
+        fontdir = opendir(fonts) ;
+      }
+      if(fontdir == NULL){
+        printf(" ERROR:  Webcore font directory not found\n") ;
+        printf(" ERROR:  Display text will fail\n") ;
+        ZRfonts = NULL ;
+      }else{
+        closedir(fontdir) ;
+        ZRfonts = fonts ;
+        if(ip)printf(" Fonts (WebFonts) directory exists.\n");
+      }
 
 //  Does config file exist?  If not create it
 
@@ -66,13 +95,13 @@ DIR    *dotzrails    ;     // DIR pointer to .zrails cirectory
       fptr = gopen(config,"r") ;
       if(ip)printf(" Testing for config file: %s %p\n",config,(void *)fptr);
       if(fptr == NULL){
-        printf(" Creating new config file in directory .zrails\n");
+        printf(" Creating new config file in directory .zr\n");
         fptr = gopen(config,"w");
         if(ip)printf(" File pointer is %p\n",(void *)fptr);
         fprintf(fptr,"#\n");
-        fprintf(fptr,"#  File .zrails/config\n");
+        fprintf(fptr,"#  File .zr/config\n");
         fprintf(fptr,"#\n");
-        fprintf(fptr,"#  The file contains the names of directories used by ZRails\n");
+        fprintf(fptr,"#  The file contains the names of directories used by ZR\n");
         fprintf(fptr,"#\n");
         fprintf(fptr,"#  MSTSdir    // Top directory for MSTS files (if any)\n");
         fprintf(fptr,"#  ORdir      // Top directory of current OR system\n");
@@ -83,14 +112,14 @@ DIR    *dotzrails    ;     // DIR pointer to .zrails cirectory
         fprintf(fptr,"ORroutedir =\n");
         fprintf(fptr,"#\n");
         gclose(fptr);
-        printf("  Please now edit file '.zrails/config' in your HOME directory\n");
+        printf("  Please now edit file '.zr/config' in your HOME directory\n");
         printf("  Giving the locations of the current system and the current route\n");
         return ;
       }
 /*
  *  If configure file exists use it to initialise directories.
  */
-      if(ip)printf("\n File .zrails/config exists\n\n");
+      if(ip)printf(" File .zr/config exists.\n\n");
       for(i=0;i<3;i++)token_a[i] =(char *)malloc(ll+1);
       slen = 0 ;
       printf("  Content of config file: \n") ;

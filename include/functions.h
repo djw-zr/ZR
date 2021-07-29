@@ -18,8 +18,9 @@ int  strcmp_ic(const char *s1, const char *s2) ;  // strcmp ignoring case.
 char *zr_basename(char *fname)     ;  // basename replacement
 char *zr_extension(char *fname)    ;  // Return filename extension
 char *zr_corename(char *fname)     ;  // Return filename without extension
-int zr_filename_MS2L(char *fname)  ;  // Convert all '\' in filename to '/'
+int  zr_filename_MS2L(char *fname) ;  // Convert all '\' in filename to '/'
 int  calls_per_sec()               ;  // Frames_per_second timing function
+int  nint(double d)                ;  // Nearest integer
 
 int  process_args(int argc, char **argv) ;
 void process_defaults()                  ;
@@ -39,12 +40,19 @@ void  error2(char *routine, char *file, char *datafile, char*string);
 void  error3(char *routine, char *file, char *datafile, char *string, int n);
 void  error4(char *routine, char *file, char *datafile, char *string);
 
+int   cameras_init() ;
+int   camera_new_position() ;
+
 int   init_track_db(char *filename) ;
-void  read_track_section(TrkSectionNode *tracknode, MSfile *ms) ;
-void  init_track_section(TrkSectionNode *tracknode) ;
-int   list_track_section(TrkSectionNode *tnode) ;
+void  read_track_path(TrkNetNode *pnode, MSfile *ms) ;
+void  init_track_path(TrkNetNode *pnode) ;
+int   list_track_section(TrkNetNode *pnode) ;
+int   add_world_item_pointers_to_track_vectors(TrkNetNode *tnnode) ;
+int   set_junction_path(TrkNetNode *tnnode) ;
 
 int   init_tsec_db() ;
+int   print_tsec_section(int section_index) ;
+int   print_tsec_shape(int shape_index) ;
 
 int   make_tile_vertex_arrays()       ;
 int   make_tile_vertex_array(TileListNode *tnode)       ;
@@ -52,9 +60,9 @@ int   display_tile_vertex_array(TileListNode *tnode) ;
 
 int   make_needed_track_road_shapes() ;
 int   make_track_shapes() ;
-int   make_track_shape(TrkSectionNode *tracknode, DynProfile *profile) ;
+int   make_track_shape(TrkNetNode *tracknode, DynProfile *profile) ;
 int   initialise_track_shape(ShapeNode *shapenode) ;
-int   add_sub_nodes_to_track(TrkSectionNode *track_section, DynProfile *profile) ;
+int   add_sub_nodes_to_track(TrkNetNode *track_section, DynProfile *profile) ;
 int   add_texture_pointers_to_track_profiles(DynProfile *dnode) ;
 int   make_track_display_lists() ;
 int   create_dynamic_track_node(WorldItem *world_item) ;
@@ -63,8 +71,8 @@ int   read_tr_items_files(char *filename) ;
 int   read_tr_items(MSfile *fp, char *header);
 
 int   init_road_db(char *filename) ;
-void  read_road_section(TrkSectionNode *road_section, MSfile *msfile) ;
-void  init_road_section(TrkSectionNode *road_node) ;
+void  read_road_path(TrkNetNode *road_path, MSfile *msfile) ;
+void  init_road_path(TrkNetNode *road_path) ;
 int   make_default_road_profile() ;
 int   make_road_shapes() ;
 int   make_road_display_lists() ;
@@ -139,6 +147,11 @@ int add_texture_pointers_to_shape_items(ShapeNode *snode) ;
 
 int  generate_wagon_list()                                  ;
 int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode) ;
+ShapeNode *find_wagon(char *name)                           ;
+int  trv_print(TravellerNode *tn) ;
+int  trk_next(TravellerNode *t, int inext)   ;
+
+
 
 int  global2local(int tile_e0, int tile_n0, float h0, float size, float scale,
                  int tile_e,  int tile_n,  float e,  float n,    float h,
@@ -146,5 +159,18 @@ int  global2local(int tile_e0, int tile_n0, float h0, float size, float scale,
 int  local2msts(int tile_e0, int tile_n0, float h0, float size, float scale,
                 float x,     float y,     float z,  int *tile_e, int *tile_n,
                 float *e,    float *n,    float *h) ;
+int transform_travel_posn(TravellerNode *t, GLdouble *mview) ;
+int zr_print_modelview() ;
+
 int  test_transforms() ;
+int  test_trav()       ;
+int  init_trav_1(TravellerNode *t) ;
+int  trv_move(TravellerNode *t, double dist) ;
+
+void  zr_clock_gettime(struct timespec clock[4]) ;
+
+//  Freetype
+
+int  freetype_init() ;
+
 

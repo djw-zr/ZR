@@ -16,12 +16,14 @@
  *   'display.c'.  Keyboard input is handled by 'keyboard.c'.
  *
  *   This file includes the glut call-back routines:
- *     myGlutIdle()
  *     reshape()
  *   Plus the graphics version of process_args and graphics utility routines.
  *
  *==============================================================================
  */
+void render_text(const char *text, float x, float y, float sx, float sy) ;
+//FT_Library ft;
+//FT_Face face;
 
 /*
  * *****************************************************************************
@@ -50,103 +52,42 @@ void reshape(int w, int h)
     viewport_width  = tw ;
     viewport_height = th ;
 /*
- * For Orthographic prjection scale track tiles to fit within window.
+ *  Initialise matrices
  */
-    if(o_plot){
-      if(l_pd  || ip)printf(" Use glOrtho\n");
-        if(0 == ortho_set){
-          sc = 0.90 ;
-
-          scale_w = tw*sc/(tile_east - tile_west + 1);
-          scale_h = th*sc/(tile_north - tile_south + 1);
-          if(scale_w < scale_h) scale = 0.5/scale_w ;
-            else scale = 0.5/scale_h;
-          centre_x = (tile_east  + tile_west  - 1)*0.5 - tile_x0 ;
-          centre_y = (tile_north + tile_south - 1)*0.5 - tile_y0 ;
-          ortho_left      = centre_x - w*scale ;
-          ortho_right     = centre_x + w*scale ;
-          ortho_bottom    = centre_y - h*scale ;
-          ortho_top       = centre_y + h*scale ;
-          ortho_near      = -0.01 ;
-          ortho_far       =  1.0;
-          ortho_set = 1 ;
-        }
-        sc = (ortho_right-ortho_left)/(ortho_top - ortho_bottom);
-        if(l_pd || ip)printf(" Ortho %f %f %f %f %f %f %f\n",
-                              (double)ortho_left,(double)ortho_right,
-                              (double)ortho_bottom,(double)ortho_top,
-                              (double)ortho_near,(double)ortho_far,sc);
-
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glOrtho(ortho_left, ortho_right, ortho_bottom, ortho_top,
-                                        ortho_near,   ortho_far) ;
-        glScalef(1.0,1.0,-1.0) ;
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glLightfv(GL_LIGHT0, GL_POSITION, position);  //  REQUIRED after MODULVIEW CHANGE
-/*
- *  For
- */
-    }else{
       if(l_pd  || ip)printf(" Use gluPerspective\n");
       viewport_aspect = (GLfloat)tw/(GLfloat)th    ;
+#if defined _Display_Shapes || defined _Display_Wagons
+      viewport_near = 1.0/plot_scale ;
+      viewport_far  = 4096.0/plot_scale ;
+#elif _Display_Textures
+      viewport_near =  0.1 ;
+      viewport_far  = 10.0 ;
+#else
       viewport_near   = viewport_near_m/plot_scale ;
       viewport_far    = viewport_far_m/plot_scale  ;
+#endif
       glMatrixMode(GL_PROJECTION) ;
       glLoadIdentity() ;
       gluPerspective(viewport_fovy,viewport_aspect,viewport_near,viewport_far);
+#if 0
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity() ;
       gluLookAt(lookat_eye_x,lookat_eye_y,lookat_eye_z,
-               lookat_centre_x,lookat_centre_y,lookat_centre_z,
+               lookat_center_x,lookat_center_y,lookat_center_z,
                lookat_up_x,lookat_up_y,lookat_up_z) ;
       glLightfv(GL_LIGHT0, GL_POSITION, position) ;  //  REQUIRED after MODELVIEW CHANGE
       initialise_eye_vectors() ;
       initialise_clip_planes(clip_a) ;
       check_topographic_blocks() ;
-    }
+#else
+      camera_changed = 1;
+      camera_new_position() ;
+#endif
+
 //    new_viewpoint = 1 ;   // graphics_cull() not needed with reshape
     if(l_pd || ip)printf(" Exit  reshape()\n");
-
 }
 
-/***************************************** myGlutIdle() ***********/
-
-void myGlutIdle( void )
-{
-int ip = 0                ;  // = 1 for debug printing
-int        tile_eye_x = lookat_eye_x ;
-int        tile_eye_y = lookat_eye_y ;
-static int last_eye_x = 0 ;
-static int last_eye_y = 0 ;
-
-/*
- * If viewpoint has moved to a new tile, check for changes in
- * the required shapes and textures
- */
-      if(lookat_eye_x<0) tile_eye_x-- ;
-      if(lookat_eye_y<0) tile_eye_y-- ;
-      if(new_viewpoint && ((tile_eye_x != last_eye_x)
-                        || (tile_eye_y != last_eye_y))){
-        if(ip)printf(" myGlutIdle :: Tile %i %i :: Eye %f %f :: Last %i %i\n",
-                  tile_eye_x, tile_eye_y, lookat_eye_x, lookat_eye_y,
-                  last_eye_x, last_eye_y) ;
-        graphics_cull() ;
-        last_eye_x = tile_eye_x ;
-        last_eye_y = tile_eye_y ;
-        new_viewpoint = 0 ;
-      }
-
-/*
- * According to the GLUT specification, the current window is
- * undefined during an idle callback.  So we need to explicitly change
- *it if necessary
- */
-        glutPostRedisplay();
-        if(ip)printf(" Exit myGlutIdle\n");
-        return ;
-}
 
 
 void  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
@@ -195,6 +136,18 @@ void *font ;
       font = GLUT_BITMAP_HELVETICA_12 ;
       glutPrintString(string,font);
     }
+
+void print_string_in_window3(GLfloat rx, GLfloat ry, char *string, void *font){
+
+      glWindowPos2d(rx,ry) ;
+#ifdef zr_freetype
+      render_text_as_greyscale(string, ft_verdana, 10) ;  // Fixed space
+//      render_text_as_greyscale(string, ft_tahoma, 10) ;   // Flexible
+#else
+      glutPrintString(string,font);
+#endif
+      return ;
+}
 
 void glutPrintString(char *string, void *font)
 {
@@ -293,11 +246,11 @@ char      my_name[]="initialise_eye_vectors";
       ipp = ip ;
 
       if(ip)printf("\n  Enter %s\n",my_name) ;
-      if(ip)printf("  Lookat_Centre = %f %f %f\n",lookat_centre_x,lookat_centre_y,lookat_centre_z) ;
+      if(ip)printf("  Lookat_Centre = %f %f %f\n",lookat_center_x,lookat_center_y,lookat_center_z) ;
       if(ip)printf("  Lookat_Eye    = %f %f %f\n",lookat_eye_x,lookat_eye_y,lookat_eye_z) ;
-      x = lookat_centre_x - lookat_eye_x ;
-      y = lookat_centre_y - lookat_eye_y ;
-      z = lookat_centre_z - lookat_eye_z ;
+      x = lookat_center_x - lookat_eye_x ;
+      y = lookat_center_y - lookat_eye_y ;
+      z = lookat_center_z - lookat_eye_z ;
       r2 = sqrt(x*x + y*y)       ;
       r3 = sqrt(x*x + y*y + z*z) ;
 
@@ -316,7 +269,6 @@ char      my_name[]="initialise_eye_vectors";
      if(ip)printf("  eye_x_*    = %f %f %f\n",eye_x_x,eye_x_y,eye_x_z) ;
      if(ip)printf("  eye_y_*    = %f %f %f\n",eye_y_x,eye_y_y,eye_y_z) ;
      if(ip)printf("  eye_z_*    = %f %f %f\n",eye_z_x,eye_z_y,eye_z_z) ;
-
 
       screen_hw_y = tan(radian*viewport_fovy*0.5) ;
       screen_hw_x = screen_hw_y*viewport_width/viewport_height ;
@@ -387,6 +339,8 @@ char    my_name[]="check_topog_in_scene" ;
 }
 /*
  *   Routine to check if object cube is visible in viewport
+ *   The cube will not be visible if all of the points fail one of
+ *   the tests
  */
 int   check_topog_in_scene2(GLfloat xa[2], GLfloat ya[2], GLfloat za[2]){
 
@@ -414,9 +368,9 @@ char    my_name[]="check_topog_in_scene2" ;
           }
         }
 // test m
-        if(0==m)return 0;
+        if(0==m)return 0;  //  Failure
       }
-      return 1 ;
+      return 1 ;           // Success
 }
 
 
