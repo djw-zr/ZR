@@ -24,7 +24,7 @@ float       distance        ;
 float       dist_level      ;
 
 int         tx, ty          ;
-float       x, y, z         ;
+double      x, y, z         ;
 GLfloat     a, b, c, d      ;
 GLfloat    scale = 1.0/plot_scale;
 WorldNode   *wnode          ;

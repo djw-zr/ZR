@@ -18,7 +18,6 @@ typedef struct dynprofile        DynProfile     ;
 typedef struct trackdistacelevel TrackDistLevel ;
 typedef struct tracksubobject    TrackSubObject ;
 typedef struct railprofile       RailProfile    ;
-typedef struct wagonnode         WagonNode      ;
 
 /**
  *  MSblock structure.  MSTS files are structured as a series of
@@ -131,10 +130,10 @@ uint                    wfname_north_z       ;    //  TileZ north (MSTS Z) locat
 uint                    worldfileuid         ;    //  UID of this piece of track in the worldfile
                                                   //  Note world file may differ from tile
 struct worlditem        *world_item          ;    //  Pointer to corresponding world item node
-double                  ax           ;  //  Rotation axis
-double                  ay           ;
-double                  az           ;
-double                  ang          ;  //  Angle of rotation (degrees)
+double                  ax                   ;    //  Rotation axis
+double                  ay                   ;
+double                  az                   ;
+double                  ang                  ;    //  Angle of rotation (degrees)
 
 uint                    flag1                ;    //  Usually 0 may point to conecting pin in junction, sometimes 2
 uint                    flag2                ;    //  Usually 1, set to 0 when track is flipped around, sometimes 2 or 3
@@ -622,6 +621,7 @@ typedef struct rgba {
 
 typedef struct matrix4x3 {
   char            *name ;
+  int              type ;  // 0 = unit, 1 = translate, 2+ = rotate
   float              AX ;
   float              AY ;
   float              AZ ;
@@ -845,23 +845,23 @@ typedef struct esdcomplexbox{
  */
 
 typedef struct shapenode {
-  struct shapenode   *next   ;
-  char               *name   ;
-  char               *sfile  ;
-  char               *sdfile ;
-  int                basic   ;             // = 1 always needed
-  int                needed  ;             // = 1 if needed for graphics
-  int                loaded  ;             // = 1 if loaded into graphics card
+  struct shapenode   *next     ;
+  char               *name     ;
+  char               *s_file   ;
+  char               *sd_file  ;
+  int                basic     ;             // = 1 always needed
+  int                needed    ;             // = 1 if needed for graphics
+  int                loaded    ;             // = 1 if loaded into graphics card
 //  int                gl_display_list ;     //  OpenGl display list index
 //  int                gl_display_list2 ;
-  uint               flags1  ;
-  uint               flags2  ;
-  int                nvolumes ;
+  uint               flags1    ;
+  uint               flags2    ;
+  int                nvolumes  ;
   ShapeVolume        *shape_vol ;
-  int                nshaders ;
-  char               **shader ;
-  int                nfilters ;
-  char               **filter ;
+  int                nshaders  ;
+  char               **shader  ;
+  int                nfilters  ;
+  char               **filter  ;
   int                npoints   ;
   Vector3            *point    ;          //  Array of vectors
   int                nnormals  ;
@@ -873,7 +873,8 @@ typedef struct shapenode {
   int                ncolors   ;
   RGBA               *color    ;
   int                nmatrices ;
-  Matrix4x3          *matrix   ;
+  Matrix4x3          *matrix   ;          //  MSTS 4x3 matrices
+  int                *matrix_role     ;   //  1:2 = wheels, 3:4 bogies
   int                n_textures       ;   //  Number of textures used (OR: nimages)
   char               **texture_name   ;   //  (OR: image)
   TextureNode        **texture        ;   //  Array of pointers to the Textures
@@ -893,7 +894,8 @@ typedef struct shapenode {
   int                dlevel_selection  ;
   int                nhierarchy        ;    //  CONFUSE WITH distance level !!!!  Should be hier...
   int                *hierarchy        ;
-  int                n_lod_controls    ;
+  int                *hierarchy_flag   ;    //  1=Wheel, 2=Bogie
+  int               n_lod_controls    ;
   LodControl         *lod_control      ;
   int                n_animations      ;
   Animation          *animation        ;

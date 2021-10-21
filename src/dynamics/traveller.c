@@ -30,6 +30,7 @@ int  trv_initv(TravellerNode *tn, int itrack, int ivector, int idirect) ;
 int   trv_move(TravellerNode *t, double distance){
 
   int            ip = 0 ;  // DEBUG
+  int            iret   ;  // Return Code
   TrkVectorNode  *vn ;
   double         d   = distance ;
   double         dn  ;
@@ -37,13 +38,16 @@ char             my_name[] = "trv_move" ;
 
       if(ip){
         printf("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
-        printf("  ENTER %s : idirect = %i\n",my_name,t->idirect) ;
+        printf("  ENTER %s : idirect = %i,  distance = %f\n",
+                                                 my_name,t->idirect,distance) ;
       }
 
       for(;;){
-//  Traveller forward corresponds to positive track direction
         vn = t->vn ;
-        if(1==t->idirect){
+/*
+ *  Case where traveller 'forward' corresponds to positive track direction
+ */
+        if(t->idirect){
           if(ip)printf("  Enter %s : move 'down' track distance %f from position %f\n",
                  my_name,d,t->position ) ;
           dn = t->position + d ;
@@ -51,12 +55,12 @@ char             my_name[] = "trv_move" ;
             t->position = dn ;
             if(ip)printf("  Routine %s :: simple return  :: position = %f / %f\n",
                                 my_name, t->position, vn->length) ;
-            trv_position(t) ;
+            iret = trv_position(t) ;
             if(ip){
-              printf("  EXIT  %s\n",my_name) ;
+              printf("  EXIT  %s,  iret = %i\n",my_name, iret) ;
               printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
             }
-            return 0 ;
+            return iret ;
           }
           if(ip){
           printf("  Routine %s :: about to call trv_next or trv_prev\n",my_name) ;
@@ -67,16 +71,18 @@ char             my_name[] = "trv_move" ;
           if(dn >= vn->length){
             d = dn - vn->length  ;
             if(ip)printf("    Distance in next section = %f\n",d) ;
-            trv_next(t) ;            //  move to next section
+            iret = trv_next(t) ;            //  move to next section
             if(ip)printf("    Position = %f\n",t->position) ;
           }else{
             d = dn ;
             if(ip)printf("    Distance in prev section = %f\n",d) ;
             if(ip)printf("    call trv_prev()\n") ;
-            trv_prev(t) ;
+            iret = trv_prev(t) ;
             if(ip)printf("  %s.  Position = %f\n",my_name, t->position) ;
           }
-//  Traveller forward corresponds to negative track direction
+/*
+ *  Case where traveller 'forward' corresponds to negative track direction
+ */
         }else{
           if(ip)printf("  Enter %s : move 'up' track distance %f\n",my_name,d) ;
           dn = t->position - d ;
@@ -84,12 +90,12 @@ char             my_name[] = "trv_move" ;
             t->position = dn ;
             if(ip)printf("  Routine %s :: simple return  :: position = %f / %f\n",
                                 my_name,t->position, vn->length) ;
-            trv_position(t) ;
+            iret = trv_position(t) ;
             if(ip){
-              printf("  EXIT  %s\n",my_name) ;
+              printf("  EXIT  %s,  iret = %i\n",my_name, iret) ;
               printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
             }
-            return 0 ;
+            return iret ;
           }
           if(ip){
           printf("  Routine %s :: about to call trv_next or trv_prev\n",my_name) ;
@@ -100,15 +106,22 @@ char             my_name[] = "trv_move" ;
           if(dn < 0.0){
             d = -dn ;
             if(ip)printf("    Distance in prev section = %f\n",d) ;
-            trv_prev(t) ;             // move to previous section
+            iret = trv_prev(t) ;             // move to previous section
           }else{
             d = vn->length - dn ;
             if(ip)printf("    Distance in next section = %f\n",d) ;
-            trv_next(t) ;            //  move to next section
+            iret = trv_next(t) ;            //  move to next section
           }
         }
+        if(iret) {
+          if(ip){
+            printf("  EXIT  %s,  iret = %i\n",my_name, iret) ;
+            printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
+          }
+           return iret ;
+        }
       }
-      return 0 ;  //  Should never be reached!
+      exit(1) ;  //  Should never be reached!
 }
 
 /*
@@ -117,10 +130,12 @@ char             my_name[] = "trv_move" ;
 
 int   trv_next(TravellerNode *t){
 
-  int           ip = 0 ; // DEBUG
-TrkNetNode      *tn = t->tn      ;
-TrkVectorNode   *vn = tn->vector ;
-char             my_name[] = "trv_next" ;
+int           ip   = 0 ;  //  Debug
+int           iret = 0 ;  //  Return code
+TravellerNode tc       ;  //  Copy
+TrkNetNode    *tn = t->tn      ;
+TrkVectorNode *vn = tn->vector ;
+char          my_name[] = "trv_next" ;
 
       if(ip){
       printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n") ;
@@ -160,8 +175,16 @@ char             my_name[] = "trv_next" ;
         printf("   MOVE to next section node  +++++++++++++++++++\n");
         printf("     Call trk_next            +++++++++++++++++++\n");
         }
+#if 1
+        tc   = *t ;
+        iret = trk_next(t,1) ;
+        if(iret){
+           *t = tc ;
+           t->ivector = t->ivector - 1 ;  // Reset vector
+        }
+#else
         if(-1 == trk_next(t,1)){
-          eng_speed = 0.0 ;
+          t->wagon->train->speed = -t->wagon->train->speed ;
 //          t->idirect = !t->idirect ;
 /*
           if(t->ivector<0){
@@ -172,18 +195,21 @@ char             my_name[] = "trv_next" ;
  */
         }
         if(ip)printf("   SWAP Direction      ++++++++++++++++++++++++++\n");
+#endif
       }
       if(ip)trv_print(t) ;
       if(ip)printf("  EXIT %s\n",my_name);
-      return 0 ;
+      return iret ;
 }
 
 int   trv_prev(TravellerNode *t){
 
-  int           ip = 0 ; // DEBUG
-  TrkNetNode    *tn = t->tn      ;
-  TrkVectorNode *vn = tn->vector ;
-  char          my_name[] = "trv_prev" ;
+int           ip   = 0 ;  // DEBUG
+int           iret = 0 ;  // Return code
+TravellerNode tc               ;  //  Copy of travelelr node
+TrkNetNode    *tn = t->tn      ;
+TrkVectorNode *vn = tn->vector ;
+char          my_name[] = "trv_prev" ;
 
       if(ip){
         printf("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n") ;
@@ -228,11 +254,20 @@ int   trv_prev(TravellerNode *t){
  */
       }else{
         if(ip)printf("   MOVE to next section node  +++++++++++++++++++\n");
-        if(ip)printf("     Call trk_prev            +++++++++++++++++++\n");
+        if(ip)printf("     Call trk_next(t,-1)      +++++++++++++++++++\n");
+#if 1
+        tc = *t ;
+        iret = trk_next(t,-1) ;
+        if(iret){
+          *t = tc ;
+          t->ivector = t->ivector + 1 ;  // Reset vector
+        }
+#else
         if(-1 == trk_next(t,-1)){
           if(ip)printf("   END of vector nodes ++++++++++++++++++++++++++\n");
+          t->wagon->train->speed = -t->wagon->train->speed ;
+
 //          t->idirect = !t->idirect ;
-          eng_speed = 0 ;
 /*          if(t->ivector<0){
             t->ivector = 0 ;
           }else{
@@ -241,19 +276,21 @@ int   trv_prev(TravellerNode *t){
           printf("   SWAP Direction      ++++++++++++++++++++++++++\n");
  */
         }
+#endif
       }
       if(ip)trv_print(t) ;
       if(ip){
         printf("  EXIT  %s\n",my_name);
         printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n") ;
       }
-      return 0 ;
+      return iret ;
 }
 
 
 int  init_trav(TravellerNode *tn){
 
       tn->wagon       = NULL ;
+      tn->shape       = NULL ;
       tn->tn          = NULL ;
       tn->vn          = NULL ;
 
@@ -269,6 +306,7 @@ int  init_trav(TravellerNode *tn){
       return 0;
 }
 
+#if 0
 int  init_trav_1(TravellerNode *tn){
 
   int ip = 0 ; //  DEBUG
@@ -294,9 +332,9 @@ int  init_trav_1(TravellerNode *tn){
 //      trv_initv(tn,130,2,0) ;  // near Lithgow
 //        trv_initv(tn, 87,1,0) ;  // past Lithgow
 //      trv_move(tn,0.001) ;
-      tn->wagon = find_wagon("1905-I103") ;
-      tn->wagon->needed = 1 ;
-      tn->wagon->loaded = 0 ;
+      tn->shape = find_wagon("1905-I103") ;
+      tn->shape->needed = 1 ;
+      tn->shape->loaded = 0 ;
       mark_textures()          ;
       load_needed_textures()   ;
       load_needed_display_lists() ;
@@ -304,6 +342,7 @@ int  init_trav_1(TravellerNode *tn){
       trv_position(tn) ;
       return 0 ;
 }
+#endif
 
 int   trv_print(TravellerNode *t){
 
@@ -318,11 +357,12 @@ char  my_name[]="trv_print" ;
       printf("      ivector      = %i\n",t->ivector)  ;
       printf("      position     = %f\n",t->position) ;
       printf("      idirect      = %i\n",t->idirect)  ;
-      if(t->wagon != NULL){
-         printf("      wagon        = %s\n",t->wagon->name) ;
-         printf("      needed       = %i\n",t->wagon->needed) ;
-         printf("      loaded       = %i\n",t->wagon->loaded) ;
-         printf("      display_list = %i\n",t->wagon->lod_control[0].dist_level[0].gl_display_list) ;
+      if(t->shape != NULL){
+         printf("      shape        = %s\n",t->shape->name) ;
+         printf("      needed       = %i\n",t->shape->needed) ;
+         printf("      loaded       = %i\n",t->shape->loaded) ;
+         printf("      display_list = %i\n",
+             t->shape->lod_control[0].dist_level[0].gl_display_list) ;
       }else{
          printf("      No wagon specified\n") ;
       }

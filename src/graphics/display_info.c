@@ -98,8 +98,8 @@ int  display_help(){
 //
       glColor4f(0.8,0.8,0.8,0.9) ;
       glBegin(GL_QUADS) ;
-        glVertex2f(  0.0,h - 280.0) ;
-        glVertex2f(900.0,h - 280.0) ;
+        glVertex2f(  0.0,h - 300.0) ;
+        glVertex2f(900.0,h - 300.0) ;
         glVertex2f(900.0,h) ;
         glVertex2f(  0.0,h) ;
       glEnd() ;
@@ -134,6 +134,9 @@ int  display_help(){
       print_string_in_window3(10.0,h-240.0,s1,GLUT_BITMAP_HELVETICA_12) ;
       sprintf(s1," Track info.   : 't' - toggle");
       print_string_in_window3(10.0,h-260.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+
+      sprintf(s1," Trains         : 'F7' - cycle");
+      print_string_in_window3(10.0,h-280.0,s1,GLUT_BITMAP_HELVETICA_12) ;
 
 
 
@@ -183,7 +186,7 @@ char          s1[1024],s2[1024],s3[1024],s4[1024] ;
  *  next JUNCTION or END_SECTION in front of and behind traveller
  */
       glColor3f(0.0,0.0,0.0) ;
-      sprintf(s1," Track Data:  Wagon: %s",t->wagon->name);
+      sprintf(s1," Track Data:  Wagon Shape: %s",t->shape->name);
       sprintf(s2," > TN %4i, Pin %i %i :: TN %i %i %i :: ST %i BR %i ",
              tn1->index_of_node,     // Index of 'forward' end node
              tn1->type_of_pin[0],    // Number of 'in' nodes
@@ -404,86 +407,99 @@ GLfloat r0 = 20.0,
  *
  *   This routine is called from within the 2D plotting section of the main
  *   graphics routine.  It generates two small 2D images which display
- *   the position of the points in front of and behind the traveller.
+ *   the position of the points in front of and behind the train.
  *
- *   Note:  In time it should be modified to generate the images for the
- *          current 'train'.
  * =============================================================================
  */
 
-int   display_switches(TravellerNode *t){
+int   display_switches(TrainNode *train){
 
 int           i, n, ii[7]  ;
-int           ip = 0       ;         // Debug
+int           ip   = 0     ;         //  Debug
+int           iret = 0     ;         //  Return code
 int           index        ;         //  Index of section containing traveller
-TrkNetNode    *tn = t->tn,
-              *tn1, *tn2   ;         // Pointers to track sections
-TrkVectorNode *vn = t->vn  ;         // Pointer to current track vector
+TravellerNode *tff  = train->first->traveller,
+              *tbf  = train->last->traveller,
+              tf = *tff,             //  Copy front traveller
+              tb = *tbf ;            //  Copy back traveller
+TrkNetNode    *tfn = tf.tn,
+              *tbn = tb.tn,
+              *tfn1, *tfn2   ;        // Pointers to track sections
+TrkVectorNode *vn = tf.vn  ;         // Pointer to current track vector
 GLfloat       h = viewport_height ;  // Height of main viewport
+double        df, db ;               // lenght of end wagons
 
 /*
- *  Find Junctions or Track Ends
+ *  Find Junctions or Track Ends in front of and behind
+ *  front of front wagon
  */
-      n = tn->pin_to_section[t->idirect ? 1 : 0] ;
-      tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-      n = tn->pin_to_section[t->idirect ? 0 : 1] ;
-      tn2 = &track_db.trk_sections_array[n-1]   ;  // Section behind
-/*
- *  Switch ahead of traveller
- */
-      for(i=0;i<7;i++)ii[i] = 0 ;
-      index = tn->index_of_node ;
+      for(i=0;i<7;i++)ii[i] = 0 ;                 //  Zero flags
+
+      df = tf.wagon->raw_wagon->length ;
+      if(df>0.0) trv_move(&tf, 0.5*df) ;
+      tfn = tf.tn ;
+
+      n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
+      tfn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+      n = tfn->pin_to_section[tf.idirect ? 0 : 1] ;
+      tfn2 = &track_db.trk_sections_array[n-1]   ;  // Section behind
+
+      index = tfn->index_of_node ;
+
       if(ip)printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
              index,
-             tn->pin_to_section[t->idirect ? 1 : 0],
-             tn->pin_to_section[t->idirect ? 0 : 1],
-             tn1->pin_to_section[0], tn1->pin_to_section[1], tn1->pin_to_section[2],
-             tn2->pin_to_section[0], tn2->pin_to_section[1], tn2->pin_to_section[2]);
-      if(tn1->type_of_node == END_SECTION){
+             tfn->pin_to_section[tf.idirect ? 1 : 0],
+             tfn->pin_to_section[tf.idirect ? 0 : 1],
+             tfn1->pin_to_section[0], tfn1->pin_to_section[1],
+             tfn1->pin_to_section[2],
+             tfn2->pin_to_section[0], tfn2->pin_to_section[1],
+             tfn2->pin_to_section[2]);
+
+      if(tfn1->type_of_node == END_SECTION){
         ii[6] = 1 ;
 // Approaching base of points
-      }else if(index == tn1->pin_to_section[0]){
+      }else if(index == tfn1->pin_to_section[0]){
         ii[4] = 2 ;
-        if(tn1->straight == 1){
-          if(tn1->branch == 1){
+        if(tfn1->straight == 1){
+          if(tfn1->branch == 1){
             ii[1] = 2 ;  ii[2] = 1 ;
           }else{
             ii[1] = 1 ;  ii[2] = 2 ;
           }
         }else{
-          if(tn1->branch == 1){
+          if(tfn1->branch == 1){
             ii[0] = 2 ;  ii[1] = 1 ;
           }else{
             ii[0] = 1 ;  ii[1] = 2 ;
           }
         }
 // Approaching left arm of points
-      }else if(index == tn1->pin_to_section[1]){
+      }else if(index == tfn1->pin_to_section[1]){
         ii[4] = 2 ;
-        if(tn1->straight == 1){
-          if(tn1->branch == 1){
+        if(tfn1->straight == 1){
+          if(tfn1->branch == 1){
             ii[1] = 2 ;  ii[5] = 1 ;
           }else{
             ii[1] = 1 ;  ii[5] = 1 ;
           }
         }else{
-          if(tn1->branch == 1){
+          if(tfn1->branch == 1){
             ii[2] = 2 ;  ii[5] = 1 ;
           }else{
             ii[2] = 1 ;  ii[5] = 1 ;
           }
         }
 // Approaching right arm of points
-      }else if(index == tn1->pin_to_section[2]){
+      }else if(index == tfn1->pin_to_section[2]){
         ii[4] = 2 ;
-        if(tn1->straight == 1){
-          if(tn1->branch == 1){
+        if(tfn1->straight == 1){
+          if(tfn1->branch == 1){
             ii[0] = 1 ;  ii[3] = 1 ;
           }else{
             ii[0] = 2 ;  ii[3] = 1 ;
           }
         }else{
-          if(tn1->branch == 1){
+          if(tfn1->branch == 1){
             ii[1] = 1 ;  ii[3] = 1 ;
           }else{
             ii[1] = 2 ;  ii[3] = 1 ;
@@ -497,55 +513,66 @@ GLfloat       h = viewport_height ;  // Height of main viewport
  *  This needs further code to allow for small screen sizes
  */
       plot_switch(10.0,h-170.0,ii);
+
 /*
- *  Switch behind traveller
+ *  Find Junctions or Track Ends behind back of back wagon
  */
-      for(i=0;i<7;i++)ii[i] = 0 ;
-      if(tn2->type_of_node == END_SECTION){
+      for(i=0;i<7;i++)ii[i] = 0 ;                 //  Zero flags
+
+      db = tb.wagon->raw_wagon->length ;
+      if(db>0.0) trv_move(&tb,-0.5*db) ;
+      tbn = tb.tn ;
+
+      n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
+      tfn2 = &track_db.trk_sections_array[n-1]   ;  // Section behind
+
+      index = tbn->index_of_node ;
+
+      if(tfn2->type_of_node == END_SECTION){
         ii[6] = -1 ;
 // Leaving base of points
-      }else if(index == tn2->pin_to_section[0]){
+      }else if(index == tfn2->pin_to_section[0]){
         ii[1] = 2 ;
-        if(tn2->straight == 1){
-          if(tn2->branch == 1){
+        if(tfn2->straight == 1){
+          if(tfn2->branch == 1){
             ii[4] = 2 ;  ii[5] = 1 ;
           }else{
             ii[4] = 1 ;  ii[5] = 2 ;
           }
         }else{
-          if(tn2->branch == 1){
+          if(tfn2->branch == 1){
             ii[3] = 2 ;  ii[4] = 1 ;
           }else{
             ii[3] = 1 ;  ii[4] = 2 ;
           }
         }
 // Leaving left arm of points
-      }else if(index == tn2->pin_to_section[1]){
+      }else if(index == tfn2->pin_to_section[1]){
         ii[1] = 2 ;
-        if(tn2->straight == 1){
-          if(tn2->branch == 1){
+        if(tfn2->straight == 1){
+          if(tfn2->branch == 1){
             ii[4] = 2 ;  ii[2] = 1 ;
           }else{
             ii[4] = 1 ;  ii[2] = 2 ;
           }
         }else{
-          if(tn2->branch == 1){
+          if(tfn2->branch == 1){
             ii[5] = 2 ;  ii[2] = 1 ;
           }else{
             ii[5] = 1 ;  ii[2] = 1 ;
           }
         }
 // Leaving right arm of points
-      }else if(index == tn2->pin_to_section[2]){
+      }else if(index == tfn2->pin_to_section[2]){
         ii[1] = 2 ;
-        if(tn2->straight == 1){
-          if(tn2->branch == 1){
+        if(tfn2->straight == 1){
+          if(tfn2->branch == 1){
             ii[3] = 1 ;  ii[0] = 1 ;
           }else{
             ii[3] = 2 ;  ii[0] = 1 ;
           }
         }else{
-          if(tn2->branch == 1){
+          if(tfn2->branch == 1){
             ii[4] = 1 ;  ii[0] = 1 ;
           }else{
             ii[4] = 2 ;  ii[0] = 1 ;
@@ -560,4 +587,44 @@ GLfloat       h = viewport_height ;  // Height of main viewport
  */
       plot_switch(10.0,h-240.0,ii);
       return 0;
+}
+
+
+
+/*
+ * =============================================================================
+ *
+ *   Routine to check position of train relative to end of track and switches
+ *
+ *   If the train is approaching and within distance 'dist'
+ *    - of the end of track
+ *    - of a switch (point) not set for the apth of the train
+ *   the train stops
+ *
+ * =============================================================================
+ */
+
+int   check_track(TrainNode *train, double dist){
+
+int           ip = 0       ;  // Debug
+int           iret         ;  //  Set to 1 to stopping
+TravellerNode tf  ;           //  Copy back traveller
+double        df  ;           // lenght of end wagons
+char         *my_name="check_track" ;
+
+      if(0.0 == train->speed) return 0 ;
+
+      if(train->speed > 0.0){
+        tf = *(train->first->traveller) ;
+        df = tf.wagon->raw_wagon->length ;
+        if(df>0.0) iret = trv_move(&tf, 0.5*df) ;
+        if(iret==0) iret = trv_move(&tf, dist)  ;
+      }else{
+        tf = *(train->last->traveller) ;
+        df = tf.wagon->raw_wagon->length ;
+        if(df>0.0) iret = trv_move(&tf, -0.5*df) ;
+        if(iret==0) iret = trv_move(&tf, -dist)  ;
+      }
+      if(iret) train->speed = 0.0 ;
+      return iret ;
 }

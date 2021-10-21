@@ -32,56 +32,8 @@ static int last_eye_y = 0 ;
 static double dist_tot = 0.0 ;
 char        my_name[] = "glut_idle" ;
 
-#if 0
-/*
- * If viewpoint has moved to a new tile, check for changes in
- * the required shapes and textures
- */
-      if(lookat_eye_x<0) tile_eye_x-- ;  //  Correct integer value if negative
-      if(lookat_eye_y<0) tile_eye_y-- ;
-      if(new_viewpoint && ((tile_eye_x != last_eye_x)
-                        || (tile_eye_y != last_eye_y))){
-        if(ip)printf(" glut_idle :: Tile %i %i :: Eye %f %f :: Last %i %i\n",
-                  tile_eye_x, tile_eye_y, lookat_eye_x, lookat_eye_y,
-                  last_eye_x, last_eye_y) ;
-        graphics_cull() ;
-        last_eye_x = tile_eye_x ;
-        last_eye_y = tile_eye_y ;
-        new_viewpoint = 0 ;
-      }
-#endif
-/*
- *  Determine the time interval since the routine last called.
- */
-#ifdef _Display_Normal
-      clock_gettime(CLOCK_MONOTONIC, &run_clock1)    ;  //  Run clock
-      run_seconds = (run_clock1.tv_sec - run_clock0.tv_sec)
-                  + (run_clock1.tv_nsec - run_clock0.tv_nsec)*0.000000001 ;
-      if(eng_seconds0<0) eng_seconds0 = run_seconds ;
-/*
- *  If time >~ 1/30 second update dynamics
- */
-      if(run_seconds - eng_seconds0>0.03){
-//      if(run_seconds - eng_seconds0>1.0){
-double dist ;
-        dist = eng_speed*(run_seconds - eng_seconds0) ;
-        dist_tot = dist_tot + dist ;
-        if(ip>1 || (ip == 1 && dist != 0.0)){
-          printf("\n====================================================\n");
-          printf("  In routine %s\n",my_name) ;
-          printf("  run sec = %f :: eng sec = %f :: speed = %f :: dist = %f"
-             " :: dist_tot = %f\n",
-             eng_seconds0,run_seconds,eng_speed,dist, dist_tot) ;
-        }
-        if(dist!=0.0){
-          if(ip)printf("  Routine %s :: Call trv_move\n",my_name) ;
-          trv_move(&trav_node_0,dist) ;
-          if(ip)printf("  Routine %s :: Return from trv_move\n",my_name) ;
-          camera_changed = 1 ;
-        }
-        eng_seconds0 = run_seconds ;
-      }
-#endif
+      if(ip)printf("  Enter %s\n",my_name) ;
+
 /*
  * According to the GLUT specification, the current window is
  * undefined during an idle callback.  So we need to explicitly change

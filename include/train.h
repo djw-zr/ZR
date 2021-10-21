@@ -41,10 +41,6 @@
  *==============================================================================
  */
 
-double  eng_speed    =  0.0    ;
-double  eng_seconds0 = -1.0    ;
-struct  travellernode trav_node_0 ;
-
 /*
  *  TravellerNodes contain information on the position of
  *  each traveller in space and relative to the track layout.
@@ -56,8 +52,13 @@ struct  travellernode trav_node_0 ;
  *
  */
 
-typedef struct travellernode {
-  ShapeNode     *wagon      ;  //  Current wagon
+typedef struct travellernode  TravellerNode ;
+typedef struct wagonnode      WagonNode     ;
+typedef struct trainnode      TrainNode     ;
+
+struct travellernode {
+  ShapeNode    *shape       ;  //  Shape of current wagon
+  WagonNode    *wagon       ;  //  Current wagon
   TrkNetNode    *tn         ;  //  Current track section in track network
   TrkVectorNode *vn         ;  //  Current vector in track section
 
@@ -72,7 +73,7 @@ typedef struct travellernode {
   int          ivector      ;  //  Index of current vector
   int          idirect      ;  //  1/0 = increase/decrease in distance moved by
                                //        traveller increases vector position
-} TravellerNode ;
+}  ;
 
 /*
  *  WagonNodes are used to specify wagons on the track, wagons in consists
@@ -82,20 +83,23 @@ typedef struct travellernode {
  *  modified (or added) when trains are constructed.
  */
 
-typedef struct wagonnode{
-  struct wagonnode  *next      ;  //  Next wagon in train or NULL
-  struct wagonnode  *prev      ;  //  Previous wagon or NULL
-  char              *name      ;  //  Name of wagon type (as in raw_wagon)
-  int               index      ;  //  Position of wagon in train or consist
-  int               motor      ;  //  True (non-zero) if this has a motor
-  int               direction  ;  //  True if front in direction of train front
-  int               n_travel   ;  //  Number of traveller nodes.
-  double            dist_front ;  //  Distances from wagon shape origin ..
-  double            dist_back  ;  //  .. to limits of front and back buffers
-  TravellerNode     *traveller ;  //  Vector of traveller nodes
-  ShapeNode         *shape     ;  //  Shape node defining wagon
-  RawWagonNode      *raw_wagon ;  //  Node with wagon's basic data
-} WagonNode ;
+struct wagonnode{
+  WagonNode     *next      ;  //  Next wagon in train or NULL
+  WagonNode     *prev      ;  //  Previous wagon or NULL
+  TrainNode     *train     ;
+  char          *name      ;  //  Name of wagon type (as in raw_wagon)
+  int           index      ;  //  Position of wagon in train or consist
+  int           is_engine  ;  //  True (non-zero) if this has a motor
+  int           train_dir  ;  //  True if wagon in same direction as train
+  int           n_travel   ;  //  Number of traveller nodes.
+  double        dist_front ;  //  Distances from wagon shape origin ..
+  double        dist_back  ;  //  .. to limits of front and back buffers
+  double        wheel_angle       ;  // Degrees
+  double        driverwheel_angle ;  // Degrees
+  TravellerNode *traveller ;  //  Vector of traveller nodes
+  ShapeNode     *shape     ;  //  Shape node defining wagon
+  RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data
+} ;
 
 /*
  *   TrainNode are used to specify 'trains', located on the track,
@@ -103,15 +107,12 @@ typedef struct wagonnode{
  *   a new train at a chosen point on the track.
  */
 
-typedef struct trainnode{
+struct trainnode{
   struct trainnode  *next  ;  // Next train in linked list
   char              *name  ;  // Unique name of train (or consist)
   double            speed  ;  // Speed of train
   WagonNode         *motor ;  // Pointer to primary motor or NULL
   WagonNode         *first ;  // Pointer to first wagon in train
   WagonNode         *last  ;  // Pointer to last wagon in train
-} TrainNode ;
-
-
-
+} ;
 

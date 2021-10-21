@@ -768,8 +768,8 @@ int   initialise_track_shape(ShapeNode *shapenode){
 
       shapenode->next       = NULL ;
       shapenode->name       = NULL ;
-      shapenode->sfile      = NULL ;
-      shapenode->sdfile     = NULL ;
+      shapenode->s_file     = NULL ;
+      shapenode->sd_file    = NULL ;
       shapenode->basic      = 1    ;  //  For the moment assume always needed
       shapenode->needed     = 1    ;  //  Needed for current scene
       shapenode->loaded     = 0    ;  //  Loaded in graphics card

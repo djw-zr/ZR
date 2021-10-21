@@ -30,7 +30,6 @@ int generate_shape_display_list(ShapeNode *snode){
   int         prim_state_idx  ;
   int         tex_idx         ;
   int         ivtx_state      ;
-  int         matrix_type     ;
   int         ip = 0          ;   //  0 = no printing
   int         ic = 0, icc = -1     ;   //  Control
   int         i, j, k, l, m, n ;
@@ -176,14 +175,14 @@ int generate_shape_display_list(ShapeNode *snode){
 
               if(texture == NULL){
                 printf(" **********************shape_dlist*********************************\n");
-                printf("  Image missing !\n");
+                printf("  Routine: %s.  Image missing !\n",my_name);
                 printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
                 printf(" ******************************************************************\n");
                 break ;
               }else{
                 if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no)){
                 printf(" **********************shape_dlist*********************************\n");
-                printf("  Image unloaded !\n");
+                printf("  Routine: %s.  Image unloaded !\n",my_name);
                 printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
                 printf(" ******************************************************************\n");
                 }
@@ -216,17 +215,13 @@ int generate_shape_display_list(ShapeNode *snode){
 
                while(im-->0){
                  matrix4x3   = &(snode->matrix[ima[im]])      ;
-                 matrix_type = check_matrix4x3(matrix4x3)     ;
-#if 1
                  if(ic == 0 || i_control2[icc] == 1){
-                 if(matrix_type != 0){
-//int ihierarchy = -99 ;
-//                 if(ivtx_state<dist_level->n_hierarchy)ihierarchy = dist_level->hierarchy[ivtx_state] ;
+                 if(matrix4x3->type != 0){
 
                    if(ip)printf(" shape_dlist2 : shape = %s, sub_object = %i, tri_list = %i, prim_state = %i, prim_state->name = %s, vertex_state = %i, hierarchy[vs] = %i, imatrix_type = %i\n",
                               snode->name, k, l, prim_state_idx, prim_state->name, ivtx_state,
-                              dist_level->hierarchy[ivtx_state],matrix_type) ;
-                   if(matrix_type == 1){
+                              dist_level->hierarchy[ivtx_state],matrix4x3->type) ;
+                   if(matrix4x3->type == 1){
                      glTranslatef((GLfloat) matrix4x3->DX,
                                   (GLfloat) matrix4x3->DY,
                                   (GLfloat) matrix4x3->DZ) ;
@@ -237,7 +232,6 @@ int generate_shape_display_list(ShapeNode *snode){
                    }
                  }
                  }
-#endif
                }
 
               glBindTexture(GL_TEXTURE_2D, gl_tex_ref_no) ;

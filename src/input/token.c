@@ -22,6 +22,7 @@ static char token[4096] ;
 static int  rbr_buffered  ;
 static int  skip_underscore_token(MSfile *msfile) ;
 
+
 /*
  * *****************************************************************************
  *  Initialise tokens
@@ -348,11 +349,30 @@ int  skip_rbr(MSfile *msfile){
     }
     return 0;
 }
+
+int  skipto_rbr(MSfile *msfile){
+
+  int  n      ;
+  char *token ;
+
+      n = 1 ;
+      for(;;){
+        token = new_tmp_token(msfile) ;
+        if(!strcmp(token,")"))n-- ;     // Right bracket
+        if(!n)break ;                   // n == 0
+        if(!strcmp(token,"("))n++ ;     // Left bracket
+      }
+      return 0;
+}
 /*
  * *****************************************************************************
- * Check for right bracket
+ * Check for lest and right brackets
  * *****************************************************************************
  */
+int  is_lbr(char *token){
+    if (0 == strcmp(token,"(") ) return 1 ;   // True
+    else return 0 ;                           // False
+}
 int  is_rbr(char *token){
     if (0 == strcmp(token,")") ) return 1 ;   // True
     else return 0 ;                           // False
@@ -413,6 +433,69 @@ char  my_name[] = "skip_underscore_token" ;
       }
       return 0 ;
 }
+
+/*
+ *   Routine to place an unused token in token_unused
+ */
+
+int return_token(char *token, MSfile *msfile){
+      free(msfile->token_unused) ;
+      msfile->token_unused = strdup(token) ;
+      return 0 ;
+}
+
+/*
+ *  Routine to carry out conversions
+ *  This also corrects for
+ *       values within quotes      ( "4.52kg" )
+ *       values with units missing (  4.52    )
+ */
+
+double convert_unit(char *token, char *unit){
+
+int    i,n ;
+int    ip = 0     ;  // Debug
+char   string[20] ;  // storage for units
+size_t lt, ls ;
+float  value ;
+
+      if(ip)printf(" convert : token = %s\n",token) ;
+      ls = strspn(token,"-1234567890e.") ;
+      if(ip)printf(" convert : ls = %i\n",(int)ls) ;
+      if(token[ls-1]=='e')ls = ls - 1;
+
+      strcpy(string,&token[ls]) ;
+      token[ls] = '\0' ;
+      if(ip)printf("  Number = %s, Unit = %s\n",token,string);
+
+      sscanf(token,"%f",&value) ;
+      if(ip)printf("  Value = %f\n",(float)value);
+
+      if(!strlen(unit) || !strlen(string) || !strcmp(string,unit)){
+        return (double)value ;
+      }else if(0==strcmp(unit,"kg") && 0==strcmp(string,"t-uk")){
+        value = value * 1016.047  ;  // Convert long ton to kg
+      }else if(0==strcmp(unit,"kg") && 0==strcmp(string,"t")){
+        value = value * 907.18474  ;  // Convert short ton to kg
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft")){
+        value = value * 12.0 * 0.0254  ;  // Convert feet to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"in")){
+        value = value * 0.0254  ;  // Convert inches to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"cm")){
+        value = value * 0.01  ;  // Convert cm to metres
+      }else if(0==strcmp(unit,"N") && 0==strcmp(string,"kN")){
+        value = value * 1000.0  ;  // Convert kN to N
+      }else{
+        printf(" Conversion failed\n")  ;
+        printf("   token = %s\n",token) ;
+        printf("   unit  = %s\n",unit)  ;
+        value = 0./0. ;
+        printf(" value = %f\n",value)   ;
+        exit(1) ;
+      }
+      return (double)value ;
+}
+
 
 
 /*
@@ -689,9 +772,14 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
       msfile->ascii = unicode ? 0 : 1 ;
 /*
  *  Read first MSTS header
+ *  Some unicode files start with blanks (!)
  */
       if(unicode){
-        for(i=0;i<16;i++){
+        for(i=0;i<256;i++){
+          buffer[0] = getc(fp) ; getc(fp) ;
+          if('S' == buffer[0])break;
+        }
+        for(i=1;i<16;i++){
           buffer[i] = getc(fp); getc(fp) ;
         }
       }else{
@@ -699,6 +787,8 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           buffer[i] = getc(fp);
         }
       }
+//      printf(" Routine open_msfile :: file   = %s\n",filename) ;
+//      printf(" Routine open_msfile :: buffer = %s\n",buffer) ;
 /*
  *  Check for compress
  */
@@ -737,6 +827,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 // Error
         }else{
           printf("ERROR 1 : file header not recognised\n");
+          printf("        :  File = %s\n",filename) ;
           strncpy(string,buffer,8); string[8] = 0;
           printf("  Header reads : %s\n",string);
           return 1;

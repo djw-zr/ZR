@@ -34,6 +34,7 @@ int   l_pp = 0              ;  // l_pp = 1 to print after a new position
 int   i_count = 0           ;  // Used to count number of debug print statements
 float d_rotate  = 90.0      ;  // Deug : default rotation angle (0, 90)
 float d_reflect = -1.0      ;  // Default reflection value (-1,1)
+char test_shape[] = "1905-S654" ;
 //char test_shape[] = "AU_Ash_20m" ;
 //char test_shape[] = "BBS-NSW-RoadBridge5span" ;
 //char test_shape[] = "BBS-BlockofShops4" ;
@@ -43,7 +44,7 @@ float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 //char test_shape[] = "AU_GumClump2" ;  //  Used to track processing of shape
 //char test_shape[] = "NSW_SemLQJct-M-L" ;  //  Used to track error in prim_state
 //char test_shape[] = "a1t100mStrt" ;  //  Used to track error in track orientation
-char test_shape[] = " " ;  //  Dummy
+//char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;
 int   c_width, c_height ;
@@ -159,6 +160,7 @@ char string[256] ;
 #include "clip.c"
 #include "display_info.c"
 #include "display.c"
+#include "display_shapes.c"
 #include "keyboard.c"
 #include "shape.c"
 #include "shape_d.c"
@@ -175,8 +177,9 @@ char string[256] ;
 #include "terrain.c"
 #include "tiles.c"
 #include "world.c"
+#include "load_wagon_file.c"
+#include "load_wagon_files.c"
 #include "test_sphere.c"
-#include "load_wagons.c"
 #include "token.c"
 #include "token_b.c"
 #include "token_tb.c"

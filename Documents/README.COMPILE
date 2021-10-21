@@ -4,10 +4,10 @@ README.COMPILE
 Required Software
 =================
 
-    The program has been developed using the OpenSUSE 15.* versions of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard linux distributions such as Debian, Ubuntu and Fedora.
+    The program has been developed using the OpenSUSE 15.* versions of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard Linux distributions such as Debian, Ubuntu and Fedora.
 
     Compilation and linking of the program is carried out by the makefile.  This requires installation of the programs:
-      make   ::  Gnu make program of equivalent
+      make   ::  Gnu make program or equivalent
       gcc    ::  GNU C compiler
 
     In addition the program needs the following libraries
@@ -43,9 +43,9 @@ Compiling
 Fonts
 =====
 
-    The program uses freetype routines together with the Microsoft font files 'tachoma.ttf' and 'verdana.ttf'.  In a linux system the freetype library is usally in a package named 'libfreetype#' where # is the number of the release.  The file 'ft2build.h' which is also needed is usually in package 'freetype2-devel'.
+    The program uses Freetype routines together with the Microsoft font files 'tachoma.ttf' and 'verdana.ttf'.  In a Linux system the Freetype library is usually in a package named 'libfreetype#' where # is the number of the release.  The file 'ft2build.h' which is also needed is usually in package 'freetype2-devel'.
 
-    The two font files should either be in the syftem font directory '/usr/share/fonts/webcore' or in the user directory '~/.zr/fonts'.  If the above two fonts are not available they can be replaced by changing the two font names in file 'freetype.c'.
+    The two font files should either be in the system font directory '/usr/share/fonts/webcore' or in the user directory '~/.zr/fonts'.  If the above two fonts are not available they can be replaced by changing the two font names in file 'freetype.c'.
 
 Starting the program
 ====================
@@ -66,9 +66,3 @@ Starting the program
       ./zr -help   :: Request help.
       ./zr         :: Check loading of data files.
       ./zr -p      :: Load data files and run.
-
-
-
-
-
-

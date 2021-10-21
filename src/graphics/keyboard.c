@@ -31,8 +31,9 @@ int  i, n  ;
 int  new_camera = 0 ;
 double scalei = 1.0/plot_scale ;
 CameraNode    *camera           ;
-TravellerNode *t = &trav_node_0 ;
-TrkNetNode  *tn1, *tn2, *tn = t->tn ;
+TravellerNode *tf = player_train->first->traveller,
+              *tb = player_train->last->traveller ;
+TrkNetNode  *tn1, *tn2, *tfn = tf->tn, *tbn = tb->tn ;
 GLfloat v4[4] ;
 
       imod = glutGetModifiers();
@@ -48,7 +49,8 @@ GLfloat v4[4] ;
       if(l_ctrl)             ;  // Keep the compiler happy for now
       if(l_shift) isign = -1 ;
 
-      if(ip)printf(" Routine keyboard.  Key : 0x%x  :%c: \n",key,key);
+      if(ip)printf(" Routine keyboard.  Key : 0x%x  :%c: \n\n",key,key);
+      if(ip)fflush(NULL);
 /*
  *   1.  Keys using 'alt'
  */
@@ -129,31 +131,45 @@ GLfloat v4[4] ;
           case 't':
             display_track_info_on = !display_track_info_on ;
             break ;
+/*
+ *  Debug display of engines and trucks
+ */
+          case 'z':
+            id_shape-- ;
+            break ;
+          case 'x':
+            id_shape = -1 ;
+            break ;
+          case 'c':
+            id_shape++ ;
+            break ;
 #endif
         }
       }else{
         switch (key) {
 //  Increase speed backwards
           case 'a':
-            eng_speed = eng_speed - 2.0 ;
+            player_train->speed -= 1.0 ;
             break ;
 //  Increase speed
           case 'd':
-            eng_speed = eng_speed + 2.0 ;
+            player_train->speed += 1.0 ;
+//            printf("  KB :: player_train->speed = %f\n",player_train->speed);
+            fflush(NULL) ;
             break ;
 //  Stop
           case 's':
-            eng_speed = 0.0 ;
+            player_train->speed = 0.0 ;
             break ;
 //  Change Switch/Points in front of traveller
           case 'g':
-            n = tn->pin_to_section[t->idirect ? 1 : 0] ;
+            n = tfn->pin_to_section[tf->idirect ? 1 : 0] ;
             tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
             if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
             break ;
 //  Change Switch/Points behind traveller
           case 'G':
-            n = tn->pin_to_section[t->idirect ? 0 : 1] ;
+            n = tbn->pin_to_section[tb->idirect ? 0 : 1] ;
             tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
             if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
             break ;
@@ -173,6 +189,8 @@ GLfloat v4[4] ;
             break ;
           case '4':
             new_camera     = 4 ;
+            cameras[4].offset_eye_x = -cameras[4].offset_eye_x ;
+            offset_eye_x = cameras[4].offset_eye_x ;
             break ;
           case '5':
             new_camera     = 5 ;
@@ -182,8 +200,6 @@ GLfloat v4[4] ;
             break ;
           case '7':
             new_camera     = 7 ;
-            cameras[7].offset_eye_x = -cameras[7].offset_eye_x ;
-            offset_eye_x = cameras[7].offset_eye_x ;
             break ;
           case '8':
             new_camera     = 8 ;
@@ -222,6 +238,8 @@ GLfloat v4[4] ;
           camera_new_position()           ;
         }
       }
+      if(ip)printf(" Exit keyboard\n") ;
+      if(ip)fflush(NULL) ;
 }
 
 
@@ -404,6 +422,16 @@ void  specialkey(int key, int ixm, int iym)
       }else if(key == GLUT_KEY_F8){
         display_switches_on = !display_switches_on ;
         return ;
+      }else if(key == GLUT_KEY_F7 && l_alt){
+        if(NULL == player_train->next){
+          player_train = trainlist_beg ;
+        }else{
+          player_train = player_train->next ;
+        }
+        current_camera = 1 ;
+        camera_changed = 1              ;
+        camera_new_position()           ;
+        return ;
       }else{
         if(ip)printf(" Keyboard : No action required\n\n");
         return ;
@@ -459,7 +487,7 @@ void  specialkey(int key, int ixm, int iym)
  */
 #ifdef kb_dev
   int     tile_e, tile_n ;
-  float   e, n, h        ;
+  double  e, n, h        ;
        if(display_info || ip){
          local2msts(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                    offset_center_x, offset_center_y, offset_center_z,

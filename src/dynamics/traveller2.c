@@ -2,7 +2,7 @@
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
- *   File:  traveller.c
+ *   File:  traveller2.c
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
@@ -11,19 +11,20 @@
  *   Routines structures used for travellers
  *   Based on Traveller.cs and other OpenRails files
  *
- *   Initially the routines need tobe robust and accurate but as they are
+ *   Initially the routines need to be robust and accurate but as they are
  *   the core part of the dynamics code they eventually also need to be very
  *   efficient
  *
  *==============================================================================
  */
+uint  find_mainline_section(TrkNetNode *tn, int pin_1, int pin_2) ;
 
 /*
  *  Routine to initialise a traveller - given:
  *    a)  The index of a track node
  *    b)  The vector index
+ *    c)  The direction of the wagon relative to the train
  */
-uint  find_mainline_section(TrkNetNode *tn, int pin_1, int pin_2) ;
 
 int  trv_initv(TravellerNode *t, int itrack, int ivector, int idirect){
 
@@ -71,8 +72,8 @@ char          my_name[] = "trv_initv" ;
       t->ang_deg  = 0.0 ;
       t->position = 0.0 ;
 
-      t->ivector = ivector ;
       t->itrack  = itrack  ;
+      t->ivector = ivector ;
       t->idirect = idirect ;
 
       if(ip)printf(" Routine %s, tn = %p, vn = %p\n",
@@ -137,11 +138,17 @@ char    my_name[] = "trv_ploc" ;
 /*
  *  Routine to move from the end of a track node section, via a junction,
  *  to the next track node section
+ *
+ *  Returns 0 : no error
+ *          1 : end if track reached
+ *  If a traveller attempts to join a junction from the 'wrong' branch
+ *  the movement is allowed but the global flag "junction_error" is set.
  */
 int   trk_next(TravellerNode *t, int inext){
 
 int i, j ;
-int             ip = 0           ;  //  Debug
+int             ip   = 0         ;  //  Debug
+int             iret = 0         ;  //  Return code
 int             idirect = t->idirect ;
 int             fromj_old,          //  True if new/old track section
                 fromj_new        ;  //  increased away from the junction
@@ -211,8 +218,21 @@ uint    pin ;
         printf("    Pinned sections:          %i %i %i\n",
           tn->pin_to_section[0],tn->pin_to_section[1],tn->pin_to_section[2]) ;
       }
-//  Search for old track section
-
+/*
+ * End of track error
+ */
+      if(n_in_pins+n_ot_pins < 2 || tn->type_of_node == END_SECTION){
+          if(ip){
+            printf("    Routine %s : Error :  Wagon entered end section = %i\n",
+                                                                my_name, j_sect) ;
+            printf("                          Type of node = %i %s\n",
+                               tn->type_of_node, token_trackdb[tn->type_of_node]) ;
+          }
+          return 1 ;
+      }
+/*
+ *  Search for old track section
+ */
       j = -1 ;
       for(i=0 ; i<n_in_pins+n_ot_pins ; i++){
         if(my_sect == tn->pin_to_section[i]){j = i ; break ; } ;
@@ -234,19 +254,24 @@ uint    pin ;
  */
 
       if(j>0){
+        if(j!=tn->branch){
+          printf("  Routine %s.  Trying to enter switch from wrong branch\n",my_name);
+          printf("    Number of in and out pins %i %i\n", n_in_pins, n_ot_pins) ;
+          printf("    Pinned sections:          %i %i %i\n",
+             tn->pin_to_section[0],tn->pin_to_section[1],tn->pin_to_section[2]) ;
+          printf("    Entering junction from pin %i, section %i\n",j,tn->pin_to_section[j]) ;
+          junction_error = 1 ;  //  Wagon entered junction from wrong branch
+        }
         n_sect = tn->pin_to_section[0] ;
       }else{
         n_sect = tn->pin_to_section[tn->branch] ;
       }
-      if(n_sect == -1){
-        if(tn->type_of_node == END_SECTION){
-          return -1 ;
-        }else{
-          printf("  ERROR in routine %s\n",my_name) ;
-          printf("  ERROR : New track section %i is not VECTOR_SECTION"
-                 " or END_SECTION\n", n_sect) ;
-          exit(1) ;
-        }
+//      if(n_sect == -1){
+      if(n_sect <= 0){
+        printf("  ERROR in routine %s\n",my_name) ;
+        printf("  ERROR : New track section %i is not a VECTOR_SECTION"
+                " or an END_SECTION\n", n_sect) ;
+        exit(1) ;
       }
       if(ip)printf("    Routine %s, new section = %i\n", my_name, n_sect) ;
 

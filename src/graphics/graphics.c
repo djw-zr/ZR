@@ -393,22 +393,22 @@ char    my_name[]="check_topog_in_scene2" ;
  *  x, y, z                  :: Position in local coordinates
  */
 
-int  global2local(int tile_e0, int tile_n0, float h0, float size, float scale,
+int  global2local(int tile_e0, int tile_n0, double h0, double size, double scale,
                 int tile_e,  int tile_n,
-                float e,     float n,     float h,
-                float *x,    float *y,    float *z){
-float  scalei = 1.0/scale ;
+                double e,     double n,     double h,
+                double *x,    double *y,    double *z ){
+double  scalei = 1.0/scale ;
 
-      *x = (float)scalei*((tile_e - tile_e0 + 0.5)*size + e) ;
-      *y = (float)scalei*((tile_n - tile_n0 + 0.5)*size + n) ;
-      *z = (float)scalei*(h - h0) ;
+      *x = scalei*((tile_e - tile_e0 + 0.5)*size + e) ;
+      *y = scalei*((tile_n - tile_n0 + 0.5)*size + n) ;
+      *z = scalei*(h - h0) ;
       return 0 ;
 }
 
-int  local2msts(int tile_e0, int tile_n0, float h0, float size, float scale,
-                float x,     float y,     float z,
+int  local2msts(int tile_e0, int tile_n0, double h0, double size, double scale,
+                double x,     double y,     double z,
                 int *tile_e, int *tile_n,
-                float *e,    float *n,    float *h){
+                double *e,    double *n,    double *h){
 float xp, yp ;
 int   le, ln ;
 
@@ -429,7 +429,7 @@ int test_transforms(){
 int   tile_e0 = 3000,   tile_n0 =  500  ;
 float size    = 2040.0, scale   = plot_scale, h0 = tile_h0 ;
 int   tile_e, tile_n ;
-float x, y, z, e, n, h ;
+double x, y, z, e, n, h ;
 
       tile_e = 3010 ;
       tile_n =  520 ;

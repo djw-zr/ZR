@@ -40,6 +40,7 @@ TrkNetNode     *tnnode ;
 int            wtype   ;
 TextureNode    *tnode  ;
 DynProfile     *dnode  ;
+RawWagonNode   *rwnode ;
 char           my_name[] = "init_data_structures" ;
 
       printf("***********************************************************\n") ;
@@ -177,8 +178,8 @@ char           my_name[] = "init_data_structures" ;
  *   1.   Generate a lists of wagon files and texture files
  *
  *   a)   Walk file structure and for each *.eng and *.wag
- *        file found generate a new WagonNode structure and add it
- *        to the linked list pointed to by wagonlist_beg (zr.h).
+ *        file found generate a new RawWagonNode structure and add it
+ *        to the linked list pointed to by rawwagonlist_beg (zr.h).
  *        Add *.jpg (side image), *.s (3-D shape) and *.sd
  *        (bounding box etc) files with the same name to the
  *        WagonNode structure.
@@ -190,21 +191,28 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PROCESS WAGONS\n") ;
-      printf("   Generate lists of wagon files\n");
-      generate_wagon_list() ;
+      printf("   Scan for wagon and wagon texture files and process\n");
+      scan_for_wagon_files() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *   2.  Load the Shape (*.s) and Additional data (*.sd) files
  */
       printf("   Read and load wagon shape files\n");
-      ip = 1 ;
+      ip = 0 ;
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        if(ip || 0)printf(" Call load_shape :: shape name = %s\n",snode->name) ;
+        if(ip){
+          printf(" Call load_shape :: shape name = %s\n",snode->name) ;
+          printf(" Call load_shape :: shape      = %p\n",(void *)snode) ;
+        }
         load_shape(snode) ;
-        if(ip)printf(" Call load_shape_d :: sdfile = %s\n",snode->sdfile) ;
+        if(ip)printf(" Call load_shape_d :: sd_file = %s\n",snode->sd_file) ;
         load_shape_d(snode) ;
 //      if(!strcmp(snode->name,"4W-CV-load"))print_shape_file_data(snode) ;
 //      if(!strcmp(snode->name,"4W-CW2"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"1905-I103"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"1905-S654"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"AU_NSW_Dtruck3"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"SMRcrew"))print_shape_file_data(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -221,6 +229,11 @@ char           my_name[] = "init_data_structures" ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
+ *    3a.  Sort list
+ */
+      printf("   Sort textures\n");
+      sort_textures(&wtexturelist_beg) ;
+/*
  *    4.  Add wagon texture pointers to wagon structures
  *        Each WagonNode structure contains a list of requied
  *        textures.  After this point it also contains pointers to
@@ -231,6 +244,18 @@ char           my_name[] = "init_data_structures" ;
         add_texture_pointers_to_wagon_shapes(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ *   5.  Check wheel radii
+ */
+#if 0
+      printf("   Check wheel radii\n");
+      for(rwnode = rawwagonlist_beg; rwnode != NULL ; rwnode=rwnode->next){
+        printf(" data :: AA %p\n",(void *)rwnode) ;
+        check_wheel_radii(rwnode) ;
+        printf(" data :: BB\n") ;
+      }
+        printf(" data :: CC\n") ;
+#endif
 /*
  * *****************************************************************************
  *  Process the files describing the 3-D structures in the world files
@@ -481,10 +506,10 @@ DynTrackSect  *d ;
 #endif
 //   List and/or print shape data
 //   Shape 'test_shape' is defined in file 'zr.c'.
-#if 0
+#if 1
       printf("   List Shapes :: Test shape = %s\n",test_shape);
       for(snode=shapelist_beg,i=0; snode!=NULL; snode=snode->next,i++){
-        printf("   Shape : %3i : %s\n",i,snode->name);
+//        printf("   Shape : %3i : %s\n",i,snode->name);
         if(0 == strcmp_ic(snode->name,test_shape)){
           printf("\n  Shape file data:\n") ;
           print_shape_file_data(snode)  ;
@@ -559,13 +584,20 @@ DynTrackSect  *d ;
       printf("  tile_north = %i\n",tile_north) ;
       printf("  tile_south = %i\n",tile_south) ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-#if 0
 /*
- *  Carry out tests
+ *  List wagons
  */
-      printf("  Routine %s : call test_trav()\n",my_name) ;
-      test_trav() ;
-#endif
+
+//      print_wagon_data() ;
+      print_wagon_data_to_file("wagonlist.txt") ;
+/*
+ *  Initialise trains
+ */
+      trains_init() ;
+
+      printf(" Exit from %s\n",my_name) ;
+      fflush(NULL) ;
+
       return 0 ;
 }
 

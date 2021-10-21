@@ -24,7 +24,7 @@
 int transform_travel_posn(TravellerNode *t, GLdouble *mview){
 
   int      ip = 0  ;
-  float    x, y, z ;
+  double   x, y, z ;
   GLdouble a, b, c ;
   GLdouble scalei      = 1.0/plot_scale ;
   GLdouble rail_height = 0.27  ;  // Best fit placing wheels on track
@@ -104,7 +104,6 @@ int transform_travel_posn(TravellerNode *t, GLdouble *mview){
 
       glGetDoublev(GL_MODELVIEW_MATRIX,mview) ;
       glPopMatrix() ;
-//      eng_speed = 0.0 ;
 
       return 0 ;
 }

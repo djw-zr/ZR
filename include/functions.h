@@ -19,6 +19,7 @@ char *zr_basename(char *fname)     ;  // basename replacement
 char *zr_extension(char *fname)    ;  // Return filename extension
 char *zr_corename(char *fname)     ;  // Return filename without extension
 int  zr_filename_MS2L(char *fname) ;  // Convert all '\' in filename to '/'
+char *zr_find_msfile(char *fname)  ;  // Find ms style filename
 int  calls_per_sec()               ;  // Frames_per_second timing function
 int  nint(double d)                ;  // Nearest integer
 
@@ -85,6 +86,23 @@ int   tilelist_init(int tile_w, int tile_e, int tile_s, int tile_n) ;
 int   tilelist_init2() ;
 char  *TileToFileName(int tilex, int tiley, int zoom);
 
+//  Train and traveller routines
+
+int   trains_init(void) ;
+int   add_new_train(char *name) ;
+int   add_wagon_to_train(char *train, char *wagon, int idirn) ;
+int   position_train(char *name, int itrack, int ivector, int idirect) ;
+int   trv_initv(TravellerNode *tn, int itrack, int ivector, int idirect) ;
+int   update_trains(struct timespec t) ;
+int   print_wagon_data(void) ;
+int   print_wagon_data_to_file(char *filename) ;
+int   check_wheel_radii(RawWagonNode *w) ;
+
+//  Graphics routines
+void  display(void) ;
+int   display_shape(WagonNode *wagon, ShapeNode *shape,
+                    LodControl *lod_control, DistLevel *dist_level) ;
+
 //  Msfile routines (token.c)
 
 int  open_msfile(char *filename, MSfile *msfile, int texture, int iprint) ;
@@ -95,10 +113,14 @@ int   close_msfile(MSfile *msfile)   ;
 int   is_string_int(char *s)         ;
 int   is_string_decimal(char *s)     ;
 int   is_string_alnum(char *s)       ;
+int   is_lbr(char *token)            ;
 int   is_rbr(char *token)            ;
 
 int   skip_lbr(MSfile *msfile)       ;
 int   skip_rbr(MSfile *msfile)       ;
+int   skipto_rbr(MSfile *msfile)     ;
+int   return_token(char *token, MSfile *msfile) ;
+
 
 char  *new_tmp_token(MSfile *msfile) ;
 char  *ctoken(MSfile *msfile)        ;
@@ -107,6 +129,7 @@ long  ltoken(MSfile *msfile)         ;
 double dtoken(MSfile *msfile)        ;
 unsigned int uitoken(MSfile *msfile) ;
 long long lltoken_16(MSfile *msfile) ;
+double convert_unit(char *t, char *s) ;
 
 // Binary read routine (token_tb.c)
 
@@ -144,21 +167,22 @@ int   add_shape_pointers_to_world_items() ;
 
 int generate_shape_display_list(ShapeNode *snode) ;
 int add_texture_pointers_to_shape_items(ShapeNode *snode) ;
+int sort_textures(TextureNode **t) ;
 
-int  generate_wagon_list()                                  ;
+int  scan_for_wagon_files()                              ;
 int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode) ;
 ShapeNode *find_wagon(char *name)                           ;
-int  trv_print(TravellerNode *tn) ;
-int  trk_next(TravellerNode *t, int inext)   ;
+int  trv_print(TravellerNode *tn)                           ;
+int  trk_next(TravellerNode *t, int inext)                  ;
 
 
 
-int  global2local(int tile_e0, int tile_n0, float h0, float size, float scale,
-                 int tile_e,  int tile_n,  float e,  float n,    float h,
-                 float *x,    float *y,    float *z) ;
-int  local2msts(int tile_e0, int tile_n0, float h0, float size, float scale,
-                float x,     float y,     float z,  int *tile_e, int *tile_n,
-                float *e,    float *n,    float *h) ;
+int  global2local(int tile_e0, int tile_n0, double h0, double size, double scale,
+                 int tile_e,  int tile_n,  double e,  double n,    double h,
+                 double *x,    double *y,    double *z) ;
+int  local2msts(int tile_e0, int tile_n0, double h0, double size, double scale,
+                double x,     double y,     double z,  int *tile_e, int *tile_n,
+                double *e,    double *n,    double *h) ;
 int transform_travel_posn(TravellerNode *t, GLdouble *mview) ;
 int zr_print_modelview() ;
 

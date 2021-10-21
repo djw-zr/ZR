@@ -27,7 +27,8 @@
 int     l_plot = 0  ;   // True if plotting on
 int     tst_tile_x =  1448 ;       //  Initial test  1448
 int     tst_tile_y = 10331 ;       //  Initial test 10331
-int     n_vanodes_d ;   //  Used to store number of va nodes displayed
+int     n_vanodes_d  ;   //  Used to store number of va nodes displayed
+int     id_shape = 1 ;       // Used to debug display
 
 
 GLdouble pi     = M_PI       ;
@@ -65,8 +66,8 @@ GLdouble viewport_near_m =  1.0 ;    // Nearest point displayed 1 m(m)
 //GLdouble viewport_far_m  = 10240.0 ; // Furthest point displayed ~10 km (m)
 GLdouble viewport_far_m  = 2048.0 ; // Furthest point displayed ~10 km (m)
 
-float    tile_size  = 2048.0    ;  // Size of tile (m)
-float    plot_scale = 2048.0    ;  // Size in m of one unit in plotting space
+double    tile_size  = 2048.0    ;  // Size of tile (m)
+double    plot_scale = 2048.0    ;  // Size in m of one unit in plotting space
 
 // Unit vectors in model space corresponding to:
 GLdouble eye_x_x, eye_x_y, eye_x_z ;  //    Unit right vector   (x) in screen
@@ -78,7 +79,7 @@ GLdouble screen_hw_y               ;  // Screen half height at distance 1.0
 
 int      tile_x0                ;  // Local x-origin (east) for plotting
 int      tile_y0                ;  // Local y-origin (north) for plotting
-float    tile_h0                ;  // Local height origin for plotting
+double   tile_h0                ;  // Local height origin for plotting
 
 int      tile_eye_x0            ;  // Tile containing viewpoint
 int      tile_eye_y0            ;
@@ -262,6 +263,9 @@ GLdouble offset_center_y =   6.569811  ;
 GLdouble offset_center_z =   0.073429  ;
 #endif
 
+/*
+ *   Position of eye in model coordinates
+ */
 GLdouble lookat_eye_x    ;
 GLdouble lookat_eye_y    ;
 GLdouble lookat_eye_z    ;
@@ -353,7 +357,7 @@ GLfloat   light0_shin  =   0.5 ;      //  Shininess
 
 
 
-float scale = 1.0;
+double scale = 1.0;
 float view_rotate[16] = { 1,0,0,0,   0, 0.866025404,-0.5,0,
                           0,0.5, 0.866025404,0,   0,0,0,1 };
 
@@ -388,7 +392,7 @@ int   use_tile(int ix, int iy) ;
 int   display_extra_data(void) ;
 int   display_track_info(TravellerNode *t) ;
 int   display_help()           ;
-int   display_switches(TravellerNode *t)   ;
+int   display_switches(TrainNode *t)   ;
 
 int   make_tile_topog_display_lists(void) ;
 int   make_tile_topog_display_list(TileListNode *tnode, GLuint klist) ;

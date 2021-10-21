@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
+#include <libgen.h>
 #include <math.h>
 #include <stdlib.h>
 //#include <assert.h>
@@ -115,7 +116,8 @@ struct timespec run_clock1  ;      //  Current time
 struct timespec zr_clock_1[4] ;
 struct timespec zr_clock_2[4] ;
 double zr_clock_time[4][5]  ;      //  Arrays to use for timing
-double   run_seconds        ;      //  Difference in seconds
+double run_seconds          ;      //  Difference in seconds
+int    junction_error = 0   ;      //  Set when wagon enters junction from wrong branch
 
 /*
  * Control/debug array
@@ -159,11 +161,12 @@ int        current_block_level = -1 ;  // Used while reading shape files
 
 // Trains, Wagons and Engines
 
-TrainNode    *trainnode_beg  = NULL ;
-TrainNode    *trainnode_end  = NULL ;
+TrainNode    *trainlist_beg  = NULL ;
+TrainNode    *trainlist_end  = NULL ;
+TrainNode    *player_train   = NULL ;
 
-RawWagonNode *wagonlist_beg  = NULL    ;  // Pointer to first node in list of wagons
-RawWagonNode *wagonlist_end  = NULL    ;  // Pointer to last node
+RawWagonNode *rawwagonlist_beg  = NULL ;  // Pointer to first node in list of basic wagon structures
+RawWagonNode *rawwagonlist_end  = NULL ;  // Pointer to last node
 ShapeNode    *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
 ShapeNode    *wshapelist_end = NULL    ;  // Pointer to last node
 TextureNode  *wtexturelist_beg = NULL ;

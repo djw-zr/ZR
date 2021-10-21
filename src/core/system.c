@@ -52,6 +52,8 @@ char c1, c2 ;
 /**
  *  char *zr_basename(char *fname)
  *
+ *  Returns a copy of fname with all directories removed
+ *
  *  zr version of basename used because of the differences between
  *  versions of the standard basename routine.  This always returns
  *  a string but it can be the null string "".
@@ -70,9 +72,41 @@ char  *pz ;
 }
 
 /**
+ *  char *zr_basename2(char *fname)
+ *
+ *  Returns a copy of fname without the extension and with all directories
+ *  removed
+ *
+ *  zr version of basename used because of the differences between
+ *  versions of the standard basename routine.  This always returns
+ *  a string but it can be the null string "".
+ *  The string is created using malloc.  The space should be freed
+ *  when/if no longer needed.
+ */
+
+char *zr_basename2(char *fname){
+
+char  *pz, *string1, *string2 ;
+      if(fname == NULL) return strdup("") ;
+      pz = strrchr(fname,'/') ;
+      if(pz == NULL){
+        string1 = strdup(fname) ;
+      }else{
+        pz++ ;
+        string1 = strdup(pz) ;
+      }
+      pz = strrchr(string1,'.')  ;
+      if(pz != NULL) *pz = '\0' ;
+      string2 = strdup(string1) ;
+      free(string1) ;
+      return string2 ;         // malloc
+}
+
+
+/**
  *  char *zr_extension(char *fname)
  *
- *  Routine to return copy of filename extension
+ *  Routine to return copy of filename extension  i.e. jpg
  */
 
 char *zr_extension(char *fname){
@@ -88,7 +122,7 @@ char *pz ;
 /**
  *  char *zr_corename(char *fname)
  *
- *  Routine to return copy of filename without extension
+ *  Routine to return copy of file fname without extension
  */
 
 char *zr_corename(char *fname){
@@ -133,24 +167,175 @@ char *zr_parentdir(char *fname){
       return string2 ;
 }
 
+/**
+ *  char *zr_full_parentdir(char *fname)
+ *
+ *  Routine to return full name of parent directory
+ *    If fname is "/A/B/C", returns "/A/B".
+ *    If fname is "/A", returns "/".
+ *    If fname is "A" returns NULL
+ */
+
+char *zr_full_parentdir(char *fname){
+
+  char *string ;
+  char *pz ;
+
+      if(fname == NULL) return NULL  ;
+
+      string = strdup(fname)   ;                 //malloc
+      pz = strrchr(string,'/') ;
+// If '/' is not found
+      if(pz==NULL){free(string); return NULL ;}  // '/' not found
+// If fname is in top directory
+      if(pz==string){
+        free(string) ;
+        string = strdup("/") ;
+        return string ;
+      }
+      *pz = '\0'     ;
+      return string ;
+}
+
+
+
+/**
+ *  char *zr_find_msfile(char *fname)
+ *
+ *  In Microsoft style filenames, either uppercase or lowercase characters
+ *  may be used to represent the same filename.  This routine first checks
+ *  to see if a file exists.  If the file does not exist it checks for the
+ *  parent directory and then searches the current directory for a matching
+ *  filename, ignoring differences between upped and lower case.
+ *
+ */
+
+char *zr_find_msfile(char *fname){
+
+int  i, j, n, m, ok  ;
+int  ip = 0          ;  // Debug
+char *base,             //  File name in last directory
+     *parent,           //  Full pathname of parent directory
+     *string         ;
+char *my_name = "zr_find_msfile" ;
+DIR  *dp     ;
+FILE *fp     ;
+struct dirent *di ;
+/*
+ *  Check if file exists
+ */
+      if(ip)printf(" Enter routine %s, File = %s\n",my_name,fname) ;
+      fp = fopen(fname,"r") ;
+      if(fp!=NULL){  // Fle exists
+        fclose(fp) ;
+        return strdup(fname)   ;
+      }
+/*
+ *  If not search for parent
+ */
+      parent = zr_full_parentdir(fname) ;  // malloc
+      if(ip)printf(" Routine %s, AA parent = %s\n",my_name,parent) ;
+      if(parent==NULL){
+        parent = strdup(".") ;
+      }else if(!strcmp(parent,"/")){
+        *parent = '\0'       ;
+      }else{
+        fp = fopen(parent,"r") ;
+        if(fp == NULL){
+          string = zr_find_msfile(parent) ;
+          free(parent) ;
+          if(string == NULL) return NULL ; // Error return
+          parent = string ;
+        }else{
+          fclose(fp) ;
+        }
+      }
+      if(ip)printf(" Routine %s, BB parent = %s\n",my_name,parent) ;
+/*
+ * Check again for file
+ */
+      base = zr_basename(fname)        ;  // malloc
+      n      = strlen(base) + strlen(parent) + 2 ;
+      string = (char *)malloc(n*sizeof(char))    ;
+      strcpy(string,parent) ;
+      strcat(string,"/")    ;
+      strcat(string,base)   ;
+      if(ip)printf(" Routine %s, CC file = %s\n",my_name,string) ;
+      fp = fopen(string,"r") ;
+      if(fp!=NULL){  // Fle exists
+        fclose(fp)   ;
+        free(parent) ;
+        free(base)   ;
+        return string   ;
+      }
+/*
+ *  Search parent directory for matching file
+ */
+      n = strlen(base) ;
+      for(i=0;i<n;i++) base[i]=tolower(base[i]) ;
+
+      dp = opendir(parent) ;
+      ok = 0 ;
+      while((di=readdir(dp))!= NULL){
+        free(string) ;
+        string = strdup(di->d_name) ;
+        for(i=0;i<strlen(string);i++) string[i] = tolower(string[i]) ;
+        ok = !strcmp(string,base) ;
+        if(ok)break ;
+      }
+      free(string) ;
+      string = strdup(di->d_name) ;
+      closedir(dp) ;
+/*
+ *  Success ??
+ */
+      if(ok){
+        if(ip)printf("  Routine %s, AA File found.  File = %s\n",
+                                                     my_name,string) ;
+        free(base)    ;
+        base = string ;
+        n    = strlen(base) + strlen(parent) + 2 ;
+        string = (char *)malloc(n*sizeof(char))  ;
+        strcpy(string,parent) ;
+        strcat(string,"/")    ;
+        strcat(string,base)   ;
+        if(ip)printf("  Routine %s, BB File found.  File = %s\n",
+                                                     my_name,string) ;
+      }else{
+        if(ip)printf("  Routine %s, File not found.  File = %s\n",
+                                                     my_name,fname) ;
+        free(string)  ;
+        string = NULL ;
+      }
+      free(base)   ;
+      free(parent) ;
+      return string  ;
+}
 
 
 /**
  *  char *zr_filename_MS2L(char *fname)
  *
- *  Routine to replace '\' by '/' in filenames
+ *  Routine to replace '\' by '/' in filenames and to correct case of extension.
+ *  This is because files referred to as name.s may be name.S etc.
  */
 
 int zr_filename_MS2L(char *fname){
 
-int  i, n   ;
+int  i, j, n  ;
+int  ip = 0          ;  // Debug
+char *my_name = "zr_filename_MS2L" ;
 
       n = strlen(fname) ;
-      for(i=0;i<n;i++){
-        if(fname[i] == '\\')fname[i] = '/' ;
+      for(i=0,j=0;i<n;i++,j++){
+        if(fname[i] == '\\')fname[j] = '/' ;
+        if(fname[i] == '/' && fname[i+1] == '/')i++ ;   // Convert "//" to "/"
       }
+      fname[j] = '\0' ;
       return 0 ;
 }
+
+
 
 /**
  *
@@ -187,8 +372,9 @@ static int icounta[] = {0, 0, 0, 0, 0} ;
  *
  * Function to check the properties of a MSTS 4x3 matrix.
  * It returns 0 if it is a unit diagonal matrix,
- *            1 if it represents translation with no rotation,
- *            2 if it represents rotation.
+ *            1 if it represents translation oonly,
+ *            2 if it represents rotation and/or stretching,
+ *            3 if it represents both.
  */
 int check_matrix4x3(Matrix4x3 *m){
 

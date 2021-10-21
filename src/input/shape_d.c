@@ -35,7 +35,7 @@ int load_shape_d(ShapeNode *snode){
   char    myname[] = "load_shape_d" ;
 
       if(ip)printf("\n  Enter routine : %s\n",myname);
-      if(ip)printf("  File = %s\n",snode->sdfile);
+      if(ip)printf("  File = %s\n",snode->sd_file);
 /*
  *  Initialise  ESD variables
  */
@@ -52,14 +52,14 @@ int load_shape_d(ShapeNode *snode){
       snode->esd_bounding_box_zmin     = 0.0  ;
       snode->esd_bounding_box_zmax     = 0.0  ;
 //  Return if there is no *.sd file.
-      if(NULL == snode->sdfile) return 0 ;
+      if(NULL == snode->sd_file) return 0 ;
 /*
  * =============================================================================
  *  open_msfile reads and checks the first 16 bytes of the file, inflates
  *  compressed files, reads the next 16 bytes and sets the flags.
  * =============================================================================
  */
-      l = open_msfile(snode->sdfile, msfile, 0, 0) ;
+      l = open_msfile(snode->sd_file, msfile, 0, 0) ;
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
         exit(1) ;
@@ -72,7 +72,7 @@ int load_shape_d(ShapeNode *snode){
       string = (char *)"SHAPE" ;
       if(0 != strcmp(token,string)){
         printf(" Routine %s.\n", myname);
-        printf("   File name = %s\n",snode->sdfile);
+        printf("   File name = %s\n",snode->sd_file);
         printf("   Wrong token found at top level.\n");
         printf("   Token expected = %s\n","Shape");
         printf("   Token found    = %s\n",token);
@@ -88,9 +88,9 @@ int load_shape_d(ShapeNode *snode){
 
       for(i=0;i<(int)strlen(shape_file_name);i++)
           shape_file_name[i]=tolower(shape_file_name[i]) ;
-      cp = strrchr(snode->sfile,'/') ;
+      cp = strrchr(snode->s_file,'/') ;
       if(NULL == cp){
-        cp = snode->sfile ;
+        cp = snode->s_file ;
       }else{
         cp++ ;
       }
@@ -200,7 +200,7 @@ int load_shape_d(ShapeNode *snode){
             break ;
           DEFAULT
             printf("  Routine load_shape_d() error\n");
-            printf("    ESD filename  = %s\n",snode->sfile) ;
+            printf("    ESD filename  = %s\n",snode->s_file) ;
             printf("    Unrecognised token = %s\n",token) ;
             break ;
         END

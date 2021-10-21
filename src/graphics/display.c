@@ -24,11 +24,8 @@ int display_shapes(void)      ;  // Plot all shapes on a grid
 int display_wagons(void)      ;  // Plot all wagons on a grid
 int display_textures(void)    ;  // Plot all textures on a grid
 
-//double   x_scale, y_scale, z_scale, x_last, y_last ;
-double   x_last, y_last ;
-
-int i_display = 0 ;
-
+int    i_display = 0  ;
+double x_last, y_last ;
 
 /*
  *==============================================================================
@@ -37,7 +34,7 @@ int i_display = 0 ;
  */
 void display(void){
 
-int      ierr ;
+int      iret ;
 int      i, j, k  ;
 int      ip = 0   ;  // DEBUG
 char     string[128];
@@ -50,6 +47,7 @@ clock_t       dtrack_t_beg, dtrack_t_end ;
 static double tile_time_used, shape_time_used, track_time_used,
               dtrack_time_used  ;
 int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
+char          *my_name = "display" ;
 
         tile_t_beg  = 0.0 ;
         tile_t_end  = 0.0 ;
@@ -74,12 +72,16 @@ GLfloat  low_shininess[]  = {  10.0 };
 GLfloat  v4[4] ;
 
 
-//      printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-//      printf(" Enter display :: %i\n",i_display++) ;
-//      printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
-      i_display++ ;
+      if(ip){
+        printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+        printf(" Enter display :: %i\n",i_display++) ;
+        printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
+      }
+
       zr_clock_gettime(zr_clock_1) ;
-      l_fps = 1 ;
+#ifdef _Display_Normal
+      update_trains(zr_clock_1[1]) ;  // Update using monotonic time
+#endif
 /*
  *  If position has changed - update viewpoint
  */
@@ -252,10 +254,10 @@ DistLevel   *dist_level     ;
 
 int         gl_display_list ;
 int         l_here = 0      ;
-double      distance        ;
+double      dist            ;
 double      scale= 1.0/plot_scale ;
 
-float   x, y, z ;
+double   x, y, z ;
 GLfloat a, b, c, d ;
 
       glEnable(GL_LIGHTING);
@@ -306,7 +308,6 @@ GLfloat a, b, c, d ;
  *  Check if item is within window
  *  At this point the program is using the MSTS axis convention
  */
-  int  iret ;
             iret = check_in_scene( (GLdouble) x,  (GLdouble) y, (GLdouble) z,
                                   (GLdouble) 0.05, (GLdouble) 2.5) ;
 
@@ -354,16 +355,23 @@ GLfloat a, b, c, d ;
  *  Note:  At the moment the distance between the eye and the shape is not
  *         properly checked before using each of the display lists.
  */
-            distance = 0.0 ;                              // NOTE
+            dist = sqrt((x-lookat_eye_x)*(x-lookat_eye_x)
+                    + (y-lookat_eye_y)*(y-lookat_eye_y)
+                    + (z-lookat_eye_z)*(z-lookat_eye_z) )*plot_scale ;
+
             for(i=0; i<snode->n_lod_controls; i++){
               lod_control = &(snode->lod_control[i]) ;
               if(ip)printf(" lod_control index = %i\n",i) ;
               for(j=0; j<lod_control->n_dist_levels; j++){
                 if(ip)printf("    distance level index = %i\n",j) ;
                 dist_level = &(lod_control->dist_level[j])  ;
-                if(distance < dist_level->dlevel_selection) break ;
+                if(dist < dist_level->dlevel_selection) break ;
               }
-              if(j == lod_control->n_dist_levels) continue ;
+              if(j == lod_control->n_dist_levels){
+//                glPopMatrix() ;
+                continue ;
+              }
+
 //  Keep the 'optimised' compiler happy
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
@@ -440,150 +448,202 @@ GLfloat a, b, c, d ;
 //      glFinish() ; // Clear GPU
       dtrack_t_end   = clock() ;
 #endif
+
 /*
  *==============================================================================
- *   Display traveller
+ *  Display Trains
  *==============================================================================
  */
 #if 1
 {
 int     it1 = 0,  //  Debug traveller
         it = 0 ;
-float   x, y, z ;
-float   rail_height = 0.27 ;  // Best fit placing wheels on track
-GLfloat a, b, c, d ;
-GLfloat scalei = 1.0/plot_scale ;
-TravellerNode *t   ;
-TrkVectorNode *vn  ;
-WorldItem     *witem   ;
-LodControl *lod_control    ;
-DistLevel  *dist_level     ;
-int        gl_display_list ;
 
-        it = it1 && l_disp1 ;
 
-        t     = &trav_node_0   ;
-        vn    = t->vn ;
+  int     gl_display_list ;
+  int     n_dist_levels   ;
+  double   x, y, z, dist  ;
+  double   rail_height = 0.27 ;  // Best fit placing wheels on track
+  GLfloat a, b, c, d ;
+  GLfloat scalei = 1.0/plot_scale ;
+
+  TrainNode     *train ;
+  WagonNode     *wagon ;
+  RawWagonNode  *r_wagon ;
+  ShapeNode     *f_shape ;
+  TravellerNode *tv    ;
+  TrkVectorNode *vn    ;
+  LodControl    *lod_control ;
+  DistLevel     *dist_level  ;
+
+      it = it1 && l_disp1 ;
+
+#ifdef culling_off_for_wagons
+      glDisable(GL_CULL_FACE) ;
+#else
+      glCullFace(GL_BACK) ;
+      glEnable(GL_CULL_FACE) ;
+#endif
+      glFrontFace(GL_CW) ;
+
+      glEnable(GL_TEXTURE_2D) ;
+      glEnable(GL_BLEND) ;
+      glEnable(GL_ALPHA_TEST) ;
+      glAlphaFunc(GL_GREATER,0.1);
+      glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
+
+      for(train = trainlist_beg; train != NULL ; train=train->next){
+        for(wagon = train->first; wagon != NULL; wagon = wagon->next){
+
+          tv = wagon->traveller ;
+          vn = tv->vn ;
+          a = degree*vn->a_east_x   ;
+          b = degree*vn->a_height_y ;
+          c = degree*vn->a_north_z  ;
 /*
  *   Convert from MSTS location to coordinates used for graphics
  */
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+          global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                          vn->tile_east_x, vn->tile_north_z,
                          vn->east_x , vn->north_z, vn->height_y+rail_height,
                          &x, &y, &z) ;
-        if(it)printf("\n TTTA  x, y, z = %f %f %f :: %i %i  :: %f %f %f : %f \n",
+          if(it)printf("\n TTTA  x, y, z = %f %f %f :: %i %i  :: %f %f %f : %f \n",
                          (double)x,(double)y,(double)z,
                          vn->tile_east_x, vn->tile_north_z,
                          vn->east_x, vn->height_y, vn->north_z, scale) ;
-
-        glMatrixMode(GL_MODELVIEW) ;
-        glPushMatrix() ;
-        glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
-
-        glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
-        glScalef(scalei,scalei,-scalei) ;
-
-        a = degree*vn->a_east_x   ;
-        b = degree*vn->a_height_y ;
-        c = degree*vn->a_north_z  ;
-
-        if(it)printf(" TTTB ax, ay, az = %f %f %f, "
-                     "length, radius = %f %f, angle = %f, ang_deg = %f\n",
-          a,b,c, vn->length, vn->radius, vn->angle, vn->angle*degree) ;
-// Direction - Yaw
-        glRotatef((GLfloat)b,(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
-// Slope - Pitch
-        glRotatef((GLfloat)a,(GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
-// Camber - Roll
-        glRotatef((GLfloat)c,(GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
-
-        if(it)printf(" TTTC x, y, z, ang_deg= %f %f %f : %f\n",
-                                               t->x,t->y,t->z,t->ang_deg) ;
-
-        glTranslatef((GLfloat)(t->x),(GLfloat)(t->y),(GLfloat)(t->z)) ;
-        glRotatef((GLfloat)(-t->ang_deg),(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
 /*
- * Draw traveller !!
+ * Check the wagon is within view - skip if outside view or far away
  */
-//  Define front face polygons as going clockwise
-//  Needed for MSTS shapes after transforms
-        glFrontFace(GL_CW) ;
+          iret = check_in_scene( (GLdouble) x,  (GLdouble) y, (GLdouble) z,
+                                (GLdouble) 0.05, (GLdouble) 2.5) ;
 
-        lod_control = &(t->wagon->lod_control[0]) ;
-        dist_level = &(lod_control->dist_level[0])  ;
-        gl_display_list = dist_level->gl_display_list ;
-        glEnable(GL_TEXTURE_2D) ;
-        glEnable(GL_BLEND) ;
-        glEnable(GL_ALPHA_TEST) ;
-        glAlphaFunc(GL_GREATER,0.5);
-        glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+          if(0==iret) continue ;
 
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
+          dist = sqrt((x-lookat_eye_x)*(x-lookat_eye_x)
+                    + (y-lookat_eye_y)*(y-lookat_eye_y)
+                    + (z-lookat_eye_z)*(z-lookat_eye_z) )*plot_scale ;
 
-        glCallList(gl_display_list) ;
+          glMatrixMode(GL_MODELVIEW) ;
+          glPushMatrix() ;
+            glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
+            glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
+            glScalef(scalei,scalei,-scalei) ;
+            glRotatef((GLfloat)b,(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+            glRotatef((GLfloat)a,(GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+            glRotatef((GLfloat)c,(GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
 
-        glDisable(GL_BLEND) ;
-        glDisable(GL_ALPHA_TEST);
-        glDisable(GL_TEXTURE_2D) ;
-//  Disable culling
-        glDisable(GL_CULL_FACE) ;
-//  Restore counter-clockwise default for front-facing polygons
-        glFrontFace(GL_CCW) ;
+            glTranslatef((GLfloat)(tv->x),(GLfloat)(tv->y),(GLfloat)(tv->z)) ;
+#if 0
+            if(0==strcmp(wagon->name,"4W-HG-Brake-Van")){
+              printf("  Display :: Wagon %s, w->train_dir = %i, tv->ang_deg = %f\n",
+                        wagon->name, wagon->train_dir,tv->ang_deg) ;
+            }
+#endif
+            if(wagon->train_dir){
+              glRotatef((GLfloat)(-tv->ang_deg),(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+            }else{
+              glRotatef((GLfloat)(180.0-tv->ang_deg),
+                        (GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+            }
+
 /*
  *  Draw location lines
  */
-        glDisable(GL_LIGHTING) ;
-        glDisable(GL_TEXTURE_2D) ;
-        glLineWidth(5.0) ;
+#if 0
+            glDisable(GL_LIGHTING) ;
+            glDisable(GL_TEXTURE_2D) ;
+            glLineWidth(5.0) ;
 //  Location of traveller
 //        using traveller modelview matrix
-#if 0
-        glBegin(GL_LINES);
-        glColor3f((GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
-        glVertex3f((GLfloat) -1.0, (GLfloat)4.0,(GLfloat)0.0) ;
-        glVertex3f((GLfloat)  5.0, (GLfloat)4.0,(GLfloat)0.0) ;
+            glColor3f((GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) -1.0, (GLfloat)4.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat)  5.0, (GLfloat)4.0,(GLfloat)0.0) ;
 
-        glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
-        glVertex3f((GLfloat) 0.0, (GLfloat)-1.0,(GLfloat)0.0) ;
-        glVertex3f((GLfloat) 0.0, (GLfloat) 5.0,(GLfloat)0.0) ;
+            glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)-1.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat) 5.0,(GLfloat)0.0) ;
 
-        glColor3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
-        glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat)-1.0) ;
-        glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat) 5.0) ;
+            glColor3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat)-1.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat) 5.0) ;
 
-        glEnd() ;
+            glEnable(GL_LIGHTING) ;
+            glEnable(GL_TEXTURE_2D) ;
 #endif
-        glPopMatrix() ;
-        glPushMatrix() ;
-//  Draw origin of current vector element
-//  - using gluLookAt modelview matrix
+            for(i=0; i<wagon->shape->n_lod_controls; i++){
+              lod_control = &(wagon->shape->lod_control[i]) ;
+
+              for(j=0; j<lod_control->n_dist_levels; j++){
+                if(ip)printf("    distance level index = %i\n",j) ;
+                dist_level = &(lod_control->dist_level[j])  ;
+                if(dist < dist_level->dlevel_selection) break ;
+              }
+              if(j == lod_control->n_dist_levels) continue ;
+
+              display_shape(wagon, wagon->shape, lod_control, dist_level) ;
+            }
+/*
+ *  Display load
+ */
+            r_wagon = wagon->raw_wagon ;
+            f_shape = r_wagon->f_shape ;
+            if(f_shape != NULL){
+              for(i=0; i<f_shape->n_lod_controls; i++){
+                lod_control = &(f_shape->lod_control[i]) ;
+                for(j=0; j<lod_control->n_dist_levels; j++){
+                  if(ip)printf("    distance level index = %i\n",j) ;
+                  dist_level = &(lod_control->dist_level[j])  ;
+                  if(dist < dist_level->dlevel_selection) break ;
+                }
+                if(j == lod_control->n_dist_levels) continue ;
+
+                display_shape(wagon, f_shape, lod_control, dist_level) ;
+              }
+            }
+
+/*
+ *  Draw location lines
+ */
 #if 0
-        {
-  GLfloat x1, x2, y1, y2, z1, z2 ;
-          glBegin(GL_LINES);
-          x1 = x ;
-          y1 = y ;
-          z1 = z - scalei*1.0 ;
-          z2 = z + scalei*10.0 ;
-          glColor3f((GLfloat)0.5,(GLfloat)0.5,(GLfloat)0.0) ;
-          glVertex3f(x1, y1, z1) ;
-          glVertex3f(x1, y1, z2) ;
-          glEnd() ;
+            glDisable(GL_LIGHTING) ;
+            glDisable(GL_TEXTURE_2D) ;
+            glLineWidth(5.0) ;
+//  Location of traveller
+//        using traveller modelview matrix
+            glColor3f((GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) -1.0, (GLfloat)4.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat)  5.0, (GLfloat)4.0,(GLfloat)0.0) ;
+
+            glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)-1.0,(GLfloat)0.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat) 5.0,(GLfloat)0.0) ;
+
+            glColor3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat)-1.0) ;
+            glVertex3f((GLfloat) 0.0, (GLfloat)4.0,(GLfloat) 5.0) ;
+
+            glEnable(GL_LIGHTING) ;
+            glEnable(GL_TEXTURE_2D) ;
+#endif
+          glPopMatrix() ;
         }
-        glLineWidth(1.0) ;
-        glEnable(GL_LIGHTING) ;
-#endif
-        glPopMatrix() ;
-        glLineWidth(1.0) ;
-        glEnable(GL_LIGHTING) ;
-        glEnable(GL_TEXTURE_2D) ;
-}
-#endif       //  End of traveller option
+      }
 
+      glDisable(GL_BLEND) ;
+      glDisable(GL_ALPHA_TEST);
+      glDisable(GL_TEXTURE_2D) ;
+//  Restore counter-clockwise default for front-facing polygons
+      glFrontFace(GL_CCW) ;
+//  Disable culling
+      glDisable(GL_CULL_FACE) ;
+}
+#endif
 
 
 /*
@@ -701,7 +761,7 @@ TrkNetNode *trk_sec_node   ;
         print_string_in_window((GLfloat)20.0,(GLfloat)20.0,string) ;
 
         sprintf(string,"Run time = %9.2f     Speed = %7.2f",
-                           run_seconds, eng_speed );
+                           run_seconds, player_train->speed );
         print_string_in_window((GLfloat)20.0,(GLfloat)40.0,string) ;
 double  t[4] ;
         zr_clock_gettime(zr_clock_2) ;
@@ -728,6 +788,9 @@ double  t[4] ;
 {
 GLfloat w = viewport_width ;
 GLfloat h = viewport_height ;
+
+      glDisable(GL_LIGHTING) ;
+      glDisable(GL_TEXTURE_2D) ;
 //  Set up projection
       glMatrixMode(GL_PROJECTION) ;
       glPushMatrix() ;
@@ -739,16 +802,21 @@ GLfloat h = viewport_height ;
       glLoadIdentity() ;
       glEnable(GL_BLEND) ;
 
+
+
 //  Call special 2-D displays
-      if(display_track_info_on) display_track_info(&trav_node_0) ;
+      if(display_track_info_on) display_track_info(player_train->first->traveller) ;
       if(display_help_on)       display_help() ;
-      if(display_switches_on)   display_switches(&trav_node_0) ;
+      if(display_switches_on)   display_switches(player_train) ;
 //  Restore defaults
 
       glPopMatrix() ;  //  Pop GL_MODELVIEW
       glMatrixMode(GL_PROJECTION) ;
       glPopMatrix() ;  //  Pop GL_PROJECTION
       glMatrixMode(GL_MODELVIEW) ;
+
+      glEnable(GL_LIGHTING) ;
+      glEnable(GL_TEXTURE_2D) ;
 }
 #endif
 /*
@@ -831,8 +899,8 @@ GLfloat xx, yy ;
 int sketch_track_routes(void){
 
 int      i, j, k    ;
-double   scale = 1.0/plot_scale ;
-GLfloat  x = 0., y=0.0 , z=0.0 ;
+double  scale = 1.0/plot_scale ;
+double  x = 0., y=0.0 , z=0.0 ;
 TrkVectorNode   *vec, *v ;
 TrkNetNode      *trk_sec_node  ;
 WorldItem       *w ;
@@ -865,7 +933,7 @@ char     string[256] ;
               glColor3f(1.0,0.0,1.0) ;
               ortho_col = 0;
             }
-            glVertex3d(x, y, z) ;
+            glVertex3d((GLfloat) x, (GLfloat) y, (GLfloat) z) ;
           }
           glEnd();
         }
@@ -881,7 +949,7 @@ char     string[256] ;
                 vec[j].tile_east_x, vec[j].tile_north_z,
                 vec[j].east_x, vec[j].north_z, vec[j].height_y,
                 &x, &y, &z );
-            glColor3f(0.8,0.8,0.8) ;
+          glColor3f(0.8,0.8,0.8) ;
           glBegin(GL_LINES) ;
             glVertex3d(x, y, z) ;
             z = z + 6.0*scale ;
@@ -935,7 +1003,7 @@ int sketch_road_routes(void){
 
 int    i, j ;
 double   scale = 1.0/plot_scale ;
-GLfloat  x, y, z ;
+double   x, y, z ;
 TrkVectorNode   *vec ;
 TrkNetNode  *road_sec_node ;
 
@@ -975,7 +1043,7 @@ TrkNetNode  *road_sec_node ;
             glColor3f(1.0,0.4,1.0) ;
             ortho_col = 0;
           }
-          glVertex3d(x, y, z) ;
+          glVertex3d((GLfloat) x, (GLfloat) y, (GLfloat) z) ;
         }
         glEnd();
 /*
@@ -1091,7 +1159,10 @@ char       string[128];
  */
 int display_wagons(void){
 
-ShapeNode  *snode          ;
+ShapeNode  *shape,
+           *f_shape         ;
+RawWagonNode *wnode        ;
+WagonNode  *wagon = trainlist_beg->first ;  // Dummy wagon
 LodControl *lod_control    ;
 DistLevel  *dist_level     ;
 int        gl_display_list ;
@@ -1102,10 +1173,14 @@ int        i, j, ierr, ip = 0 ;
 char       string[128]     ;
 
       glEnable(GL_LIGHTING) ;
-      glFrontFace(GL_CW) ;
-//  Cull back faces
+
+#ifdef culling_off_for_wagons
+      glDisable(GL_CULL_FACE) ;
+#else
       glCullFace(GL_BACK) ;
       glEnable(GL_CULL_FACE) ;
+#endif
+      glFrontFace(GL_CW) ;
 
       glEnable(GL_BLEND) ;
       glEnable(GL_ALPHA_TEST) ;
@@ -1118,7 +1193,8 @@ char       string[128]     ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
 
-      for(snode=wshapelist_beg, i=0, j=0; snode!=NULL; snode=snode->next, i++){
+//      for(snode=wshapelist_beg, i=0, j=0; snode!=NULL; snode=snode->next, i++){
+      for(wnode=rawwagonlist_beg, i=0, j=0; wnode!=NULL; wnode=wnode->next, i++){
         if(30==i){
           j = j + 1;
           i = 0;
@@ -1138,25 +1214,52 @@ char       string[128]     ;
         glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
 #endif
 
-        lod_control = &(snode->lod_control[0]) ;
+        shape = wnode->shape ;
+        lod_control = &(shape->lod_control[0]) ;
         dist_level = &(lod_control->dist_level[0])  ;
+#if 0
         gl_display_list = dist_level->gl_display_list ;
         if(ip)printf("  Display: i,j = %i,%i wagon = %s, lod = %i, dist = %i, "
-              " gl_display_list = %i\n", i,j,snode->name,i,j,gl_display_list);
-
+              " gl_display_list = %i\n", i,j,shape->name,i,j,gl_display_list);
         glCallList(gl_display_list) ;
+        printf(" FF ") ;
+#else
+        display_shape(wagon, shape, lod_control, dist_level) ;
+#endif
+
+
+/*
+ *  Display load
+ */
+        f_shape = wnode->f_shape ;
+        if(f_shape != NULL){
+          lod_control = &(f_shape->lod_control[0]) ;
+          dist_level = &(lod_control->dist_level[0])  ;
+#if 0
+          gl_display_list = dist_level->gl_display_list ;
+          if(ip)printf("  Display: i,j = %i,%i load  = %s, lod = %i, dist = %i"
+                       "\n",i,j,f_shape->name,i,j,
+                         gl_display_list);
+          glCallList(gl_display_list) ;
+#else
+          if(ip)printf("  Display: i,j = %i,%i load  = %s, lod = %p, dist = %p\n"
+                       ,i,j,f_shape->name,(void *)lod_control,
+                                          (void *)dist_level) ;
+          display_shape(wagon, f_shape, lod_control, dist_level) ;
+#endif
+        }
 /*
  * Plot bounding box
  */
         glDisable(GL_TEXTURE_2D) ;
         glDisable(GL_LIGHTING) ;
         glColor3f(1.0,1.0,1.0) ;
-        x1 = snode->esd_bounding_box_xmin ;
-        x2 = snode->esd_bounding_box_xmax ;
-        y1 = snode->esd_bounding_box_ymin ;
-        y2 = snode->esd_bounding_box_ymax ;
-        z1 = snode->esd_bounding_box_zmin ;
-        z2 = snode->esd_bounding_box_zmax ;
+        x1 = shape->esd_bounding_box_xmin ;
+        x2 = shape->esd_bounding_box_xmax ;
+        y1 = shape->esd_bounding_box_ymin ;
+        y2 = shape->esd_bounding_box_ymax ;
+        z1 = shape->esd_bounding_box_zmin ;
+        z2 = shape->esd_bounding_box_zmax ;
         glBegin(GL_LINE_STRIP) ;
           glVertex3d(x1, y1, z1) ;
           glVertex3d(x2, y1, z1) ;
@@ -1175,9 +1278,21 @@ char       string[128]     ;
 /*
  *  Add name
  */
-        sprintf(string," - WAGON %s",snode->name);
+        y1 = y0 + i*30*scale ;
+        x1 = x0 + j*30*scale ;
         glColor3f(1.0,1.0,1.0) ;
-        print_string_in_window2((GLfloat) x1+0.001, (GLfloat) y1, (GLfloat) 0.0, string);
+        sprintf(string," - WAGON    %s",wnode->name);
+        print_string_in_window2((GLfloat) x1+0.001, (GLfloat) y1,
+                                (GLfloat) 0.0, string);
+        sprintf(string," - SHAPE    %s",shape->name);
+        print_string_in_window2((GLfloat) x1+0.001, (GLfloat) y1,
+                                (GLfloat) -1.0*scale, string);
+        if(f_shape){
+          sprintf(string," - FREIGHT    %s",f_shape->name);
+          print_string_in_window2((GLfloat) x1+0.001, (GLfloat) y1,
+                                  (GLfloat) -2.0*scale, string);
+        }
+        glColor3f(1.0,1.0,0.0) ;
         glEnable(GL_LIGHTING) ;
         glEnable(GL_TEXTURE_2D) ;
       }
@@ -1250,6 +1365,7 @@ TextureNode  *tnode ;
 
       x0 =  2 ;
       y0 =  0 ;
+      j = 0 ;
       for(tnode=wtexturelist_beg,i=0,j=0;tnode!=NULL;tnode=tnode->next,i++){
         if(10==i){
           j = j + 1;

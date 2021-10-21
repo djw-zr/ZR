@@ -197,7 +197,7 @@ int load_texture(TextureNode *tnode){
   FILE   *fp ;
   char    myname[] = "load_texture" ;
 
-//      ip = !strcmp(tnode->name,"road") ;
+//      ip = !strncmp(tnode->name,"Dtruck",6) ;
 
 /*
  *  open_msfile reads and checks the first 16 bytes of the texture file
@@ -338,8 +338,8 @@ int   is_mask  = 0;
       }
       tnode->is_alpha = is_alpha ;
       tnode->is_mask  = is_mask  ;
-      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  s_format = %2x  channels = %i\n",
-                            raw_data, mipmaps, surface_format,channel_count);
+      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  alpha = %i  mask = %i  s_format = %2x  channels = %i,  name = %s\n",
+                            raw_data, mipmaps, is_alpha, is_mask, surface_format,channel_count,tnode->name);
 /*
  *  Create texture pointer array
  *  This is of length one - unless mipmaps is set.
@@ -504,7 +504,7 @@ int ioff ;
 int   w = width, nb, h, nwords ;
         nb = 3 ;
         for(n=0;n<channel_count;n++){
-          if(type[n] == 2 || type[n] == 6) nb = 4 ;
+          if(type[n] == 2 || type[n] == 6) nb = 4 ;  // Mask or alpha present
         }
 //        if(surface_format == 0x0e) return 0 ;
 /*
@@ -577,8 +577,14 @@ int   w = width, nb, h, nwords ;
                                          j,k,l,m,(j*w + l*8 + m)*4 + 3);
                       }
 #endif
-                      tnode->texture[i][(j*w + l*8 + m)*4 + 3]
-                                              = ((c>(7-m)) & 1) ? 0xff : 0 ;
+                      if(surface_format == 0x10 && 0){
+                        tnode->texture[i][(j*w + l*8 + m)*4 + 3]
+//                                              = 0xff ;
+                                              = ((c>>(7-m)) & 1) ? 0 : 0xff ;
+                      }else{
+                        tnode->texture[i][(j*w + l*8 + m)*4 + 3]
+                                              = ((c>>(7-m)) & 1) ? 0xff : 0 ;
+                      }
                     }
                   }
                 }
@@ -672,4 +678,56 @@ int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja){
           }
         }
         return 0 ;
+}
+
+/*
+ *  Routine to sort the wagon textures
+ */
+
+static int  compare_tx_names(const void *p1, const void *p2){
+
+TextureNode **s1, **s2, *t1, *t2 ;
+
+      s1 = (TextureNode **)p1 ;
+      s2 = (TextureNode **)p2 ;
+      t1 = (TextureNode *)*s1 ;
+      t2 = (TextureNode *)*s2 ;
+
+//      printf("  compare  %p %p :: %p %p:: %p %p :: %s %s\n",p1,p2,(void *)s1,(void *)s2,
+//             (void *)t1, (void *)t2,t1->name,t2->name) ;
+
+      return strcmp(t1->name, t2->name) ;
+}
+
+int sort_textures(TextureNode **texturelist_beg){
+
+int n_textures, i,
+    ip = 0       ;
+TextureNode *tx,
+            **ta ;
+
+      n_textures = 0 ;
+      for(tx = *texturelist_beg; tx != NULL; tx = tx->next) n_textures++ ;
+
+      ta = (TextureNode **)malloc(n_textures*sizeof(TextureNode *)) ;
+      for(tx = *texturelist_beg, i=0; tx != NULL; tx = tx->next, i++) ta[i] = tx ;
+
+      if(ip)for(i=0;i<n_textures;i++){
+        printf(" CC %p ta = %p,  name = %s\n",(void *)ta,(void *)ta[i], ta[i]->name) ;
+      }
+
+      qsort(ta, n_textures, sizeof(TextureNode *), compare_tx_names) ;
+
+      *texturelist_beg = ta[0] ;
+      for(i=1;i<n_textures;i++) ta[i-1]->next = ta[i] ;
+      ta[n_textures-1]->next = NULL ;
+
+      if(ip){
+        printf(" n_textures = %i\n",n_textures) ;
+        for(tx = *texturelist_beg,i=0; tx != NULL; tx = tx->next,i++)
+          printf(" %i  Tx = %p  ::  Texture = %s\n",i,(void *)tx,tx->name) ;
+      }
+      free(ta) ;
+
+      return 0 ;
 }

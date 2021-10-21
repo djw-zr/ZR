@@ -40,6 +40,7 @@ CFLAGS  += -Dkb_dev #              Keyboard with modified 'flying' keys
 CFLAGS  += -Duse_vertex_arrays
 #CFLAGS  += -Dtexture_short
 #CFLAGS  += -Dnormal_byte
+CFLAGS += -Dculling_off_for_wagons
 CFLAGS   += -Dzr_freetype  #  -Dfreetype would rename directory
 
 

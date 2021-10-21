@@ -37,7 +37,7 @@
 void graphics_init(void)
 {
 
-int      ip = 2  ;  //  0 = no printing
+int      ip = 0  ;  //  0 = no printing
 int      i, j ;
 int      ivec[10] ;
 GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
@@ -186,13 +186,6 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       make_dynamic_display_lists();
 #endif
 
-/*
- *  Initialise tests
- */
-      if(ip)printf("***********************************************************\n") ;
-      printf("  Routine %s, call init_trav_1\n",my_name) ;
-      init_trav_1(&trav_node_0) ;
-      graphics_cull() ;
       if(ip)printf("  Exit graphics_init\n");
       if(ip)printf("***********************************************************\n") ;
 
@@ -314,16 +307,6 @@ int it, jt ;
           }
         }
       }
-/*
- *  Process wagons - for the moment process traveller trav_node_0 only
- */
-      if(ip)printf("  ====================  Routine %s, process trav_node_0\n",my_name) ;
-      if(ip)trv_print(&trav_node_0) ;
-      if(trav_node_0.wagon != NULL){
-        trav_node_0.wagon->needed = 1 ;
-        if(ip)printf("  ==================   trav_node_0.wagon->needed = 1\n") ;
-      }
-      if(ip)trv_print(&trav_node_0) ;
 
 
 // For options -D_Display_Shapes and  -D_Display_Wagons mark all as needed
@@ -602,7 +585,10 @@ int            ip = 0 ;
         snode->loaded = 1 ;
         if(ip>1)printf("     Install shape : %s\n",snode->name) ;
       }
-
+/*
+ *  Wagons no longer use display lists
+ */
+#if 0
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
         if(0 == snode->needed || 1 == snode->loaded) continue ;
@@ -611,6 +597,7 @@ int            ip = 0 ;
         if(ip>1)printf("     Install wagon : %s\n",snode->name) ;
         if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
       }
+#endif
       return ;
 }
 /*

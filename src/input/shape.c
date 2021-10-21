@@ -114,11 +114,11 @@ ShapeNode *shape ;
 /*
  *  Save full name of s file
  */
-          shape->sfile = (char *)malloc(len1 + len2 ) ;
-          strcpy(shape->sfile,sdir_name) ;
-          strcat(shape->sfile,namelist[i]->d_name);
+          shape->s_file = (char *)malloc(len1 + len2 ) ;
+          strcpy(shape->s_file,sdir_name) ;
+          strcat(shape->s_file,namelist[i]->d_name);
 
-          f=gopen(shape->sfile,"r") ;
+          f=gopen(shape->s_file,"r") ;
           if(f!=NULL ){
             if(ip)printf(" File opened: \n") ;
             gclose(f);
@@ -130,30 +130,30 @@ ShapeNode *shape ;
  *  Save full name of sd file if present or NULL
  */
           len3 = len1 + len2 + 1 ;
-          shape->sdfile = (char *)malloc(len3) ;
-          strncpy(shape->sdfile, shape->sfile, len3) ;
-          shape->sdfile[len3-3] = 's' ;
-          shape->sdfile[len3-2] = 'd' ;
-          shape->sdfile[len3-1] = '\0' ;
-          if(ip)printf("  AA  Full name of sd file : %s\n",shape->sdfile) ;
-          if((f=gopen(shape->sdfile,"r"))==NULL ){
-            shape->sdfile[len3-2] = 'D' ;
-            if((f=gopen(shape->sdfile,"r"))==NULL ){
-              shape->sdfile[len3-3] = 'S' ;
-              shape->sdfile[len3-2] = 'd' ;
-              if((f=gopen(shape->sdfile,"r"))==NULL ){
-                shape->sdfile[len3-2] = 'D' ;
-                if((f=gopen(shape->sdfile,"r"))==NULL ){
+          shape->sd_file = (char *)malloc(len3) ;
+          strncpy(shape->sd_file, shape->s_file, len3) ;
+          shape->sd_file[len3-3] = 's' ;
+          shape->sd_file[len3-2] = 'd' ;
+          shape->sd_file[len3-1] = '\0' ;
+          if(ip)printf("  AA  Full name of sd file : %s\n",shape->sd_file) ;
+          if((f=gopen(shape->sd_file,"r"))==NULL ){
+            shape->sd_file[len3-2] = 'D' ;
+            if((f=gopen(shape->sd_file,"r"))==NULL ){
+              shape->sd_file[len3-3] = 'S' ;
+              shape->sd_file[len3-2] = 'd' ;
+              if((f=gopen(shape->sd_file,"r"))==NULL ){
+                shape->sd_file[len3-2] = 'D' ;
+                if((f=gopen(shape->sd_file,"r"))==NULL ){
 //  Ignore MSTS track shapes
                   if((shape->name[0] != 'a' && shape->name[0] != 'A') ||
                      (shape->name[1] != '1' && shape->name[1] != '2')){
                     printf("   Routine '%s'.  Unable to find sd file "
                       "corresponding to shape : %s\n",my_name, shape->name)   ;
-//                  printf("   Full name of s  file : %s\n",   shape->sfile)  ;
-//                  printf("  Full name of sd file : %s\n",    shape->sdfile) ;
+//                  printf("   Full name of s  file : %s\n",   shape->s_file)  ;
+//                  printf("  Full name of sd file : %s\n",    shape->sd_file) ;
                   }
-                  free(shape->sdfile);
-                  shape->sdfile = NULL ;
+                  free(shape->sd_file);
+                  shape->sd_file = NULL ;
                 }
               }
             }
@@ -175,8 +175,8 @@ int  init_shape_node(ShapeNode *shape){
 
 
           shape->name              = NULL ;
-          shape->sfile             = NULL ;
-          shape->sdfile            = NULL ;
+          shape->s_file            = NULL ;
+          shape->sd_file           = NULL ;
 //          shape->gl_display_list   = 0 ;  // not a valid display list number
           shape->basic             = 0 ;  //  = 1 always needed
           shape->needed            = 0 ;  //  Needed for current scene
@@ -248,17 +248,18 @@ int  init_shape_node(ShapeNode *shape){
 
 int load_shape(ShapeNode *snode ) {
 
-  int     ip = 1 ;                  //Controls printing
+  int     ip = 0 ;                  //Controls printing
   int     i, j, k, l, m, n, itoken;
   MSfile  msfile0 ;
   MSfile  *msfile = &msfile0 ;
   FILE    *fp ;
+  char    *string ;
   char    myname[] = "load_shape" ;
 
       ip = ip && !strcmp(snode->name,test_shape) ;
+      if(ip || 0)printf("\n  Enter routine : %s\n",myname);
       if(ip || 0)printf("  Shape name = %s\n",snode->name);
-      if(ip)printf("\n  Enter routine : %s\n",myname);
-      if(ip)printf("  File = %s\n",snode->sfile);
+      if(ip || 0)printf("  File = %s\n",snode->s_file);
 /*
  * =============================================================================
  *  open_msfile reads and checks the first 16 bytes of the file, inflates
@@ -266,8 +267,13 @@ int load_shape(ShapeNode *snode ) {
  * =============================================================================
  */
       if(ip)printf(" AA\n");
-      l = open_msfile(snode->sfile, msfile, 0, ip) ;
-      if(ip)printf(" BB\n");
+      zr_filename_MS2L(snode->s_file) ;          //  Convert '\' to '/'
+      if(ip)printf("  Routine %s, snode->s_file = %s\n",myname,snode->s_file) ;
+      string = zr_find_msfile(snode->s_file) ;
+      if(ip)printf("  Routine %s,        string = %s\n",myname,string) ;
+      l = open_msfile(string, msfile, 0, ip) ;
+      free(string) ;
+      if(ip)printf(" BB\n") ;
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
         exit(1) ;
@@ -503,6 +509,7 @@ float  X, Y, Z, R ;
         if(0 != snode->nmatrices) {
           snode->matrix = (Matrix4x3 *)
                               malloc(snode->nmatrices*sizeof(Matrix4x3));
+          snode->matrix_role = (int *)malloc(snode->nmatrices*sizeof(int)) ;
           for(i=0;i<snode->nmatrices;i++){
 // 2 MATRIX
             open_named_block(msfile, 2, MATRIX) ;
@@ -536,6 +543,10 @@ float  X, Y, Z, R ;
             snode->matrix[i].DZ = read_real32_a(msfile);
 #endif
             end_block(msfile,2) ;
+/*
+ *  Calculate and save matrix type (no-op, translation, rotation)
+ */
+            snode->matrix[i].type = check_matrix4x3(&(snode->matrix[i])) ;
           }
         }
         end_block(msfile,1) ;
@@ -1224,6 +1235,33 @@ float  X, Y, Z, R ;
                                 }
                               }
                               break;
+                            case(TCB_POS) :
+                              controller->type = TCB_POS;
+                              controller->n_anim_keys = read_int32_a(msfile) ;
+                              if(ip)printf(" n_anim_keys = %i\n",controller->n_anim_keys);
+                              if(0!=controller->n_anim_keys){
+                                controller->anim_key = (AnimKey *)malloc(
+                                    controller->n_anim_keys*sizeof(AnimKey)) ;
+                                for(l=0;l<controller->n_anim_keys;l++){
+                                  AnimKey *anim_key = &(controller->anim_key[l]) ;
+//  7  TCB_KEY
+                                  open_named_block(msfile, 7, TCB_KEY)  ;
+                                  if(ip)printf(" Token TCB_KEY found \n") ;
+                                  anim_key->type      = TCB_KEY ;
+                                  anim_key->frame     = read_int32_a(msfile) ;
+                                  anim_key->X         = read_real32_a(msfile) ;
+                                  anim_key->Y         = read_real32_a(msfile) ;
+                                  anim_key->Z         = read_real32_a(msfile) ;
+                                  anim_key->W         = read_real32_a(msfile) ;
+                                  anim_key->tension   = read_real32_a(msfile) ;
+                                  anim_key->continuity = read_real32_a(msfile) ;
+                                  anim_key->bias      = read_real32_a(msfile) ;
+                                  anim_key->in        = read_real32_a(msfile) ;
+                                  anim_key->out       = read_real32_a(msfile) ;
+                                  end_block(msfile,7) ;
+                                }
+                              }
+                              break;
                             case(TCB_ROT):
                               controller->type = TCB_ROT;
                               controller->n_anim_keys = read_int32_a(msfile) ;
@@ -1308,13 +1346,13 @@ int  print_shape_file_data(ShapeNode *snode){
   int  ip = 0 ; // 1 = Printing of trilists
 
       printf( "  name    = %s\n",snode->name ) ;
-      printf( "  sfile   = %s\n",snode->sfile ) ;
-      printf( "  sdfile  = %s\n",snode->sdfile ) ;
+      printf( "  s_file  = %s\n",snode->s_file ) ;
+      printf( "  sd_file = %s\n",snode->sd_file ) ;
 
 
 #if 1
-      printf( "  flags1  = %x\n",snode->flags1 ) ;
-      printf( "  flags2  = %x\n",snode->flags2 ) ;
+      printf( "  flags1    = %x\n",snode->flags1 ) ;
+      printf( "  flags2    = %x\n",snode->flags2 ) ;
       printf( "  nvolumes  = %i\n",snode->nvolumes ) ;
       printf( "  nshaders  = %i\n",snode->nshaders ) ;
       for(i=0;i<snode->nshaders;i++)
@@ -1328,13 +1366,15 @@ int  print_shape_file_data(ShapeNode *snode){
       printf( "  nsort_vectors      = %i\n",snode->nsort_vectors ) ;
       printf( "  nmatrices          = %i\n",snode->nmatrices ) ;
       for(i=0;i<snode->nmatrices;i++){
-        printf("  AX, AY, AZ = %f %f %f\n",
+        printf("  Matrix      = %i\n",i) ;
+        printf("  Matrix name = %s\n",snode->matrix[i].name) ;
+        printf("  AX, AY, AZ  = %f %f %f\n",
                  snode->matrix[i].AX,snode->matrix[i].AY,snode->matrix[i].AZ) ;
-        printf("  BX, BY, BZ = %f %f %f\n",
+        printf("  BX, BY, BZ  = %f %f %f\n",
                  snode->matrix[i].BX,snode->matrix[i].BY,snode->matrix[i].BZ) ;
-        printf("  CX, CY, CZ = %f %f %f\n",
+        printf("  CX, CY, CZ  = %f %f %f\n",
                  snode->matrix[i].CX,snode->matrix[i].CY,snode->matrix[i].CZ) ;
-        printf("  DX, DY, DZ = %f %f %f\n",
+        printf("  DX, DY, DZ  = %f %f %f\n",
                  snode->matrix[i].DX,snode->matrix[i].DY,snode->matrix[i].DZ) ;
       }
       printf( "  n_textures         = %i\n",snode->n_textures ) ;
@@ -1375,7 +1415,7 @@ int  print_shape_file_data(ShapeNode *snode){
 
       printf( "\n  n_vtx_states       = %i\n",snode->n_vtx_states ) ;
       nn = snode->n_vtx_states ;
-      for(i=0;i<(nn>20 ? 20 : nn);i++){
+      for(i=0;i<(nn>40 ? 40 : nn);i++){
          printf( "    flags           %i = %i\n",i,snode->vtx_state[i].flags ) ;
          printf( "      imatrix       %i = %i\n",i,snode->vtx_state[i].imatrix ) ;
          printf( "         AX, AY, AZ = %9f %9f %9f\n",
@@ -1488,9 +1528,9 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
 
 
             printf( "      n_vertex_sets         = %i\n",sub_object->n_vertex_sets ) ;
-            ll = (10<sub_object->n_vertex_sets ? 10 : sub_object->n_vertex_sets);
+            ll = (30<sub_object->n_vertex_sets ? 30 : sub_object->n_vertex_sets);
             for(l=0;l<ll;l++){
-              printf( "        vtx_state_idx  %i     = %i\n",l,sub_object->vertex_set[l].vtx_state_idx ) ;
+              printf( "\n        vtx_state_idx  %i     = %i\n",l,sub_object->vertex_set[l].vtx_state_idx ) ;
               printf( "        start_vtx_idx  %i     = %i\n",l,sub_object->vertex_set[l].start_vtx_idx ) ;
               printf( "        vtx_count      %i     = %i\n",l,sub_object->vertex_set[l].vtx_count     ) ;
             }
@@ -1503,7 +1543,7 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
             printf( "      n_tri_lists           = %i\n",sub_object->n_tri_lists ) ;
             ll =  sub_object->n_tri_lists;
             for(l=0;l<ll;l++){
-              printf( "\n        prim_state index   %i     = %i\n",l,sub_object->tri_list[l].prim_state_trilist ) ;
+              printf( "\n        prim_state_idx     %i     = %i\n",l,sub_object->tri_list[l].prim_state_trilist ) ;
               printf(   "        n_vertex_idxs      %i     = %i\n",l,sub_object->tri_list[l].n_vertex_idxs ) ;
               if(ip){
                 for(m=0;m<sub_object->tri_list[l].n_vertex_idxs;m++){
@@ -1527,10 +1567,79 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
         }
       }
 
+      printf("==============================================================================\n");
+      printf("=====  Start Animations                   ====================================\n");
+      printf("==============================================================================\n");
+
+      printf( "\n  n_animations     = %i\n",snode->n_animations) ;
+      for(i=0;i<snode->n_animations;i++){
+Animation *animation ;
+        animation = &(snode->animation[i]) ;
+        printf("\n  animation : i = %i\n",i) ;
+        printf("    frame_count  = %i\n",animation->frame_count)  ;
+        printf("    frame_rate   = %i\n",animation->frame_rate)   ;
+        printf("    n_anim_nodes = %i\n",animation->n_anim_nodes) ;
+
+        for(j=0;j<animation->n_anim_nodes;j++){
+AnimNode *anim_node ;
+          anim_node = &(animation->anim_node[j]) ;
+          printf("\n    anim_node : j = %i\n",j) ;
+          printf("      n_controllers = %i\n",anim_node->n_controllers) ;
+
+          for(k=0;k<anim_node->n_controllers;k++){
+AnimController *controller ;
+            controller = &(anim_node->controller[k]) ;
+            printf("\n    controller : k = %i : Type = %i : %s\n",
+                         k,controller->type,token_idc[controller->type]) ;
+            printf("      n_anim_keys = %i\n",controller->n_anim_keys) ;
+            if(controller->type == LINEAR_POS){
+              printf("        anim_key  type  frame  X         Y         Z\n") ;
+            }else if(controller->type == TCB_POS){
+              printf("        anim_key  type  frame  X         Y         Z         W\n") ;
+            }else{
+              printf("        anim_key  type  frame  X         Y         Z         W        "
+                     " tension   continuity bias     in        out\n") ;
+            }
+
+            for(l=0;l<controller->n_anim_keys;l++){
+AnimKey *anim_key ;
+              anim_key = &(controller->anim_key[l]) ;
+#if 0
+              printf("\n      anim_key : l = %i\n",l) ;
+              printf("        type     = %i\n",anim_key->type)  ;
+              printf("        frame    = %i\n",anim_key->frame) ;
+              printf("        X        = %f\n",anim_key->X)     ;
+              printf("        Y        = %f\n",anim_key->Y)     ;
+              printf("        Z        = %f\n",anim_key->Z)     ;
+              printf("        W        = %f\n",anim_key->W)     ;
+              printf("        tension  = %f\n",anim_key->tension) ;
+              printf("        continuity  = %f\n",anim_key->continuity) ;
+              printf("        bias     = %f\n",anim_key->bias)  ;
+              printf("        in       = %f\n",anim_key->in  )  ;
+              printf("        out      = %f\n",anim_key->out )  ;
+#else
+              if(anim_key->type == SLERP_ROT){
+                printf( "         %i,       %i,    %i,   %8.5f, %8.5f, %8.5f, %8.5f : %s\n",
+                    l, anim_key->type, anim_key->frame, anim_key->X, anim_key->Y, anim_key->Z, anim_key->W,token_idc[anim_key->type]) ;
+              }else if(anim_key->type == LINEAR_KEY){
+                printf( "         %i,       %i,    %i,   %8.5f, %8.5f, %8.5f : %s\n",
+                    l, anim_key->type, anim_key->frame, anim_key->X, anim_key->Y, anim_key->Z, token_idc[anim_key->type]) ;
+              }else{
+                printf( "         %i,       %i,    %i,   %8.5f, %8.5f, %8.5f, %8.5f, "
+                      "%8.5f, %8.5f, %8.5f, %8.5f, %8.5f : %s\n",
+                    l, anim_key->type, anim_key->frame, anim_key->X, anim_key->Y, anim_key->Z, anim_key->W, anim_key->tension, anim_key->continuity, anim_key->bias, anim_key->in, anim_key->out,token_idc[anim_key->type]) ;
+              }
+#endif
+            } //  "End l AnimKey"
+          }   //  "End k AnimController"
+        }     //  "End j AnimNode "
+      }       //  "End i Animation"
+
+
       printf("\n\n*****************************************************\n\n\n");
 #endif
-      if(ip)printf(" Sropping after reading shape %s\n",snode->name);
-      if(ip)exit(1) ;
+//      if(ip)printf(" Stopping after reading shape %s\n",snode->name);
+//      if(ip)exit(1) ;
 
       return 0;
 }
