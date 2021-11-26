@@ -38,7 +38,7 @@ int      iret ;
 int      i, j, k  ;
 int      ip = 0   ;  // DEBUG
 char     string[128];
-TileListNode    *tnode ;
+TileListNode    *tl_node ;
 
 clock_t       tile_t_beg,  tile_t_end  ;
 clock_t       shape_t_beg, shape_t_end ;
@@ -197,13 +197,13 @@ GLfloat  v4[4] ;
 #endif
 
       n_vanodes_d = 0 ;
-      for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
-        if(0==tnode->needed) continue ;
-        if(0==check_topog_in_scene(tnode)) continue ;
+      for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
+        if(0==tl_node->needed) continue ;
+        if(0==check_topog_in_scene(tl_node)) continue ;
 #ifdef use_vertex_arrays
-        display_tile_vertex_array(tnode) ;
+        display_tile_vertex_array(tl_node) ;
 #else
-        glCallList((GLuint) tnode->gl_display_list) ;
+        glCallList((GLuint) tl_node->gl_display_list) ;
 #endif
         n_tiles_plotted++ ;
       }
@@ -576,6 +576,7 @@ int     it1 = 0,  //  Debug traveller
             glEnable(GL_LIGHTING) ;
             glEnable(GL_TEXTURE_2D) ;
 #endif
+            dist_level = NULL ;
             for(i=0; i<wagon->shape->n_lod_controls; i++){
               lod_control = &(wagon->shape->lod_control[i]) ;
 
@@ -736,6 +737,8 @@ TrkNetNode *trk_sec_node   ;
       if(l_fps){
         glDisable(GL_LIGHTING) ;
         glDisable(GL_TEXTURE_2D) ;
+        glEnable(GL_BLEND) ;
+
         k = calls_per_second() ;
         if(k>0) fps = k ;
         tile_time_used = 0.98*tile_time_used +  0.02*
@@ -791,7 +794,10 @@ GLfloat h = viewport_height ;
 
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
+      glEnable(GL_BLEND) ;
+
 //  Set up projection
+
       glMatrixMode(GL_PROJECTION) ;
       glPushMatrix() ;
       glLoadIdentity() ;
@@ -800,9 +806,6 @@ GLfloat h = viewport_height ;
       glMatrixMode(GL_MODELVIEW) ;
       glPushMatrix() ;
       glLoadIdentity() ;
-      glEnable(GL_BLEND) ;
-
-
 
 //  Call special 2-D displays
       if(display_track_info_on) display_track_info(player_train->first->traveller) ;
@@ -824,7 +827,11 @@ GLfloat h = viewport_height ;
  */
 //      glFlush() ;
 //      glFinish();     /* Wait until drawing done  */
+
+#ifndef SDL2
       glutSwapBuffers();
+#endif
+
       {
 double t[4] ;
         zr_clock_gettime(zr_clock_2) ;
@@ -957,6 +964,9 @@ char     string[256] ;
           glEnd() ;
           glColor3f(1.0,1.0,1.0) ;
 #if 1
+          glEnable(GL_BLEND) ;
+          glDisable(GL_LIGHTING)   ;
+          glDisable(GL_TEXTURE_2D) ;
           sprintf(string," - %i  %i  %i  %i ::F %i %i\n",
                   trk_sec_node->index_of_node,trk_sec_node->type_of_node,
                   trk_sec_node->length_of_vector,j,v->flag1, v->flag2) ;
@@ -967,6 +977,7 @@ char     string[256] ;
                   vec[j].east_x,vec[j].north_z,vec[j].height_y);
           z = z - 1.0*scale ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+
           if(w->worldtype==306){
             for(k=0;k<5;k++){
               d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
@@ -984,6 +995,9 @@ char     string[256] ;
               print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
               glColor3f(1.0,1.0,1.0) ;
           }
+          glEnable(GL_LIGHTING)   ;
+          glEnable(GL_TEXTURE_2D) ;
+          glDisable(GL_BLEND) ;
 #endif
         }
 #endif
@@ -1313,7 +1327,7 @@ int          i, j   ;
 int          ip = 0 ;         // debug
 char         string[128]            ;
 GLfloat      x1, x2, y1, y2, x0, y0 ;
-TextureNode  *tnode ;
+TextureNode  *tx_node ;
 
       glEnable(GL_TEXTURE_2D) ;
       glEnable(GL_LIGHTING)   ;
@@ -1322,17 +1336,17 @@ TextureNode  *tnode ;
 
       x0 = 0 ;
       y0 = 0 ;
-      for(tnode=texturelist_beg,i=0,j=0;tnode!=NULL;tnode=tnode->next,i++){
+      for(tx_node=texturelist_beg,i=0,j=0;tx_node!=NULL;tx_node=tx_node->next,i++){
         if(10==i){
           j = j + 1;
           i = 0;
         }
         x1 = x0 + i*0.1 ; x2 = x1 + 0.1 ;
         y2 = y0 + j*0.1 ; y1 = y2 + 0.1 ;
-        glBindTexture(GL_TEXTURE_2D, tnode->gl_tex_ref_no) ;
-        if(ip)printf(" tnode = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
-                     " %f %f :: %i\n",(void *)tnode,i,j,
-                                        x1,y1,x2,y2,tnode->gl_tex_ref_no);
+        glBindTexture(GL_TEXTURE_2D, tx_node->gl_tex_ref_no) ;
+        if(ip)printf(" tx_node = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
+                     " %f %f :: %i\n",(void *)tx_node,i,j,
+                                        x1,y1,x2,y2,tx_node->gl_tex_ref_no);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1354,7 +1368,7 @@ TextureNode  *tnode ;
  */
         glDisable(GL_TEXTURE_2D) ;
         glDisable(GL_LIGHTING) ;
-        sprintf(string,"   %s",tnode->name);
+        sprintf(string,"   %s",tx_node->name);
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window2((GLfloat) x1, (GLfloat) y1-0.09, (GLfloat) 0.002, string);
         glColor3f(0.0,0.0,0.0) ;
@@ -1366,17 +1380,17 @@ TextureNode  *tnode ;
       x0 =  2 ;
       y0 =  0 ;
       j = 0 ;
-      for(tnode=wtexturelist_beg,i=0,j=0;tnode!=NULL;tnode=tnode->next,i++){
+      for(tx_node=wtexturelist_beg,i=0,j=0;tx_node!=NULL;tx_node=tx_node->next,i++){
         if(10==i){
           j = j + 1;
           i = 0;
         }
         x1 = x0 + i*0.1 ; x2 = x1 + 0.1 ;
         y2 = y0 + j*0.1 ; y1 = y2 + 0.1 ;
-        glBindTexture(GL_TEXTURE_2D, tnode->gl_tex_ref_no) ;
-        if(ip)printf(" tnode = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
-                     " %f %f :: %i\n",(void *)tnode,i,j,
-                                        x1,y1,x2,y2,tnode->gl_tex_ref_no);
+        glBindTexture(GL_TEXTURE_2D, tx_node->gl_tex_ref_no) ;
+        if(ip)printf(" tx_node = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
+                     " %f %f :: %i\n",(void *)tx_node,i,j,
+                                        x1,y1,x2,y2,tx_node->gl_tex_ref_no);
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1398,7 +1412,7 @@ TextureNode  *tnode ;
  */
         glDisable(GL_TEXTURE_2D) ;
         glDisable(GL_LIGHTING) ;
-        sprintf(string,"   %s",tnode->name);
+        sprintf(string,"   %s",tx_node->name);
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window2((GLfloat) x1, (GLfloat) y1-0.09, (GLfloat) 0.002, string);
         glColor3f(0.0,0.0,0.0) ;

@@ -339,6 +339,7 @@ double    x, y, z, w     ;
 /*
  *  Order pairs so that transforation is before rotation
  */
+                      c0 = c1 = NULL ;
                       if(n_controllers == 1){
                         c0 = &(anim_node->controller[0]) ;
                       }else if(n_controllers == 2){

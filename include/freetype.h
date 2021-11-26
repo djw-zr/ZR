@@ -15,6 +15,7 @@
  */
 #ifdef zr_freetype
 
+//#include <freetype/ft2build.h>    // [Package freetype2-devel]
 #include <ft2build.h>    // [Package freetype2-devel]
 #include FT_FREETYPE_H
 

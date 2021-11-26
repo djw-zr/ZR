@@ -278,7 +278,11 @@ char   my_name[] = "make_dynamic_display_lists" ;
 /*
  * Free allocated memory
  */
-          for(v3x3 = v3x3_beg ; v3x3 != NULL ; v3x3 = v3x3->next)free(v3x3) ;
+
+          for(v3x3 = v3x3_beg ; v3x3 != NULL ; v3x3 = v3x3_end){
+            v3x3_end = v3x3->next ;
+            free(v3x3)            ;
+          }
           v3x3_end = NULL ;
           v3x3_beg = NULL ;
         }

@@ -283,6 +283,7 @@ double hh  ;
 /*
  *   Cycle over cells of strip - including overlap
  */
+        l2  = 0 ;
         for(i=0;i<nht;i++){     // Cycle over cells of strip
           l1 = (i == nht-1) ;   // End cell of row
 

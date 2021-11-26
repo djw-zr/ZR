@@ -43,21 +43,21 @@ int make_tile_vertex_arrays(){
 
 int          ip = 0 ;  // Debug
 int          ix, iy ;
-TileListNode *tnode ;
+TileListNode *tl_node ;
 char         my_name[] = "make_tile_vertex_arrays" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
-      for(tnode=tilelist_head;tnode!=NULL;tnode=tnode->next){
-        ix = tnode->tilex ;
-        iy = tnode->tiley ;
+      for(tl_node=tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
+        ix = tl_node->tilex ;
+        iy = tl_node->tiley ;
         if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
-        tnode->needed          = 1     ;
-        make_tile_vertex_array(tnode)  ;
+        tl_node->needed          = 1     ;
+        make_tile_vertex_array(tl_node)  ;
       }
       return 0;
 }
 
-int make_tile_vertex_array(TileListNode *tnode){
+int make_tile_vertex_array(TileListNode *tl_node){
 
 int            i, j, k, l, kt, l1, l2, n1, n2, n3, n4, i3, j3, m3 ;
 int            tile_x, tile_y ;
@@ -78,7 +78,7 @@ int            max_i, max_v ;
 int            nbx, nby, ncx, ncy, ib, jb, nvt, ii, jj, ij;
 VANode         *va_node ;
 
-TerrainData    *terrain = &(tnode->terrain_data) ;
+TerrainData    *terrain = &(tl_node->terrain_data) ;
 GLfloat        *vertex ;
 #ifdef normal_byte
   GLbyte         *normal  ;
@@ -102,19 +102,19 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       if(ip)printf(" Enter routine %s\n",my_name) ;
 
 
-      floor      = tnode->terrain_data.terrain_sample_floor ;
-      scale      = tnode->terrain_data.terrain_sample_scale ;
-      elevations = tnode->terrain_data.elevations           ;
-      nht        = tnode->terrain_data.terrain_nsamples     ;
+      floor      = tl_node->terrain_data.terrain_sample_floor ;
+      scale      = tl_node->terrain_data.terrain_sample_scale ;
+      elevations = tl_node->terrain_data.elevations           ;
+      nht        = tl_node->terrain_data.terrain_nsamples     ;
 
       dx_topog = 1.0/nht               ;  // Spacing in tile units
       dm_topog = tile_size/nht         ;  // Spacing in m
       dd_texture = 2.0                 ;  // Texture distance per terrain spacing
 
-      tile_x = tnode->tilex ;
-      tile_y = tnode->tiley ;
+      tile_x = tl_node->tilex ;
+      tile_y = tl_node->tiley ;
       if(ip)printf("  Tile_x = %i %i, tile_y = %i %i :: %i\n",
-                                 tile_x,tile_x0,tile_y,tile_y0,tnode->needed) ;
+                                 tile_x,tile_x0,tile_y,tile_y0,tl_node->needed) ;
       if(ip)printf("  plot_scale = %f %f\n",(double)plot_scale,(double)scalei) ;
 /*
  *  Define material properties of land.
@@ -365,13 +365,17 @@ double hh  ;
                 xa[0] = xa[1] = vertex[0] ;
                 ya[0] = ya[1] = vertex[1] ;
                 za[0] = za[1] = vertex[2] ;
+//  Keep the 'optimised' compiler happy
               }else{
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
                 if(vertex[k]<xa[0])xa[0] = vertex[k];
                 if(vertex[k]>xa[1])xa[1] = vertex[k];
                 if(vertex[k+1]<ya[0])ya[0] = vertex[k+1];
                 if(vertex[k+1]>ya[1])ya[1] = vertex[k+1];
                 if(vertex[k+2]<za[0])za[0] = vertex[k+2];
                 if(vertex[k+2]>za[1])za[1] = vertex[k+2];
+#pragma GCC diagnostic pop
               }
 #ifdef normal_byte
               normal[k  ] =   0 ;
@@ -405,9 +409,12 @@ double hh  ;
 /*
  *  save limits
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
           va_node->xa[0] = xa[0] ; va_node->xa[1] = xa[1] ;
           va_node->ya[0] = ya[0] ; va_node->ya[1] = ya[1] ;
           va_node->za[0] = za[0] ; va_node->za[1] = za[1] ;
+#pragma GCC diagnostic pop
           va_node->in_use = 1 ;    //  Tests not availale at this stage
 
 
@@ -446,31 +453,31 @@ int check_topographic_blocks(){
 
 int          ip = 0       ;  // Debug
 int          ix, iy, k, n ;
-TileListNode *tnode       ;
+TileListNode *tl_node       ;
 VANode       *va_node     ;
 char         my_name[] = "check_topographic_blocks" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
-      for(tnode=tilelist_head;tnode!=NULL;tnode=tnode->next){
-        ix = tnode->tilex ;
-        iy = tnode->tiley ;
+      for(tl_node=tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
+        ix = tl_node->tilex ;
+        iy = tl_node->tiley ;
         if(ip)printf("  tile_x, tile_y, use_tile = %i %i %i :: %i %i :: %i %i :: %i\n",
-        ix,iy,use_tile(ix,iy), tile_eye_x0, tile_x0, tile_eye_x0, tile_y0, tile_cull_r);
+        ix,iy,use_tile(ix,iy), tile_eye_x0, tile_x0, tile_eye_y0, tile_y0, tile_cull_r);
         if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
-        tnode->needed          = 1     ;
+        tl_node->needed          = 1     ;
 
-        if(ip)printf(" name = %s, nbx = %i, nby = %i\n",tnode->name,
-               tnode->terrain_data.nbx,
-               tnode->terrain_data.nby ) ;
-        n = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+        if(ip)printf(" name = %s, nbx = %i, nby = %i\n",tl_node->name,
+               tl_node->terrain_data.nbx,
+               tl_node->terrain_data.nby ) ;
+        n = tl_node->terrain_data.nbx*tl_node->terrain_data.nby ;
         if(ip)printf(" n = %i\n",n) ;
         if(n != 256){
-          tnode->needed = 0;
+          tl_node->needed = 0;
           continue ;
         }
         for(k=0;k<n;k++){
           if(ip)printf(" %i",k) ;
-          va_node = &(tnode->terrain_data.va_node[k]) ;
+          va_node = &(tl_node->terrain_data.va_node[k]) ;
           va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
         }
         if(ip)printf("\n") ;

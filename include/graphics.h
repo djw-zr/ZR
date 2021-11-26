@@ -19,10 +19,48 @@
   #define _Display_Normal
 #endif
 
-#include <GL/gl.h>
+//#include <GL/gl.h>
 //#include <GL/glext.h>
-#include <GL/glu.h>
-#include <GL/glut.h>
+//#include <GL/glu.h>
+//#include <GL/glut.h>
+
+#ifdef SDL2
+
+#include <stdio.h>
+#include <stdint.h>
+#include <assert.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_opengl.h>
+#include <SDL2/SDL_ttf.h>
+
+#include <GL/gl.h>
+#include <GL/glext.h>
+
+typedef int32_t  i32 ;
+typedef uint32_t u32 ;
+typedef int32_t  b32 ;
+
+u32 WindowFlags       ;
+SDL_Window   *Window  ;
+SDL_GLContext Context ;
+SDL_Event    *Event   ;
+TTF_Font     *ttf_font ;
+TTF_Font     *ttf_font_f12,
+             *ttf_font_f14,
+             *ttf_font_f16,
+             *ttf_font_f18 ;
+
+
+b32 Running    = 1 ;
+b32 FullScreen = 0 ;
+
+/* Function Prototypes */
+void PrintKeyInfo(SDL_KeyboardEvent *key ) ;
+void PrintModifiers(Uint16 mod )           ;
+void reshape2(int w, int h) ;
+int  keyboard_sdl(SDL_Event *event )       ;
+
+#endif
 
 int     l_plot = 0  ;   // True if plotting on
 int     tst_tile_x =  1448 ;       //  Initial test  1448
@@ -63,8 +101,8 @@ GLsizei  viewport_y0     =  100 ;   // = main_window_y0
 GLdouble viewport_fovy   = 30.0 ;
 GLdouble viewport_aspect =  1.0 ;
 GLdouble viewport_near_m =  1.0 ;    // Nearest point displayed 1 m(m)
-//GLdouble viewport_far_m  = 10240.0 ; // Furthest point displayed ~10 km (m)
-GLdouble viewport_far_m  = 2048.0 ; // Furthest point displayed ~10 km (m)
+//GLdouble viewport_far_m  = 10240.0 ; // Furthest point displayed
+GLdouble viewport_far_m  = 2048.0 ; // Furthest point displayed
 
 double    tile_size  = 2048.0    ;  // Size of tile (m)
 double    plot_scale = 2048.0    ;  // Size in m of one unit in plotting space
@@ -366,10 +404,10 @@ void  keyboard(unsigned char key, int x, int y);
 void  display(void) ;
 void  reinit_vars(void) ;
 void  specialkey(int key, int ixm, int iym) ;
-void  print_string_in_window(GLfloat rx, GLfloat ry, char *string);
-void  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string);
-void  print_string_in_window3(GLfloat rx, GLfloat ry, char *string, void *font);
-void  glutPrintString(char *string, void *font) ;
+int   print_string_in_window(GLfloat rx, GLfloat ry, char *string);
+int   print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string);
+int   print_string_in_window3(GLfloat rx, GLfloat ry, char *string, int font_size);
+int   glutPrintString(char *string, void *font) ;
 
 void  myLookAt(void)           ;
 void  reshape(int w, int h)    ;

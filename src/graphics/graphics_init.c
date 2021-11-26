@@ -58,10 +58,13 @@ char     my_name[] = "graphics_init" ;
        printf("  GL_MAX_ELEMENTS_VERTICES = %i\n",ivec[0]) ;
        glGetIntegerv(GL_MAX_ELEMENTS_INDICES, ivec) ;
        printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",ivec[0]) ;
+
 /*
  * Initialise truetype
  */
+#ifndef SDL2
        freetype_init() ;
+#endif
 /*
  *   In case of changes : re-initialise viewport variables
  */
@@ -128,9 +131,9 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 /*
  *  Start with camera  '0'
  */
-      current_camera = 0 ;
-      camera_changed = 1 ;
-      camera_new_position() ;
+       current_camera = 0 ;
+       camera_changed = 1 ;
+       camera_new_position() ;
 /*
  *  Initialise clocks
  */
@@ -160,7 +163,7 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
  */
 #ifdef _Display_Normal
       if(ip)printf("   Make tile display lists\n");
-//     make_tile_topog_display_lists() ;
+//      make_tile_topog_display_lists() ;
 # ifdef use_vertex_arrays
       make_tile_vertex_arrays()       ;
 #else
@@ -211,13 +214,20 @@ int  ip = 0                   ;  //  = 0 for no debug printing
       clear_needed_flags()     ;
       if(ip)printf("   GC Call mark_shapes\n") ;
       mark_shapes()            ;
+      if(ip)printf("   GC Call mark_textures\n") ;
       mark_textures()          ;
+      if(ip)printf("   GC Call cull_topography_display_lists\n") ;
       cull_topography_display_lists() ;
 //      cull_textures()          ;
+      if(ip)printf("   GC Call cull_display_lists\n") ;
       cull_display_lists()     ;
+      if(ip)printf("   GC Call load_topography_display_lists\n") ;
       load_topography_display_lists() ;
+      if(ip)printf("   GC Call load_needed_textures\n") ;
       load_needed_textures()   ;
+      if(ip)printf("   GC Call load_needed_display_lists\n") ;
       load_needed_display_lists() ;
+      if(ip)printf("   Exit graphics_cull\n") ;
 #endif
 
       return ;

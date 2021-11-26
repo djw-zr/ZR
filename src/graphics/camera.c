@@ -53,7 +53,7 @@ CameraNode *camera ;
 
 int camera_new_position(){
 
-  int          i, j, position ;
+  int          i, j ;
   int          ip = 0 ;         //  Debug
   float        rail_height = 0.27 ;  //  Best fit placing wheels on track
   float       x, y, z, scalei=1.0/plot_scale ;
@@ -70,19 +70,22 @@ int camera_new_position(){
  *==============================================================================
  */
 #ifdef _Display_Normal
-      if(ip)printf(" Enter %s _Display_Normal\n",my_name) ;
-      if(ip)printf(" camera_changed =  %i\n",camera_changed) ;
-      if(ip)printf(" current_camera =  %i\n",current_camera) ;
-      if(ip)printf(" camera_last =  %i\n",camera_last) ;
+      if(ip){
+        printf(" Enter %s _Display_Normal\n",my_name) ;
+        printf(" camera_changed =  %i\n",camera_changed) ;
+        printf(" current_camera =  %i\n",current_camera) ;
+        printf(" camera_last =  %i\n",camera_last) ;
+      }
 
       if(!camera_changed)return 0 ;
       camera_changed = 0 ;
       camera   = &cameras[current_camera] ;
-      position = camera->position ;
 /*
  *==============================================================================
  *  If the camera has been changed initialise offsets from
  *  origin (origin can be absolute or the position of a traveller)
+ *  If camera 4 is called more then once the position swaps to the other
+ *  side of the tracks.
  *==============================================================================
  */
       if((current_camera != camera_last) || current_camera == 4){
@@ -92,21 +95,9 @@ int camera_new_position(){
         offset_center_x = scalei*camera->offset_center_x ;
         offset_center_y = scalei*camera->offset_center_y ;
         offset_center_z = scalei*camera->offset_center_z ;
-#if 0
-/*
- *  If camera 0 or camera 8 : initialise absolute values
- *  May not be needed
- */
-        if(current_camera == 0 || current_camera == 8){
-          lookat_eye_x    = offset_eye_x    ;
-          lookat_eye_y    = offset_eye_y    ;
-          lookat_eye_z    = offset_eye_z    ;
-          lookat_center_x = offset_center_x ;
-          lookat_center_y = offset_center_y ;
-          lookat_center_z = offset_center_z ;
-        }
-#endif
+
 //  Other graphic variables
+
         radian_to_north = atan2(offset_center_x-offset_eye_x,
                                 offset_center_y-offset_eye_y) ;
         radian_to_up    = 0.5*M_PI - atan2(offset_center_z-offset_eye_z,
@@ -117,14 +108,13 @@ int camera_new_position(){
         if(ip)printf(" %s, angle_to_north = %10.6f, angle_to_up = %10.6f\n",
                my_name, angle_to_north, angle_to_up);
       }
-      if(ip)printf(" position =  %i\n",position) ;
 /*
  *==============================================================================
  *  If camera position is absolute copy offset coordinates to lookat
  *  otherwise calculate new lookat (absolute) values
  *==============================================================================
  */
-      if(current_camera== 0 || current_camera == 8){
+      if(current_camera == 0 || current_camera == 8){
         lookat_eye_x    = offset_eye_x    ;
         lookat_eye_y    = offset_eye_y    ;
         lookat_eye_z    = offset_eye_z    ;
@@ -154,11 +144,13 @@ int camera_new_position(){
  */
         transform_travel_posn(t, &mm[0][0]) ;
 
-        if(ip)printf(" Routine %s\n",my_name) ;
-        if(ip)printf(" Matrix mm\n");
-        for(j=0;j<4;j++){
-          if(ip)printf("    %10.6f %10.6f %10.6f %10.6f\n",
-                            mm[0][j],mm[1][j],mm[2][j],mm[3][j]) ;
+        if(ip){
+          printf(" Routine %s\n",my_name) ;
+          printf(" Matrix mm\n");
+          for(j=0;j<4;j++){
+            if(ip)printf("    %10.6f %10.6f %10.6f %10.6f\n",
+                              mm[0][j],mm[1][j],mm[2][j],mm[3][j]) ;
+          }
         }
 /*
  *==============================================================================
@@ -221,6 +213,9 @@ int camera_new_position(){
       tile_eye_y0 = lookat_eye_y ;
       if(lookat_eye_x<0.0) tile_eye_x0 = tile_eye_x0 - 1 ;
       if(lookat_eye_y<0.0) tile_eye_y0 = tile_eye_y0 - 1 ;
+      if(ip)printf(" Camera AA :: Tile %i %i :: Eye %f %f :: Last %i %i\n",
+                  tile_eye_x0, tile_eye_y0, lookat_eye_x, lookat_eye_y,
+                  last_eye_x0, last_eye_y0) ;
 /*
  *==============================================================================
  *  If viewpoint tile has changed cull shapes etc.

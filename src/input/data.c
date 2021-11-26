@@ -331,6 +331,7 @@ char           my_name[] = "init_data_structures" ;
  *         The data is added to the TextureNode
  */
       printf("   Read and load texture files\n");
+      if(ip)printf("   land_texture_default = %s\n",land_texture_default) ;
       for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
 //        if(strncmp(tnode->name,"AU_Ash",6))continue ;
         load_texture(tnode) ;
@@ -338,12 +339,13 @@ char           my_name[] = "init_data_structures" ;
         if(strcmp_ic(tnode->name,land_texture_default))continue;
         tnode->basic = 1     ;    //  Must be loaded
         land_texture = tnode ;
+        if(ip)printf("   land_texture = %p\n",(void *)land_texture) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *      3.  In each ShapeNode add pointers to the required textures.
  */
-      printf("    Add links to textures needed by each shape\n");
+      printf("   Add links to textures needed by each shape\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
         add_texture_pointers_to_shape_items(snode) ;
       }
@@ -534,7 +536,7 @@ DynTrackSect  *d ;
  */
 #if 0
       ip = 0 ;
-      if(ip || 1){
+      if(ip){
   int   i, j, k, kmin, kmax, n ;
   unsigned short  *kp ;
         printf(" List tile data\n") ;

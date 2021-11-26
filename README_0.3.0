@@ -4,36 +4,28 @@ Program ZR
 Introduction
 ============
 
-    Program ZR is intended initially to be a GNU version of OpenRails, the open source program based on MSTS (Microsoft Train Simulator), using Mesa/OpenGL and X11 for the 3D graphics and GLUT or SDL2 for the window and user interfaces.  It is written in C.
+    Program ZR is intended initially to be a GNU version of OpenRails, the open source program based on MSTS (Microsoft Train Simulator), using Mesa/OpenGL and X11 for the 3D graphics and GLUT for the window and user interfaces.  It is written in C, but as OpenGL is also available on other systems, such as Windows and OS 11, there is no reason why it should not be converted.
 
     The basic design principal is the engineers' KISS (Keep It Simple Stupid).  GNU does not support C#, so as ZR is a bit-shoving program we are limited to C or C++.  ZR started as a C++ project but I was concerned about speed (not helped by some comments in Stroustrup's book) and I was not convinced that the extensions (overtyping etc) were optimal (or needed) for a relatively small project like OpenRails.  So I chose C.
 
     I have thought about the name and after some thought junked either GLOR or GOR (Gnu-Linux OpenRails or the Great Ocean Railroad), for ZR (Zero Rails).  Zero is the typographical sibling of 'O' and it means that any special names can start with the shorter 'zr' or 'zr_' without possibly confusion with dictionary words.
 
     At the lowest level the program includes routines to read most, if not all,  OpenRails and MSTS style text, compressed and binary files.  This allows the files describing the landscape, fixed shapes (stations, tracks, buildings, rail crossings, signals, etc.) and wagons (including engines, carriages and freight) to be read and the contents used to generate the display.
-
+    
     Wheels and engine running gear rotate and move correctly.  Trains can be constructed and the settings of points/switches changed to allow them to reach any part of the track.
-
+    
     There are also compiler options which separately display wagons/engines, shapes and textures.  However the remaining OpenRails code, which includes all the active dynamics, still has to be converted.
-
-    The program has been developed using the "Great Zig Zag Railway" route available from:
-       https://www.zigzag.coalstonewcastle.com.au/
-
-
-Version 0.4.0
-=============
-
-    Up to this stage ZR has been developed using glut to interface with the operating system, mainly for handling the graphics window and keyboard.  Version 0.4.0 allows the choice of either glut (freeglut.sourceforge.net) or SDL2 (www.libsdl.org) for the interface.
-
-    In principal there are (or have been) glut packages designed to run on Windows and other systems but SDL2 has the advantage of being much more actively supported.  For the moment ZR will not compile on Windows although this version does contain some changes designed to work with MinGW on Windows (www.mingw-w64.org).
 
 Version 0.3.0
 =============
 
-    Version 0.3.0 adds support for one or more trains, each consisting of one or more wagons.  The key combination 'Alt-F7' switches between trains.  Wagon loads are now displayed and the program animates wheel rotation and steam engine running gear.  Trains now stop at end-of-track instead of being reflected.  They also stop when trying to enter a junction from the wrong branch.
-
+    The program has been developed using the "Great Zig Zag Railway" route available from:
+       https://www.zigzag.coalstonewcastle.com.au/
+       
+    Version 0.3.0 adds support for one or more trains, each consisting of one or more wagons.  The key combination 'Alt-F7' switches between trains.  Wagon loads are now displayed and the program animates wheel rotation and steam engine running gear.  Trains now stop at end-of-track instead of being reflected.  They also stop when trying to enter a junction from the wrong branch.  
+       
     The F1 key toggles a help screen and the F8 key toggles the display of points/switches in front of and behind a train.  Keys '1' to '9' toggle different camera views.
-
+    
     Display rates can still be low - but will depend on the graphics card being used.  The code includes an option to use vertex arrays for the topography, which should speed things up.  The code also uses viewport clip planes, again to reduce the amount of data processed by the graphics card.
 
     At this stage of development, the code is likely to contain bugs and hit problems with common misspellings of MSTS tokens - which MSTS and OpenRails either ignore or allow for.  For this reason it is suggested that users first test the code using the zig-zag route, before trying the it out on other routes
@@ -56,15 +48,10 @@ Running the program
 
     As with the MSTS keyboard, 'Shift-Z' gives an estimate of frames per second.  The value displayed is an cumulative average over the previous 5 seconds - so it takes 5 seconds to stabilise.
 
-    Keys 'd' and 'a' speed up and slowdown the current train by 1 m/s.
-    Key  's' stops the current train.
-    Keys 'g' and 'G' change the points in front of and behind the current train.
-
     Key 'F1' displays a help panel.
-    Key 'F8' displays the position of the points/switches in front of and behind the train.
-    Key 'Alt-F7' moves the viewpoint and control to the next train.
+    Key 'F8' displays the position of the points/switches in front and behind the engine. 
 
-    The keys '1', '2', '3', '4', '5', '6' and '7' move the viewpoint to positions (mostly) similar to the standard MSTS camera positions.
+    The keys '1', '2', '3', '4', '5', '6' and '7' move the viewpoint to positions (mostly) similar to the standard MSTS cameras.
 
 Other Options
 =============
@@ -88,12 +75,12 @@ Other Options
         #CFLAGS  += -D_Display_Wagons #       Engines, wagons and carriages, with loads.
         #CFLAGS  += -D_Display_Textures #     Textures
     The 3D figures and 2D textures are displayed on a regular grid.  The names are also displayed.
-
+    
        CFLAGS  += -Dculling_off_for_wagons
          Solves the problem due to parts of some wagons having the shape triangles ordered clockwise instead of the standard anti-clockwise direction.
-
+         
        CFLAGS  += --Dzr_freetype
-         When using the glut interface this option uses the Freetype libraries for text.  Otherwise the glut text routines are used.
+         Use the Freetype libraries for text.  Otherwise the glut text routines are used.
 
        CFLAGS  += --Duse_vertex_arrays
          Use vertex arrays for topography
@@ -103,7 +90,7 @@ Other Options
        CFLAGS  += --Dgeo_coord
        CFLAGS  += --Dtexture_short
        CFLAGS  += --Dnormal_byte
-
+    
 
 Contributing
 ============

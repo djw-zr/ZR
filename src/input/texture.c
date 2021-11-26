@@ -40,7 +40,7 @@ int file_is_ace( const struct dirent *p){
 int load_texture_filenames() {
 
   int         idir, len1, len2, i, n ;
-  int         ip = 0 ;                // Control printing : 0 = no printing
+  int         ip = 1 ;                // Control printing : 0 = no printing
   char        *tdir_name ;
   DIR         *tdir;
   struct dirent *f_entry;
@@ -81,6 +81,7 @@ int load_texture_filenames() {
           printf("   Program stopping ... \n") ;
           exit(1) ;
         }
+        closedir(tdir) ;
 /*
  * 1.5  Generate an ordered list
  */
@@ -135,7 +136,7 @@ int load_texture_filenames() {
           free(namelist[i]) ;
         }
       free(namelist);
-      closedir(tdir) ;
+//      closedir(tdir) ;
       free(tdir_name);
       }
       return 0;
@@ -518,7 +519,8 @@ int   w = width, nb, h, nwords ;
  *  If no mipmaps allow width and height to differ.
  */
           h  = (mipmaps ? w : height) ;
-          nwords = (w*h <4) ? 4 : w*h ;         // 1x1 mipmaps need 2x2 memory
+//          nwords = (w*h <4) ? 4 : w*h ;         // 1x1 mipmaps need 2x2 memory
+          nwords = (w*h <8) ? 8 : w*h ;         // Ensure on 8 byte boundary
           tnode->texture[i] = (GLubyte *)calloc(nb*nwords,sizeof(GLubyte));
           if(ip)printf("  Memory for image %i, nb = %i, w = %i, h = %i,"
                   " nwords = %i, size = %i, texture[i] = %p\n",

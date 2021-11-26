@@ -22,6 +22,8 @@
  *==============================================================================
  */
 void render_text(const char *text, float x, float y, float sx, float sy) ;
+int  sdl2PrintString(char *string);
+
 //FT_Library ft;
 //FT_Face face;
 
@@ -31,66 +33,68 @@ void render_text(const char *text, float x, float y, float sx, float sy) ;
  *         also called when the graphics screen is opened
  * *****************************************************************************
  */
-void reshape(int w, int h)
+#ifdef SDL2
+void reshape2(int w, int h)
 {
-  int tx, ty, tw, th   ;        //  Origin (x, y), with and height of viewport.
-  int      ip = 0 ;             // 0 = no printing
-  GLdouble scale_w, scale_h, scale, centre_x, centre_y ;
-  GLfloat position[] = { 3.0, 3.0, 3.0, 0.0 };              // Light position
-  GLint   iparms[4] ;
-  double   sc ;
-    if(l_pd  || ip)printf(" Enter reshape\n");
-//    GLUI_Master.get_viewport_area( &tx, &ty, &tw, &th) ;
-    glGetIntegerv(GL_VIEWPORT,iparms);
-    tx = iparms[0] ;
-    ty = iparms[1] ;
-    tw = w ;
-    th = h ;
-    if(ip)printf("  Reshape : %i %i %i %i\n",tx,ty,tw,th);
-
-    glViewport((GLsizei) tx, (GLsizei) ty, (GLsizei) tw, (GLsizei) th);
-    viewport_width  = tw ;
-    viewport_height = th ;
-/*
- *  Initialise matrices
- */
-      if(l_pd  || ip)printf(" Use gluPerspective\n");
-      viewport_aspect = (GLfloat)tw/(GLfloat)th    ;
-#if defined _Display_Shapes || defined _Display_Wagons
-      viewport_near = 1.0/plot_scale ;
-      viewport_far  = 4096.0/plot_scale ;
-#elif _Display_Textures
-      viewport_near =  0.1 ;
-      viewport_far  = 10.0 ;
-#else
-      viewport_near   = viewport_near_m/plot_scale ;
-      viewport_far    = viewport_far_m/plot_scale  ;
-#endif
+      SDL_GetWindowSize(Window, &viewport_width, &viewport_height) ;
+      glViewport(0, 0, viewport_width, viewport_height);
+      viewport_aspect = (GLfloat)viewport_width/(GLfloat)viewport_height    ;
       glMatrixMode(GL_PROJECTION) ;
       glLoadIdentity() ;
       gluPerspective(viewport_fovy,viewport_aspect,viewport_near,viewport_far);
-#if 0
       glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity() ;
-      gluLookAt(lookat_eye_x,lookat_eye_y,lookat_eye_z,
-               lookat_center_x,lookat_center_y,lookat_center_z,
-               lookat_up_x,lookat_up_y,lookat_up_z) ;
-      glLightfv(GL_LIGHT0, GL_POSITION, position) ;  //  REQUIRED after MODELVIEW CHANGE
-      initialise_eye_vectors() ;
-      initialise_clip_planes(clip_a) ;
-      check_topographic_blocks() ;
-#else
-      camera_changed = 1;
-      camera_new_position() ;
-#endif
-
-//    new_viewpoint = 1 ;   // graphics_cull() not needed with reshape
-    if(l_pd || ip)printf(" Exit  reshape()\n");
 }
 
 
+#else
+void reshape(int w, int h)
+{
+int tx, ty, tw, th   ;        //  Origin (x, y), with and height of viewport.
+int      ip = 0 ;             // 0 = no printing
+GLdouble scale_w, scale_h, scale, centre_x, centre_y ;
+GLfloat position[] = { 3.0, 3.0, 3.0, 0.0 };              // Light position
+GLint   iparms[4] ;
+double   sc ;
 
-void  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
+      if(l_pd  || ip)printf(" Enter reshape\n");
+
+//    GLUI_Master.get_viewport_area( &tx, &ty, &tw, &th) ;
+      glGetIntegerv(GL_VIEWPORT,iparms);
+      tx = iparms[0] ;
+      ty = iparms[1] ;
+      tw = w ;
+      th = h ;
+      if(ip)printf("  Reshape : %i %i %i %i\n",tx,ty,tw,th);
+
+      glViewport((GLsizei) tx, (GLsizei) ty, (GLsizei) tw, (GLsizei) th);
+      viewport_width  = tw ;
+      viewport_height = th ;
+/*
+ *  Initialise matrices
+ */
+        if(l_pd  || ip)printf(" Use gluPerspective\n");
+        viewport_aspect = (GLfloat)tw/(GLfloat)th    ;
+#if defined _Display_Shapes || defined _Display_Wagons
+        viewport_near = 1.0/plot_scale ;
+        viewport_far  = 4096.0/plot_scale ;
+#elif _Display_Textures
+        viewport_near =  0.1 ;
+        viewport_far  = 10.0 ;
+#else
+        viewport_near   = viewport_near_m/plot_scale ;
+        viewport_far    = viewport_far_m/plot_scale  ;
+#endif
+        glMatrixMode(GL_PROJECTION) ;
+        glLoadIdentity() ;
+        gluPerspective(viewport_fovy,viewport_aspect,viewport_near,viewport_far);
+        camera_changed = 1;
+        camera_new_position() ;
+
+        if(l_pd || ip)printf(" Exit  reshape()\n");
+}
+#endif
+
+int  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
 {
 /*
  *  Print string at fixed position on screen.
@@ -110,12 +114,17 @@ void  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
 void *font ;
 
       glWindowPos2f(wx,wy) ;   /* Initial window pixel position */
+#ifdef SDL2
+      ttf_font = ttf_font_f16 ;
+      sdl2PrintString(string) ;
+#else
       font = GLUT_BITMAP_HELVETICA_18 ;
       glutPrintString(string,font);
-      return ;
+#endif
+      return 0 ;
 }
 
-void  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string)
+int  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string)
 {
 /*
  *  Print string at fixed position in 3D space coordinates
@@ -131,32 +140,142 @@ void  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string)
  *       GLUT_BITMAP_HELVETICA_18
  */
 
+      glDisable(GL_LIGHTING)  ;
+      glDisable(GL_TEXTURE_2D) ;
+      glEnable(GL_BLEND)      ;
+
+      glRasterPos3d(rx, ry, rz) ;
+#ifdef SDL2
+      ttf_font = ttf_font_f12 ;
+      sdl2PrintString(string) ;
+#else
 void *font ;
-      glRasterPos3d(rx,ry, rz) ;
       font = GLUT_BITMAP_HELVETICA_12 ;
       glutPrintString(string,font);
-    }
+#endif
+      glEnable(GL_LIGHTING)  ;
+      glEnable(GL_TEXTURE_2D) ;
+      glEnable(GL_BLEND)      ;
+      return 0 ;
+      }
 
-void print_string_in_window3(GLfloat rx, GLfloat ry, char *string, void *font){
+int print_string_in_window3(GLfloat rx, GLfloat ry, char *string, int font_size){
+
+char my_name[] = "print_string_in_window3" ;
 
       glWindowPos2d(rx,ry) ;
-#ifdef zr_freetype
-      render_text_as_greyscale(string, ft_verdana, 10) ;  // Fixed space
-//      render_text_as_greyscale(string, ft_tahoma, 10) ;   // Flexible
+#ifdef SDL2
+      switch(font_size) {
+        case 12:
+          ttf_font = ttf_font_f12 ;
+          break ;
+        case 14:
+          ttf_font = ttf_font_f14 ;
+          break ;
+        case 16:
+          ttf_font = ttf_font_f16 ;
+          break ;
+        case 18:
+          ttf_font = ttf_font_f18 ;
+          break ;
+        default:
+          printf("  ERROR in routine %s\n",my_name) ;
+          printf("    Font size %i is not supported. \n",font_size) ;
+          printf("  Program stopping ...\n") ;
+          exit(1) ;
+      }
+      sdl2PrintString(string) ;
+#elif defined zr_freetype
+      render_text_as_greyscale(string, ft_verdana, font_size-2) ;  // Fixed space
 #else
+void *font ;
+      switch(font_size) {
+        case 10:
+          font = GLUT_BITMAP_HELVETICA_10 ;
+          break ;
+        case 12:
+          font = GLUT_BITMAP_HELVETICA_12 ;
+          break ;
+        case 18:
+          font = GLUT_BITMAP_HELVETICA_18 ;
+          break ;
+        default:
+          printf("  ERROR in routine %s\n",my_name) ;
+          printf("    Font size %i is not supported. \n",font_size) ;
+          printf("  Program stopping ...\n") ;
+          exit(1) ;
+      }
       glutPrintString(string,font);
 #endif
-      return ;
+      return 0 ;
 }
 
-void glutPrintString(char *string, void *font)
+
+int  sdl2PrintString(char *string){
+#ifdef SDL2
+  int     ip = 0   ;
+  int     ired, igreen, iblue, ialpha ;
+  Uint32  i, j, k, l ;
+  Uint8   pred, pgreen, pblue, palpha ;
+  SDL_Surface  *surface ;                           //  SDL_surface.h
+  SDL_PixelFormat *pf ;                       //  SDL_pixels.h
+  SDL_Color    fg = {255, 255, 255, 100},
+               bg = {255,   0,   0,   0} ;          //  SDL_pixels.h
+  GLfloat color[4]    ;
+  int text_width  ;
+  int text_height ;
+  int pitch       ;
+  Uint8 *px       ;
+  Uint8 *pg       ;
+
+      glGetFloatv(GL_CURRENT_COLOR, color) ;
+      ired   = nint(color[0]*255) ;
+      igreen = nint(color[1]*255) ;
+      iblue  = nint(color[2]*255) ;
+//      ialpha = nint(color[3]*255) ;
+//      printf("  GL_CURRENT_COLOR = %f %f %f %f\n",color[0],color[1],color[2],color[3]) ;
+
+      surface = TTF_RenderText_Shaded(ttf_font, string, fg, bg) ;
+      text_width  = surface->w      ;
+      text_height = surface->h      ;
+      pitch       = surface->pitch  ;
+//      pf          = surface->format ;
+      px          = surface->pixels ;
+
+
+      pg = malloc(text_width*text_height*4*sizeof(Uint8)) ;
+      k = 0 ;
+      l = 0 ;
+      for(j=0;j<text_height;j++){
+        k = (text_height-j-1)*pitch  ;
+        for(i=0;i<text_width;i++,k++,l+=4){
+           pg[l]   = px[k]  ;     //  alpha
+           pg[l+1] = iblue  ;         //  blue
+           pg[l+2] = igreen ;         //  green
+           pg[l+3] = ired   ;         //  red
+        }
+      }
+      glDrawPixels(text_width, text_height, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pg) ;
+      SDL_FreeSurface(surface) ;
+      free(pg) ;
+#endif
+
+      return 0 ;
+}
+
+
+
+int glutPrintString(char *string, void *font)
 {
+#ifndef SDL2
 int len, i;
 
     len = (int) strlen(string);
     for (i = 0; i < len; i++) {
         glutBitmapCharacter(font, string[i]);
     }
+#endif
+    return 0 ;
 }
 
 /*

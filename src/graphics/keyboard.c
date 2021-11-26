@@ -428,9 +428,9 @@ void  specialkey(int key, int ixm, int iym)
         }else{
           player_train = player_train->next ;
         }
-        current_camera = 1 ;
-        camera_changed = 1              ;
-        camera_new_position()           ;
+        current_camera = 1    ;
+        camera_changed = 1    ;
+        camera_new_position() ;
         return ;
       }else{
         if(ip)printf(" Keyboard : No action required\n\n");
@@ -538,31 +538,4 @@ void  specialkey(int key, int ixm, int iym)
 //  Trigger graphics_cull checks (myGlutIdle in graphics.c)
       new_viewpoint = 1 ;
       glutPostRedisplay() ;
-}
-
-float zr_fclip(float x, float xmin, float xmax){
-
-  float ans = x ;
-      if(xmax<xmin) return ans ;
-      if(ans>xmax) ans = xmax ;
-      if(ans<xmin) ans = xmin ;
-      return ans ;
-}
-
-int zr_setv4(GLfloat *v4, float x0, float x1, float x2, float x3){
-
-      v4[0] = x0 ;
-      v4[1] = x1 ;
-      v4[2] = x2 ;
-      v4[3] = x3 ;
-      return 0 ;
-}
-
-int zr_setp4(float *v4, float altde, float polar) {
-
-      v4[0] = cos(radian*altde)*sin(radian*polar)   ;
-      v4[1] = cos(radian*altde)*cos(radian*polar)   ;
-      v4[2] = sin(radian*altde) ;
-      v4[3] = 0.0 ;
-      return 0    ;
 }

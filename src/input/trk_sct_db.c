@@ -540,6 +540,8 @@ static int idt = 0 ;  //  Current dynamic track section being processed
 static WorldItem  *ws = NULL ;
 char my_name[] = "add_distances_to_track_vectors" ;
 
+      k = 0 ;
+
       if(ip)printf("  Add distances :  track node = %4i, vector = %i, flags = %i %i, is_normal = %i, ns = %i, ndt = %i, idt = %i, w = %p, ws = %p\n",t->index_of_node,nvec,flag1,flag2,is_normal,ns,ndt,idt,(void *)w,(void *)ws) ;
 //      printf("  worldtype = %i\n",v->world_item->worldtype) ;
       if(is_normal){

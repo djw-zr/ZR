@@ -21,20 +21,34 @@
 #include <stdlib.h>
 //#include <assert.h>
 #include <time.h>
+#include <errno.h>
 
 #include <dirent.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/dir.h>
+#ifdef MinGW
+  #include <io.h>           //  This may not be necessary
+#else
+  #include <sys/dir.h>
+#endif
 //#include <udunits2.h>
 
 #define GL_GLEXT_PROTOTYPES  // Needed for glWindowPos2f()
 
 #include <GL/gl.h>
 #include <GL/glu.h>
-#include <GL/glut.h>
+#ifdef SDL2
+  #include <stdint.h>
+  #include <assert.h>
+  #include <SDL2/SDL.h>
+  #include <SDL2/SDL_opengl_glext.h>
+  #include <SDL2/SDL_ttf.h>
+#else
+  #include <GL/glut.h>
+  #include "freetype.h"
+#endif
 #ifdef PORTAUDIO
   #include <stdint.h>
   #include "portaudio.h"
@@ -47,7 +61,6 @@
 #include "world.h"
 #include "display_info.h"
 #include "train.h"
-#include "freetype.h"
 #include "camera.h"
 
 #include "functions.h"    //  Call this last

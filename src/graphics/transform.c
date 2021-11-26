@@ -19,7 +19,6 @@
  *   form *matrix[column][row] - opposite to the normal
  *   C convention.
  */
-#define ZR_COORD
 
 int transform_travel_posn(TravellerNode *t, GLdouble *mview){
 
@@ -31,6 +30,7 @@ int transform_travel_posn(TravellerNode *t, GLdouble *mview){
   TrkVectorNode *vn    = t->vn ;
   char     *my_name = "transform_travel_posn" ;
 
+      if(ip)printf("  Enter %s\n",my_name) ;
 /*
  *  Find start of track vector section
  */
@@ -43,22 +43,10 @@ int transform_travel_posn(TravellerNode *t, GLdouble *mview){
       glPushMatrix() ;
 
       glLoadIdentity() ;
-      if(ip){
-        printf(" MODELVIEW AA\n") ;
-        zr_print_modelview() ;
-      }
 //  Move to start of track section
       glTranslated((GLdouble)x, (GLdouble)y, (GLdouble)z) ;
-      if(ip){
-        printf(" MODELVIEW BB\n") ;
-        zr_print_modelview() ;
-      }
 //  Convert following distances from metres to plot_scale
       glScalef(scalei,scalei,scalei) ;
-      if(ip){
-        printf(" MODELVIEW DD\n") ;
-        zr_print_modelview() ;
-      }
 /*
  *  Change rotation signs to allow for change from
  *  left hand MSTS axes to right hand ZR axes
@@ -68,39 +56,26 @@ int transform_travel_posn(TravellerNode *t, GLdouble *mview){
       c = -degree*vn->a_north_z  ;
 
 // Track Direction - (Aircraft Yaw) at start of section
+
       glRotated((GLdouble)b,(GLdouble)0.0,(GLdouble)0.0,(GLdouble)1.0) ;
-      if(ip){
-        printf(" MODELVIEW EE  %10.6f\n",(double)b) ;
-        zr_print_modelview() ;
-      }
 
 // Track Slope - (Aircraft Pitch)
+
       glRotated((GLdouble)a,(GLdouble)1.0,(GLdouble)0.0,(GLdouble)0.0) ;
-      if(ip){
-        printf(" MODELVIEW FF  %10.6f\n",(double)a) ;
-        zr_print_modelview() ;
-      }
+
 // Track Camber - (Aircraft Roll) - Normally zero
+
       if(c != (GLdouble)0.0)
         glRotated((GLdouble)c,(GLdouble)0.0,(GLdouble)1.0,(GLdouble)0.0) ;
-      if(ip){
-        printf(" MODELVIEW GG  %10.6f\n",(double)c) ;
-        zr_print_modelview() ;
-      }
+
 // Move to traveller position on track section
 // (convert Traveller MSTS position to ZR axes)
+
       glTranslated((GLdouble)(t->x),(GLdouble)(t->z),(GLdouble)(t->y)) ;
-      if(ip){
-        printf(" MODELVIEW HH  %10.6f  %10.6f  %10.6f\n",
-                          (double)(t->x),(double)(t->y),(double)(t->z)) ;
-        zr_print_modelview() ;
-      }
+
 //  Traveller rotation due to track curvature
+
       glRotated((GLdouble)(t->ang_deg),(GLdouble)0.0,(GLdouble)0.0,(GLdouble)1.0) ;
-      if(ip){
-        printf(" MODELVIEW II  %10.6f\n", (double)(-t->ang_deg)) ;
-        zr_print_modelview() ;
-      }
 
       glGetDoublev(GL_MODELVIEW_MATRIX,mview) ;
       glPopMatrix() ;

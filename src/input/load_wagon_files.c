@@ -33,9 +33,9 @@ int process_wagon_file(const char *fpath, const struct stat *sb,
   */
 int scan_for_wagon_files(){
 
-  int    ip = 0          ;              // Debug printing
-  int    l1, iret        ;
-  char   *top_dir ;
+  int    ip = 0     ;       // Debug printing
+  int    l1, iret   ;
+  char   *top_dir   ;
   char  my_name[] = "scan_for_wagon_files" ;
 
       l1      = strlen(ORdir) + strlen("Trains/Trainset/") + 1 ;
@@ -44,9 +44,11 @@ int scan_for_wagon_files(){
       strcat(top_dir,"Trains/Trainset/")           ;
       if(ip)printf(" Top trainset directory = %s\n",top_dir) ;
 
-      iret = ftw(top_dir, process_wagon_file, 5) ;
+// Walk directory
 
+      iret = ftw(top_dir, process_wagon_file, 5) ;
       free(top_dir) ;
+
       if(ip)printf(" Return from routine %s\n",my_name) ;
       return iret ;
 }
@@ -56,10 +58,10 @@ int scan_for_wagon_files(){
 int process_wagon_file(const char *fpath, const struct stat *sb,
                         int typeflag){
 
-  int    ip = 0          ;     // Debug printing
-  int    n, is           ;
-  FILE   *fp             ;
-  char   *file_name,           //  Full filename
+  int   ip = 0          ;     // Debug printing
+  int   n, is           ;
+  FILE  *fp             ;
+  char  *file_name,           //  Full filename
         *base_name,           //  Base name inc extension
         *core_name,           //  Base name without extension
         *extension,           //  Extension

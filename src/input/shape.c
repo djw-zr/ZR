@@ -78,6 +78,7 @@ ShapeNode *shape ;
         if(ip)printf(" Directory SHAPES = %s\n",sdir_name) ;
         sdir = opendir(sdir_name) ;
         if(sdir == NULL) error_s1(sdir_name) ;
+        closedir(sdir) ;
 
 //        while ((f_entry = readdir(sdir)) != NULL) {
 //          len2 = strlen(f_entry->d_name) ;
@@ -89,25 +90,34 @@ ShapeNode *shape ;
           exit(EXIT_FAILURE);
         }
         printf("  Shapes from directory %s\n",sdir_name );
+        printf("  n = %i, namelist = %p :: %p\n",n,(void *)namelist,(void *)namelist[0]) ;
+      for(i=0;i<n;i++)
+        printf(" %s  name = %i,  %s\n",my_name,i,namelist[i]->d_name) ;
 /*
  * Initialise new shapenode
  */
         for(i=0;i<n;i++){
+//          printf(" AA i = %i\n",i) ;
           shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
+//          printf(" BB i = %i\n",i) ;
           init_shape_node(shape) ;
+//          printf(" CC i = %i\n",i) ;
 
           if(shapelist_beg == NULL){
             shapelist_beg = shape       ;
           }else{
             shapelist_end->next = shape ;
           }
+//         printf(" CC i = %i\n",i) ;
           shapelist_end = shape ;
           shape->next   = NULL ;
 /*
  *  Save name and filename
  */
+//         printf(" DD i = %i\n",i) ;
           len2 = strlen(namelist[i]->d_name) ;
           shape->name = (char *)malloc(len2-1) ;
+//         printf(" EE i = %i\n",i) ;
           strncpy(shape->name,namelist[i]->d_name,len2-2);
           shape->name[len2-2] = '\0' ;
           if(ip)printf(" Found shape file : %s\n",shape->name) ;
@@ -162,7 +172,7 @@ ShapeNode *shape ;
           free(namelist[i]) ;
         }
         free(namelist);
-        closedir(sdir) ;
+//        closedir(sdir) ;
         free(sdir_name) ;
       }
       return 0;

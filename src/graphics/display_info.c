@@ -109,34 +109,34 @@ int  display_help(){
       glColor3f(0.0,0.0,0.0) ;
 
       sprintf(s1," Help Panel - with developer options");
-      print_string_in_window3(10.0,h-25.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-25.0,s1,12) ;
       sprintf(s1," Keyboard keys:");
-      print_string_in_window3(10.0,h-45.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-45.0,s1,12) ;
       sprintf(s1," Speed     : 'a' - decrease, 's' - stop,  'd' - increase speed forward");
-      print_string_in_window3(10.0,h-70.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-70.0,s1,12) ;
       sprintf(s1," Cameras : '1' - Driver, '2' - Front, '3' - Rear, '4' - Trackside, '5' - Passenger, '6' - Coupler, '7' - Yard view, '8' - Default view");
-      print_string_in_window3(10.0,h-90.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-90.0,s1,12) ;
       sprintf(s1,"              : 'Arrow left' - move Left, 'Arrow Right' - move right, 'Arrow Up' - move forward, 'Arrow Down' - move back");
-      print_string_in_window3(10.0,h-110.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-110.0,s1,12) ;
       sprintf(s1,"              : 'Page Up' - move up, 'Page Down' - move down");
-      print_string_in_window3(10.0,h-130.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-130.0,s1,12) ;
       sprintf(s1,"              : 'Alt'/'Shift' plus arrow keys give smaller/larger steps");
-      print_string_in_window3(10.0,h-150.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-150.0,s1,12) ;
       sprintf(s1,"              : 'Cntl' plus arrow keys turns left, right, up and down");
-      print_string_in_window3(10.0,h-170.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-170.0,s1,12) ;
 
       sprintf(s1," Switches : 'F8' - toggle display, 'g' - toggle switch in front, 'G' - toggle switch behind");
-      print_string_in_window3(10.0,h-190.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-190.0,s1,12) ;
 
       sprintf(s1," Special Keys - with 'alt'");
-      print_string_in_window3(10.0,h-220.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-220.0,s1,12) ;
       sprintf(s1," World items : 'n' - toggle, 'o'/'p' increase/decrease distance, 'k'/'l' increase/decrease height");
-      print_string_in_window3(10.0,h-240.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-240.0,s1,12) ;
       sprintf(s1," Track info.   : 't' - toggle");
-      print_string_in_window3(10.0,h-260.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-260.0,s1,12) ;
 
       sprintf(s1," Trains         : 'F7' - cycle");
-      print_string_in_window3(10.0,h-280.0,s1,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-280.0,s1,12) ;
 
 
 
@@ -223,10 +223,10 @@ char          s1[1024],s2[1024],s3[1024],s4[1024] ;
              tn2->pin_to_section[2], // Index of third
              tn2->straight,          // Index of straight branch
              tn2->branch) ;          // Index of current switched branch
-      print_string_in_window3(10.0,h-25.0,s1,GLUT_BITMAP_HELVETICA_12) ;
-      print_string_in_window3(10.0,h-50.0,s2,GLUT_BITMAP_HELVETICA_12) ;
-      print_string_in_window3(10.0,h-75.0,s3,GLUT_BITMAP_HELVETICA_12) ;
-      print_string_in_window3(10.0,h-100.0,s4,GLUT_BITMAP_HELVETICA_12) ;
+      print_string_in_window3(10.0,h-25.0,s1,12) ;
+      print_string_in_window3(10.0,h-50.0,s2,12) ;
+      print_string_in_window3(10.0,h-75.0,s3,12) ;
+      print_string_in_window3(10.0,h-100.0,s4,12) ;
 
       return 0 ;
       }
@@ -607,7 +607,7 @@ double        df, db ;               // lenght of end wagons
 int   check_track(TrainNode *train, double dist){
 
 int           ip = 0       ;  // Debug
-int           iret         ;  //  Set to 1 to stopping
+int           iret = 0     ;  //  Set to 1 to stopping
 TravellerNode tf  ;           //  Copy back traveller
 double        df  ;           // lenght of end wagons
 char         *my_name="check_track" ;

@@ -44,14 +44,3 @@ char        my_name[] = "glut_idle" ;
         return ;
 }
 
-void  zr_clock_gettime(struct timespec clock[4]){
-
-//      clock_gettime(CLOCK_REALTIME,           &clock[0] );
-      clock_gettime(CLOCK_REALTIME_COARSE,    &clock[0] );
-//      clock_gettime(CLOCK_MONOTONIC,          &clock[1] );
-      clock_gettime(CLOCK_MONOTONIC_COARSE,   &clock[1] );
-      clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &clock[2] );
-      clock_gettime(CLOCK_THREAD_CPUTIME_ID,  &clock[3] );
-
-      return ;
-}
