@@ -28,8 +28,6 @@
 #include <stdio.h>
 
 void error_s1(char *d)  ;
-void error_s2(char *f)  ;
-void error_s3(char *f, int i)  ;
 void init_sub_object(SubObject *s)  ;
 void init_tri_list(TriList *t)      ;
 
@@ -53,15 +51,17 @@ int file_is_shape( const struct dirent *p){
 
 int load_shape_filenames() {
 
-int    len1, len2, len3, idir, i, n ;
-int    ip = 0        ;      // 0 = no printing
-char   *sdir_name    ;
-DIR    *sdir         ;
-FILE   *f            ;
+int    len1, len2, len3, idir, i, n, iret ;
+int    ip = 0 ;                    // 0 = no printing
+char   *name      = NULL ;
+char   *sdir_name = NULL ;
+DIR    *sdir      = NULL ;
+FILE   *f         = NULL ;
 char   my_name[] = "load_shape_filenames" ;
-struct dirent *f_entry;
-struct dirent **namelist;
-ShapeNode *shape ;
+struct dirent *f_entry   = NULL ;
+struct dirent **namelist = NULL ;
+ShapeNode *shape     ;
+BTree  *btree_node   ;
 
       for(idir=0;idir<2;idir++){
         if(idir==0){
@@ -76,6 +76,15 @@ ShapeNode *shape ;
           strcat(sdir_name,"Global/Shapes/")      ;
         }
         if(ip)printf(" Directory SHAPES = %s\n",sdir_name) ;
+        iret = zr_find_msfile2(sdir_name) ;
+        if(iret || sdir_name == NULL){
+          printf(" Routine %s : ERROR : Unable to open SHAPES directory\n",
+                                                                my_name) ;
+          printf("    Directory name = %s\n", sdir_name) ;
+          printf("    Program stopping ...\n") ;
+          exit(1) ;
+        }
+
         sdir = opendir(sdir_name) ;
         if(sdir == NULL) error_s1(sdir_name) ;
         closedir(sdir) ;
@@ -84,24 +93,42 @@ ShapeNode *shape ;
 //          len2 = strlen(f_entry->d_name) ;
 //          if(strcmp(".s",&(f_entry->d_name[len2-2]))!= 0 &&
 //            strcmp(".S",&(f_entry->d_name[len2-2]))!= 0) continue ;
+#ifdef MinGW
+        n = scandir(sdir_name, &namelist, file_is_shape, NULL);
+#else
         n = scandir(sdir_name, &namelist, file_is_shape, versionsort);
+#endif
         if (n == -1) {
           perror("scandir");
           exit(EXIT_FAILURE);
         }
-        printf("  Shapes from directory %s\n",sdir_name );
-        printf("  n = %i, namelist = %p :: %p\n",n,(void *)namelist,(void *)namelist[0]) ;
-      for(i=0;i<n;i++)
-        printf(" %s  name = %i,  %s\n",my_name,i,namelist[i]->d_name) ;
+        printf("     Shapes from directory %s\n",sdir_name );
+//        printf("  n = %i, namelist = %p :: %p\n",n,(void *)namelist,(void *)namelist[0]) ;
+        if(ip){
+          for(i=0;i<n;i++){
+            printf(" %s  name = %i,  %s\n",my_name,i,namelist[i]->d_name) ;
+          }
+        }
+/*
+ *  Process shape files
+ */
+        for(i=0;i<n;i++){
+//  Determine core name and convert to lower case
+          free(name) ;
+          name = zr_basename2(namelist[i]->d_name) ;
+          str2lc(name)        ;
+/*
+ *  Skip unless shape is needed
+ */
+          btree_node = find_btree(shape_master,name) ;
+//          printf("  Shape %s,  btree_node = %p\n", name, (void *)btree_node);
+          if(!btree_node) continue ;
 /*
  * Initialise new shapenode
  */
-        for(i=0;i<n;i++){
-//          printf(" AA i = %i\n",i) ;
           shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
-//          printf(" BB i = %i\n",i) ;
           init_shape_node(shape) ;
-//          printf(" CC i = %i\n",i) ;
+          btree_node->data = (void *)shape ;
 
           if(shapelist_beg == NULL){
             shapelist_beg = shape       ;
@@ -157,7 +184,7 @@ ShapeNode *shape ;
 //  Ignore MSTS track shapes
                   if((shape->name[0] != 'a' && shape->name[0] != 'A') ||
                      (shape->name[1] != '1' && shape->name[1] != '2')){
-                    printf("   Routine '%s'.  Unable to find sd file "
+                    printf("       Routine '%s'.  Unable to find sd file "
                       "corresponding to shape : %s\n",my_name, shape->name)   ;
 //                  printf("   Full name of s  file : %s\n",   shape->s_file)  ;
 //                  printf("  Full name of sd file : %s\n",    shape->sd_file) ;
@@ -258,8 +285,9 @@ int  init_shape_node(ShapeNode *shape){
 
 int load_shape(ShapeNode *snode ) {
 
-  int     ip = 0 ;                  //Controls printing
-  int     i, j, k, l, m, n, itoken;
+  uint    ip = 0 ;                  //  Debug printing when ip == 1
+  uint    i, j, k, l, m, n, itoken;
+  int     iret ;
   MSfile  msfile0 ;
   MSfile  *msfile = &msfile0 ;
   FILE    *fp ;
@@ -267,9 +295,11 @@ int load_shape(ShapeNode *snode ) {
   char    myname[] = "load_shape" ;
 
       ip = ip && !strcmp(snode->name,test_shape) ;
-      if(ip || 0)printf("\n  Enter routine : %s\n",myname);
-      if(ip || 0)printf("  Shape name = %s\n",snode->name);
-      if(ip || 0)printf("  File = %s\n",snode->s_file);
+      if(ip){
+        printf("\n  Enter routine : %s\n",myname);
+        printf("  Shape name = %s\n",snode->name);
+        printf("  File = %s\n",snode->s_file);
+      }
 /*
  * =============================================================================
  *  open_msfile reads and checks the first 16 bytes of the file, inflates
@@ -279,11 +309,14 @@ int load_shape(ShapeNode *snode ) {
       if(ip)printf(" AA\n");
       zr_filename_MS2L(snode->s_file) ;          //  Convert '\' to '/'
       if(ip)printf("  Routine %s, snode->s_file = %s\n",myname,snode->s_file) ;
-      string = zr_find_msfile(snode->s_file) ;
-      if(ip)printf("  Routine %s,        string = %s\n",myname,string) ;
-      l = open_msfile(string, msfile, 0, ip) ;
-      free(string) ;
-      if(ip)printf(" BB\n") ;
+      iret = zr_find_msfile2(snode->s_file) ;
+      if(iret){
+        printf("\n\n  ERROR : Routine zr_find_msfile failed to find file\n");
+        printf("      File = %s\n",snode->s_file) ;
+        exit(1) ;
+      }
+      if(ip)printf("  Routine %s,        File = %s\n",myname,snode->s_file) ;
+      l = open_msfile(snode->s_file, msfile, 0, ip) ;
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
         exit(1) ;
@@ -381,17 +414,32 @@ int load_shape(ShapeNode *snode ) {
         end_block(msfile,1) ;
 /*
  * =============================================================================
- * 1 POINTS
+ * 1 POINTS   (Given as ZR_POINTS in enum.h to bypass window script)
  * =============================================================================
  */
-        open_named_block(msfile, 1, POINTS) ;
-        if(ip)printf(" Token POINTS found \n");
+        open_named_block(msfile, 1, ZR_POINTS) ;
         snode->npoints = read_uint32_a(msfile) ;
+        if(ip)printf(" Token POINTS found.  npoints = %i \n",snode->npoints);
+/*
+ *  Check npoints is correct
+ */
+        if(msfile->binary){
+          n = msfile->level[1].length - 13 ;
+          m = n/21 ;
+          if(m!=snode->npoints){
+            printf("     Routine %s error.\n",myname) ;
+            printf("       Shape name = %s\n",snode->name) ;
+            printf("       Number of points reported = %i\n", snode->npoints) ;
+            printf("       Number of points present  = %i\n", m) ;
+            if(m>snode->npoints)snode->npoints = m ;
+            printf("       Number of points stored   = %i\n", snode->npoints) ;
+          }
+        }
         snode->point = (Vector3 *)malloc(snode->npoints*sizeof(Vector3));
         for(i=0;i<snode->npoints;i++){
-// 2 POINT
-          open_named_block(msfile, 2, POINT) ;
-          if(ip)printf(" Token POINT found \n");
+// 2 POINT   (Changed to ZR_POINT to bypass Windows script)
+          open_named_block(msfile, 2, ZR_POINT) ;
+          if(ip)printf(" Token ZR_POINT found. i = %i   ",i);
 #ifdef geo_coord
           snode->point[i].X = read_real32_a(msfile);
           snode->point[i].Z = read_real32_a(msfile);
@@ -401,8 +449,11 @@ int load_shape(ShapeNode *snode ) {
           snode->point[i].Y = read_real32_a(msfile);
           snode->point[i].Z = read_real32_a(msfile);
 #endif
+          if(ip)printf("  %f   %f   %f\n",snode->point[i].X,snode->point[i].Y,snode->point[i].Z) ;
+          is_block_end(msfile,2,ip) ;
           end_block(msfile,2) ;
         }
+        is_block_end(msfile,1,ip) ;
         end_block(msfile,1) ;
 /*
  * =============================================================================
@@ -410,16 +461,17 @@ int load_shape(ShapeNode *snode ) {
  * =============================================================================
  */
         open_named_block(msfile, 1, UV_POINTS) ;
-        if(ip)printf(" Token UV_POINTS found \n");
         snode->nuvpoints = read_uint32_a(msfile) ;
+        if(ip)printf(" Token UV_POINTS found.  nuvpoints = %i \n",snode->nuvpoints);
         snode->uvpoint = (UVVector2 *)malloc(
                                       snode->nuvpoints*sizeof(UVVector2));
         for(i=0;i<snode->nuvpoints;i++){
 // 2 UV_POINT
           open_named_block(msfile, 2, UV_POINT) ;
-          if(ip)printf(" Token UV_POINT found \n");
+          if(ip)printf(" Token UV_POINT found. i = %i   ",i);
           snode->uvpoint[i].U = read_real32_a(msfile);
           snode->uvpoint[i].V = read_real32_a(msfile);
+          if(ip)printf("  %f   %f\n",snode->uvpoint[i].U,snode->uvpoint[i].V) ;
           end_block(msfile,2) ;
         }
         end_block(msfile,1) ;
@@ -429,18 +481,19 @@ int load_shape(ShapeNode *snode ) {
  * =============================================================================
  */
         open_named_block(msfile, 1, NORMALS) ;
-        if(ip)printf(" Token NORMALS found \n");
         snode->nnormals = read_uint32_a(msfile) ;
+        if(ip)printf(" Token NORMALS found.  nnormals = %i \n",snode->nnormals);
         snode->normal = (Vector3 *)malloc(snode->nnormals*sizeof(Vector3));
         for(i=0;i<snode->nnormals;i++){
 // 2 VECTOR
 float  X, Y, Z, R ;
           open_named_block(msfile, 2, VECTOR) ;
-          if(ip)printf(" Token VECTOR found \n");
+          if(ip)printf(" Token normal VECTOR found. i = %i   ",i);
           X = read_real32_a(msfile);
           Y = read_real32_a(msfile);
           Z = read_real32_a(msfile);
           R = 1.0/sqrt(X*X+Y*Y+Z*Z) ;
+// Normalise
 #ifdef geo_coord
           snode->normal[i].X = X*R ;
           snode->normal[i].Z = Y*R ;
@@ -450,7 +503,7 @@ float  X, Y, Z, R ;
           snode->normal[i].Y = Y*R ;
           snode->normal[i].Z = Z*R ;
 #endif
-// Normalise
+          if(ip)printf("  %f   %f   %f\n",snode->normal[i].X,snode->normal[i].Y,snode->normal[i].Z) ;
 
           end_block(msfile,2) ;
         }
@@ -463,14 +516,18 @@ float  X, Y, Z, R ;
         open_named_block(msfile, 1, SORT_VECTORS) ;
         if(ip)printf(" Token SORT_VECTORS found \n");
         snode->nsort_vectors = read_uint32_a(msfile) ;
-        if(ip)printf("  nsort_vectors = %i\n",snode->nsort_vectors);
+        if(ip){
+          printf("  nsort_vectors = %i\n",snode->nsort_vectors);
+          printf("  position      = %i\n",(int)ftell(msfile->fp));
+          printf("  block_end     = %i\n",msfile->level[1].byte_end);
+        }
         if(0 != snode->nsort_vectors){
           snode->sort_vector = (Vector3 *)
                           malloc(snode->nsort_vectors*sizeof(Vector3));
           for(i=0;i<snode->nsort_vectors;i++){
 // 2 VECTOR
             open_named_block(msfile, 2, VECTOR) ;
-            if(ip)printf(" Token VECTOR found \n");
+            if(ip)printf(" Token sort VECTOR found.  i = %i  ",i);
 #ifdef geo_coord
             snode->sort_vector[i].X = read_real32_a(msfile);
             snode->sort_vector[i].Z = read_real32_a(msfile);
@@ -480,6 +537,7 @@ float  X, Y, Z, R ;
             snode->sort_vector[i].Y = read_real32_a(msfile);
             snode->sort_vector[i].Z = read_real32_a(msfile);
 #endif
+            if(ip)printf("  %f   %f   %f\n",snode->sort_vector[i].X,snode->sort_vector[i].Y,snode->sort_vector[i].Z) ;
             end_block(msfile,2) ;
           }
         }
@@ -516,15 +574,16 @@ float  X, Y, Z, R ;
         if(ip)printf(" Token MATRICES found \n");
         snode->nmatrices = read_uint32_a(msfile) ;
         if(ip)printf("  nmatrices = %i\n",snode->nmatrices);
+        snode->matrix = NULL ;
         if(0 != snode->nmatrices) {
           snode->matrix = (Matrix4x3 *)
                               malloc(snode->nmatrices*sizeof(Matrix4x3));
-          snode->matrix_role = (int *)malloc(snode->nmatrices*sizeof(int)) ;
+          snode->matrix_role = (uint *)malloc(snode->nmatrices*sizeof(uint)) ;
           for(i=0;i<snode->nmatrices;i++){
 // 2 MATRIX
             open_named_block(msfile, 2, MATRIX) ;
-            if(ip)printf(" Token MATRIX found \n");
             snode->matrix[i].name = strdup(msfile->level[2].label) ;
+            if(ip)printf(" Token MATRIX found.  i = %i,  name = %s\n",i,snode->matrix[i].name);
 #if defined geo_coord
             snode->matrix[i].AX = read_real32_a(msfile);
             snode->matrix[i].AZ = read_real32_a(msfile);
@@ -557,6 +616,7 @@ float  X, Y, Z, R ;
  *  Calculate and save matrix type (no-op, translation, rotation)
  */
             snode->matrix[i].type = check_matrix4x3(&(snode->matrix[i])) ;
+            snode->matrix_role[i] = 0 ;
           }
         }
         end_block(msfile,1) ;
@@ -577,10 +637,9 @@ float  X, Y, Z, R ;
           snode->texture[i] = NULL ;
 // 2 IMAGE
           open_named_block(msfile, 2, IMAGE) ;
-          if(ip)printf(" Token IMAGE found \n");
           snode->texture_name[i] = read_ucharz_a(msfile);
           zr_filename_MS2L(snode->texture_name[i]) ;
-          if(ip)printf(" IMAGE = %s\n",snode->texture_name[i]);
+          if(ip)printf(" Token IMAGE found.  i = %i,  name = %s\n",i, snode->texture_name[i]);
           end_block(msfile,2) ;
         }
         end_block(msfile,1) ;
@@ -615,7 +674,7 @@ float  X, Y, Z, R ;
           for(i=0;i<snode->n_texlevel_low;i++){
 // 2 TEXTURE
             open_named_block(msfile, 2, TEXTURE) ;
-            if(ip)printf(" Token TEXTURE found \n");
+            if(ip)printf(" Token TEXTURE found,  i + %i\n",i);
             snode->texlevel_low[i].iImage        = read_int32_a(msfile);
             snode->texlevel_low[i].FilterMode    = read_int32_a(msfile);
             snode->texlevel_low[i].MipMapLODBias = read_real32_a(msfile);
@@ -754,7 +813,7 @@ float  X, Y, Z, R ;
             vtx_state->light_mat_idx  = read_int32_a(msfile);
             vtx_state->light_cfg_idx  = read_int32_a(msfile);
             vtx_state->light_flags    = read_uint32_a(msfile);
-            if(!is_block_end(msfile,2,1))
+            if(!is_block_end(msfile,2,ip))
               vtx_state->imatrix2        = read_int32_a(msfile);
             else
               vtx_state->imatrix2        = 0.0           ;
@@ -791,8 +850,8 @@ float  X, Y, Z, R ;
                prim_state->n_tex_idxs = read_int32_a(msfile);
                if(ip)printf("  n_tex_idxs = %i\n",prim_state->n_tex_idxs) ;
                if(0 != prim_state->n_tex_idxs) {
-                 prim_state->tex_idx = (int *)
-                                 malloc(prim_state->n_tex_idxs*sizeof(int)) ;
+                 prim_state->tex_idx = (uint *)
+                                 malloc(prim_state->n_tex_idxs*sizeof(uint)) ;
                  for(j=0;j<prim_state->n_tex_idxs;j++)
                    prim_state->tex_idx[j] = read_int32_a(msfile);
                }
@@ -954,8 +1013,8 @@ float  X, Y, Z, R ;
                               sub_object->n_node_maps = read_int32_a(msfile) ;
                               if(ip)printf(" n_node_maps = %i\n",sub_object->n_node_maps) ;
                               if(0!=sub_object->n_node_maps){
-                                sub_object->node_map = (int *)malloc(
-                                   sub_object->n_node_maps*sizeof(int)) ;
+                                sub_object->node_map = (uint *)malloc(
+                                   sub_object->n_node_maps*sizeof(uint)) ;
                                 for(l=0;l<sub_object->n_node_maps;l++)
                                   sub_object->node_map[l] = read_int32_a(msfile) ;
                               }
@@ -968,15 +1027,15 @@ float  X, Y, Z, R ;
  *   7.1.  shaders
  */
                           if(ip)printf(" SUB_OBJECT_HEADER Section 1 \n");
-                          if(!is_block_end(msfile,7,0)){
+                          if(!is_block_end(msfile,7,ip)){
 //  8  SUBOBJECT_SHADERS
                             open_named_block(msfile, 8, SUBOBJECT_SHADERS) ;
                             if(ip)printf(" Token SUBOBJECT_SHADERS found \n");
                             sub_object->n_shaders = read_int32_a(msfile);
                             if(ip)printf(" n_shaders = %i\n",sub_object->n_shaders) ;
                             if(0!=sub_object->n_shaders){
-                              sub_object->shader = (int *)malloc(
-                                    sub_object->n_shaders*sizeof(int)) ;
+                              sub_object->shader = (uint *)malloc(
+                                    sub_object->n_shaders*sizeof(uint)) ;
                               for(l=0;l<sub_object->n_shaders;l++){
                                 sub_object->shader[l] = read_int32_a(msfile) ;
                               }
@@ -985,15 +1044,15 @@ float  X, Y, Z, R ;
                           }
 //   7.2.  light_cfgs
                           if(ip)printf(" SUB_OBJECT_HEADER Section 2 \n");
-                          if(!is_block_end(msfile,7,0)){
+                          if(!is_block_end(msfile,7,ip)){
 //  8  SUBOBJECT_LIGHT_CFGS
                             open_named_block(msfile, 8, SUBOBJECT_LIGHT_CFGS) ;
                             if(ip)printf(" Token SUBOBJECT_LIGHT_CFGS found \n");
                             sub_object->n_light_cfgs = read_int32_a(msfile);
                             if(ip)printf(" n_light_cfgs = %i\n",sub_object->n_light_cfgs) ;
                             if(0!=sub_object->n_light_cfgs){
-                              sub_object->light_cfg = (int *)malloc(
-                                    sub_object->n_light_cfgs*sizeof(int)) ;
+                              sub_object->light_cfg = (uint *)malloc(
+                                    sub_object->n_light_cfgs*sizeof(uint)) ;
                               for(l=0;l<sub_object->n_light_cfgs;l++){
                                 sub_object->light_cfg[l] = read_int32_a(msfile) ;
                               }
@@ -1023,7 +1082,7 @@ float  X, Y, Z, R ;
                               Vertex *vertex  = &(sub_object->vertex[l]) ;
 // 8  VERTEX
                               open_named_block(msfile, 8, VERTEX) ;
-                              if(ip)printf(" Token VERTEX found \n");
+                              if(ip)printf(" Token VERTEX found.  l = %i\n",l);
                               vertex->flags   = read_uint32_a(msfile) ;
                               vertex->ipoint  = read_int32_a(msfile) ;
                               vertex->inormal = read_int32_a(msfile) ;
@@ -1035,9 +1094,9 @@ float  X, Y, Z, R ;
                                 vertex->n_vertex_uvs = read_int32_a(msfile);
                                 if(ip)printf(" n_vertex_uvs = %i\n",vertex->n_vertex_uvs) ;
                                 if(0!=vertex->n_vertex_uvs){
-                                  vertex->vertex_uv = (int *)malloc(
-                                      vertex->n_vertex_uvs*sizeof(int)) ;
-                                  for(m=0;m<vertex->n_vertex_uvs;m++)
+                                  vertex->vertex_uv = (uint *)malloc(
+                                      vertex->n_vertex_uvs*sizeof(uint)) ;
+                                  for(m=0;m<(uint)(vertex->n_vertex_uvs);m++)
                                       vertex->vertex_uv[m] = read_int32_a(msfile) ;
                                 }
                                 end_block(msfile,9) ;
@@ -1070,8 +1129,9 @@ float  X, Y, Z, R ;
                         }
 // 7 PRIMITIVES
                         {
-                          int last_prim_state_idx = 0 ;
-                          int icount, token ;
+                          int  last_prim_state_idx = 0 ;
+                          int  token  ;
+                          uint icount ;
                           TriList  *tri_list ;
                           open_named_block(msfile, 7, PRIMITIVES) ;
  //                         sub_object->n_primitives = read_int32_a(msfile);
@@ -1119,8 +1179,8 @@ float  X, Y, Z, R ;
                                       tri_list->n_normal_idxs = read_int32_a(msfile);
                                       if(ip)printf("     n_normal_idxs = %i\n",tri_list->n_normal_idxs) ;
                                       if(0!=tri_list->n_normal_idxs){
-                                        tri_list->normal_idx = (int *)malloc(
-                                          tri_list->n_normal_idxs*sizeof(int)) ;
+                                        tri_list->normal_idx = (uint *)malloc(
+                                          tri_list->n_normal_idxs*sizeof(uint)) ;
                                         for(n=0;n<tri_list->n_normal_idxs;n++){
                                           tri_list->normal_idx[n] = read_int32_a(msfile) ;
                                           read_int32_a(msfile) ;
@@ -1177,7 +1237,6 @@ float  X, Y, Z, R ;
 
         if(!is_block_end(msfile, 0, 0)){
 
-//          ip = 1;
           if(ip)printf("  ANIMATIONS in file : %s\n",snode->name) ;
 
           open_named_block(msfile, 1, ANIMATIONS)  ;
@@ -1343,6 +1402,11 @@ float  X, Y, Z, R ;
         end_block(msfile,1) ;
       }
       close_msfile(msfile);
+      if(ip){
+        printf(" *****************************************************************\n") ;
+        printf(" *   EXIT  ROUTINE  %s\n",myname) ;
+        printf(" *****************************************************************\n") ;
+      }
       return 0 ;
 }
 
@@ -1352,10 +1416,14 @@ float  X, Y, Z, R ;
 
 int  print_shape_file_data(ShapeNode *snode){
 
-  int  i, j, k, l, m, ll, nn;
-  int  ip = 0 ; // 1 = Printing of trilists
+  uint  i, j, k, l, m, ll, nn;
+  uint  ip = 0 ; // 1 = Printing of trilists
+  char *myname = "print_shape_file_data" ;
 
-      printf( "  name    = %s\n",snode->name ) ;
+      printf("\n *****************************************************************\n") ;
+      printf(" *   ENTER  ROUTINE  %s\n",myname) ;
+      printf(" *****************************************************************\n") ;
+      printf( "  shape   = %s\n",snode->name ) ;
       printf( "  s_file  = %s\n",snode->s_file ) ;
       printf( "  sd_file = %s\n",snode->sd_file ) ;
 
@@ -1364,6 +1432,13 @@ int  print_shape_file_data(ShapeNode *snode){
       printf( "  flags1    = %x\n",snode->flags1 ) ;
       printf( "  flags2    = %x\n",snode->flags2 ) ;
       printf( "  nvolumes  = %i\n",snode->nvolumes ) ;
+      for(i=0;i<snode->nvolumes;i++){
+        printf( "      volume %i radius = %f\n",i,snode->shape_vol[i].radius) ;
+        printf( "                vector = %f %f %f\n",
+                         snode->shape_vol[i].vec.X,
+                         snode->shape_vol[i].vec.Y,
+                         snode->shape_vol[i].vec.Z) ;
+      }
       printf( "  nshaders  = %i\n",snode->nshaders ) ;
       for(i=0;i<snode->nshaders;i++)
         printf( "      shader   %i = %s\n",i,snode->shader[i] ) ;
@@ -1426,20 +1501,22 @@ int  print_shape_file_data(ShapeNode *snode){
       printf( "\n  n_vtx_states       = %i\n",snode->n_vtx_states ) ;
       nn = snode->n_vtx_states ;
       for(i=0;i<(nn>40 ? 40 : nn);i++){
-         printf( "    flags           %i = %i\n",i,snode->vtx_state[i].flags ) ;
-         printf( "      imatrix       %i = %i\n",i,snode->vtx_state[i].imatrix ) ;
-         printf( "         AX, AY, AZ = %9f %9f %9f\n",
-                          snode->matrix[i].AX,snode->matrix[i].AY,snode->matrix[i].AZ) ;
-         printf( "         BX, BY, BZ = %9f %9f %9f\n",
-                          snode->matrix[i].BX,snode->matrix[i].BY,snode->matrix[i].BZ) ;
-         printf( "         CX, CY, CZ = %9f %9f %9f\n",
-                          snode->matrix[i].CX,snode->matrix[i].CY,snode->matrix[i].CZ) ;
-         printf( "         DX, DY, DZ = %9f %9f %9f\n",
-                          snode->matrix[i].DX,snode->matrix[i].DY,snode->matrix[i].DZ) ;
-         printf( "      light_mat_idx %i = %i\n",i,snode->vtx_state[i].light_mat_idx ) ;
-         printf( "      light_cfg_idx %i = %i\n",i,snode->vtx_state[i].light_cfg_idx ) ;
-         printf( "      light_flags   %i = %i\n",i,snode->vtx_state[i].light_flags ) ;
-         printf( "      imatrix2      %i = %i\n",i,snode->vtx_state[i].imatrix2 ) ;
+        printf( "    flags           %i = %i\n",i,snode->vtx_state[i].flags ) ;
+        printf( "      imatrix       %i = %i\n",i,snode->vtx_state[i].imatrix ) ;
+        if(snode->matrix && i<snode->nmatrices){
+          printf( "         AX, AY, AZ = %9f %9f %9f\n",
+                         snode->matrix[i].AX,snode->matrix[i].AY,snode->matrix[i].AZ) ;
+          printf( "         BX, BY, BZ = %9f %9f %9f\n",
+                         snode->matrix[i].BX,snode->matrix[i].BY,snode->matrix[i].BZ) ;
+          printf( "         CX, CY, CZ = %9f %9f %9f\n",
+                         snode->matrix[i].CX,snode->matrix[i].CY,snode->matrix[i].CZ) ;
+          printf( "         DX, DY, DZ = %9f %9f %9f\n",
+                         snode->matrix[i].DX,snode->matrix[i].DY,snode->matrix[i].DZ) ;
+        }
+        printf( "      light_mat_idx %i = %i\n",i,snode->vtx_state[i].light_mat_idx ) ;
+        printf( "      light_cfg_idx %i = %i\n",i,snode->vtx_state[i].light_cfg_idx ) ;
+        printf( "      light_flags   %i = %i\n",i,snode->vtx_state[i].light_flags ) ;
+        printf( "      imatrix2      %i = %i\n",i,snode->vtx_state[i].imatrix2 ) ;
       }
 
 
@@ -1453,6 +1530,7 @@ int  print_shape_file_data(ShapeNode *snode){
          for(j=0;j<snode->prim_state[i].n_tex_idxs;j++){
            printf("      tex_idx         %i %i = %i\n",i,j, snode->prim_state[i].tex_idx[j]);
          }
+         printf( "      zbias           %i = %f\n",i,snode->prim_state[i].zbias ) ;
          printf( "      ivtx_state      %i = %i\n",i,snode->prim_state[i].ivtx_state ) ;
          printf( "      alpha_test_mode %i = %i\n",i,snode->prim_state[i].alpha_test_mode ) ;
          printf( "      light_cfgidx    %i = %i\n",i,snode->prim_state[i].light_cfgidx ) ;
@@ -1470,18 +1548,20 @@ int  print_shape_file_data(ShapeNode *snode){
         printf( "      n_dist_levels      = %i\n",snode->lod_control[i].n_dist_levels ) ;
         for(j=0;j<snode->lod_control[i].n_dist_levels;j++){
 DistLevel *dist_level = &(snode->lod_control[i].dist_level[j]) ;
-          printf("--------------------------------------------------------------\n") ;
+        printf("==============================================================================\n");
+        printf("=======  Start dist_level                 ====================================\n");
+        printf("==============================================================================\n");
           printf( "      dist_level        = %i\n",j ) ;
           printf( "      dlevel_selection  = %f\n",dist_level->dlevel_selection ) ;
           printf( "      n_hierarchy        = %i\n",dist_level->n_hierarchy ) ;
           printf( "      n_sub_objects      = %i\n",dist_level->n_sub_objects ) ;
 
-          for(k=0;k<(int)(dist_level->n_hierarchy);k++)
+          for(k=0;k<dist_level->n_hierarchy;k++)
             printf("               Heirarchy %3i = %3i\n",k, dist_level->hierarchy[k]);
           printf("..............................................................\n") ;
 
           printf("==============================================================================\n");
-          printf("=====  Start Sub Object                   ====================================\n");
+          printf("=========  Start Sub Object               ====================================\n");
           printf("==============================================================================\n");
 
           for(k=0;k<dist_level->n_sub_objects;k++){
@@ -1528,11 +1608,19 @@ SubObject *sub_object = &(dist_level->sub_object[k]) ;
               printf( "            vertex_uv   %i     = %i\n",m,sub_object->vertex[l].vertex_uv[m] ) ;
             }
 #else
-            printf("     l    flags   ipoint   inormal     color1      color2   n_vertexuvs   [0]\n");
+            printf("     l    flags    ipoint    inormal     color1      color2   n_vertexuvs   [0]\n");
             for(l=0;l<ll;l++){
 Vertex        *vertex = &(sub_object->vertex[l]) ;
-              printf("   %3i      %3i      %3i       %3i    %8x    %8x        %2i      %3i\n",
-                         l, vertex->flags,vertex->ipoint,vertex->inormal,vertex->color1,vertex->color2, vertex->n_vertex_uvs, vertex->vertex_uv[0] );
+              if(0 != vertex->n_vertex_uvs){
+                printf("   %3i      %3i      %4i       %4i    %8x    %8x        %2i      %3i\n",
+                         l, vertex->flags,vertex->ipoint,vertex->inormal,
+                          vertex->color1,vertex->color2,
+                          vertex->n_vertex_uvs, vertex->vertex_uv[0] );
+              }else{
+                printf("   %3i      %3i      %4i       %4i    %8x    %8x\n",
+                         l, vertex->flags,vertex->ipoint,vertex->inormal,
+                          vertex->color1,vertex->color2);
+              }
             }
 #endif
 
@@ -1546,7 +1634,7 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
             }
 
             printf("==============================================================================\n");
-            printf("=====  Start Tri Lists                    ====================================\n");
+            printf("=====      Start Tri Lists                ====================================\n");
             printf("==============================================================================\n");
 
 
@@ -1660,20 +1748,6 @@ void error_s1(char *d) {
 
       printf("  Error in routine 'load_shape_filenames'.\n")   ;
       printf("  Directory not found.  \n  Directory = %s\n",d) ;
-      printf("  Program stopping ... \n") ;
-      exit(1) ;
-}
-void error_s2(char *f) {
-
-      printf("  Error in routine 'load_shape_filenames'.\n")   ;
-      printf("  File not found.  \n  File = %s\n",f) ;
-      printf("  Program stopping ... \n") ;
-      exit(1) ;
-}
-void error_s3(char *f, int i) {
-
-      printf("  Error in routine 'load_shape_filenames'.\n")   ;
-      printf("  Unable to find sd file corresponding to name : %s\n",f) ;
       printf("  Program stopping ... \n") ;
       exit(1) ;
 }

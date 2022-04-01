@@ -39,7 +39,8 @@ void  init_levels(MSfile *msfile)
 
 int  open_block(MSfile *msfile, int i_level){
   long     tell ;
-  int      i, k ;
+  int      i     ;
+  unsigned int k ;
   int      ip = 0 ;   //  1 for printing
   FILE     *fp = msfile->fp ;
   MSblock  *block ;

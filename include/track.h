@@ -38,13 +38,13 @@ float             pitch_max     ;  // Distance (m) controlling error on curves
 float             gauge         ;  // Track gauge
 float             inner         ;  // Distance of rail inner face from centre line
 float             outer         ;  // Distance of rail outer face from centre line
-int               n_dist_levels ;  // Number of distance levels
+uint              n_dist_levels ;  // Number of distance levels
 TrackDistLevel    *dist_level   ;  // Data for each LOD distance
 }  ;
 
 struct trackdistacelevel {
 float             distance      ;  // Maximum distance to use this data
-int               n_sub_objects ;  // Number of sub-objects
+uint              n_sub_objects ;  // Number of sub-objects
 TrackSubObject    *sub_object   ;  // Sub-objects at this distance
 }  ;                               // Typedef : TrackDistLevel
 
@@ -58,13 +58,13 @@ char              *tex_add_mode_name; // Name of texture method to use (Ditto)
 int               alpha_test    ;  // 1/0 : if 1 use alpha test
 int               ESD_alt_tex   ;  // ESD_Alternative_Texture
 int               MipMap_LOD_Bias; // Bias to use with MipMaps
-int               n_profiles    ;  // Number of profiles
+uint              n_profiles    ;  // Number of profiles
 RailProfile       *profile      ;  // Profiles to use with this LOD
 }  ;                               // Typedef : TrackSubObject
 
 struct    railprofile {            // Rail profile  (Polyline in OR)
 char              *name         ;  // Name of this profile
-int               n_elements    ;  // Number of vertices, normals and uvvectors
+uint              n_elements    ;  // Number of vertices, normals and uvvectors
 Vector3           *vertex       ;  // Vertices of profile
 Vector3           *normal       ;  // Normals
 UVVector2         *uvvector     ;  // Texture coordinates
@@ -86,7 +86,7 @@ typedef struct sectionidx   SectionIdx   ;
 
 struct tracksection{
 TrackSection      *next         ;  //
-int               index         ;  //
+uint              index         ;  //
 float             gauge         ;  //
 float             length        ;  //
 float             radius        ;  //
@@ -96,7 +96,7 @@ int               water_scoop   ;  //
 } ;
 
 struct sectionidx{
-int               num_sections  ;  //
+uint              num_sections  ;  //
 float             east_x        ;  //  Offset of section start from shape origin
 float             height_y      ;  //
 float             north_z       ;  //
@@ -107,7 +107,7 @@ int               *section      ;  //  Indices
 struct trackshape{
 TrackShape        *next         ;
 int               index         ;
-int               num_paths     ;  //
+uint               num_paths     ;  //
 char*             filename      ;  //
 int               main_route    ;  //
 float             clearance_dist;  //
@@ -116,7 +116,7 @@ int               tunnel_shape  ;  //
 int               road_shape    ;  //
 int               manual_junction_shape  ;  //
 int               crossover_shape        ;  //
-int               num_xover     ;
+uint               num_xover     ;
 Vector3           *xover        ;
 }  ;
 

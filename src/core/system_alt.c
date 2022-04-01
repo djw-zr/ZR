@@ -17,19 +17,37 @@
  */
 #if defined MinGW
 
+#include <sys/stat.h>
+
 /*
  *   Minimal replacement for routine 'realpath'.
  *   The version makes no changes to the filename.
  */
-
-char *realpath(const char *path, char *resolved_path){
+#if 1
+char *realpath1(const char *path, char *resolved_path){
 
   char my_name[] = "REALPATH" ;
-
-      resolved_path = strdup(path) ;
+  char *new_path ;
+  int  n ;
+//  If using MinGW under linux use the real 'realpath()' to handle
+//  the /sys directory pointers
+#ifndef WINDOWS
+      if(!strncmp(path,"/sys",4)){
+        return realpath(path,resolved_path) ;
+      }
+#endif
+//
+      new_path = strdup(path) ;
+      if(resolved_path == NULL){
+        return new_path ;
+      }
+      n = strlen(resolved_path) -1;
+      strncpy(resolved_path,new_path,n) ;
+      resolved_path[n] = '\0' ;
+      free(new_path) ;
       return resolved_path ;
 }
-
+#endif
 /*
  *   Routines using struct dirent.
  *     Defined in /usr/include/bits/dirent.h
@@ -70,13 +88,18 @@ struct dirent  **d1, **d2 ;
  *   This version sorts the list useing routine alphasort1 (above)
  *        instead of the routine referenced by 'compar'.
  */
+//  GCC pragmas to ignore unused parameter in this section only
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
 
 int scandir(const char *dir_name, struct dirent ***namelist,
             int (*filter)(const struct dirent *),
             int (*compar)(const struct dirent **, const struct dirent **)){
 
+#pragma GCC diagnostic pop
+
 int  n, i ;
-int  ip = 1    ;    // DEBUG
+int  ip = 0    ;    // DEBUG
 
 struct dirnode{               //  Linked list of dirent
    struct dirnode *next     ;
@@ -86,6 +109,7 @@ struct dirnode{               //  Linked list of dirent
 DIR             *root_dir     ;  // Pointer to a directory (DIR) structure
 struct dirent   *dir_point    ;  // Pointer to structure dirent
 struct dirent  **dir_array    ;  // Pointer to array of pointers
+struct stat      sb           ;
 
 struct dirnode  *d_node_first ;  // Pointer to d_node structure
 struct dirnode  *d_node_last  ;
@@ -99,6 +123,8 @@ char my_name[] = "scandir (zr version)" ;
 /*
  *  1.  Open directory :: [errno defined in error.h]
  */
+      if(ip)printf("  Open dir %s\n",dir_name );
+
       root_dir = opendir(dir_name) ;
       if(root_dir == NULL){
         return errno ;     //  Return (non-zero) error from opendir
@@ -107,13 +133,48 @@ char my_name[] = "scandir (zr version)" ;
  *  2.  Scan directory looking for regular files,  Each file that
  *      passes 'filter' is added to a linked list and the list
  *      length counted.
+ *
+ *     Windows probably needs _stat, a full pathname, _S_IFMMT and _S_IFREG.
+ *             of which the full pathname is most likely.
+ *     Directory entries . and .. should be skipped.
  */
       n = 0 ;
       for(;;){
         dir_point = readdir(root_dir) ;
         if(dir_point == NULL) break   ;            //  End of directory entries
 
-        if(dir_point->d_type != DT_REG)continue ;  //  Not a regular file
+        if(ip)printf(" Routine %s, readdir returns file: %s\n",my_name,dir_point->d_name) ;
+/*
+ *  Windows MinGW does not save he full path name in d_name
+ *  The folllowing code corrects this
+ */
+        {
+  int   n1, n2 ;
+  char *full_name ;
+          n1 = strlen(dir_name);
+          n2 = strlen(dir_point->d_name) ;
+          full_name = (char *)malloc(n1+n2+2) ;
+          strcpy(full_name,dir_name) ;
+          if(dir_name[n1-1]!='/')strcat(full_name,"/") ;
+          strcat(full_name,dir_point->d_name) ;
+          if(ip)printf(" Routine %s, readdir full_name   : %s\n",my_name,full_name) ;
+/*
+ *  Check for file - skip mising files
+ */
+
+          if(stat(full_name,&sb) == -1){
+            printf("Routine scandir ::File = %s\n",full_name) ;
+            perror("Routine scandir : call to stat()");
+            free(full_name) ;
+            continue ;
+//          exit(EXIT_FAILURE) ;
+          }
+          free(full_name) ;
+        }
+
+        if((sb.st_mode & S_IFMT) != S_IFREG)continue ; // Not a regular file
+
+//        if(dir_point->d_type != DT_REG)continue ;  //  Not a regular file
         if(filter != NULL){
           if(filter(dir_point) == 0) continue   ;  //  Does not match filter
         }

@@ -1,0 +1,117 @@
+#
+################################################################################
+#
+#   File: makefile_w
+#
+#   This file is part of ZR. Released under licence GPL-3.0-or-later.
+#   You should have received a copy of the GNU General Public License
+#   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+#
+#   Windows/MinGW version of makefile for use with SDL2 or GLUT
+#
+#   See README.MAKEFILE
+#
+#    HOMEPATH = /Users/user_name
+#    PATH     = [Path of bin files]
+#
+#    mingw32-make -f makefile_w
+#
+################################################################################
+#
+ifeq ($(OS),Windows_NT)
+  SHELL := bash.exe
+endif
+
+# Define interface: SDL2 or (default) GLUT
+# The later conditional command does not work if one or more spaces follow SDL2
+
+IFACE=SDL2
+
+#  Specify include and source directories relative to this directory
+
+INC_DIR   := include
+SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout
+
+MinGW64_HOME = C:/opt/mingw64
+SDL2_HOME    = C:/opt/sdl2
+
+#  Specify Compiler and Compiler Options
+
+CC       = gcc
+CFLAGS   = -m64 -march=native -mcmodel=large
+CFLAGS   = -O3 #               Level 3 compiler optimisation
+CFLAGS  += -Wall -pedantic
+CFLAGS  += -Wextra
+CFLAGS  += -Wno-unused-variable
+CFLAGS  += -I$(MinGW64_HOME)/include
+CFLAGS  += -I$(SDL2_HOME)/include
+
+CFLAGS  += $(foreach dir, $(INC_DIR), $(addprefix -I, $(dir)))
+CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
+
+#  Specify pre-processor options
+
+CFLAGS += -DMinGW #          Use system_alt.c routines with MinGW
+CFLAGS += -DWINDOWS #        Handle windows specifics
+
+#CFLAGS  += -Dsketch_tracks_and_roads #  Plot outline of roads/tracks
+CFLAGS  += -Dgrid_lines #    Outline tiles
+#CFLAGS  += -Dfull_topog #   Plot all topography
+CFLAGS  += -Dkb_dev #        Keyboard with modified 'flying' keys
+#CFLAGS  += -D_Display_Shapes
+#CFLAGS  += -D_Display_Wagons
+#CFLAGS  += -D_Display_Textures
+CFLAGS  += -Duse_vertex_arrays
+#CFLAGS  += -Dtexture_short
+#CFLAGS  += -Dnormal_byte
+CFLAGS += -Dculling_off_for_wagons
+#CFLAGS += -DROUTE_USA1 #     Northeast Corridor
+#CFLAGS += -DROUTE_USA2 #     Marias Pass
+#CFLAGS += -DROUTE_EUROPE1 #  Settle line
+#CFLAGS += -DROUTE_EUROPE2 #  Innsbruck - St Anton
+#CFLAGS += -DROUTE_JAPAN1 #   Tokyo - Hakone
+#CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line
+#CFLAGS += -DROUTE_TUTORIAL # MSTS Tutorial Route
+
+#  Conditionals
+
+ifeq ($(IFACE),SDL2)
+  CFLAGS  += -DSDL2
+  LIBGL   =  -lSDL2main -lSDL2
+else
+  LIBGL   =  -lglut
+endif
+
+#  Specify libraries
+
+LDFLAGS  = -L$(SDL2_HOME)\lib
+LDFLAGS += -lopengl32 -lglu32 -lmingw32 $(LIBGL) -lz
+
+#  Generate list of  prerequisits
+
+HFILES := $(shell find $(INC_DIR) -name "*.h")
+CFILES := $(shell find $(SRC_DIR) -name "*.c")
+
+# Which suffixes to process
+
+.SUFFIXES:
+.SUFFIXES: .c .h .o
+
+#  Targets that are not the name of a file
+
+.PHONEY: clean cleaner paths
+
+#  Makefile targets:
+
+zr: zr.c $(HFILES) $(CFILES) makefile
+	$(CC) zr.c -o $@ $(CFLAGS) $(LDFLAGS)
+
+paths:
+	$(CC) zr.c -o $@ $(CFLAGS) $(LDFLAGS) -E -v
+
+clean:
+	rm -f *.o *~
+
+cleaner:
+	rm -f zr *.o *~
+

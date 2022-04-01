@@ -24,7 +24,7 @@ enum LODMethod {
 } ;
 
 enum PitchControl {
-      PC_NONE             ,   // No pitch control method specified.
+      ZR_PC_NONE             ,   // No pitch control method specified.
       CHORDLENGTH         ,   // Constant length of chord
       CHORDDISPLACEMENT       // Maximum displacement of chord from arc.
 } ;
@@ -46,10 +46,11 @@ enum trackdb {
       SIGNALS,                //  SIGNAL IS A COMPILER RESERVED WORD
       SOUND_REGION,
       SPEED_POST,
-      CAR_SPAWNER
+      CAR_SPAWNER,
+      EMPTY_ITEM
 } ;
 
-const char *token_trackdb[1552] = {
+const char *token_trackdb[14] = {
 /*   0  */    "NONE",
 /*   1  */    "VECTOR_SECTION",
 /*   2  */    "END_SECTION",
@@ -63,10 +64,11 @@ const char *token_trackdb[1552] = {
 /*  10  */    "SOUND_REGION",
 /*  11  */    "SPEED_POST",
 /*  12  */    "CAR_SPAWNER",
+/*  13  */    "EMPTY_ITEM"
 } ;
 
 /*
- *  These are the or token_id values listed in tokenid.cs
+ *  These are the OR token_id values listed in tokenid.cs
  *  All these names have been changed to upper case as this is
  *  the standard used for enums.  Where this has resulted in conflicts with the
  *  enums above, (NONE, PLATFORM, SIDING, PICKUP the characters "_ALT" have been
@@ -75,14 +77,14 @@ const char *token_trackdb[1552] = {
  *  structure defined in "stdio.h".
  */
 enum token_id {
-        ERROR = 0,
+        ZR_ERROR = 0,
         COMMENT = 1,
-        POINT,
+        ZR_POINT,
         VECTOR,
         QUAT,
         NORMALS,
         NORMAL_IDXS,
-        POINTS,
+        ZR_POINTS,
         UV_POINT,
         UV_POINTS,
         COLOUR,
@@ -620,7 +622,7 @@ enum token_id {
         INERTIATENSOR,
         BOX,
         MATRIX3X3,
-        SIZE,
+        ZR_SIZE,
         CENTREOFGRAVITY,
         MASS,
         SPRING,

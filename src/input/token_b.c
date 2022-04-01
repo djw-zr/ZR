@@ -93,6 +93,7 @@ union u_tag {
       u.m = 0 ;
       for(i=0;i<2;i++){
        u.ca[i] = getc(fp) ;
+//       printf(" read_uint16 i= %i, ca = %c,  m = %X\n",i,u.ca[i],u.m) ;
       }
       return u.m ;
 }
@@ -126,6 +127,7 @@ union u_tag {
       u.m = 0 ;
       for(i=0;i<4;i++){
        u.ca[i] = getc(fp) ;
+//      printf(" read_uint16 i= %i, ca = %c,  m = %X\n",i,u.ca[i],u.m) ;
       }
       return u.m ;
 }
@@ -183,4 +185,18 @@ char  *string ;
       }
       string[n] = '\0' ;
       return string ;
+}
+
+/*
+ *  Routine to skip to the end of a block in an MSTS binary file
+ */
+
+
+void skip_to_bblock_end(FILE *fp, MSblock *block){
+
+int i ;
+      for(i=ftell(fp);i<block->byte_end;i++){
+        fgetc(fp) ;
+      }
+      return ;
 }

@@ -19,16 +19,12 @@ int   display_extra_data(){
 int        ip = 0  ;
 int        tx, ty  ;
 GLfloat    xc, yc, zc   ;
-GLfloat    vx, vy, vz   ;
 GLfloat    xx, yy, zz   ;
 GLfloat    m2d = 1.0/plot_scale ;  // Convert from metres to display usints
 GLfloat    dist, dist0, height0  ;
 
 WorldNode   *wnode ;
 WorldItem   *witem ;
-ShapeNode   *snode ;
-LodControl  *lod_control ;
-DistLevel   *dist_level  ;
 char        string[2048] ;
 
       if(!display_info) return 0 ;
@@ -68,13 +64,17 @@ char        string[2048] ;
           dist = (xx-xc)*(xx-xc) + (yy-yc)*(yy-yc) ;
           if(dist > dist0)continue ;
 
-          glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)1.0) ;
+          glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
           glBegin(GL_LINES) ;
             glVertex3d(xx, yy, zz) ;
             zz = zz + height0      ;
             glVertex3d(xx, yy, zz) ;
           glEnd() ;
-          glColor3f(1.0,1.0,1.0) ;
+          if(witem->uid == 4485){
+            glColor3f(1.0,1.0,0.0) ;
+          }else{
+            glColor3f(1.0,1.0,1.0) ;
+          }
           sprintf(string," - WORLD   :: uid = %i, type =  %i"
                          " :: item at :: %f %f %f ",
                          witem->uid,witem->worldtype,xx,yy,zz);
@@ -127,18 +127,15 @@ int  display_help(){
 
       sprintf(s1," Switches : 'F8' - toggle display, 'g' - toggle switch in front, 'G' - toggle switch behind");
       print_string_in_window3(10.0,h-190.0,s1,12) ;
+      sprintf(s1,"               : 'V' - toggle wipers, 'P' - toggle pantographs, 'p' - toggle mirrors");
+      print_string_in_window3(10.0,h-210.0,s1,12) ;
 
       sprintf(s1," Special Keys - with 'alt'");
-      print_string_in_window3(10.0,h-220.0,s1,12) ;
-      sprintf(s1," World items : 'n' - toggle, 'o'/'p' increase/decrease distance, 'k'/'l' increase/decrease height");
       print_string_in_window3(10.0,h-240.0,s1,12) ;
-      sprintf(s1," Track info.   : 't' - toggle");
+      sprintf(s1," World items : 'n' - toggle, 'o'/'p' increase/decrease distance, 'k'/'l' increase/decrease height");
       print_string_in_window3(10.0,h-260.0,s1,12) ;
-
-      sprintf(s1," Trains         : 'F7' - cycle");
+      sprintf(s1,"  Trains         : 'F7' - cycle                 Track info.   : 't' - toggle");
       print_string_in_window3(10.0,h-280.0,s1,12) ;
-
-
 
       return 0 ;
 }
@@ -160,7 +157,7 @@ int   display_track_info(TravellerNode *t){
 int           n ;
 GLfloat       w = viewport_width ;
 GLfloat       h = viewport_height ;
-TrkNetNode    *tn = t->tn,
+TrkSectNode   *tn = t->tn,
               *tn1, *tn2            ;
 TrkVectorNode *vn = t->vn ;
 char          s1[1024],s2[1024],s3[1024],s4[1024] ;
@@ -292,7 +289,7 @@ GLfloat r0 = 20.0,
         }
       }else{
 /*
- *  Plot line NW
+ *  Plot line SW
  */
         if(ii[0]!=0){
           if(ii[0]==2){
@@ -306,7 +303,7 @@ GLfloat r0 = 20.0,
           glEnd() ;
         }
 /*
- *  Plot line N
+ *  Plot line S
  */
         if(ii[1]!=0){
           if(ii[1]==2){
@@ -320,7 +317,7 @@ GLfloat r0 = 20.0,
           glEnd() ;
         }
 /*
- *  Plot line NE
+ *  Plot line SE
  */
         if(ii[2]!=0){
           if(ii[2]==2){
@@ -334,7 +331,7 @@ GLfloat r0 = 20.0,
           glEnd() ;
         }
 /*
- *  Plot line SE
+ *  Plot line NE
  */
         if(ii[3]!=0){
           if(ii[3]==2){
@@ -348,7 +345,7 @@ GLfloat r0 = 20.0,
           glEnd() ;
         }
 /*
- *  Plot line S
+ *  Plot line N
  */
         if(ii[4]!=0){
           if(ii[4]==2){
@@ -362,7 +359,7 @@ GLfloat r0 = 20.0,
           glEnd() ;
         }
 /*
- *  Plot line SW
+ *  Plot line NW
  */
         if(ii[5]!=0){
           if(ii[5]==2){
@@ -415,14 +412,14 @@ GLfloat r0 = 20.0,
 int   display_switches(TrainNode *train){
 
 int           i, n, ii[7]  ;
-int           ip   = 0     ;         //  Debug
+int           ip = 0       ;         //  Debug
 int           iret = 0     ;         //  Return code
-int           index        ;         //  Index of section containing traveller
+uint          index        ;         //  Index of section containing traveller
 TravellerNode *tff  = train->first->traveller,
               *tbf  = train->last->traveller,
               tf = *tff,             //  Copy front traveller
               tb = *tbf ;            //  Copy back traveller
-TrkNetNode    *tfn = tf.tn,
+TrkSectNode   *tfn = tf.tn,
               *tbn = tb.tn,
               *tfn1, *tfn2   ;        // Pointers to track sections
 TrkVectorNode *vn = tf.vn  ;         // Pointer to current track vector
@@ -446,7 +443,8 @@ double        df, db ;               // lenght of end wagons
 
       index = tfn->index_of_node ;
 
-      if(ip)printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
+      if(ip && l_time_30s){
+             printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
              index,
              tfn->pin_to_section[tf.idirect ? 1 : 0],
              tfn->pin_to_section[tf.idirect ? 0 : 1],
@@ -454,14 +452,17 @@ double        df, db ;               // lenght of end wagons
              tfn1->pin_to_section[2],
              tfn2->pin_to_section[0], tfn2->pin_to_section[1],
              tfn2->pin_to_section[2]);
+             printf("    front = %i : %i\n",tfn1->straight,tfn1->branch) ;
+             printf("    back  = %i : %i\n",tfn2->straight,tfn2->branch) ;
+      }
 
       if(tfn1->type_of_node == END_SECTION){
         ii[6] = 1 ;
 // Approaching base of points
       }else if(index == tfn1->pin_to_section[0]){
         ii[4] = 2 ;
-        if(tfn1->straight == 1){
-          if(tfn1->branch == 1){
+        if(tfn1->straight == 1){        //  Index (1 or 2) of straight branch in junction
+          if(tfn1->branch == 1){        //  Index (1 or 2) of current switched branch
             ii[1] = 2 ;  ii[2] = 1 ;
           }else{
             ii[1] = 1 ;  ii[2] = 2 ;
@@ -507,6 +508,10 @@ double        df, db ;               // lenght of end wagons
         }
       }else{
        for(i=0;i<6;i++)ii[i] = 1 ;
+      }
+      if(ip && l_time_30s){
+             printf("       indices :: %i %i %i : %i %i %i : %i\n",
+               ii[0], ii[1], ii[2], ii[3], ii[4], ii[5], ii[6] ) ;
       }
 /*
  *  Call plotting routine for track in front.
@@ -585,6 +590,10 @@ double        df, db ;               // lenght of end wagons
  *  Call plotting routine for track behind.
  *  This needs further code to allow for small screen sizes
  */
+      if(ip && l_time_30s){
+             printf("       indices :: %i %i %i : %i %i %i : %i\n",
+               ii[0], ii[1], ii[2], ii[3], ii[4], ii[5], ii[6] ) ;
+      }
       plot_switch(10.0,h-240.0,ii);
       return 0;
 }
@@ -628,3 +637,31 @@ char         *my_name="check_track" ;
       if(iret) train->speed = 0.0 ;
       return iret ;
 }
+
+/*
+ * =============================================================================
+ *
+ *   Routine to dislay last graphics error onscreen
+ *
+ * =============================================================================
+ */
+
+void display_error(){
+
+GLenum  n = 0 ;
+GLfloat       w = viewport_width ;
+GLfloat       h = viewport_height ;
+char    string[256] = "GL error = ";
+      n = glGetError() ;
+      if(n != GL_NO_ERROR){
+        gl_errorCode = n ;
+        gl_errString = (GLubyte *)gluErrorString(n) ;
+      }
+//      printf("  OpenGL error = %i, %i :: %s\n",(int)n, (int)gl_errorCode,(char *)gl_errString) ;
+      strncat(string,(char *)gl_errString,200) ;
+      glColor3f((GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ;
+      print_string_in_window3(10.0,h-25.0,string,18) ;
+
+      return ;
+}
+

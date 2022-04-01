@@ -47,6 +47,8 @@ char *token = NULL ;
         trk_item-> type_of_node = SOUND_REGION ;
       else if (0 == strcmp(token,"SpeedPostItem"))
         trk_item-> type_of_node = SPEED_POST   ;
+      else if (0 == strcmp(token,"EmptyItem"))
+        trk_item-> type_of_node = EMPTY_ITEM   ;
       else{
         printf("  Routine %s, file %s :  Unrecognised track item.\n",
                                                      my_name,"__FILE__");
@@ -62,12 +64,15 @@ char *token = NULL ;
  */
       for(;;){
         token = new_tmp_token(msfile) ;
+        if(ip)printf("  Routine %s,   sub-token = %s\n",my_name,token) ;
         if(')' == token[0])break   ;     // Closing bracket
         SWITCH(token)
           CASE("TrItemId")
             skip_lbr(msfile) ;
             trk_item->index_of_node = itoken(msfile) ;
             skip_rbr(msfile) ;
+            if(ip)printf("  Routine %s,   index of node = %i\n",
+                                      my_name,trk_item->index_of_node) ;
             break;
 
           CASE("TrItemRData")
@@ -147,9 +152,51 @@ char *token = NULL ;
 
           CASE("SpeedpostTrItemData")
             skip_lbr(msfile) ;
-            trk_item->speedpost_data1  = itoken(msfile) ;
-            trk_item->speedpost_data2  = itoken(msfile) ;
-            trk_item->speedpost_data3  = dtoken(msfile) ;
+            trk_item->speedpost_flags  = itoken(msfile) ;
+            trk_item->is_warning       = trk_item->speedpost_flags & 0x01 ;
+            trk_item->is_limit         = trk_item->speedpost_flags & 0x02 ;
+            trk_item->is_milepost      = !trk_item->is_warning && !trk_item->is_limit ;
+            trk_item->is_resume    = 0 ;
+            trk_item->is_passanger = 0 ;
+            trk_item->is_freight   = 0 ;
+            trk_item->is_mph       = 0 ;
+            trk_item->show_number  = 0 ;
+            trk_item->show_dot     = 0 ;
+            trk_item->speed_ind    = 0 ;
+            trk_item->display_number = 0.0 ;
+            trk_item->angle          = 0.0 ;
+            if(!trk_item->is_milepost){
+              if(trk_item->is_warning && trk_item->is_limit){
+                trk_item->is_warning = 0 ;
+                trk_item->is_resume  = 1 ;
+              }
+
+              trk_item->is_passanger = trk_item->speedpost_flags & (1<<5) ;
+              trk_item->is_freight   = trk_item->speedpost_flags & (1<<6) ;
+              if(trk_item->speedpost_flags & (1<<7)){
+                trk_item->is_passanger = 1 ;
+                trk_item->is_freight   = 1 ;
+              }
+              trk_item->is_mph       = trk_item->speedpost_flags & (1<<8) ;
+              if(trk_item->speedpost_flags & (1<<4)){
+                 trk_item->show_number = 1 ;
+                 trk_item->show_dot    = trk_item->speedpost_flags & (1<<9) ;
+              }
+            }
+
+            if(!trk_item->is_resume){
+              if(trk_item->is_milepost && !(trk_item->speedpost_flags & (1<<9)) ){
+                trk_item->speed_ind = dtoken(msfile) ;    //   Convert MPH ??
+              }else{
+                trk_item->speed_ind = dtoken(msfile) ;
+              }
+            }
+
+            if(trk_item->show_number){
+              trk_item->display_number = itoken(msfile) ;
+            }
+            trk_item->angle          = dtoken(msfile) ;
+
             skip_rbr(msfile) ;
             break;
 
@@ -200,12 +247,15 @@ char *token = NULL ;
 
           DEFAULT
             printf("  Routine %s, file %s :  Unrecognised track sub-item.\n",
-                                                        my_name,"__FILE__");
+                                                          my_name,"__FILE__");
+            printf("    Track type of node is %s\n",
+                                      token_trackdb[trk_item->type_of_node]-1);
             printf("    Track sub-item is %s\n", token );
             printf("  Program stopping ... \n");
             exit(1) ;
         END
 
       }
+      if(ip)printf("  Exit routine %s\n\n",my_name) ;
       return 0;
 }

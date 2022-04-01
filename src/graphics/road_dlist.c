@@ -12,14 +12,14 @@
  *
  *==============================================================================
  */
-int   make_road_display_list(TrkNetNode *section, DynProfile *profile) ;
+int   make_road_display_list(TrkSectNode *section, DynProfile *profile) ;
 int   ip_road_display = 0 ;
 
 int   make_road_display_lists(){
 
-int  i ;
-int  ip = 0 ;                        // Debug printing = 1
-TrkNetNode  *road_section    ;  // Track section needing shape
+uint  i ;
+uint  ip = 0 ;                        // Debug printing = 1
+TrkSectNode  *road_section    ;  // Track section needing shape
 //DynProfile      *road_profile    ;  // Track Profile to use
 char            my_name[]="make_road_display_lists" ;
 char            default_name[]="Default Road Profile" ;
@@ -54,12 +54,12 @@ char            default_name[]="Default Road Profile" ;
  *  increase in the x-direction.
  */
 
-int   make_road_display_list(TrkNetNode *track_section, DynProfile *road_profile){
+int   make_road_display_list(TrkSectNode *track_section, DynProfile *road_profile){
 
-int   i, j, k, l0, l1, m, n    ;
-int            n_road_nodes   ;
-int            gl_display_list ;
-int            ip = 0          ;                    // debug printing
+uint   i, n, j, k, l0, l1, m    ;
+uint            n_road_nodes   ;
+uint            gl_display_list ;
+uint            ip = 0          ;                    // debug printing
 double         xx0, yy0, xx1, yy1, xxn, yyn,
                x0, y0, z0, xt, yt,
                x, y, z, xn, yn, zn,
@@ -184,8 +184,8 @@ TextureNode    *tnode        ;
 }
 
 int  add_texture_pointers_to_road_profiles(DynProfile *dnode){
-  int  i, j    ;
-  int  ip = 0  ;   // 0 = no printing, 1 = error printing only
+  uint  i, j    ;
+  uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
   TrackDistLevel   *dist_level   ;
   TrackSubObject   *sub_object   ;
   TextureNode      *tnode        ;
@@ -216,7 +216,7 @@ int  add_texture_pointers_to_road_profiles(DynProfile *dnode){
 *  Compare lower case versions of names (Microsoft feature)
 */
           for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-            if(strcmp_ic(name,tnode->name))continue ;
+            if(!tnode->name || strcmp_ic(name,tnode->name))continue ;
             sub_object->texture = tnode     ;          // save link
             tnode->needed       = 1         ;
             if(ip>1)printf("  Texture found    = %s\n",tnode->name) ;

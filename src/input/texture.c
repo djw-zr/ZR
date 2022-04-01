@@ -11,6 +11,8 @@
  *   File contains routines for loading textures into main memory
  *   Code based on comments and code in Acefile.cs
  *
+ *   Some information on the different formats is given in README.ACE
+ *
  *==============================================================================
  */
 
@@ -39,13 +41,13 @@ int file_is_ace( const struct dirent *p){
 
 int load_texture_filenames() {
 
-  int         idir, len1, len2, i, n ;
-  int         ip = 1 ;                // Control printing : 0 = no printing
-  char        *tdir_name ;
-  DIR         *tdir;
-  struct dirent *f_entry;
-  struct dirent **namelist;
-  TextureNode *texture ;
+  int         idir, len1, len2, i, n, iret ;
+  int         ip = 0 ;                // Control printing : 0 = no printing
+  char        *tdir_name   = NULL ;
+  DIR         *tdir        = NULL ;
+  struct dirent *f_entry   = NULL ;
+  struct dirent **namelist = NULL ;
+  TextureNode *texture     = NULL ;
   char        myname[] = "load_texture_filenames" ;
 
 /*
@@ -73,6 +75,14 @@ int load_texture_filenames() {
         tdir_name = current_dir ;
         len1 = strlen(tdir_name) + 1 ;
 #endif
+        iret = zr_find_msfile2(tdir_name) ;
+        if(iret){
+          printf(" Routine %s : ERROR : Unable to open TEXTURES directory\n",
+                                                                myname) ;
+          printf("    Directory name = %s\n", tdir_name) ;
+          printf("    Program stopping ...\n") ;
+          exit(1) ;
+        }
         if(ip)printf(" Trying textures directory = %s\n",tdir_name) ;
         tdir = opendir(tdir_name) ;
         if(tdir == NULL){
@@ -85,12 +95,16 @@ int load_texture_filenames() {
 /*
  * 1.5  Generate an ordered list
  */
+#ifdef MinGW
+         n = scandir(tdir_name, &namelist, file_is_ace, NULL) ;
+#else
          n = scandir(tdir_name, &namelist, file_is_ace, versionsort);
+#endif
          if (n == -1) {
            perror("scandir");
            exit(EXIT_FAILURE);
          }
-         printf("  Textures from directory %s\n",tdir_name );
+         printf("     Textures from directory %s\n",tdir_name );
 //        for(i=0;i<n;i++){
 //           printf("%s\n", namelist[i]->d_name);
 //           free(namelist[i]);
@@ -162,8 +176,8 @@ int  init_texture_node(TextureNode *texture){
         texture->n_textures     = 0 ;
         texture->texture        = NULL ;
         texture->surface_format = 0 ;
-        texture->gl_mem_format  = ERROR ;
-        texture->gl_mem_packing = ERROR ;
+        texture->gl_mem_format  = ZR_ERROR ;
+        texture->gl_mem_packing = ZR_ERROR ;
         texture->gl_tex_ref_no  = 0 ;
       return 0 ;
 }
@@ -198,7 +212,7 @@ int load_texture(TextureNode *tnode){
   FILE   *fp ;
   char    myname[] = "load_texture" ;
 
-//      ip = !strncmp(tnode->name,"Dtruck",6) ;
+//      ip = !strncmp(tnode->name,"brake3",6) ;
 
 /*
  *  open_msfile reads and checks the first 16 bytes of the texture file
@@ -277,6 +291,9 @@ int load_texture(TextureNode *tnode){
           printf("    contains mipmaps but the height and with do not match.\n") ;
           printf("    width = %i,  height = %i.\n", width, height) ;
           printf("  Routine %s exiting without loading texture.\n",myname) ;
+          close_msfile(&msfile) ;
+          free(tnode->name)  ;
+          tnode->name = NULL ;
           return 1  ;
         }
         if((width & (width-1)) != 0){
@@ -284,6 +301,9 @@ int load_texture(TextureNode *tnode){
           printf("    contains mipmaps but the width is not a power of 2.\n") ;
           printf("    width = %i,  height = %i\n", width, height) ;
           printf("  Routine %s exiting without loading texture\n",myname) ;
+          close_msfile(&msfile) ;
+          free(tnode->name)  ;
+          tnode->name = NULL ;
           return 1  ;
         }
         for(i=width,image_count = 0;i>0;i=i>>1,image_count++) ;
@@ -312,6 +332,9 @@ int load_texture(TextureNode *tnode){
         printf("    channel_count  = %i \n",channel_count);
         printf("    raw_data       = %i \n",raw_data);
         printf("    image_count    = %i \n",image_count);
+        close_msfile(&msfile) ;
+        free(tnode->name)  ;
+        tnode->name = NULL ;
         return 1;
       }
 /*
@@ -339,8 +362,9 @@ int   is_mask  = 0;
       }
       tnode->is_alpha = is_alpha ;
       tnode->is_mask  = is_mask  ;
-      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  alpha = %i  mask = %i  s_format = %2x  channels = %i,  name = %s\n",
-                            raw_data, mipmaps, is_alpha, is_mask, surface_format,channel_count,tnode->name);
+      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  alpha = %i  mask = %i  s_format = %2x  channels = %i,  image_count = %i, compress = %i, name = %s\n",
+           raw_data, mipmaps, is_alpha, is_mask, surface_format,channel_count,
+           image_count, msfile.compress, tnode->name);
 /*
  *  Create texture pointer array
  *  This is of length one - unless mipmaps is set.
@@ -358,9 +382,17 @@ int   is_mask  = 0;
 /*
  *==============================================================================
  *   Read Raw data
+ *
+ *   Used in MSTS to  store 0x12 (Compressed Dxt1) images
+ *   Dxt1 compuression uses 64 bits to store colours in a 4x4 block of pixels
+ *   First 32 bits contains 2 colours stored as RGB in 5, 6 and 5 bits.
+ *   All cells white = 0xFF 0xFF 0xFF 0xFF 0x00 0x00 0x00 0x00
+ *   All cells black = 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
+ *   All cells grey  = 0x84 0x10 0x84 0x10 0x00 0x00 0x00 0x00
+ *   All cells red   = 0xF8 0x00 0xF8 0x00 0x00 0x00 0x00 0x00
  *==============================================================================
- *     This starts with a table of 32-bit integers, each giving the offset in
- *       bytes from the start of the table to the start of the corresponding
+ *     Raw data starts with a table of 32-bit integers, each giving the offset
+ *       inbytes from the start of the table to the start of the corresponding
  *       mipmap.
  *     If the mipmap width is 4 or larger, the data is stored as raw
  *       data following an initial 32-bit integer giving the number of raw
@@ -403,10 +435,14 @@ int  *tex_size = (int *)malloc(image_count*sizeof(int)) ;
           tex_size[i] = read_int32(fp) ;
           if(i>0)tex_size[i-1] = tex_size[i]-tex_size[i-1] - 4 ;
         }
-        tex_size[image_count-1] = 4 ;
         if(ip){
           for(i=0;i<image_count;i++)
-            printf(" mipmap %i, size = %i bytes\n",i, tex_size[i]) ;
+            printf(" AA mipmap %i, size = %i bytes\n",i, tex_size[i]) ;
+        }
+        if(mipmaps && (tex_size[image_count-2] == 4))tex_size[image_count-1] = 4 ;
+        if(ip){
+          for(i=0;i<image_count;i++)
+            printf(" BB mipmap %i, size = %i bytes\n",i, tex_size[i]) ;
         }
 /*
  * read mipmaps
@@ -423,20 +459,31 @@ int     w = width ;
                          " bytes %5i, texture[i] = %p\n",
                          i, w, l, tex_size[i], (void *)tnode->texture[i] ) ;
             if(l != tex_size[i]){
-              printf(" Error l != tex_size[i] \n");
+              printf("  Error while processing texture file %s.ace \n",tnode->name) ;
+              printf("    l != tex_size[i] \n");
+              printf("    i = %i,  l = %i, tex_size[i] = %i\n",i,l,tex_size[i]) ;
+              printf("    Surface format option = %x\n", surface_format);
+#if 0
               printf(" Next 100 bytes:\n");
               for(i=0;i<100;i++){
                  c = fgetc(fp);
                  if(feof(fp))break ;
                  printf(" I = %i,  byte = %2x\n",i,(uint)(c&0xff));
               }
-              exit(0) ;
+#endif
+              close_msfile(&msfile) ;
+              free(tnode->name)  ;
+              tnode->name = NULL ;
+              return 1 ;
             }
             for(j=0;j<tex_size[i];j++){
               c = fgetc(fp) ;
               if(feof(fp)){
                 printf(" EOF while reading texture data\n");
                 printf("    Texture loading aborted\n") ;
+                close_msfile(&msfile) ;
+                free(tnode->name)  ;
+                tnode->name = NULL ;
                 return 1;
               }
               tnode->texture[i][j] = c ;
@@ -446,13 +493,41 @@ int     w = width ;
           }else{
             if(ip)printf("  Mipmap image %2i, width = %i. Set to eight zero bytes\n",i,w);
             tnode->texture[i] = (GLubyte *)malloc(8*sizeof(GLubyte));
-            for(j=0;j<8;j++,k++) tnode->texture[i][j] = 0 ;
+#if 0
+            tnode->texture[i][0] = 0x84 ;  // Grey
+            tnode->texture[i][1] = 0x10 ;
+            tnode->texture[i][2] = 0x84 ;
+            tnode->texture[i][3] = 0x10 ;
+            tnode->texture[i][4] = 0x00 ;
+            tnode->texture[i][5] = 0x00 ;
+            tnode->texture[i][6] = 0x00 ;
+            tnode->texture[i][7] = 0x00 ;
+#endif
+#if 1
+            tnode->texture[i][0] = 0xF8 ;  // Red
+            tnode->texture[i][1] = 0x00 ;
+            tnode->texture[i][2] = 0xF8 ;
+            tnode->texture[i][3] = 0x00 ;
+            tnode->texture[i][4] = 0x00 ;
+            tnode->texture[i][5] = 0x00 ;
+            tnode->texture[i][6] = 0x00 ;
+            tnode->texture[i][7] = 0x00 ;
+#endif
+#if 0
+//            for(j=0;j<8;j++,k++) tnode->texture[i][j] = 0 ;
+            for(j=0;j<8;j++) tnode->texture[i][j] = 0 ;
+//            for(j=0;j<8;j++,k++) tnode->texture[i][j] = 0xFF ;
+#endif
           }
         }
         free(tex_size) ;
 /*
  *==============================================================================
  *  Read structured data
+ *  These have RGB or RGBA pixel data backed into two bytes:
+ *     0x0E :  R5  G5  B5
+ *     0x10 :  R5  G5  B5  A1
+ *     0x11 :  R4  G4  B4  A4
  *==============================================================================
  *
  *  This starts with a table of 32 bit offsets to each scan line for each image
@@ -607,82 +682,6 @@ int   w = width, nb, h, nwords ;
 }
 
 /*
- * Subroutine to convert packed Dxt1 texture block into rgba bytes
- *
- *  Textures in memory are stored as four bytes per pixel, in which
- *  increasing byte number corresponds to red, green, blue and alpha
- */
-
-int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja){
-
-  int           i, j ;
-  unsigned int  c0, c1, kk, ll ;
-  unsigned int  r[4], g[4], b[4], a[4] ;
-
-        c0 = ia[1] & 0xFFFF ;         // First 2 bytes
-        c1 = (ia[1]>16) & 0xFFFF ;    // Next 2 bytes
-/*
- *  In the dtx1 format, the first two 16-bit integers contain red, green
- *  and blue values stored in bits 0:4, 5:10 and 11:15.  Here the colours
- *  are extracted and placed in integers with their most significan bit
- *  in bit-7.  Bits 0:7 of the four colours then reflect the original
- *  rgb bytes but with the loss of the low order bits dropped by the dxt1
- *  scheme.
- */
-        b[0] = c0 &   0x1f ; b[0] = b[0] << 3 ;
-        g[0] = c0 &  0x7e0 ; g[0] = g[0] >> 3 ;
-        r[0] = c0 & 0xf800 ; r[0] = r[0] >> 8 ;
-        a[0] = 0xffff ;
-
-        b[1] = c1 &   0x1f ; b[1] = b[1] << 3 ;
-        g[1] = c1 &  0x7e0 ; g[1] = g[1] >> 3 ;
-        r[1] = c1 & 0xf800 ; r[1] = r[1] >> 8 ;
-        a[1] = 0xffff ;
-/*
- *  Two sets of equations are then used to define a third and fourth colours
- *  used by the dxt1 scheme.  The + 1 in the equations is included to round
- *  up the fraction 2/3, when it occurs, to the next highest integer.
- */
-        if(c0>c1){
-          r[2] = (r[0]*2 + r[1] + 1)/3 ;
-          g[2] = (g[0]*2 + g[1] + 1)/3 ;
-          b[2] = (b[0]*2 + b[1] + 1)/3 ;
-          a[2] = 0xffff ;
-          r[3] = (r[0] + 2*r[1] + 1)/3 ;
-          g[3] = (g[0] + 2*g[1] + 1)/3 ;
-          b[3] = (b[0] + 2*b[1] + 1)/3 ;
-          a[3] = 0xffff ;
-        }else{
-          r[2] = (r[0] + r[1])/2 ;
-          g[2] = (g[0] + g[1])/2 ;
-          b[2] = (b[0] + b[1])/2 ;
-          a[2] = 0xffff ;
-          r[3] = 0 ;               // Transparent - no colour
-          g[3] = 0 ;
-          b[3] = 0 ;
-          a[3] = 0x0000 ;
-        }
-/*
- *   Finally use the array of 2-bit indices in the second pair of 16-bit
- *   words to define the rgba values of a 4 by 4 block of pixels.
- *   NOTE:  Check orders of ja and 2-bit indices correspond !!!!
- */
-        for(i=0;i<4;i++){
-          for(j=0;j<4;j++){
-            kk = ia[1] & 0x3 ;     // Extract lowest two bits
-            ll = (i*4 + j)*4 ;
-            printf(" i, j, kk, ll = %i %i %i %i \n", i, j, kk, ll );
-            ja[ll  ] = r[kk] ;
-            ja[ll+1] = g[kk] ;
-            ja[ll+2] = b[kk] ;
-            ja[ll+3] = a[kk] ;
-            ia[1]    = ia[1]>>2 ;  // Shift down two bits
-          }
-        }
-        return 0 ;
-}
-
-/*
  *  Routine to sort the wagon textures
  */
 
@@ -707,16 +706,32 @@ int n_textures, i,
     ip = 0       ;
 TextureNode *tx,
             **ta ;
+char *my_name="sort_textures" ;
+
+      if(ip){
+        printf("  Enter routine %s\n",my_name) ;
+        printf("    texturelist_beg = %p\n",(void *)texturelist_beg) ;
+        fflush(NULL) ;
+      }
+
+//      printf(" AA \n") ; fflush(NULL) ;
+      tx = *texturelist_beg;
+//      printf(" BB \n") ; fflush(NULL) ;
+//      printf("  tx = %p\n", (void *)tx) ; fflush(NULL) ;
 
       n_textures = 0 ;
-      for(tx = *texturelist_beg; tx != NULL; tx = tx->next) n_textures++ ;
+      for(tx = *texturelist_beg; tx != NULL; tx = tx->next){
+//        printf("  i  = %i\n", n_textures) ; fflush(NULL) ;
+//        printf("  tx = %p\n", (void *)tx) ; fflush(NULL) ;
+        n_textures++ ;
+      }
 
       ta = (TextureNode **)malloc(n_textures*sizeof(TextureNode *)) ;
       for(tx = *texturelist_beg, i=0; tx != NULL; tx = tx->next, i++) ta[i] = tx ;
 
-      if(ip)for(i=0;i<n_textures;i++){
-        printf(" CC %p ta = %p,  name = %s\n",(void *)ta,(void *)ta[i], ta[i]->name) ;
-      }
+//      if(ip)for(i=0;i<n_textures;i++){
+//        printf(" CC %p ta = %p,  name = %s\n",(void *)ta,(void *)ta[i], ta[i]->name) ;
+//      }
 
       qsort(ta, n_textures, sizeof(TextureNode *), compare_tx_names) ;
 

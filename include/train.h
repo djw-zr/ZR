@@ -52,14 +52,15 @@
  *
  */
 
-typedef struct travellernode  TravellerNode ;
-typedef struct wagonnode      WagonNode     ;
-typedef struct trainnode      TrainNode     ;
+typedef struct travellernode  TravellerNode  ;
+typedef struct wagonnode      WagonNode      ;
+typedef struct trainnode      TrainNode      ;
+//typedef struct enginenode     EngineNode     ;
 
 struct travellernode {
   ShapeNode    *shape       ;  //  Shape of current wagon
   WagonNode    *wagon       ;  //  Current wagon
-  TrkNetNode    *tn         ;  //  Current track section in track network
+  TrkSectNode  *tn          ;  //  Current track section in track network
   TrkVectorNode *vn         ;  //  Current vector in track section
 
   double       x            ;  //  Position (m) of traveller
@@ -69,9 +70,9 @@ struct travellernode {
                                //  degrees
   double       position     ;  //  Position within section
 
-  int          itrack       ;  //  Current track node
-  int          ivector      ;  //  Index of current vector
-  int          idirect      ;  //  1/0 = increase/decrease in distance moved by
+  uint          itrack       ;  //  Current track node
+  uint          ivector      ;  //  Index of current vector
+  uint          idirect      ;  //  1/0 = increase/decrease in distance moved by
                                //        traveller increases vector position
 }  ;
 
@@ -92,19 +93,47 @@ struct wagonnode{
   int           is_engine  ;  //  True (non-zero) if this has a motor
   int           train_dir  ;  //  True if wagon in same direction as train
   int           n_travel   ;  //  Number of traveller nodes.
+  int           has_wipers   ;  // = 1 when engine has wipers
+  int           wipers_on    ;  // = 1 when wipers switched on
+  int           wipers_off   ;  // = 1 when wiper switched off
+  int           has_mirrors  ;  // = 1 when engine has driver mirrors
+  int           mirrors_out  ;  // = 1 when mirrors (moving) out
+  int           has_pantographs  ;  // = 1 when engine has pantographs
+  int           pantographs_up   ;  // = 1 when pantographs (being) raised
+
   double        dist_front ;  //  Distances from wagon shape origin ..
   double        dist_back  ;  //  .. to limits of front and back buffers
   double        wheel_angle       ;  // Degrees
   double        driverwheel_angle ;  // Degrees
+
+  double        wipers_ang   ;  // 0 to 360 - converted 0.5(sin(ang)+1.0)
+  double        mirrors_dist ;  // 0 to 1
+  double        pantographs_dist ;  // 0 to 1
+
   TravellerNode *traveller ;  //  Vector of traveller nodes
   ShapeNode     *shape     ;  //  Shape node defining wagon
   RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data
+//  EngineNode    *engine    ;  //
 } ;
+#if 0
+struct enginenode{
+  int           has_wipers   ;  // = 1 when engine has wipers
+  int           wipers_on    ;  // = 1 when wipers switched on
+  int           wipers_off   ;  // = 1 when wiper switched off
+  double        wipers_ang   ;  // 0 to 360 - converted 0.5(sin(ang)+1.0)
+  int           has_mirrors  ;  // = 1 when engine has driver mirrors
+  int           mirrors_out  ;  // = 1 when mirrors (moving) out
+  double        mirrors_dist ;  // 0 to 1
+  int           has_pantographs  ;  // = 1 when engine has pantographs
+  int           pantographs_up   ;  // = 1 when pantographs (being) raised
+  double        pantographs_dist ;  // 0 to 1
+} ;
+#endif
 
 /*
- *   TrainNode are used to specify 'trains', located on the track,
- *   and 'consists', standard trains that can be used to generate
- *   a new train at a chosen point on the track.
+ *   TrainNode is used to specify either a 'train', located on the
+ *   track, or a 'consist', standard trains that can be used to
+ *   initialise a new train at a chosen point on the track.
  */
 
 struct trainnode{

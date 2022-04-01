@@ -7,6 +7,53 @@
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+
+You can always view all the environment variables available on your device using
+the Powershell command
+ Get-ChildItem Env: | Sort Name
+
+
+Name                           Value
+----                           -----
+ALLUSERSPROFILE                C:\ProgramData
+APPDATA                        C:\Users\David\AppData\Roaming
+CommonProgramFiles             C:\Program Files\Common Files
+CommonProgramFiles(x86)        C:\Program Files (x86)\Common Files
+CommonProgramW6432             C:\Program Files\Common Files
+COMPUTERNAME                   IDEALPAD
+ComSpec                        C:\Windows\system32\cmd.exe
+DriverData                     C:\Windows\System32\Drivers\DriverData
+FPS_BROWSER_APP_PROFILE_STRING Internet Explorer
+FPS_BROWSER_USER_PROFILE_ST... Default
+HOMEDRIVE                      C:
+HOMEPATH                       \Users\David
+LOCALAPPDATA                   C:\Users\David\AppData\Local
+LOGONSERVER                    \\IDEALPAD
+NUMBER_OF_PROCESSORS           2
+OneDrive                       C:\Users\David\OneDrive
+OS                             Windows_NT
+Path                           C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPo...
+PATHEXT                        .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
+PROCESSOR_ARCHITECTURE         AMD64
+PROCESSOR_IDENTIFIER           Intel64 Family 6 Model 76 Stepping 4, GenuineIntel
+PROCESSOR_LEVEL                6
+PROCESSOR_REVISION             4c04
+ProgramData                    C:\ProgramData
+ProgramFiles                   C:\Program Files
+ProgramFiles(x86)              C:\Program Files (x86)
+ProgramW6432                   C:\Program Files
+PSModulePath                   C:\Users\David\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell...
+PUBLIC                         C:\Users\Public
+SESSIONNAME                    Console
+SystemDrive                    C:
+SystemRoot                     C:\Windows
+TEMP                           C:\Users\David\AppData\Local\Temp
+TMP                            C:\Users\David\AppData\Local\Temp
+USERDOMAIN                     IDEALPAD
+USERDOMAIN_ROAMINGPROFILE      IDEALPAD
+USERNAME                       David
+USERPROFILE                    C:\Users\David
+windir                         C:\Windows
  *
  *==============================================================================
  */
@@ -30,11 +77,20 @@ char   *token        ;
 FILE   *fptr = NULL  ;     // Pointer to config file
 DIR    *dotzr        ;     // DIR pointer to .zr directory
 DIR    *fontdir      ;     // DIR pointer to fonts directory
+char *my_name = "process_defaults" ;
+
+      if(ip)printf("  Enter %s\n",my_name) ;
 
 //  Find users home directory
-
+#ifdef WINDOWS
+      home = getenv("HOMEPATH") ;
+#else
       home = getenv("HOME") ; // Pointer to string "HOME" in program address space
+#endif
+      if(ip)printf("  AA\n") ;
+      if(ip)printf("  BB ::%s:: \n",home) ;
       slen = strlen(home) ;
+      if(ip)printf("  BB ::%i:: \n",(int)slen) ;
       if(slen==0){
         printf(" Unable to determine users HOME directory\n");
         printf(" Program stopping ...\n");
@@ -52,7 +108,11 @@ DIR    *fontdir      ;     // DIR pointer to fonts directory
       dotzr = opendir(dotdir) ;
       if(dotzr == NULL){
         printf(" Creating new .zr directory in users home folder\n");
+#ifdef WINDOWS
+        mkdir(dotdir);
+#else
         mkdir(dotdir, 0777);
+#endif
       }else{
         if(ip)printf(" Users .zr directory exists.\n");
       }
@@ -123,8 +183,12 @@ DIR    *fontdir      ;     // DIR pointer to fonts directory
       for(i=0;i<3;i++)token_a[i] =(char *)malloc(ll+1);
       slen = 0 ;
       printf("  Content of config file: \n") ;
+#ifdef SDL2
+      while ((int)(nread = getline1(&line, &slen, fptr)) != -1) {
+#else
       while ((int)(nread = getline(&line, &slen, fptr)) != -1) {
-        if(ip)printf("Retrieved line of length %zu:\n", nread);
+#endif
+        if(ip)printf("Retrieved line of length %i: \n", (int)nread);
         fwrite(line, nread, 1, stdout);
         if(ip)printf(" Line = ::%s::\n",line) ;
 
@@ -177,5 +241,18 @@ DIR    *fontdir      ;     // DIR pointer to fonts directory
         printf("   ORdir      = %s\n",ORdir);
         printf("   ORroutedir = %s\n",ORroutedir);
       }
+#ifdef ROUTE_MSTS
+      printf("   Program ZR will use MSTS route %s\n",msts_route) ;
+      free(ORdir) ;
+      ORdir = MSTSdir ;
+      free(ORroutedir) ;
+      ORroutedir = malloc(strlen(ORdir)+strlen(msts_route)+10) ;
+      strcpy(ORroutedir,ORdir) ;
+      strcat(ORroutedir,"ROUTES/") ;
+      strcat(ORroutedir,msts_route) ;
+      strcat(ORroutedir,"/") ;
+      printf("   Home directory  = %s\n",ORdir);
+      printf("   Route directory = %s\n",ORroutedir);
+#endif
       return ;
 }

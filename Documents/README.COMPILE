@@ -4,7 +4,7 @@ README.COMPILE
 Required Software
 =================
 
-    The program has been developed using the OpenSUSE 15.* versions of linux.  As far as I know, no specialist packages are required so the compiers and libraries should be also available for the standard Linux distributions such as Debian, Ubuntu and Fedora.
+    The program has been developed using the OpenSUSE 15.* versions of Linux.  As far as I know, no specialist packages are required so the compilers and libraries should be also available for the standard Linux distributions such as Debian, Ubuntu and Fedora.
 
     Compilation and linking of the program is carried out by the makefile.  This requires installation of the programs:
       make   ::  Gnu make program or equivalent
@@ -18,8 +18,13 @@ Required Software
       libXmu  ::  X11 extensions (-lXmu)
       libGL   ::  OpenGL library (-lGL)
       libGLU  ::  Extensions for GLU (-lGLU)
+    If the glut interface is used then
       libglut ::  GLUT library (-lglut)
       libfreetype :: freetype
+    Alternatively for the SDL2 interface
+      libSDL2      ::  SDL2 library
+      libSDL2_ttf  ::  SDL2 text
+
     The libraries glibc and X11, Xext and Xmu should be installed by default.  The others may need to be installed using a package manager.  Unfortunately the name of the package can change from one system to another so you may need to obtain expert help.
 
     Often the library exists in directory '/usr/lib64' with a name such as "libXmu.so.6".  However the program linker will be looking for "libXmu.so" so if the latter does not exist it will fail.  The solution is to change directories to '/usr/lib' and use the superuser command to create the link:
@@ -43,9 +48,11 @@ Compiling
 Fonts
 =====
 
-    The program uses Freetype routines together with the Microsoft font files 'tachoma.ttf' and 'verdana.ttf'.  In a Linux system the Freetype library is usually in a package named 'libfreetype#' where # is the number of the release.  The file 'ft2build.h' which is also needed is usually in package 'freetype2-devel'.
+    When the glut interface is being used the program uses the freetype routines together with the Microsoft font files 'tachoma.ttf' and 'verdana.ttf'.  In a Linux system the freetype library is usually in a package named 'libfreetype#' where # is the number of the release.  The file 'ft2build.h' which is also needed is usually in package 'freetype2-devel'.
 
-    The two font files should either be in the system font directory '/usr/share/fonts/webcore' or in the user directory '~/.zr/fonts'.  If the above two fonts are not available they can be replaced by changing the two font names in file 'freetype.c'.
+    For the SDL2 interface, the program uses the SDL2_ttf library to process the same truetype font files.
+
+    The two font files should either be in the system font directory '/usr/share/fonts/webcore' or in the user directory '~/.zr/fonts'.  If the above two fonts are not available they can be replaced by changing the two font names in file 'freetype.c' for glut and in 'zr.c' for SDL2.
 
 Starting the program
 ====================

@@ -25,14 +25,14 @@
  */
 int create_dynamic_track_node(WorldItem *witem){
 
-int             i       ;
-TrkNetNode  *pnode ;
+int          i      ;
+TrkSectNode  *pnode ;
 
 /*
  *  Generate initialise track section node
  */
-      pnode = (TrkNetNode *)malloc(sizeof(TrkNetNode));
-      witem->u.dyn_track_obj.tsnode          = pnode ;
+      pnode = (TrkSectNode *)malloc(sizeof(TrkSectNode));
+      witem->u.dyn_track_obj.tsnode = pnode ;
       for(i=0;i<3;i++){
        witem->u.dyn_track_obj.gl_display_list[i] =   0 ;
        witem->u.dyn_track_obj.dist_level[i]      = 0.0 ;

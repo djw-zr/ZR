@@ -27,11 +27,14 @@
  */
 #include <dirent.h>
 #include <stdio.h>
+int world_item_init(WorldItem *world_item) ;
+void  add_shape_name_to_world_btree(WorldNode *wnode, WorldItem *world_item);
 
-int world_item_init(WorldItem *world_item)               ;
 
 /*
+ * *****************************************************************************
  * Routine to create a world node for each world file in directory world
+ * *****************************************************************************
  */
 
 int load_world_filenames() {
@@ -56,7 +59,7 @@ int load_world_filenames() {
       if(wdir == NULL){
         strcpy(wdir_name,ORroutedir)    ;
         strcat(wdir_name,"World/")      ;
-        if(ip)printf(" Tryingirectory world = %s\n",wdir_name) ;
+        if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
         wdir = opendir(wdir_name) ;
         if(wdir == NULL){
           printf(" Unable to find world directory\n") ;
@@ -100,18 +103,25 @@ int load_world_filenames() {
         strncpy(string7,&(world->name[2]),6);
         string7[6] = '\0' ;
         world->tile_x = atoi(string7) ;
+        if(world->name[1] == '-')world->tile_x = -world->tile_x ;
         strncpy(string7,&(world->name[9]),6);
         string7[6] = '\0' ;
         world->tile_y = atoi(string7) ;
-//        printf("  Tile_X = %i\n",world->tile_x);
-//        printf("  Tile_Z = %i\n",world->tile_y);
+        if(world->name[8] == '-')world->tile_y = -world->tile_y ;
+        if(ip){
+          printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
+          printf("  Tile_X = %i\n",world->tile_x);
+          printf("  Tile_Z = %i\n",world->tile_y);
+          printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
+        }
 /*
  *  Initialise other structure variables
  */
-       world->tr_watermark = 0 ;
-       world->vdbid_count  = 0 ;
-       world->vdb_sphere   = NULL ;
-       world->world_item   = NULL ;
+        world->tr_watermark = 0 ;
+        world->vdbid_count  = 0 ;
+        world->vdb_sphere   = NULL ;
+        world->world_item   = NULL ;
+        world->shape_tree   = NULL ;
       }
       closedir(wdir) ;
       free(wdir_name) ;
@@ -126,7 +136,8 @@ int load_world_filenames() {
 
 int  load_world(WorldNode *wnode){
 
-  int     i, l, iret ;
+  int  i, l, iret ;
+  int  istoken ;
   enum token_id itoken, itoken2, itoken3, itoken4 ;
   int     ip1 = 0, ip = 0 ;                  //Controls printing
   double  temp ;
@@ -175,13 +186,15 @@ int  load_world(WorldNode *wnode){
  */
 
       for(;;){
-        itoken   = open_block(msfile,1) ;
-        msblock1 = &(msfile->level[1])  ;
-        if(-1==itoken){
+        istoken = open_block(msfile,1) ;
+        if(-1==istoken){
           if(ip)printf(" Routine %s.  End of file found at level 1\n",my_name);
           close_msfile(msfile) ;
           return 1;
         }
+        msblock1 = &(msfile->level[1])  ;
+        itoken  = istoken ;
+
         if(ip)printf("\n  Level 1 : token = %i  %s  : block data length = %i \n",
            itoken,token_idc[itoken], msblock1->length-msblock1->l_label-9) ;
         if(itoken == VDBIDCOUNT){
@@ -261,24 +274,34 @@ int  load_world(WorldNode *wnode){
             end_block(msfile,3) ;
             end_block(msfile,2) ;
           }
-        }else if(itoken == TR_WATERMARK){
+        }else if(TR_WATERMARK == itoken){
           wnode->tr_watermark = read_int32(fp) ;
-// ***********************************************************************
-//
-// ***********************************************************************
+/*
+ *  Unknown token
+ */
+        }else if(309 == itoken){
+          skip_to_bblock_end(fp,msblock1) ;
+
+/*
+ * ***********************************************************************
+ *
+ *  Level 1 tokens with level 2 subtokens
+ *
+ * ***********************************************************************
+ */
         }else if(STATIC == itoken || COLLIDEOBJECT == itoken
                 || TRACKOBJ == itoken
                 || itoken == CARSPAWNER || itoken == 357
                 || itoken == SIDING_ALT || itoken == 361
                 || itoken == PLATFORM_ALT || itoken == FOREST
                 || itoken == LEVELCR
-                || itoken == DYNTRACK || itoken == 306
-                || itoken == TRANSFER || itoken == 363
-                || itoken == GANTRY   || itoken == 356
-                || itoken == PICKUP_ALT|| itoken == 359
-                || itoken == HAZARD   || itoken == SIGNAL_ALT
-                || itoken == SPEEDPOST
-        ){
+                || itoken == DYNTRACK   || itoken == 306
+                || itoken == TRANSFER   || itoken == 363
+                || itoken == GANTRY     || itoken == 356
+                || itoken == PICKUP_ALT || itoken == 359
+                || itoken == HAZARD     || itoken == SIGNAL_ALT
+                || itoken == SPEEDPOST ){
+
 /*
  *  Crate new world item
  */
@@ -296,7 +319,17 @@ int  load_world(WorldNode *wnode){
             wnode->world_item = world_item ;
           }
           world_item->worldtype = itoken ;
-
+#if 1
+          if(itoken == CARSPAWNER || itoken == 357){
+            if(ip)printf("  Initialise car spawner variables\n") ;
+            world_item->u.car_spawn_obj.carspawnerlist_idx =    0 ;
+            world_item->u.car_spawn_obj.car_frequency      =  5.0 ;
+            world_item->u.car_spawn_obj.car_av_speed       = 20.0 ;
+            world_item->u.car_spawn_obj.list_name          = NULL ;
+          }else if(itoken == STATIC || COLLIDEOBJECT == itoken){
+            world_item->u.static_obj.no_direct_light  = 0 ;
+          }
+#endif
 /*
  *   Process level 3 tokens
  */
@@ -311,6 +344,7 @@ int  load_world(WorldNode *wnode){
             }else if(FILENAME == itoken2){
 // Strings are unicode, headed by two byte length
               world_item->filename = read_ucharz(fp) ;
+              add_shape_name_to_world_btree(wnode, world_item) ;
               if(ip || ip1)printf("  filename = %s\n",world_item->filename) ;
             }else if(POSITION == itoken2){
               world_item->X = read_real32(fp) ;  // MSTS X
@@ -357,31 +391,51 @@ int  load_world(WorldNode *wnode){
             }else if(VDBID == itoken2){
               world_item->vdb_id = read_uint32(fp) ;
               if(ip)printf("      world_item->vdb_id      = %i\n",world_item->vdb_id);
-            }else if(STATICFLAGS == itoken2){
-              world_item->static_flags = read_uint32(fp) ;
-              if(ip)printf("      world_item->static_flags = %i\n",world_item->static_flags);
+            }else if(COLLIDEFLAGS == itoken2){
+              world_item->collide_flags = read_uint32(fp) ;
+              if(ip)printf("      world_item->collide_flags = %i\n",world_item->collide_flags);
             }else if(STATICDETAILLEVEL == itoken2){
               world_item->static_detail_level = read_uint32(fp) ;
               if(ip)printf("      world_item->static_detail_level = %i\n",
                                  world_item->static_detail_level);
+            }else if(STATICFLAGS == itoken2){
+              world_item->static_flags = read_uint32(fp) ;
+              if(ip)printf("      world_item->static_flags = %i\n",world_item->static_flags);
             }else if(TRITEMID == itoken2){
               world_item->tr_item_db[world_item->n_tr_item]      = read_int32(fp) ;
               world_item->tr_item_db_id[world_item->n_tr_item++] = read_int32(fp) ;
+            }else if(MAXVISDISTANCE == itoken2){
+                world_item->max_vis_distance             = read_real32(fp) ;
+
 // TRACK OBJECT
             }else if(TRACKOBJ == itoken && SECTIONIDX == itoken2){
-              world_item->u.track_obj.section_idx       = read_uint32(fp) ;
+              world_item->u.track_obj.section_idx        = read_uint32(fp) ;
               if(ip)printf("      world_item->*.section_idx = %i\n",
                                   world_item->u.track_obj.section_idx);
             }else if(TRACKOBJ == itoken && ELEVATION == itoken2){
-              world_item->u.track_obj.elevation         = read_real32(fp) ;
+              world_item->u.track_obj.elevation          = read_real32(fp) ;
             }else if(TRACKOBJ == itoken && JNODEPOSN == itoken2){
-              world_item->u.track_obj.tile_x             = read_int32(fp) ;
-              world_item->u.track_obj.tile_y             = read_int32(fp) ;
+              world_item->u.track_obj.tile_x             = read_int32(fp)  ;
+              world_item->u.track_obj.tile_y             = read_int32(fp)  ;
               world_item->u.track_obj.X                  = read_real32(fp) ;
               world_item->u.track_obj.Y                  = read_real32(fp) ;
               world_item->u.track_obj.Z                  = read_real32(fp) ;
             }else if(TRACKOBJ == itoken && COLLIDEFLAGS == itoken2){
-              world_item->u.track_obj.collide_flags     = read_uint32(fp) ;
+              world_item->u.track_obj.collide_flags     = read_uint32(fp)  ;
+            }else if(TRACKOBJ == itoken && COLLIDEFUNCTION == itoken2){
+//  Skip to end of block
+              for(i=ftell(fp);i<msblock2->byte_end;i++){
+                fgetc(fp) ;
+              }
+#if 1
+//  CARSPAWNER OBJECT
+            }else if(itoken == CARSPAWNER || itoken == 357){
+               if(CARFREQUENCY == itoken2){
+                 world_item->u.car_spawn_obj.car_frequency = read_real32(fp) ;
+               }else if(CARAVSPEED == itoken2){
+                 world_item->u.car_spawn_obj.car_av_speed  = read_real32(fp) ;
+               }
+#endif
 //  FOREST OBJECT
             }else if(FOREST == itoken && TREETEXTURE == itoken2){
               world_item->u.forest_obj.tree_texture     = read_ucharz(fp) ;
@@ -447,7 +501,7 @@ DynTrackSect *dyn_trk_sect ;
                                      dyn_trk_sect->uid,dyn_trk_sect->param_1,
                                       dyn_trk_sect->param_2,dyn_trk_sect->delta_y);
                 end_block(msfile,3) ;
-                if(-1 != dyn_trk_sect->uid && !dyn_trk_sect->is_curved &&
+                if(!dyn_trk_sect->is_curved &&
                   0.0 != dyn_trk_sect->param_2 && 0.0 !=  dyn_trk_sect->param_1){
                   printf("  Routine %s : Dynamic track section has inconsistant values:\n",my_name);
                   printf("    is_curved = %i, param_1 = %f, param_2 = %f, uid = %i\n",
@@ -535,18 +589,38 @@ DynTrackSect *dyn_trk_sect ;
               world_item->u.pickup_obj.feed_rate_kgps        = read_real32(fp) ;
             }else if((PICKUP_ALT == itoken || 359 == itoken) && COLLIDEFLAGS == itoken2){
               world_item->u.pickup_obj.collide_flags         = read_uint32(fp) ;
+//  PLATFORM
             }else if(PLATFORM_ALT == itoken && PLATFORMDATA == itoken2){
               world_item->u.platform_obj.platform_data       = read_uint32(fp) ;
+//  STATIC and COLLIDEOBJECT == itoken
+            }else if((STATIC == itoken || COLLIDEOBJECT == itoken) && NODIRLIGHT == itoken2){
+                world_item->u.static_obj.no_direct_light = 1 ;
+            }else if(COLLIDEOBJECT == itoken && COLLIDEFUNCTION == itoken2){
+              skip_to_bblock_end(fp,msblock2) ;
+            }else if(STATIC == itoken && MATRIX3X3 == itoken2){
+              skip_to_bblock_end(fp,msblock2) ;
             }else{
-              printf(" ERROR : Routine %s\n",my_name);
-              printf("   Unrecognised level 2 token \n");
-              printf("   Level 2 token  = %i %s\n",itoken2,token_idc[itoken2]) ;
-              printf("   Level 1 token  = %i %s\n",itoken, token_idc[itoken])  ;
+              printf("   ERROR : Routine %s.  File %s\n",my_name,wnode->wfile);
+              printf("     Unrecognised level 2 token \n");
+              printf("     Level 1 token  = %i %s\n",itoken, token_idc[itoken])  ;
+              printf("     Level 2 token  = %i %s\n",itoken2,token_idc[itoken2]) ;
+              if(ip){
+                printf("     ftell(fp)    = %i\n",(int)ftell(fp)) ;
+                printf("     msfile->level[0].byte_end  = %i\n",msfile->level[0].byte_end) ;
+                printf("     msfile->level[1].byte_end  = %i\n",msfile->level[1].byte_end) ;
+                printf("     msblock1->byte_end         = %i\n",msblock1->byte_end) ;
+                printf("     msblock2->byte_end         = %i\n",msblock2->byte_end) ;
+              }
+//  Skip to end of block
+//              for(i=ftell(fp);i<msblock2->byte_end;i++){
+//                fgetc(fp) ;
+//              }
+              skip_to_bblock_end(fp,msblock2) ;
             }
             end_block(msfile,2) ;
             if(ftell(fp) == msfile->level[1].byte_end) break ;
           }
-          for(i=ftell(fp);i<msblock1->byte_end;i++){
+          for(i=ftell(fp);i<msblock2->byte_end;i++){
             fgetc(fp) ;
           }
 /*
@@ -561,7 +635,7 @@ DynTrackSect *dyn_trk_sect ;
         }
         end_block(msfile,1) ;
       }
-      if(0 && iret) ;                         //  Keep the compiler happy
+      if(0 && iret){} ;                         //  Keep the compiler happy
       close_msfile(msfile) ;
       printf(" Normal return\n");
       return 0 ;
@@ -569,22 +643,26 @@ DynTrackSect *dyn_trk_sect ;
 
 int world_item_init(WorldItem *world_item){
 
-      world_item->next         = NULL ;
-      world_item->filename     = NULL ;
-      world_item->snode        = NULL ;
-      world_item->worldtype    = 0    ;
-      world_item->uid          = 0    ;
-      world_item->static_flags = 0    ;
-      world_item->X            = 0.0  ;
-      world_item->Y            = 0.0  ;
-      world_item->Z            = 0.0  ;
-      world_item->A            = 0.0  ;
-      world_item->B            = 0.0  ;
-      world_item->C            = 0.0  ;
-      world_item->D            = 0.0  ;
-      world_item->vdb_id       = 0    ;
-      world_item->n_tr_item    = 0    ;
-      world_item->static_detail_level = 0    ;
+      world_item->next          = NULL ;
+      world_item->filename      = NULL ;
+      world_item->snode         = NULL ;
+      world_item->worldtype     = 0    ;
+      world_item->uid           = 0    ;
+      world_item->static_flags  = 0    ;
+      world_item->collide_flags = 0    ;
+      world_item->X             = 0.0  ;
+      world_item->Y             = 0.0  ;
+      world_item->Z             = 0.0  ;
+      world_item->A             = 0.0  ;
+      world_item->B             = 0.0  ;
+      world_item->C             = 0.0  ;
+      world_item->D             = 0.0  ;
+      world_item->vdb_id        = 0    ;
+      world_item->iz_off        = 0    ;
+      world_item->n_tr_item     = 0    ;
+      world_item->max_vis_distance    = 10000.0 ;
+      world_item->static_detail_level = 0       ;
+
       return 0;
 }
 
@@ -592,6 +670,7 @@ int add_shape_pointers_to_world_items(){
 
   int  k      ;
   int  ip = 0 ;   // 0 = no printing, -1 = error printing only
+  int  id = 0 ;
   WorldNode    *wnode ;
   WorldItem    *witem ;
   ShapeNode    *snode ;
@@ -610,14 +689,18 @@ int add_shape_pointers_to_world_items(){
 //          if(wnode->tile_x != tst_tile_x || wnode->tile_y != tst_tile_y)continue ;
           for(witem=wnode->world_item; witem != NULL; witem=witem->next){
             if(NULL != witem->filename){
+//              id = (witem->uid == 4485) ;
               wname = strdup(witem->filename) ;
               for(k=0;k<(int)strlen(wname);k++)wname[k] = tolower(wname[k]) ;
               wname[strlen(wname)-2] = '\0';
-              if(ip){
-                printf("                witem = %p\n",(void *)witem) ;
-                printf("                      type  = %i   %s\n",
+              if(ip || id){
+                printf("     witem = %p,  uid = %i,  tile_x = %i %i,  tile_y = %i %i\n",
+                               (void *)witem, witem->uid,
+                               wnode->tile_x, wnode->tile_x-tile_west,
+                               wnode->tile_y, wnode->tile_y-tile_south) ;
+                printf("     type       = %i   %s\n",
                                 witem->worldtype,token_idc[witem->worldtype]) ;
-                printf("                      shape = %s\n",wname) ;
+                printf("     shape name = %s\n",wname) ;
               }
               for(snode = shapelist_beg; NULL != snode; snode=snode->next ){
                 sname = strdup(snode->name) ;
@@ -627,7 +710,7 @@ int add_shape_pointers_to_world_items(){
                   snode->basic  = 0     ;
                   snode->needed = 0     ;
                   snode->loaded = 0     ;
-                  if(ip>0)printf(" Active list : wnode = %p, witem = %p, add shape: %s  ::  %s \n",(void *)wnode, (void *)witem, sname, witem->snode->name) ;
+                  if(ip)printf(" Active list : wnode = %p, witem = %p, add shape: %s  ::  %s \n",(void *)wnode, (void *)witem, sname, witem->snode->name) ;
                   free(sname) ;
                   break ;
                 }
@@ -662,3 +745,45 @@ int  list_wfile_item(WorldItem *wi){
 
       return 0;
 }
+
+void  add_shape_name_to_world_btree(WorldNode *wnode, WorldItem *world_item){
+
+uint   i ;
+char   *name = NULL ;
+BTree  *n =  wnode->shape_tree ;
+char   *my_name = "add_shape_name_to_world_btree" ;
+
+//  Make copy of filename without directories and extension
+//  and convert to lower case.
+
+      name = zr_basename2(world_item->filename) ;
+      for(i=0;i<strlen(name);i++)name[i] = tolower(name[i]) ;
+
+//  Compare
+
+      if(NULL != n){
+        if(find_btree(n,name)){
+          free(name) ;
+          return     ;      // Name already exists
+        }
+      }
+
+//  Add new item
+
+      wnode->shape_tree =
+           insert_node(wnode->shape_tree,name,NULL) ;
+      return ;
+}
+
+void add_world_shapes_to_master(void *b){
+
+BTree *bb = (BTree *)b ;
+
+      if(shape_master){
+        if(find_btree(shape_master, bb->index)) return  ;
+      }
+      shape_master = insert_node(shape_master, bb->index, NULL) ;
+      return ;
+}
+
+

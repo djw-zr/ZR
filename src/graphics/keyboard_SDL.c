@@ -30,10 +30,11 @@
  *   alt keys.
  *   However the list of SDLK values indicate that
  *   (a) depressing modifier keys also generates a keypress event
- *   (b) the upper case characters corresponding to non=alphabet chahracters are
- *       represented correctly -but this is not the case.
+ *   (b) the upper case characters corresponding to non-alphabet chahracters are
+ *       represented correctly - but this is not the case.
  *   (c) it looks as if holding doen a key generates repeats - maybe a small delay
- *       and then 10 per second - however there is a way (I thik) to prevent thsi.
+ *       and then 10 per second - however there is a way (I think) to prevent this.
+ *
  *     No mofifiers: mod & KMOD_NONE
  *     Special keys mod & KMOD_CTRL/SHIFT/ALT/LCRTL/RCTRL/LSHIFT/RSHIFT/LALT/RALT
  *
@@ -92,7 +93,7 @@ int  new_camera = 0 ;
 double scalei = 1.0/plot_scale     ;
 double del_d, del_a, cn, sn        ;
 TravellerNode *tr_node  ;
-TrkNetNode    *tn1, *tn ;
+TrkSectNode   *tn1, *tn ;
 GLfloat       v4[4]     ;
 
 SDL_Keycode sym ;  //  Part of SDL_Keysym
@@ -219,6 +220,32 @@ char        my_name[] = "keyboard_sdl" ;
             camera_new_position() ;
             new_viewpoint = 1     ;
             break ;
+/*
+ *  Special Switches (used at present to control use of graphics accumulator)
+ */
+          case '0':
+            i_zra = 0 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '1':
+            i_zra = 1 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '2':
+            i_zra = 2 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '3':
+            i_zra = 3 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '4':
+            i_zra = 4 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+/*
+ *  Deafult with 'alt' key
+ */
           default:
             if(ip)printf(" Keyboard : No action required\n\n");
             return 0 ;
@@ -261,22 +288,97 @@ char        my_name[] = "keyboard_sdl" ;
               SDL_SetWindowFullscreen(Window, WindowFlags);
             }
             break;
-//  Change Switch/Points in front of traveller
+/*
+ *  Change Switch/Points: 'g' in front of first wagon/engine
+ *                    and 'G' behind last wagon.
+ */
           case SDLK_g:
             if(l_shift){
               if(ip)printf("  Key G  Switch front\n") ;
+#if 1
+              if(player_train){
+TravellerNode *tbf = NULL,
+              tb          ;
+TrkSectNode   *tn2 = NULL,
+              *tbn = NULL ;
+double        df          ;
+
+                tbf = player_train->last->traveller ;
+                if(tbf){
+                  tb = *tbf ;
+                  df = tb.wagon->raw_wagon->length ;
+                  if(df>0.0) trv_move(&tb, -0.5*df) ;
+                  tbn = tb.tn ;
+                  n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
+                  tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+                  if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+                }
+              }
+#else
               tr_node = player_train->last->traveller ;
               tn = tr_node->tn ;
               n = tn->pin_to_section[tr_node->idirect ? 0 : 1] ;
               tn1 = &track_db.trk_sections_array[n-1]   ;  // Section behind
               if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+#endif
             }else{
+#if 1
+              if(player_train){
+TravellerNode *tff = NULL,
+              tf          ;
+TrkSectNode   *tn1 = NULL,
+              *tfn = NULL ;
+double        df          ;
+
+                tff = player_train->first->traveller ;
+                if(tff){
+                  tf = *tff ;
+                  df = tf.wagon->raw_wagon->length ;
+                  if(df>0.0) trv_move(&tf, 0.5*df) ;
+                  tfn = tf.tn ;
+                  n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
+                  tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+                  if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+                }
+              }
+#else
               if(ip)printf("  Key g  Switch front\n") ;
               tr_node = player_train->first->traveller ;
               tn = tr_node->tn ;
               n = tn->pin_to_section[tr_node->idirect ? 1 : 0] ;
               tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
               if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+#endif
+            }
+            break ;
+/*
+ *  Control Wipers, Panographs amd Mirrors
+ */
+          case SDLK_p:
+            if(l_shift){
+              if(player_train && player_train->motor
+                              && player_train->motor->has_pantographs){
+                player_train->motor->pantographs_up =
+                        !player_train->motor->pantographs_up ;
+              }
+            }else{
+              if(player_train && player_train->motor
+                              && player_train->motor->has_mirrors){
+                player_train->motor->mirrors_out =
+                        !player_train->motor->mirrors_out ;
+              }
+            }
+            break ;
+          case SDLK_v:
+            if(l_shift){       //  V :: Wipers
+              if(player_train && player_train->motor
+                              && player_train->motor->has_wipers){
+                if(player_train->motor->wipers_on){
+                  player_train->motor->wipers_off = 1 ;  // Park at end of sweep
+                }else{
+                  player_train->motor->wipers_on  = 1 ;
+                }
+              }
             }
             break ;
 //  Switch frame rate on/off
@@ -353,66 +455,78 @@ char        my_name[] = "keyboard_sdl" ;
  *  Print all information about a key event
  */
 void PrintKeyInfo( SDL_KeyboardEvent *key ){
-        /* Is it a release or a press? */
-        if( key->type == SDL_KEYUP )
-            printf( "Release:- " );
-        else
-            printf( "Press:- " );
+
+char *my_name="PrintKeyInfo" ;
+
+      printf("  Enter routine %s\n",my_name) ;
+
+/* Is it a release or a press? */
+      if( key->type == SDL_KEYUP )
+          printf( "Release:- " );
+      else
+          printf( "Press:- " );
 
 /* Print the hardware scancode first */
-        printf( "Scancode: 0x%02X", key->keysym.scancode );
+      printf( "Scancode: 0x%02X", key->keysym.scancode );
 /* Print the name of the key */
-        printf( ", Name: %s", SDL_GetKeyName( key->keysym.sym ) );
-#if 0  //  Unicode not supported
-        /* We want to print the unicode info, but we need to make */
-        /* sure its a press event first (remember, release events */
-        /* don't have unicode info                                */
-        if( key->type == SDL_KEYDOWN ){
-            /* If the Unicode value is less than 0x80 then the    */
-            /* unicode value can be used to get a printable       */
-            /* representation of the key, using (char)unicode.    */
-            printf(", Unicode: " );
-            if( key->keysym.unicode < 0x80 && key->keysym.unicode > 0 ){
-                printf( "%c (0x%04X)", (char)key->keysym.unicode,
-                        key->keysym.unicode );
-            }
-            else{
-                printf( "? (0x%04X)", key->keysym.unicode );
-            }
+      printf( ", Name: %s", SDL_GetKeyName( key->keysym.sym ) );
+#if 0
+//  Unicode not supported
+/* We want to print the unicode info, but we need to make */
+/* sure its a press event first (remember, release events */
+/* don't have unicode info                                */
+      if( key->type == SDL_KEYDOWN ){
+/* If the Unicode value is less than 0x80 then the    */
+/* unicode value can be used to get a printable       */
+/* representation of the key, using (char)unicode.    */
+        printf(", Unicode: " );
+        if( key->keysym.unicode < 0x80 && key->keysym.unicode > 0 ){
+            printf( "%c (0x%04X)", (char)key->keysym.unicode,
+                    key->keysym.unicode );
         }
+        else{
+            printf( "? (0x%04X)", key->keysym.unicode );
+        }
+      }
 #endif
-        printf( "\n" );
-        /* Print modifier info */
-        PrintModifiers( key->keysym.mod );
-    }
+      printf( "\n" );
+/* Print modifier info */
+      PrintModifiers( key->keysym.mod );
+      return ;
+}
 
-    /* Print modifier info */
-//    void PrintModifiers( SDLMod mod ){
-    void PrintModifiers( Uint16 mod ){
-        printf( "Modifers: " );
 
-        /* If there are none then say so and return */
-        if( mod == KMOD_NONE ){
-            printf( "None\n" );
-            return;
-        }
+/*
+ * Print modifier info
+ */
+void PrintModifiers( Uint16 mod ){
 
-        /* Check for the presence of each SDLMod value */
-        /* This looks messy, but there really isn't    */
-        /* a clearer way.                              */
-        if( mod & KMOD_NUM ) printf( "NUMLOCK " );
-        if( mod & KMOD_CAPS ) printf( "CAPSLOCK " );
-        if( mod & KMOD_LCTRL ) printf( "LCTRL " );
-        if( mod & KMOD_RCTRL ) printf( "RCTRL " );
-        if( mod & KMOD_RSHIFT ) printf( "RSHIFT " );
-        if( mod & KMOD_LSHIFT ) printf( "LSHIFT " );
-        if( mod & KMOD_RALT ) printf( "RALT " );
-        if( mod & KMOD_LALT ) printf( "LALT " );
-        if( mod & KMOD_CTRL ) printf( "CTRL " );
-        if( mod & KMOD_SHIFT ) printf( "SHIFT " );
-        if( mod & KMOD_ALT ) printf( "ALT " );
-        printf( "\n" );
-    }
+char *my_name="PrintModifiers" ;
+
+      printf("  Enter routine %s\n",my_name) ;
+
+      /* If there are none then say so and return */
+      if( mod == KMOD_NONE ){
+          printf( "None\n" );
+          return;
+      }
+
+      /* Check for the presence of each SDLMod value */
+      /* This looks messy, but there really isn't    */
+      /* a clearer way.                              */
+      if( mod & KMOD_NUM ) printf( "NUMLOCK " );
+      if( mod & KMOD_CAPS ) printf( "CAPSLOCK " );
+      if( mod & KMOD_LCTRL ) printf( "LCTRL " );
+      if( mod & KMOD_RCTRL ) printf( "RCTRL " );
+      if( mod & KMOD_RSHIFT ) printf( "RSHIFT " );
+      if( mod & KMOD_LSHIFT ) printf( "LSHIFT " );
+      if( mod & KMOD_RALT ) printf( "RALT " );
+      if( mod & KMOD_LALT ) printf( "LALT " );
+      if( mod & KMOD_CTRL ) printf( "CTRL " );
+      if( mod & KMOD_SHIFT ) printf( "SHIFT " );
+      if( mod & KMOD_ALT ) printf( "ALT " );
+      printf( "\n" );
+}
 
 /*
  *  Routine to handle keyboard events which change the viewpoint
@@ -460,8 +574,9 @@ char   *my_name="SDL2_kbd_change_view" ;
  *==============================================================================
  */
         if(l_ctrl){
-          if(ip)printf(" %s, angle_to_north = %10.6f, angle_to_up = %10.6f\n",
-                        my_name,angle_to_north, angle_to_up);
+          if(ip)printf(" %s, angle_to_north = %10.6f, angle_to_up = %10.6f %i %i %i %i %i\n",
+                        my_name,angle_to_north, angle_to_up,sym,
+                        SDLK_RIGHT,SDLK_LEFT,SDLK_UP,SDLK_DOWN);
           switch(sym){
             case SDLK_LEFT:
               angle_to_north -= del_a ;

@@ -17,7 +17,7 @@
  *
  *==============================================================================
  */
-uint  find_mainline_section(TrkNetNode *tn, int pin_1, int pin_2) ;
+uint  find_mainline_section(TrkSectNode *tn, int pin_1, int pin_2) ;
 
 /*
  *  Routine to initialise a traveller - given:
@@ -28,17 +28,10 @@ uint  find_mainline_section(TrkNetNode *tn, int pin_1, int pin_2) ;
 
 int  trv_initv(TravellerNode *t, int itrack, int ivector, int idirect){
 
-int           i  ;
 int           ip = 0 ;  // Debug
-int           wt ;
-TrkNetNode    *tn  ;
+TrkSectNode   *tn  ;
 TrkVectorNode *vn  ;
 
-DynTrackObj   *dto ;
-DynTrackSect  *dts ;
-TrackSection  *ts_new ;
-WorldNode     *wn  ;
-WorldItem     *wi  ;
 char          my_name[] = "trv_initv" ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
@@ -55,7 +48,7 @@ char          my_name[] = "trv_initv" ;
 /*
  *   Vector
  */
-      if(ivector >= tn->length_of_vector){
+      if((uint)ivector >= tn->length_of_vector){
         printf("  Error.  Vector length too short\n");
         printf("  Error.  Vector length = %i\n", tn->length_of_vector);
         printf("  Error.  ivector       = %i\n",ivector );
@@ -86,10 +79,11 @@ char          my_name[] = "trv_initv" ;
 
 /*
  *  Routine to print the 3D location of the traveller origin
- *    Used to check the smooth motion when progressing from one
- *    piece of track to the next
+ *    May be used to check the smooth motion when progressing
+ *    from one piece of track to the next.
  */
 
+#if 0
 int  trv_ploc(TravellerNode *tn){
 
 float   x, y, z ;
@@ -97,7 +91,6 @@ float   v1[4], v2[4] ;
 GLfloat modelview[16]  ;
 char    my_name[] = "trv_ploc" ;
 
-#if 0
 
       glMatrixMode(GL_MODELVIEW) ;
       glPushMatrix() ;
@@ -131,10 +124,12 @@ char    my_name[] = "trv_ploc" ;
 
 
       glPopMatrix() ;
-#endif
 
       return 0 ;
 }
+#endif
+
+
 /*
  *  Routine to move from the end of a track node section, via a junction,
  *  to the next track node section
@@ -146,14 +141,13 @@ char    my_name[] = "trv_ploc" ;
  */
 int   trk_next(TravellerNode *t, int inext){
 
-int i, j ;
+uint            i                ;
+int             j                ;
 int             ip   = 0         ;  //  Debug
-int             iret = 0         ;  //  Return code
 int             idirect = t->idirect ;
 int             fromj_old,          //  True if new/old track section
                 fromj_new        ;  //  increased away from the junction
-TrkNetNode      *tn = t->tn      ;
-TrkNetNode      *new_tn          ;
+TrkSectNode     *tn = t->tn      ;
 TrkVectorNode   *vn = tn->vector ;
 char             my_name[] = "trk_next" ;
 
@@ -162,7 +156,6 @@ uint    n_in_pins = tn->type_of_pin[0] ;  // Number of in pins
 uint    n_ot_pins = tn->type_of_pin[1] ;  // Number of out pins
 uint    j_sect                         ;  // Junction section
 uint    n_sect                         ;  // new section
-uint    pin ;
 
       if(ip){
         printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") ;
@@ -254,7 +247,7 @@ uint    pin ;
  */
 
       if(j>0){
-        if(j!=tn->branch){
+        if((uint)j!=tn->branch){
           printf("  Routine %s.  Trying to enter switch from wrong branch\n",my_name);
           printf("    Number of in and out pins %i %i\n", n_in_pins, n_ot_pins) ;
           printf("    Pinned sections:          %i %i %i\n",

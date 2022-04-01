@@ -18,7 +18,7 @@
  *     in main memory - probably because some computers are memory limited.
  *   ZR presently assumes that main memory is not a problem, so all shapes and
  *     textures found are loaded into memory ready for use.
- *   Here the loading and culling of data is controlled by routine graphics_cull.
+ *   Here the loading and culling of data is controlled by routine graphics_reset.
  *     Routine mark_shapes is used to identify which shapes are needed for
  *     the current viewpoint.  Routine mark_textures then identifies which
  *     textures are needed.  Textures and display lists not longer required
@@ -37,7 +37,7 @@
 void graphics_init(void)
 {
 
-int      ip = 0  ;  //  0 = no printing
+int      ip = 0  ;  //  0 = no printing  1, 2 = printing
 int      i, j ;
 int      ivec[10] ;
 GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
@@ -59,12 +59,6 @@ char     my_name[] = "graphics_init" ;
        glGetIntegerv(GL_MAX_ELEMENTS_INDICES, ivec) ;
        printf("  GL_MAX_ELEMENTS_INDICES  = %i\n",ivec[0]) ;
 
-/*
- * Initialise truetype
- */
-#ifndef SDL2
-       freetype_init() ;
-#endif
 /*
  *   In case of changes : re-initialise viewport variables
  */
@@ -91,6 +85,19 @@ char     my_name[] = "graphics_init" ;
       if(ip)printf("   Origin for 3D graphics:  Tile = %i, %i.  Height = %.2f m.\n",
                                           tile_x0, tile_y0, tile_h0) ;
 /*
+ *  Initialise cameras
+ *
+ *  This is needed to initialise the eye position before the required
+ *       shapes and textures are identified
+ */
+       cameras_init() ;
+/*
+ *  Start with camera  '0'
+ */
+       current_camera = 0 ;
+       camera_changed = 1 ;
+       camera_new_position() ;
+/*
  *   Initialise Lighting
  *   Defaults for glLightModel are
  *       Two sided lighting - off,
@@ -112,8 +119,8 @@ char     my_name[] = "graphics_init" ;
 
       glEnable(GL_DEPTH_TEST);
       glShadeModel(GL_SMOOTH) ;
-      glShadeModel(GL_FLAT) ;
-#ifdef _Display_Normal
+//      glShadeModel(GL_FLAT) ;
+#if  defined _Display_Normal && ! defined sketch_tracks_and_roads
 GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 
       glEnable(GL_FOG) ;
@@ -124,26 +131,12 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       glFogf(GL_FOG_START,0.20)   ;
       glFogf(GL_FOG_END,1.0)     ;
 #endif
-/*
- *  Initialise cameras  array
- */
-       cameras_init() ;
-/*
- *  Start with camera  '0'
- */
-       current_camera = 0 ;
-       camera_changed = 1 ;
-       camera_new_position() ;
-/*
- *  Initialise clocks
- */
-      for(j=0;j<5;j++){
-        for(i=0;i<4;i++)
-          zr_clock_time[i][j] = 0.0 ;
-      }
 
+#if 0
 /*
  *  Initialise shapes and textures
+ *
+ *   Not required - the same calls are made by the above camera routine
  */
       if(ip)printf("   Load required shapes and textures\n") ;
       if(ip>1)printf("   Call clear_needed_flags\n") ;
@@ -157,7 +150,8 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       if(ip>1)printf(" Call load_needed_textures\n") ;
       load_needed_textures()   ;
       if(ip>1)printf(" Call load_needed_display_lists\n") ;
-      load_needed_display_lists() ;
+//      load_needed_display_lists() ;
+#endif
 /*
  *  Generate Topography Display List for each Tile
  */
@@ -166,9 +160,9 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 //      make_tile_topog_display_lists() ;
 # ifdef use_vertex_arrays
       make_tile_vertex_arrays()       ;
-#else
+# else
       load_topography_display_lists() ;
-#endif
+# endif
 
 #endif
 /*
@@ -189,8 +183,10 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       make_dynamic_display_lists();
 #endif
 
-      if(ip)printf("  Exit graphics_init\n");
-      if(ip)printf("***********************************************************\n") ;
+      if(ip){
+        printf("  Exit graphics_init\n");
+        printf("***********************************************************\n") ;
+      }
 
       return  ;
 }
@@ -201,33 +197,48 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
  *  Main cull routine calls each sub-routine in turn
  *==============================================================================
  */
-void graphics_cull(void)
+void graphics_reset(void)
 {
 int  ip = 0                   ;  //  = 0 for no debug printing
+char *my_name = "graphics_reset" ;
 
       if(ip)printf("  ===================================================\n");
-      if(ip)printf("  Enter graphics_cull\n");
+      if(ip)printf("  Enter %s\n",my_name);
 #if defined _Display_Normal
 //      tile_eye_x0 = tile_x0 + lookat_eye_x ;
 //      tile_eye_y0 = tile_y0 + lookat_eye_y ;
-      if(ip)printf("   GC Call clear_needed_flags\n") ;
+      if(ip)printf("   Routine  %s : Call clear_needed_flags\n",my_name) ;
       clear_needed_flags()     ;
-      if(ip)printf("   GC Call mark_shapes\n") ;
+      if(ip)printf("   Routine  %s : Call mark_shapes\n",my_name) ;
       mark_shapes()            ;
-      if(ip)printf("   GC Call mark_textures\n") ;
+      if(ip)printf("   Routine  %s : Call mark_textures\n",my_name) ;
       mark_textures()          ;
-      if(ip)printf("   GC Call cull_topography_display_lists\n") ;
+      if(ip)printf("   Routine  %s : Call cull_topography_display_lists\n",my_name) ;
       cull_topography_display_lists() ;
-//      cull_textures()          ;
-      if(ip)printf("   GC Call cull_display_lists\n") ;
+      if(ip)printf("   Routine  %s : Call cull_textures\n",my_name) ;
+      cull_textures()          ;
+      if(ip)printf("   Routine  %s : Call cull_display_lists\n",my_name) ;
       cull_display_lists()     ;
-      if(ip)printf("   GC Call load_topography_display_lists\n") ;
-      load_topography_display_lists() ;
-      if(ip)printf("   GC Call load_needed_textures\n") ;
+/*
+ *  Load needed
+ */
+      if(ip)printf("   Routine  %s : Call load_needed_textures\n",my_name) ;
       load_needed_textures()   ;
-      if(ip)printf("   GC Call load_needed_display_lists\n") ;
-      load_needed_display_lists() ;
-      if(ip)printf("   Exit graphics_cull\n") ;
+      if(ip)printf("   Routine  %s : Call load_topography_display_lists\n",my_name) ;
+      load_topography_display_lists() ;
+      if(ip)printf("   Routine  %s : Call load_needed_display_lists\n",my_name) ;
+//      load_needed_display_lists() ;
+      if(ip)printf("   Exit %s\n",my_name) ;
+#else
+#ifndef _Display_Textures
+      if(ip)printf("   Routine  %s : Call mark_shapes\n",my_name) ;
+      mark_shapes()            ;
+#endif
+      if(ip)printf("   Routine  %s : Call mark_textures\n",my_name) ;
+      mark_textures()          ;
+      if(ip)printf("   Routine  %s : Call load_needed_textures\n",my_name) ;
+      load_needed_textures()   ;
+
 #endif
 
       return ;
@@ -235,29 +246,30 @@ int  ip = 0                   ;  //  = 0 for no debug printing
 
 /*
  *==============================================================================
- *  Routine to clear all the 'needed' flags in the shape and textures
- *    data structures before furtehr processing
+ *  Routine to clear all the 'needed' flags in the
+ *    shape and texture data structures
+ *  before further processing
  *==============================================================================
  */
 void clear_needed_flags(void)
 {
 int            ip = 0 ;
 ShapeNode      *snode  ;
-TextureNode    *tnode  ;
+TextureNode    *tx_node  ;
 
       if(ip)printf("   Enter clear_needed_flags\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
           snode->needed = snode->basic ;
       }
-      for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-          tnode->needed = tnode->basic ;
+      for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+          tx_node->needed = tx_node->basic ;
       }
 #if 0
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         snode->needed = 0 ;
       }
-      for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
-        tnode->needed = 0 ;
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        tx_node->needed = 0 ;
       }
 #endif
       return ;
@@ -277,13 +289,13 @@ TextureNode    *tnode  ;
 
 void mark_shapes(void)
 {
-int         ip = 0 ;
+int         ip  = 0 ;
+int         idw = 0,
+            idi = 0 ;
 WorldNode   *wnode ;
 WorldItem   *witem ;
 ShapeNode   *snode ;
 char        my_name[] = "mark_shapes" ;
-
-int it, jt ;
 
       if(ip){
         printf("   Enter mark_shapes\n");
@@ -299,10 +311,12 @@ int it, jt ;
  */
       for(wnode = worldlist_beg;wnode!=NULL;wnode=wnode->next){
         wnode->in_use = use_tile(wnode->tile_x, wnode->tile_y) ;
+        idw = ip && (wnode->tile_x == -12583) && (wnode->tile_y == 14768) ;
 /*
  * Loop though world items and mark as needed
  */
         for(witem = wnode->world_item; witem!=NULL;witem = witem->next){
+          idi = idw && (witem->uid == 4485) ;
           snode = witem->snode ;
           if(snode != NULL){
             if(0 == snode->needed){
@@ -315,6 +329,7 @@ int it, jt ;
               }
             }
           }
+          if(idi)printf("  shape %s,  needed = %i\n",snode->name, snode->needed) ;
         }
       }
 
@@ -346,7 +361,7 @@ int it, jt ;
 void mark_textures(void)
 {
 ShapeNode   *snode  ;
-TextureNode *tnode  ;
+TextureNode *tx_node  ;
 int         i, n    ;
 int         ip = 0  ;    // Debug printing
 
@@ -360,9 +375,9 @@ int         ip = 0  ;    // Debug printing
         for(i=0; i<n; i++){
           if(ip>1)printf("     %i, %i ::  %p\n",i, n, (void *)snode->texture[i]) ;
           if(NULL == snode->texture[i]) continue;
-          tnode = snode->texture[i] ;
-          tnode->needed = 1           ;
-          if(ip)printf("     %i, %i ::  %s\n",i, n, tnode->name) ;
+          tx_node = snode->texture[i] ;
+          tx_node->needed = 1           ;
+          if(ip)printf("     %i, %i ::  %s\n",i, n, tx_node->name) ;
         }
       }
       if(ip)printf("   Process wagon textures\n");
@@ -373,18 +388,18 @@ int         ip = 0  ;    // Debug printing
         for(i=0; i<n; i++){
           if(ip>1)printf("     %i, %i ::  %p\n",i, n, (void *)snode->texture[i]) ;
           if(NULL == snode->texture[i]) continue;
-          tnode = snode->texture[i] ;
-          tnode->needed = 1           ;
-          if(ip)printf("     %i, %i ::  %s\n",i, n, tnode->name) ;
+          tx_node = snode->texture[i] ;
+          tx_node->needed = 1           ;
+          if(ip)printf("     %i, %i ::  %s\n",i, n, tx_node->name) ;
         }
       }
       if(ip)printf("   Exit mark_textures\n");
 #else
-      for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-        tnode->needed = 1 ;
+      for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        tx_node->needed = 1 ;
       }
-      for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
-        tnode->needed = 1 ;
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        tx_node->needed = 1 ;
       }
 #endif
       return ;
@@ -396,24 +411,28 @@ int         ip = 0  ;    // Debug printing
  */
 void cull_textures(void)
 {
-TextureNode *tnode ;
+TextureNode *tx_node ;
 int         ip = 0 ;
 
       if(ip)printf("   Enter cull_textures\n");
-      for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-        if(1 == tnode->needed || 0 == tnode->loaded) continue ;
-        if(ip>1)printf("     Cull texture AA %i  %s\n",
-                                          tnode->gl_tex_ref_no,tnode->name) ;
-        glDeleteTextures((GLsizei) 1, &(tnode->gl_tex_ref_no) ) ;
-        tnode->loaded = 0 ;
+      for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        if(ip)printf("     Cull texture AA  ref %i, need %i, load %i, name  %s\n",
+                      tx_node->gl_tex_ref_no, 1 == tx_node->needed,
+                     1 == tx_node->loaded, tx_node->name) ;
+        if(1 == tx_node->needed || 0 == tx_node->loaded) continue ;
+        if(ip)printf("     Cull texture BB %i  %s\n",
+                                          tx_node->gl_tex_ref_no,tx_node->name) ;
+        glDeleteTextures((GLsizei) 1, &(tx_node->gl_tex_ref_no) ) ;
+        tx_node->gl_tex_ref_no = 0 ;
+        tx_node->loaded = 0 ;
       }
 #if 0
-      for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
-        if(1 == tnode->needed || 0 == tnode->loaded) continue ;
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        if(1 == tx_node->needed || 0 == tx_node->loaded) continue ;
         if(ip>1)printf("     Cull texture BB %i  %s\n",
-                                           tnode->gl_tex_ref_no,tnode->name) ;
-        glDeleteTextures((GLsizei) 1, &(tnode->gl_tex_ref_no) ) ;
-        tnode->loaded = 0 ;
+                                           tx_node->gl_tex_ref_no,tx_node->name) ;
+        glDeleteTextures((GLsizei) 1, &(tx_node->gl_tex_ref_no) ) ;
+        tx_node->loaded = 0 ;
       }
 #endif
       return ;
@@ -431,7 +450,7 @@ void cull_display_lists(void)
 ShapeNode      *snode        ;
 LodControl     *lod_control  ;
 DistLevel      *dist_level   ;
-int            i, j          ;
+uint           i, j          ;
 int            ip = 0        ;
 
       if(ip)printf("   Enter cull_display_lists\n");
@@ -477,37 +496,41 @@ void cull_topography_display_lists(void){
 
 int           ix, iy ;
 int           ip = 0 ;
-TileListNode *tnode ;
-TerrainData  *tdata ;
+TileListNode *tl_node ;
+TerrainData  *tl_data ;
 
       if(ip)printf("   Enter cull_topography_display_lists\n");
-      for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
+      for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
+        if(0 == tl_node->needed)continue ;
 #ifdef use_vertex_arrays
-        tdata = &(tnode->terrain_data) ;
-        if(NULL == tdata->va_vertex) continue ;
+        tl_data = &(tl_node->terrain_data) ;
+//        printf("   tile = %s  : vertex = %p :: %p\n",
+//               tl_node->name, (void *)tl_data, (void *)tl_data->va_vertex) ;
+        if(NULL == tl_data->va_vertex) continue ;
 #else
-        if(0 == tnode->gl_display_list) continue ;
+        if(0 == tl_node->gl_display_list) continue ;
 #endif
-        ix = tnode->tilex ;
-        iy = tnode->tiley ;
+        ix = tl_node->tilex ;
+        iy = tl_node->tiley ;
         if(use_tile(ix,iy)) continue ;
 #ifdef use_vertex_arrays
 # ifdef cull_vertex_arrays
-          free(tdata->va_vertex)  ; tdata->va_vertex  = NULL ;
-          free(tdata->va_normal)  ; tdata->va_normal  = NULL ;
-          free(tdata->va_texture) ; tdata->va_texture = NULL ;
-          free(tdata->va_index1)  ; tdata->va_index1  = NULL ;
+        free(tl_data->va_vertex)  ; tl_data->va_vertex  = NULL ;
+        free(tl_data->va_normal)  ; tl_data->va_normal  = NULL ;
+        free(tl_data->va_texture) ; tl_data->va_texture = NULL ;
+        free(tl_data->va_index1)  ; tl_data->va_index1  = NULL ;
 # endif
 #else
 # ifdef cull_display_lists
-        glDeleteLists(tnode->gl_display_list, (GLsizei) 1)  ;
-        tnode->gl_display_list = 0 ;
+        glDeleteLists(tl_node->gl_display_list, (GLsizei) 1)  ;
+        tl_node->gl_display_list = 0 ;
 # endif
 #endif
-        tnode->needed          = 0 ;
+        tl_node->needed          = 0 ;
         if(ip>1)printf("     Cull topog for tile %i %i :: %i\n", ix, iy,
                                                      use_tile(ix,iy)) ;
       }
+      if(ip)printf("   Exit  cull_topography_display_lists\n");
       return ;
 }
 /*
@@ -519,33 +542,36 @@ void load_topography_display_lists(void){
 
 int          k, n, ix, iy, klist ;
 int          ip = 0 ;
-TileListNode *tnode ;
+TileListNode *tl_node ;
 VANode       * va_node ;
 
       if(ip)printf("   Enter load_topography_display_lists\n");
       if(ip)printf("     land_texture = %p\n",(void *)land_texture) ;
-      for(tnode = tilelist_head; tnode != NULL; tnode=tnode->next){
-        ix = tnode->tilex ;
-        iy = tnode->tiley ;
+      for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
+        ix = tl_node->tilex ;
+        iy = tl_node->tiley ;
+        if(ip)printf("   Tile  %i  %i  use_tile = %i\n",ix,iy,use_tile(ix,iy)) ;
         if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
-        tnode->needed          = 1     ;
+        tl_node->needed = 1 ;
 #ifdef use_vertex_arrays
-        if(NULL == tnode->terrain_data.va_vertex)make_tile_vertex_array(tnode) ;
-        else{
-          n = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+        if(NULL == tl_node->terrain_data.va_vertex){
+          make_tile_vertex_array(tl_node) ;
+        }else{
+          n = tl_node->terrain_data.nbx*tl_node->terrain_data.nby ;
           for(k=0;k<n;k++){
-            va_node = &(tnode->terrain_data.va_node[k]) ;
+            va_node = &(tl_node->terrain_data.va_node[k]) ;
             va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
           }
         }
 #else
-        if(0 != tnode->gl_display_list) continue ;
+        if(0 != tl_node->gl_display_list) continue ;
         klist = glGenLists(1) ;
-        make_tile_topog_display_list(tnode, klist) ;
-        tnode->gl_display_list = klist ;
+        make_tile_topog_display_list(tl_node, klist) ;
+        tl_node->gl_display_list = klist ;
 #endif
         if(ip>1)printf("     Initialise topog for tile %i %i \n", ix, iy) ;
       }
+      if(ip)printf("   Exit  load_topography_display_lists\n");
       return ;
 }
 
@@ -556,24 +582,31 @@ VANode       * va_node ;
  */
 void load_needed_textures(void)
 {
-TextureNode    *tnode  ;
+TextureNode    *tx_node  ;
 int            ip = 0 ;
 
       if(ip)printf("   Enter load_needed_textures\n");
-      for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-        if(0 == tnode->needed || 1 == tnode->loaded) continue ;
-        if(ip)printf("     Install normal texture : %s\n",tnode->name) ;
-        make_texture_resident(tnode) ;
-        tnode->loaded = 1 ;
+      for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        if(!strcmp_ic(tx_node->name,land_texture_default) && ip){
+          printf(" Routine load_needed_textures  ================\n") ;
+          printf("  Texture = %s\n",tx_node->name) ;
+          printf("   basic  = %i\n",tx_node->basic) ;
+          printf("   needed = %i\n",tx_node->needed) ;
+          printf("   loaded = %i\n",tx_node->loaded) ;
+        }
+        if(0 == tx_node->needed || 1 == tx_node->loaded) continue ;
+        if(ip)printf("     Install normal texture : %s\n",tx_node->name) ;
+        make_texture_resident(tx_node) ;
+        tx_node->loaded = 1 ;
       }
 
-      for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
-        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tnode->name,tnode->needed, tnode->loaded);
-        if(0 == tnode->needed || 1 == tnode->loaded) continue ;
-        if(ip>1)printf("     Install wagon texture : %s\n",tnode->name) ;
-        make_texture_resident(tnode) ;
-        tnode->loaded = 1 ;
-        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tnode->name,tnode->needed, tnode->loaded);
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tx_node->name,tx_node->needed, tx_node->loaded);
+        if(0 == tx_node->needed || 1 == tx_node->loaded) continue ;
+        if(ip>1)printf("     Install wagon texture : %s\n",tx_node->name) ;
+        make_texture_resident(tx_node) ;
+        tx_node->loaded = 1 ;
+        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tx_node->name,tx_node->needed, tx_node->loaded);
       }
       return ;
 }
@@ -585,16 +618,49 @@ int            ip = 0 ;
 
 void load_needed_display_lists(void)
 {
-ShapeNode      *snode  ;
-int            ip = 0 ;
+ShapeNode  *snode ;
+LodControl *lod_control ;
+int        ip = 3 ;
+uint       i, j   ;
+int        ic = 0, id = 0, ie = 0 ;
 
       if(ip)printf("   Enter load_needed_display_lists\n");
-      for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
+      for(snode=shapelist_beg; snode!=NULL; snode=snode->next, ic++){
+        if(ip>2){
+          printf("     Check shape : %s,  needed = %i,  loaded = %i\n",
+                 snode->name,snode->needed,snode->loaded) ;
+          for(i=0;i<snode->n_lod_controls;i++){
+            lod_control = &(snode->lod_control[i]) ;
+            for(j=0;j<lod_control->n_dist_levels;j++){
+              printf("    lod = %i,  dist = %i,  gl_display_list = %i\n",
+                     i, j, lod_control->dist_level[j].gl_display_list) ;
+            }
+          }
+        }
+        if(snode->needed && snode->loaded){
+         ie++ ;
+         printf("  Display list ie = %i, shape = %s\n",ie,snode->name) ;
+        }
         if(0 == snode->needed || 1 == snode->loaded) continue ;
+        if(!strncmp(snode->name,"mark",4)) continue ;                //  ERROR
+        if(ic<700)continue ;
         generate_shape_display_list(snode) ;
         snode->loaded = 1 ;
+        id++ ;
         if(ip>1)printf("     Install shape : %s\n",snode->name) ;
+        if(ip>2){
+          printf("     Check shape : %s,  needed = %i,  loaded = %i\n",
+                 snode->name,snode->needed,snode->loaded) ;
+          for(i=0;i<snode->n_lod_controls;i++){
+            lod_control = &(snode->lod_control[i]) ;
+            for(j=0;j<lod_control->n_dist_levels;j++){
+              printf("    lod = %i,  dist = %i,  gl_display_list = %i\n",
+                     i, j, lod_control->dist_level[j].gl_display_list) ;
+            }
+          }
+        }
       }
+      printf("  DISPLAY LISTS ic = %i,  id = %i, ie = %i\n",ic,id,ie) ;
 /*
  *  Wagons no longer use display lists
  */
@@ -621,6 +687,8 @@ int            ip = 0 ;
 
 int use_tile(int ix, int iy){
 
+int  i1, j1 ;
+
       if(0 == tile_cull_r) return 1 ;
 #if 0
       printf("  tile_x, tile_y = %i %i   :: %i %i :: %i %i :: %i :: %i %i :: %i %i\n",
@@ -629,9 +697,9 @@ int use_tile(int ix, int iy){
         (abs(iy-tile_eye_y0-tile_y0)),(abs(iy-tile_eye_y0-tile_y0)<tile_cull_r)
         );
 #endif
-//      return  abs(ix-tile_eye_x0-tile_x0)<tile_cull_r &&
-//              abs(iy-tile_eye_y0-tile_y0)<tile_cull_r ;
-      if ( (abs(ix-tile_eye_x0-tile_x0)<tile_cull_r) &&
-           (abs(iy-tile_eye_y0-tile_y0)<tile_cull_r) )return 1;
+
+      i1 = ix-tile_x0-tile_eye_x0 ; if(i1<0) i1 = -i1 ;
+      j1 = iy-tile_y0-tile_eye_y0 ; if(j1<0) j1 = -j1 ;
+      if ( (i1 < tile_cull_r) && (j1 < tile_cull_r) )return 1 ;
       return 0 ;
 }

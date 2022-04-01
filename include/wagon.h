@@ -13,7 +13,13 @@
  *
  *==============================================================================
  */
-
+#if 0
+typedef struct rawenginenode {
+int          has_wipers      ;
+int          has_mirrors     ;
+int          has_pantographs ;
+} RawEngineNode ;
+#endif
 typedef struct lightstate {
 double          duration  ;
 uint            colour    ;
@@ -55,6 +61,10 @@ ShapeNode        *f_shape    ;      // Corresponding freight shape
 // Properites defined in *.wag files
 
 char             *type       ;      //  Carriage etc
+int              has_wipers  ;
+int              has_mirrors ;
+int              has_pantographs ;
+
 double           width       ;
 double           height      ;
 double           length      ;
@@ -82,6 +92,8 @@ char             *couplingtype2 ;   // Back coupling if different
 int              couplinghasrigidconnection2 ;
 double           stiffness21  ;
 double           stiffness22  ;
+double           damping21    ;
+double           damping22    ;
 double           break21      ;
 double           break22      ;
 double           r021         ;
@@ -129,7 +141,9 @@ double           rotationlimit[3]    ;
 
 char             *sound_file         ;
 char             *full_name          ;
+int              has_doors           ;
 
-struct rawwagonnode *tender  ;      //  For engines only pointer to tender
+//RawEngineNode    *raw_engine         ;
+struct rawwagonnode *tender  ;      //  Engines only: pointer to tender
 } RawWagonNode  ;
 

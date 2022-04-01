@@ -19,9 +19,6 @@ int         i  ;
 int         ip = 0          ;  // debug printing
 int         id = 0          ;  // debug display
 int         gl_display_list ;
-int         lod_control     ;
-float       distance        ;
-float       dist_level      ;
 
 int         tx, ty          ;
 double      x, y, z         ;
@@ -45,11 +42,11 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
       glEnable(GL_RESCALE_NORMAL) ;  // Faster : for use with uniform scaling
 
 //  Specify texture properties
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST) ;
 
 //  Cycle over tiles
       for(wnode=worldlist_beg; wnode != NULL; wnode=wnode->next){
@@ -89,6 +86,20 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
             glEnable(GL_TEXTURE_2D) ;
             glEnable(GL_LIGHTING) ;
           }
+/*
+ *  PolygonOffset code
+ */
+//          printf(" POLYGON OFFSET  witem = %i, iz_off = %i\n",witem->uid, witem->iz_off) ;
+          if(witem->iz_off){
+            glEnable(GL_POLYGON_OFFSET_FILL) ;
+            if(2==witem->iz_off){
+              glPolygonOffset(gl_offset2,gl_offset2) ;
+            }else{
+              glPolygonOffset(gl_offset1,gl_offset1) ;
+            }
+          }else{
+            glDisable(GL_POLYGON_OFFSET_FILL) ;
+          }
 
 //  Transform coordinate system
           glMatrixMode(GL_MODELVIEW) ;
@@ -126,7 +137,12 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
             glEnable(GL_LIGHTING)   ;
             glEnable(GL_TEXTURE_2D) ;
           }
-
+/*
+ *  PolygonOffset code
+ */
+            if(witem->iz_off){
+              glDisable(GL_POLYGON_OFFSET_FILL) ;
+            }
           glPopMatrix() ;
         }   // end loop over world items
       }   // end loop over tiles

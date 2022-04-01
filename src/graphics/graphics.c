@@ -21,7 +21,6 @@
  *
  *==============================================================================
  */
-void render_text(const char *text, float x, float y, float sx, float sy) ;
 int  sdl2PrintString(char *string);
 
 //FT_Library ft;
@@ -34,8 +33,14 @@ int  sdl2PrintString(char *string);
  * *****************************************************************************
  */
 #ifdef SDL2
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+
 void reshape2(int w, int h)
 {
+#pragma GCC diagnostic pop
+
       SDL_GetWindowSize(Window, &viewport_width, &viewport_height) ;
       glViewport(0, 0, viewport_width, viewport_height);
       viewport_aspect = (GLfloat)viewport_width/(GLfloat)viewport_height    ;
@@ -51,10 +56,7 @@ void reshape(int w, int h)
 {
 int tx, ty, tw, th   ;        //  Origin (x, y), with and height of viewport.
 int      ip = 0 ;             // 0 = no printing
-GLdouble scale_w, scale_h, scale, centre_x, centre_y ;
-GLfloat position[] = { 3.0, 3.0, 3.0, 0.0 };              // Light position
 GLint   iparms[4] ;
-double   sc ;
 
       if(l_pd  || ip)printf(" Enter reshape\n");
 
@@ -94,6 +96,10 @@ double   sc ;
 }
 #endif
 
+
+//void glWindowPos2ff(GLfloat x, GLfloat y) ;
+
+//  Use glWindowPosn
 int  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
 {
 /*
@@ -111,60 +117,50 @@ int  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
  *       GLUT_BITMAP_HELVETICA_12
  *       GLUT_BITMAP_HELVETICA_18
  */
-void *font ;
+//char my_name[] = "print_string_in_window" ;
+//      printf("  Enter %s\n",my_name) ;
 
-      glWindowPos2f(wx,wy) ;   /* Initial window pixel position */
-#ifdef SDL2
-      ttf_font = ttf_font_f16 ;
-      sdl2PrintString(string) ;
-#else
-      font = GLUT_BITMAP_HELVETICA_18 ;
-      glutPrintString(string,font);
-#endif
+      glWindowPos2f(wx,wy) ;
+      print_string_in_window_z(string, 18) ;
+
       return 0 ;
 }
 
-int  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string)
-{
-/*
- *  Print string at fixed position in 3D space coordinates
- *
- *  font can be one of the standard glut fonts:
- *
- *       GLUT_BITMAP_8_BY_13
- *       GLUT_BITMAP_9_BY_15
- *       GLUT_BITMAP_TIMES_ROMAN_10
- *       GLUT_BITMAP_TIMES_ROMAN_24
- *       GLUT_BITMAP_HELVETICA_10
- *       GLUT_BITMAP_HELVETICA_12
- *       GLUT_BITMAP_HELVETICA_18
- */
+//  Use glRasterPosn
+int  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string){
+
+//char my_name[] = "print_string_in_window2" ;
+//      printf("  Enter %s\n",my_name) ;
 
       glDisable(GL_LIGHTING)  ;
       glDisable(GL_TEXTURE_2D) ;
       glEnable(GL_BLEND)      ;
 
       glRasterPos3d(rx, ry, rz) ;
-#ifdef SDL2
-      ttf_font = ttf_font_f12 ;
-      sdl2PrintString(string) ;
-#else
-void *font ;
-      font = GLUT_BITMAP_HELVETICA_12 ;
-      glutPrintString(string,font);
-#endif
+      print_string_in_window_z(string, 12) ;
+
       glEnable(GL_LIGHTING)  ;
       glEnable(GL_TEXTURE_2D) ;
       glEnable(GL_BLEND)      ;
       return 0 ;
       }
 
-int print_string_in_window3(GLfloat rx, GLfloat ry, char *string, int font_size){
+//  Use glWindowPosn
+int print_string_in_window3(GLfloat wx, GLfloat wy, char *string, int font_size){
 
-char my_name[] = "print_string_in_window3" ;
+//char my_name[] = "print_string_in_window3" ;
+//      printf("  Enter %s\n",my_name) ;
+      glWindowPos2f(wx,wy) ;
+      print_string_in_window_z(string, font_size) ;
+      return 0;
+}
 
-      glWindowPos2d(rx,ry) ;
-#ifdef SDL2
+int    print_string_in_window_z(char *string, int font_size){
+
+char my_name[] = "print_string_in_window_z" ;
+#ifdef USE_FREETYPE
+      render_text_as_greyscale(string, ft_verdana, font_size-2) ;  // Fixed space
+#elif defined USE_SDLTTF
       switch(font_size) {
         case 12:
           ttf_font = ttf_font_f12 ;
@@ -185,8 +181,6 @@ char my_name[] = "print_string_in_window3" ;
           exit(1) ;
       }
       sdl2PrintString(string) ;
-#elif defined zr_freetype
-      render_text_as_greyscale(string, ft_verdana, font_size-2) ;  // Fixed space
 #else
 void *font ;
       switch(font_size) {
@@ -210,9 +204,8 @@ void *font ;
       return 0 ;
 }
 
-
+#ifdef USE_SDLTTF
 int  sdl2PrintString(char *string){
-#ifdef SDL2
   int     ip = 0   ;
   int     ired, igreen, iblue, ialpha ;
   Uint32  i, j, k, l ;
@@ -258,25 +251,22 @@ int  sdl2PrintString(char *string){
       glDrawPixels(text_width, text_height, GL_RGBA, GL_UNSIGNED_INT_8_8_8_8, pg) ;
       SDL_FreeSurface(surface) ;
       free(pg) ;
-#endif
-
       return 0 ;
 }
+#endif
 
+#if defined GLUT || defined USE_ZRGLUT
+int glutPrintString(char *string, void *font){
 
-
-int glutPrintString(char *string, void *font)
-{
-#ifndef SDL2
 int len, i;
 
     len = (int) strlen(string);
     for (i = 0; i < len; i++) {
         glutBitmapCharacter(font, string[i]);
     }
-#endif
     return 0 ;
 }
+#endif
 
 /*
  * Test graphics
@@ -410,9 +400,9 @@ char      my_name[]="initialise_eye_vectors";
  *             1 if within range
  */
 
-int   check_in_scene(GLdouble x, GLdouble y, GLdouble z, GLdouble r, GLdouble d){
+int   check_in_scene(GLdouble x, GLdouble y, GLdouble z, GLdouble r){
 
-int  k ;
+int      k ;
 double  sum ;
 char      my_name[]="check_in_scene" ;
 
@@ -426,18 +416,19 @@ char      my_name[]="check_in_scene" ;
       return 1 ;
 }
 
-int   check_topog_in_scene(TileListNode *tnode){
+
+int   check_topog_in_scene(TileListNode *tl_node){
 
 int     i, j, k, l ;
 double  xa[2], ya[2], x, y, z, sum ;
 char    my_name[]="check_topog_in_scene" ;
 
-      xa[0] = tnode->tilex - tile_x0 ;  xa[1] = xa[0] + 1.0 ;
-      ya[0] = tnode->tiley - tile_y0 ;  ya[1] = ya[0] + 1.0 ;
+      xa[0] = tl_node->tilex - tile_x0 ;  xa[1] = xa[0] + 1.0 ;
+      ya[0] = tl_node->tiley - tile_y0 ;  ya[1] = ya[0] + 1.0 ;
       z = lookat_eye_z ;
 /*
  *  Loop over clip planes
- *  To pass every clip plane test must be satified by at least one
+ *  To pass, every clip plane test must be satified by at least one
  *  of the limits of the tile
  */
 // Loop over tests
@@ -569,12 +560,63 @@ double x, y, z, e, n, h ;
       return 0 ;
 }
 /*
+ *   Transform a MSTS wagon coordinate to the corresponding local co-ordinate
+ *   including the translation along the current rail vector.  This mimics
+ *   the transformation used when drawing wagons and is used to check if a
+ *   wagon is within the scene
+ *
+ *   x0, y0, z0  ::  Wagon vector
+ *   xt, yt, zt  ::  position relative to origin of rail vector (metres)
+ *   a,  b,  c   ::  rotations of rail about its origin (degrees)
+ *   scalei      ::  convert from metres to model grid unit
+ *   rx, ry, rz  ::  position of rail vector origin (grid units)
+ */
+int  mstswagon2local(double x0, double y0, double z0,
+                     double xt, double yt, double zt,
+                     double a,  double b,  double c,
+                     double scalei,
+                     double rx, double ry, double rz,
+                     double *x, double *y, double *z){
+
+double x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, cc, ss;
+
+      x1 = x0 + xt ;
+      y1 = y0 + yt ;
+      z1 = z0 + zt ;
+
+      cc = cos(c*radian) ; ss = sin(c*radian) ;
+      x2 = cc*x1 - ss*y1 ;
+      y2 = ss*x1 + cc*y1 ;
+      z2 = z1 ;
+
+      cc = cos(a*radian) ; ss = sin(a*radian) ;
+      x3 = x2 ;
+      y3 = cc*y2 - ss*z2 ;
+      z3 = ss*y2 + cc*z2 ;
+
+      cc = cos(b*radian) ; ss = sin(b*radian) ;
+      x4 = cc*x3 + ss*z3 ;
+      y4 = y3 ;
+      z4 =-ss*x3 + cc*z3 ;
+
+      *x  = scalei*x4 + rx ;
+      *y  = scalei*z4 + ry ;
+      *z  = scalei*y4 + rz ;
+
+      return 0 ;
+}
+
+/*
  *  Routine to check for OpenGL error and print an error message
  */
 int  check_glerror(){
   GLenum  n ;
       n = glGetError() ;
       if(n == GL_NO_ERROR) return 0;
+
+      gl_errorCode = n ;
+      gl_errString = (GLubyte *)gluErrorString(n) ;
+
       if(n == GL_INVALID_ENUM)     printf(" OpenGL invalid enum argument \n") ;
       if(n == GL_INVALID_VALUE)    printf(" OpenGL invalid argument value\n") ;
       if(n == GL_INVALID_OPERATION)printf(" OpenGL invalid operation\n") ;
@@ -582,12 +624,16 @@ int  check_glerror(){
       if(n == GL_STACK_UNDERFLOW)  printf(" OpenGL stack underflow\n") ;
       if(n == GL_OUT_OF_MEMORY)    printf(" OpenGL out of memory\n") ;
       if(n == GL_TABLE_TOO_LARGE)  printf(" OpenGL table too large\n") ;
-      return 1;
+      return n;
 }
 int  check_glerror2(char* string){
   GLenum  n ;
       n = glGetError() ;
       if(n == GL_NO_ERROR) return 0;
+
+      gl_errorCode = n ;
+      gl_errString = (GLubyte *)gluErrorString(n) ;
+
       printf(" OpenGL error :: message = %s\n",string) ;
       if(n == GL_INVALID_ENUM)     printf(" OpenGL invalid enum argument \n") ;
       if(n == GL_INVALID_VALUE)    printf(" OpenGL invalid argument value\n") ;
@@ -596,5 +642,5 @@ int  check_glerror2(char* string){
       if(n == GL_STACK_UNDERFLOW)  printf(" OpenGL stack underflow\n") ;
       if(n == GL_OUT_OF_MEMORY)    printf(" OpenGL out of memory\n") ;
       if(n == GL_TABLE_TOO_LARGE)  printf(" OpenGL table too large\n") ;
-      return 1;
+      return n;
 }

@@ -3,7 +3,7 @@ README.KUJU_BINARY_FILES
 
     These start with the normal MSTS compressed header.  This 16 characters starting "SIMISA@F", followed by a four byte binary integer giving the size of the uncompressed file, followed by "@@@@".
 
-    When handling files in a command shell this can be stripped off with the linux tail command.
+    When handling files in a command shell this can be stripped off with the Linux tail command.
       >tail -c +17 file_with_header > file_without_header
 
      The next 2 bytes are "0x78 0x9c" indicating that it is a zlib compressed stream.  This can by uncompressed with my program zpipe.
@@ -18,7 +18,7 @@ OpenRails handling of binary files
 
      Reading the header section and setting up the offset is carried out by 'SBR Open' in file SBR.cs.  This then starts a new Binary File reader with the file pointer, filename and offset as parameters.
 
-     The binary file reader asumes that
+     The binary file reader assumes that
         fb is positioned just after the SIMISA@F header
         filename is provided for error reporting purposes
 

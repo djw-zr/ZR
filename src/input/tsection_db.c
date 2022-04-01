@@ -63,7 +63,10 @@ TrackSection *track_section ;
 
 int   init_section_idx(SectionIdx *section_idx){
 
+  int  ip = 0 ;
   char my_name[] = "init_section_idx" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
 
       if(section_idx == NULL){
         printf(" ERROR : Routine %s.  Parameter section_idx == NULL\n",my_name);
@@ -127,26 +130,45 @@ SectionIdx   *section_idx   = NULL ;
 Vector3      *xover         = NULL ;
 int          *section       = NULL ;
 
+      if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
- *  First find tsection.dat file in the top directory
+ *  The file tsection.data should be in the top Global
+ *  or GLOBAL directory.  There may be extra definitions in
+ *  directory Openrails within the Route directory
  */
       for(idir=0;idir<2;idir++){
+        printf("  idir = %i\n",idir) ;
+        printf("  ORroutedir = %s\n",ORroutedir) ;
+        printf("  ORdir      = %s\n",ORdir) ;
 //  Construct filename
         if(0==idir){
           l = strlen(ORdir) + strlen("Global/") + strlen(base_name) + 1 ;
+          if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
+          if(ip)printf(" string = %s\n",string);
           strcpy(string,ORdir) ;
+          if(ip)printf(" string = %s\n",string);
           strcat(string,"Global/") ;
         }else{
           l = strlen(ORroutedir) + strlen("OpenRails/")
                                  + strlen(base_name) + 1 ;
+          if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
           strcpy(string,ORroutedir) ;
+          if(ip)printf(" string = %s\n",string);
           strcat(string,"OpenRails/") ;
         }
+        if(ip)printf(" string = %s\n",string);
         strcat(string,base_name) ;
         if(ip)printf("     Full filename = %s\n",string) ;
 // Check file exists
+        iret = zr_find_msfile2(string) ;
+        if(iret){
+          printf("    Routine %s.  Data file does not exist\n",my_name) ;
+          printf("    Filename = %s\n",string)  ;
+          return 0 ;
+        }
+        if(ip)printf("  Routine %s.  Opening file %s\n",my_name,string) ;
         fp = gopen(string,"r") ;
         if(idir == 0 && fp == NULL){
           printf("  Unable to find tsection.dat file\n") ;
@@ -369,7 +391,7 @@ int          found = 0 ;
 TrackSection *t ;
 
       for(t = track_section_beg; t!=NULL;t=t->next){
-        if(section_index != t->index)continue ;
+        if(section_index != (int)t->index)continue ;
           found = 1 ;
           printf("    TrkSection:  gauge  = %f\n",t->gauge)  ;
           printf("    TrkSection:  length = %f\n",t->length) ;
@@ -385,7 +407,7 @@ TrackSection *t ;
 
 int print_tsec_shape(int shape_index){
 
-int          i, found = 0 ;
+uint          i, found = 0 ;
 TrackShape *t ;
 SectionIdx *s ;
 

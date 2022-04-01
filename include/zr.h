@@ -13,6 +13,22 @@
  *==============================================================================
  */
 
+#ifndef __ZR_H__
+#define __ZR_H__
+
+#ifdef  SDL2
+ #ifdef zr_freetype
+  #define USE_FREETYPE
+ #else
+  #define USE_ZRGLUT
+ #endif
+#else
+ #define GLUT
+ #ifdef zr_freetype
+  #define USE_FREETYPE
+ #endif
+#endif
+
 #include <stdio.h>
 #include <ctype.h>
 #include <string.h>
@@ -28,7 +44,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#ifdef MinGW
+#ifdef WINDOWS
   #include <io.h>           //  This may not be necessary
 #else
   #include <sys/dir.h>
@@ -36,24 +52,41 @@
 //#include <udunits2.h>
 
 #define GL_GLEXT_PROTOTYPES  // Needed for glWindowPos2f()
-
 #include <GL/gl.h>
 #include <GL/glu.h>
+
+#ifdef GLUT
+  #include <GL/freeglut.h>
+#endif
+
+#ifdef USE_ZRGLUT
+  #include "zr_glut.h"
+#endif
+
 #ifdef SDL2
   #include <stdint.h>
   #include <assert.h>
   #include <SDL2/SDL.h>
   #include <SDL2/SDL_opengl_glext.h>
-  #include <SDL2/SDL_ttf.h>
-#else
-  #include <GL/glut.h>
-  #include "freetype.h"
 #endif
+
+#ifdef  USE_FREETYPE
+  #include "freetype_zr.h"
+#endif
+
+//#ifdef USE_SDLTTF
+//  #include <SDL2/SDL_ttf.h>
+//#endif
+
 #ifdef PORTAUDIO
   #include <stdint.h>
   #include "portaudio.h"
 #endif
 
+#include "btree.h"
+typedef u_int uint ;
+
+#include "msts.h"      //  Set up msts structures (if needed)
 #include "enum.h"
 #include "struct.h"
 #include "track.h"
@@ -62,10 +95,12 @@
 #include "display_info.h"
 #include "train.h"
 #include "camera.h"
-
 #include "functions.h"    //  Call this last
 
-extern int versionsort(const struct dirent **, const struct dirent **);
+#ifndef SDL2
+  extern int versionsort(const struct dirent **, const struct dirent **);
+#endif
+
 /*
  *  Script to convert SWITCH statements into a series of if-elseif statements
  *  SWITCH and CASE cannot be used within a similar SWITCH block.  Within the
@@ -108,8 +143,6 @@ int  __switch_next2__ ;
 
   #define SWITCHL(X) char *__switch_p__ ; int  __switch_next__ ; for ( __switch_p__ = X, __switch_next__=1; __switch_p__ ; __switch_p__=0, __switch_next__=1) { {
 
-//
-
 /*
  *  Special Variables
  */
@@ -129,7 +162,14 @@ struct timespec run_clock1  ;      //  Current time
 struct timespec zr_clock_1[4] ;
 struct timespec zr_clock_2[4] ;
 double zr_clock_time[4][5]  ;      //  Arrays to use for timing
-double run_seconds          ;      //  Difference in seconds
+double start_seconds        ;      //  Start time (seconds) from zr.c
+double run_seconds          ;      //  Run time (seconds) from start of display loop
+double last_1s = 0.0        ;      //  Last time when 1s timer reset
+double last_5s = 0.0        ;      //  Last time when 5s timer reset
+double last_30s = 0.0       ;      //  Last time when 30s timer reset
+int    l_time_1s = 0        ;      //  1 s timer
+int    l_time_5s = 0        ;      //  5 s timer
+int    l_time_30s = 0       ;      //  30 s timer
 int    junction_error = 0   ;      //  Set when wagon enters junction from wrong branch
 
 /*
@@ -144,11 +184,12 @@ int     i_control1_old[200],
         i_control2_old[200] ;
 int     l_disp0 = 1,            //  True for printing during display()
         l_disp1 = 0 ;           //  True if new position
+int     i_zra   = 0 ;           //  Switch under keyboard control
 
 // Top level pointers to structures
 
-TrkDataBase      track_db ;    // Track database - with track sections and track items
-TrkDataBase      road_db  ;    // Road database  - with road sections and road items
+TrkDataBase track_db ;    // Track database - with track sections and track items
+TrkDataBase road_db  ;    // Road database  - with road sections and road items
 
 // Top level pointers to tsection.dat items
 
@@ -157,6 +198,8 @@ TrackSection  *track_section_end = NULL ;
 
 TrackShape    *track_shape_beg   = NULL ;
 TrackShape    *track_shape_end   = NULL ;
+
+BTree         *shape_master = NULL ; // Btree containing all shapes used by world files
 
 // Tiles
 
@@ -240,4 +283,4 @@ float  g2m[16] = {0, 0, 1, 0,  1, 0, 0, 0,
                   0, 1, 0, 0,  0, 0, 0, 1 };
 
 
-
+#endif

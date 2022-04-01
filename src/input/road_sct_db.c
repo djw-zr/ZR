@@ -18,15 +18,16 @@
 
 int init_road_db(char * filename)
 {
- int    i, j      ;
+ int    i, j, ip = 0 ;
  char   *datafile ;
  char   *token    ;
  char   *string   ;
  char   myname[] = "init_road_db" ;
- char   ffname[] = "__FILE__"      ;
+ char   ffname[] = "road_sec_db"      ;
 
  MSfile msfile  ;
 
+      if(ip)printf("  Enter routine %s\n",myname) ;
 /*
  * *****************************************************************************
  * Open road database file ; usually *.rdb
@@ -72,8 +73,8 @@ int init_road_db(char * filename)
  */
     road_db.trk_sections_array_size = itoken(&msfile) ;
 //    printf("  trk_sec_array_size = %i\n",road_db.trk_sections_array_size);
-    road_db.trk_sections_array = (TrkNetNode *)
-              malloc(road_db.trk_sections_array_size*sizeof(TrkNetNode));
+    road_db.trk_sections_array = (TrkSectNode *)
+              malloc(road_db.trk_sections_array_size*sizeof(TrkSectNode));
 /*
  *   Cycle over the set of road sections
  */
@@ -123,7 +124,7 @@ int init_road_db(char * filename)
 uint            ie = 0, iw = 0, in = 0, is = 0 ;
 double          de = 0, dw = 0, dn = 0, ds = 0 ,
                  h0 = 100000.0, h1 = 0.0 ;;
-TrkNetNode   *road_sec_node ;
+TrkSectNode   *road_sec_node ;
 TrkVectorNode    *vec          ;
 
     for(i=0;i<(int)road_db.trk_sections_array_size;i++){
@@ -184,23 +185,24 @@ TrkVectorNode    *vec          ;
          }
       }
 
-     printf("    LIMITS \n");
-     printf("    iw   = %i    dw = %f\n",iw,dw);
-     printf("    ie   = %i    de = %f\n",ie,de);
-     printf("    is   = %i    ds = %f\n",is,ds);
-     printf("    in   = %i    dn = %f\n",in,dn);
-     printf("    h0   = %f\n",h0);
-     printf("    h1   = %f\n",h1);
+      printf("    LIMITS \n");
+      printf("    iw   = %i    dw = %f\n",iw,dw);
+      printf("    ie   = %i    de = %f\n",ie,de);
+      printf("    is   = %i    ds = %f\n",is,ds);
+      printf("    in   = %i    dn = %f\n",in,dn);
+      printf("    h0   = %f\n",h0);
+      printf("    h1   = %f\n",h1);
 
-     trk_cell_west  = iw ;
-     trk_cell_east  = ie ;
-     trk_cell_south = is ;
-     trk_cell_north = in ;
+      trk_cell_west  = iw ;
+      trk_cell_east  = ie ;
+      trk_cell_south = is ;
+      trk_cell_north = in ;
 
-     free(datafile);
-     close_msfile(&msfile) ;
+      free(datafile);
+      close_msfile(&msfile) ;
+      if(ip)printf("  Exit  routine %s\n",myname) ;
 
-     return 0;
+      return 0;
 }
 
 /*
@@ -210,7 +212,7 @@ TrkVectorNode    *vec          ;
  * **********************************************************************
  */
 
-void read_road_path(TrkNetNode *road_path, MSfile *msfile)
+void read_road_path(TrkSectNode *road_path, MSfile *msfile)
 {
  int    j, n   ;             // loop integers
  char   *token ;
@@ -356,7 +358,7 @@ void read_road_path(TrkNetNode *road_path, MSfile *msfile)
   return ;
 }
 
-void init_road_path(TrkNetNode *road_path)
+void init_road_path(TrkSectNode *road_path)
 {
   int  i;
        road_path->index_of_node    = 0;

@@ -13,10 +13,31 @@
  *==============================================================================
  */
 
+/*
+ *   Initialise system variables and those not initialised elsewhere
+ */
+int init_system(void){
+int i, j ;
+/*
+ *  Initialise clocks
+ */
+      for(j=0;j<5;j++){
+        for(i=0;i<4;i++)
+          zr_clock_time[i][j] = 0.0 ;
+      }
+/*
+ * Initialise truetype/freetype
+ */
+#ifdef zr_freetype
+       freetype_init() ;
+#endif
+
+      return 0 ;
+}
+
 int   nint(double d){
 
-int    i ;
-double dd ;
+int i ;
 
      if(d >= 0.0){
        i = d + 0.5 ;
@@ -26,7 +47,17 @@ double dd ;
      return -i ;
 }
 
+/*
+ *   Function to convert string to lower case
+ */
+void str2lc(char *string){
 
+unsigned int i ;
+
+      if(!string) return ;
+      for(i=0;i<strlen(string);i++)string[i]=tolower(string[i]) ;
+      return ;
+}
 
 /**
  *   Function to compare two strings ignoring case.
@@ -34,11 +65,31 @@ double dd ;
  */
 int strcmp_ic(const char *s1, const char *s2){
 
-int  i, l1 ;
-char c1, c2 ;
+unsigned int i, l1  ;
+char         c1, c2 ;
 
      l1 = strlen(s1) ;
-     if(strlen(s2) != l1) return 1 ;
+     if(strlen(s2) != l1) return 1 ;   //  No match - lengths different
+     for(i=0;i<l1;i++){
+       c1 = s1[i]  ;
+       c2 = s2[i]  ;
+       c1 = tolower(c1) ;
+       c2 = tolower(c2) ;
+       if(c1 != c2) return 1 ;
+     }
+     return 0 ;
+}
+
+int strncmp_ic(const char *s1, const char *s2, int nn){
+
+unsigned int i, l1, l2  ;
+char         c1, c2 ;
+
+     l1 = strlen(s1) ;
+     l2 = strlen(s2) ;
+     if(l1 != l2 && ((int)l1 < nn || (int)l2 < nn) ) return 1 ;
+     if(nn<(int)l1) l1 = nn ;
+
      for(i=0;i<l1;i++){
        c1 = s1[i]  ;
        c2 = s2[i]  ;
@@ -128,14 +179,18 @@ char *pz ;
 char *zr_corename(char *fname){
 
 int  n   ;
-char *pz ;
+char *pz, *corename ;
       if(fname == NULL) return strdup("")   ;   // malloc
       pz = strrchr(fname,'.')               ;
       if(pz == NULL) return strdup(fname)   ;   // malloc
       n = strlen(fname) - strlen(pz)        ;
 //      printf(" zr_corename  strlen(fname) = %i\n",(int)strlen(fname)) ;
 //      printf(" zr_corename  strlen(pz)    = %i\n",(int)strlen(pz)) ;
-      return strndup(fname, n) ;
+      corename = (char *)malloc((n+1)*sizeof(char)) ;
+      strncpy(corename,fname,n) ;
+      corename[n] = '\0' ;
+//      return strndup(fname, n) ;
+      return corename ;
 }
 
 /**
@@ -210,28 +265,29 @@ char *zr_full_parentdir(char *fname){
  *
  */
 
+#if 0
 char *zr_find_msfile(char *fname){
 
-int  i, j, n, m, ok  ;
-int  ip = 0          ;  // Debug
+unsigned int  i, j, n, m, ok  ;
+unsigned int  ip = 0          ;  // Debug
 char *base,             //  File name in last directory
      *parent,           //  Full pathname of parent directory
-     *string         ;
-char *my_name = "zr_find_msfile" ;
-DIR  *dp     ;
-FILE *fp     ;
+     *string      ;
+DIR  *dp          ;
+FILE *fp          ;
 struct dirent *di ;
+char *my_name = "zr_find_msfile" ;
 /*
  *  Check if file exists
  */
       if(ip)printf(" Enter routine %s, File = %s\n",my_name,fname) ;
       fp = fopen(fname,"r") ;
-      if(fp!=NULL){  // Fle exists
+      if(fp!=NULL){  // File exists
         fclose(fp) ;
         return strdup(fname)   ;
       }
 /*
- *  If not search for parent
+ *  If not search for parent  [Use "stat(filename)" to check it exists]
  */
       parent = zr_full_parentdir(fname) ;  // malloc
       if(ip)printf(" Routine %s, AA parent = %s\n",my_name,parent) ;
@@ -311,6 +367,130 @@ struct dirent *di ;
       free(parent) ;
       return string  ;
 }
+#endif
+
+/*
+ *   Second version of zr_find_msfile.  Given a filename it tries to find
+ *   an existing file or directory with the same name.  If that does not
+ *   exists it first checks that the parent directory exists and then
+ *   looks for a matching name in the current directory.
+ */
+
+int zr_find_msfile2(char *fname){
+
+unsigned int  i, n, ok, iret  ;
+unsigned int  ip = 0          ;  // Debug
+char *base   = NULL,             //  File name in last directory
+     *parent = NULL,             //  Full pathname of parent directory
+     *string = NULL     ;
+DIR  *dp          ;
+struct dirent *di ;
+struct stat   sb  ;
+
+char *my_name = "zr_find_msfile2" ;
+/*
+ *  Check if file exists
+ */
+      if(ip)printf("\n  Enter routine %s.     Search for = %s\n",my_name,fname) ;
+      fflush(NULL) ;
+      iret = stat(fname, &sb) ;
+      if(!iret){
+        if(ip)printf("     File/Directory  exists!\n") ;
+        return 0      ;    //  File or directory exists
+      }
+/*
+ *  Check parent exists  [Use "stat(filename)" to check it exists]
+ */
+      parent = zr_full_parentdir(fname) ;  // malloc parent
+      if(ip){
+        printf("    File/Directory does not exist\n") ;
+        printf("    Parent = %s\n",parent) ;
+      }
+      if(parent==NULL){
+        parent = strdup(".") ;
+      }else if(!strcmp(parent,"/")){
+        *parent = '\0'       ;
+      }else{
+        iret = zr_find_msfile2(parent) ;
+        if(iret){
+          free(parent) ;
+          return 1 ;  // Parent does not exist
+        }
+      }
+      if(ip){
+        printf("\n    Parent found = %s\n",parent) ;
+        fflush(NULL) ;
+      }
+/*
+ * Regenerate filename
+ */
+      base = zr_basename(fname)        ;  // malloc
+      n = strlen(parent)   ;
+      strcpy(fname,parent) ;
+      if(parent[n-1]!='/')strcat(fname,"/")    ;
+      strcat(fname,base)   ;
+      if(ip)printf("    New fname = %s\n",fname) ;
+/*
+ * Check again for file
+ */
+      iret = stat(fname,&sb) ;
+      if(!iret){
+        free(parent) ;
+        free(base)   ;
+        free(string) ;
+        if(ip)printf("     File/Directory  exists!\n") ;
+        return 0     ;    //  File or directory exists
+      }
+/*
+ *  Search parent directory for matching file
+ */
+      if(ip){
+        printf("     File/Directory  does not exist\n") ;
+        printf("     Search for matching item  %s\n",base) ;
+        printf("                 in directory  %s\n",parent) ;
+      }
+      n = strlen(base) ;
+      for(i=0;i<n;i++) base[i]=tolower(base[i]) ;
+
+      dp = opendir(parent) ;
+      ok = 0 ;
+      while((di=readdir(dp))!= NULL){
+        free(string) ;
+        string = strdup(di->d_name) ;
+        for(i=0;i<strlen(string);i++) string[i] = tolower(string[i]) ;
+        ok = !strcmp(string,base) ;
+        if(ok)break ;
+      }
+/*
+ *  Failure ??
+ */
+      if(!ok){
+        closedir(dp) ;
+        free(parent) ;
+        free(base)   ;
+        free(string) ;
+        if(ip)printf("     Routine %s, DD File not found\n", my_name) ;
+        return 1     ;  // File does not exist
+      }
+/*
+ *  Success
+ */
+      free(base) ;
+      base = strdup(di->d_name) ;
+      closedir(dp) ;
+      n = strlen(parent)   ;
+      strcpy(fname,parent) ;
+      if(parent[n-1]!='/')strcat(fname,"/")    ;
+      strcat(fname,base)   ;
+      if(ip)printf("  Routine %s, DD File found.  File = %s\n",
+                                                     my_name,fname) ;
+      free(parent) ;
+      free(base)   ;
+      free(string) ;
+
+      return 0  ;
+}
+
 
 
 /**
@@ -323,8 +503,6 @@ struct dirent *di ;
 int zr_filename_MS2L(char *fname){
 
 int  i, j, n  ;
-int  ip = 0          ;  // Debug
-char *my_name = "zr_filename_MS2L" ;
 
       n = strlen(fname) ;
       for(i=0,j=0;i<n;i++,j++){
@@ -401,7 +579,7 @@ int scandir(const char *dir_name, struct dirent ***namelist,
             int (*compar)(const struct dirent **, const struct dirent **)){
 
 int  n, i ;
-int  ip = 1    ;    // DEBUG
+int  ip = 0    ;    // DEBUG
 DIR  *root_dir ;    // Pointer to a directory (DIR) structure
 
 struct dirent  *dir_point ;   // Pointer to structure dirent
@@ -546,7 +724,7 @@ static int icounta[] = {0, 0, 0, 0, 0} ;
  *
  * Function to check the properties of a MSTS 4x3 matrix.
  * It returns 0 if it is a unit diagonal matrix,
- *            1 if it represents translation oonly,
+ *            1 if it represents translation only,
  *            2 if it represents rotation and/or stretching,
  *            3 if it represents both.
  */
@@ -567,7 +745,7 @@ int k = 0 ;
  *          to an OpenGl vector representation of a 4x4 matrix
  */
 
-int make_matrix4x4(float m[16], Matrix4x3 *m1){
+int msts4x3_to_opengl4x4(float m[16], Matrix4x3 *m1){
 
       m[ 0] = m1->AX ;
       m[ 1] = m1->AY ;
@@ -585,6 +763,34 @@ int make_matrix4x4(float m[16], Matrix4x3 *m1){
       m[13] = m1->DY ;
       m[14] = m1->DZ ;
       m[15] = 1.0    ;
+      return 0 ;
+}
+
+/*
+ *  Function to mimic the OpenGL function glRotate.
+ *  This uses the transformation recipe given in file
+ *    README.ROTATION_MATRIX2
+ *  Input
+ *    ang         :  Rotation angle (degrees)
+ *    ax, ay, az  :  Unit vector specifying axis of rotation
+ *    x, y, z     :  Vector to be rotated
+ *  Output
+ *    rx, ry, rz  :  Rotated vector
+ */
+
+int  zrRotateAxyz( double ang, double  ax, double  ay, double  az,
+                               double   x, double   y, double   z,
+                               double *rx, double *ry, double *rz){
+
+double cc, ss, c1 ;
+
+      cc = cos(ang*radian) ;  c1 = 1.0 - cc ;
+      ss = sin(ang*radian) ;
+
+      *rx = (ax*ax*c1 +    cc)*x + (ax*ay*c1 - az*ss)*y + (ax*az*c1 + ay*ss)*z ;
+      *ry = (ax*ay*c1 + az*ss)*x + (ay*ay*c1 +    cc)*y + (ay*az*c1 - ax*ss)*z ;
+      *rz = (ax*az*c1 - ay*ss)*x + (ay*az*c1 + ax*ss)*y + (az*az*c1 +    cc)*z ;
+
       return 0 ;
 }
 
@@ -615,10 +821,13 @@ int  iret ;
 
 void  zr_clock_gettime(struct timespec clock[4]){
 
-//      clock_gettime(CLOCK_REALTIME,           &clock[0] );
+#ifdef MinGW
+      clock_gettime(CLOCK_REALTIME,           &clock[0] );
+      clock_gettime(CLOCK_MONOTONIC,          &clock[1] );
+#else
       clock_gettime(CLOCK_REALTIME_COARSE,    &clock[0] );
-//      clock_gettime(CLOCK_MONOTONIC,          &clock[1] );
       clock_gettime(CLOCK_MONOTONIC_COARSE,   &clock[1] );
+#endif
       clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &clock[2] );
       clock_gettime(CLOCK_THREAD_CPUTIME_ID,  &clock[3] );
 

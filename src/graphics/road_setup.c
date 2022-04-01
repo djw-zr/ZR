@@ -16,8 +16,8 @@
  *==============================================================================
  */
 
-TrkNetNode  *next_road_node(TrkNetNode *road_section) ;
-int  add_sub_nodes_to_road(TrkNetNode *road_section, DynProfile *profile) ;
+TrkSectNode  *next_road_node(TrkSectNode *road_section) ;
+int  add_sub_nodes_to_road(TrkSectNode *road_section, DynProfile *profile) ;
 int   initialise_road_shape(ShapeNode *shapenode) ;
 
 /*
@@ -143,9 +143,9 @@ char            my_name[]="make_default_road_profile" ;
  */
 
 int  make_road_shapes(){
-int  i ;
+uint i ;
 int  ip = 0 ;                        // Debug printing = 1
-TrkNetNode   *road_node       ;  // Road section needing shape
+TrkSectNode   *road_node       ;  // Road section needing shape
 //DynProfile       *road_profile    ;  // Track Profile to use
 char             my_name[]="make_road_shapes" ;
 
@@ -170,9 +170,9 @@ char             my_name[]="make_road_shapes" ;
  *  Routine to add extra road nodes on curves.  Needed when using a road profile
  */
 
-int  add_sub_nodes_to_road(TrkNetNode *road_section, DynProfile *profile){
+int  add_sub_nodes_to_road(TrkSectNode *road_section, DynProfile *profile){
 
-int           i, j, n   ;
+uint          i, j, n   ;
 int           ip = 0 ;                                // Debug printing = 1
 double        x2, y2, r0, r1, a, b, w0, w1,
               da, xn, yn, tmp  ;
@@ -194,7 +194,7 @@ double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
               xc1  = 0.1, yc1  = 0.0  ;
 TrkVectorNode *tv0,               //  Current road vector node
               *tv1  = NULL ;      //  Next road vector
-TrkNetNode *ts1 = NULL ;      //  Next road section
+TrkSectNode *ts1 = NULL ;      //  Next road section
 char          *my_name="add_sub_nodes_to_road" ;
 
       if(ip)printf("\n    Enter routine %s\n",my_name) ;
@@ -411,12 +411,12 @@ int ii, jj ;
  *  Routine to find the next node.
  */
 
-TrkNetNode  *next_road_node(TrkNetNode *road_section){
+TrkSectNode  *next_road_node(TrkSectNode *road_section){
 
 int             next_node_index, n ;
-int             ip = 0 ;                      // Dubug printing when ip = 1
+int             ip = 0 ;                      // Dubug printing when ip == 1
 char            my_name[] = "next_road_node" ;
-TrkNetNode  *t              ;
+TrkSectNode  *t              ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -427,7 +427,7 @@ TrkNetNode  *t              ;
       n = road_section->type_of_pin[0] ;
 
       next_node_index = road_section->pin_to_section[n] ;
-      if(next_node_index<0  || next_node_index > road_db.trk_sections_array_size){
+      if(next_node_index<0  || next_node_index > (int)road_db.trk_sections_array_size){
         printf(" Routine %s : Error :  Next track node index out of bounds\n",my_name) ;
         printf("   Node index = %i.\n",next_node_index)                    ;
         printf("   maximum value = %i\n",road_db.trk_sections_array_size) ;
@@ -437,7 +437,7 @@ TrkNetNode  *t              ;
       }
 
       t = &(road_db.trk_sections_array[next_node_index-1]) ;
-      if(t->index_of_node != next_node_index){
+      if(next_node_index != (int)t->index_of_node){
         printf(" Routine %s : Error :  Unable to find next track section.\n",my_name) ;
         printf("   Index requested = %i\n",   next_node_index)         ;
         printf("   Index found     = %i\n",   t->index_of_node)        ;
@@ -460,7 +460,7 @@ TrkNetNode  *t              ;
  *          triangle strips on the vertices at the sub-object level.
  */
 
-int   make_road_shape(TrkNetNode *tracknode, DynProfile *profile){
+int   make_road_shape(TrkSectNode *tracknode, DynProfile *profile){
 
 int        i, n           ;
 int        ip = 0         ;  // Debug printing

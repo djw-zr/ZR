@@ -36,6 +36,8 @@ int load_shape_d(ShapeNode *snode){
 
       if(ip)printf("\n  Enter routine : %s\n",myname);
       if(ip)printf("  File = %s\n",snode->sd_file);
+      ip = ip && !strcmp(snode->name,test_shape) ;
+
 /*
  *  Initialise  ESD variables
  */
@@ -86,8 +88,9 @@ int load_shape_d(ShapeNode *snode){
  */
       shape_file_name = ctoken(msfile) ;
 
-      for(i=0;i<(int)strlen(shape_file_name);i++)
+      for(i=0;i<(int)strlen(shape_file_name);i++){
           shape_file_name[i]=tolower(shape_file_name[i]) ;
+      }
       cp = strrchr(snode->s_file,'/') ;
       if(NULL == cp){
         cp = snode->s_file ;
@@ -96,14 +99,14 @@ int load_shape_d(ShapeNode *snode){
       }
       l = strlen(cp) ;
       snode_shape_file = (char *)malloc(l+1) ;
-      for(i=0;i<l;i++)
+      for(i=0;i<l;i++){
         snode_shape_file[i] = tolower(cp[i]) ;
+      }
       snode_shape_file[l] = '\0' ;
 
       if(strcmp(shape_file_name,snode_shape_file)){
-        printf("  Routine load_shape_d() error\n");
-        printf("    Expected name = %s\n",snode_shape_file) ;
-        printf("    Actual name   = %s\n",shape_file_name) ;
+        printf("     Routine load_shape_d() error :: Expected shape file name = %s\n",snode_shape_file) ;
+        printf("                                  :: Actual shape file name   = %s\n",shape_file_name) ;
       }
       free(shape_file_name) ;
       free(snode_shape_file) ;
@@ -112,6 +115,7 @@ int load_shape_d(ShapeNode *snode){
  */
       for(;;){
         token = ctoken(msfile);
+        if(ip)printf("  token = %s\n",token) ;
         if(')' == token[0])break ;                   // End of data
 
         SWITCH (token)
@@ -122,6 +126,8 @@ int load_shape_d(ShapeNode *snode){
             skip_rbr(msfile) ;
             break ;
           CASE ("ESD_Alternative_Texture")
+          CASE ("ESD_Alernative_Texture")
+          CASE ("ESD_Alternative_Teture")   //  JP1Multicarpark.sd
             skip_lbr(msfile) ;
             snode->esd_alternative_texture = itoken(msfile) ;
             skip_rbr(msfile) ;
@@ -137,20 +143,18 @@ int load_shape_d(ShapeNode *snode){
             break ;
           CASE ("ESD_No_Visual_Obstruction")
           CASE ("ESD_No_Visul_Obstruction")    //  ukn2t500r10d.s
-//            printf(" AA\n");
             skip_lbr(msfile) ;
-//            printf(" BB\n");
             snode->esd_no_visual_obstruction = itoken(msfile) ;
-//            printf(" ESD_No_Visual_Obstruction = %i\n",snode->esd_no_visual_obstruction) ;
             skip_rbr(msfile) ;
-//            printf(" CC\n");
-//            skip_rbr(msfile) ;
-//            printf(" DD\n");
-//            exit(1) ;
             break ;
           CASE ("ESD_No_Snapable")
             skip_lbr(msfile) ;
             snode->esd_snapable = itoken(msfile) ;
+            skip_rbr(msfile) ;
+            break ;
+          CASE ("ESD_Snapable")
+            skip_lbr(msfile) ;
+            snode->esd_snapable = 0 ;
             skip_rbr(msfile) ;
             break ;
           CASE ("ESD_Software_DLev")
@@ -159,8 +163,10 @@ int load_shape_d(ShapeNode *snode){
             skip_rbr(msfile) ;
             break ;
           CASE ("ESD_Subobj")
-            printf(" ESD_Subobj\n");
-
+          CASE ("ESD_SubObj")
+            skip_lbr(msfile) ;
+            itoken(msfile) ;
+            skip_rbr(msfile) ;
 //            skip_token_block(msfile) ;
             break ;
           CASE ("ESD_Bounding_Box")
@@ -171,7 +177,18 @@ int load_shape_d(ShapeNode *snode){
             snode->esd_bounding_box_xmax = dtoken(msfile) ;
             snode->esd_bounding_box_ymax = dtoken(msfile) ;
             snode->esd_bounding_box_zmax = dtoken(msfile) ;
-            skip_rbr(msfile) ;
+/*
+ *  Deal with faulty ESD_Bounding_Box (JP2grntext.sd)
+ */
+            if(0<skip_rbr_1(msfile)){
+              snode->esd_bounding_box_xmin = 0.0 ;
+              snode->esd_bounding_box_ymin = 0.0 ;
+              snode->esd_bounding_box_zmin = 0.0 ;
+              snode->esd_bounding_box_xmax = 0.0 ;
+              snode->esd_bounding_box_ymax = 0.0 ;
+              snode->esd_bounding_box_zmax = 0.0 ;
+              skippast_rbr(msfile) ;
+            }
             break ;
           CASE ("ESD_No_Ortssoundfilename")
             skip_lbr(msfile) ;
@@ -182,25 +199,48 @@ int load_shape_d(ShapeNode *snode){
             skip_lbr(msfile) ;
             snode->esd_bell_animation_fps = dtoken(msfile) ;
             skip_rbr(msfile) ;
+            break ;
           CASE ("ESD_Complex")
+          CASE ("ESD_Complex_Box")  //  JP1A1t50mStrtElev.sd !!
+            if(ip)printf("  CASE ESD_Complex\n") ;
             skip_lbr(msfile) ;
             n = itoken(msfile) ;
             snode->n_esd_complex_box = n ;
+            if(ip)printf("  ESD_Complex : n = %i\n", n) ;
             snode->esd_complex_box = (float *)malloc(n*12*sizeof(float));
+
             for(i=0;i<n;i++){
-              token1 = ctoken(msfile);
+              if(i==0 && !strcmp(token,"ESD_Complex_Box")){
+                token1 = strdup(token) ;
+              }else{
+                token1 = ctoken(msfile);
+              }
+              if(ip)printf("  ESD_Complex : i = %i,token1 = %s\n",i,token1) ;
+              if(is_rbr(token1)){
+                return_token(token1,msfile) ;
+                snode->n_esd_complex_box = i ;
+                break ;
+              }
               free(token1) ;
               skip_lbr(msfile) ;
               for(j=0;j<12;j++){
                 snode->esd_complex_box[i*12+j] = dtoken(msfile) ;
+                if(ip)printf("  ESD_Complex i = %i, j = %i, data = %f\n",
+                                 i,j,snode->esd_complex_box[i*12+j]) ;
               }
               skip_rbr(msfile) ;
             }
             skip_rbr(msfile) ;
             break ;
+          CASE ("ESD_Sphere")
+          CASE ("ESD_No_Visual_Obstruction")
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
           DEFAULT
             printf("  Routine load_shape_d() error\n");
-            printf("    ESD filename  = %s\n",snode->s_file) ;
+            printf("    sd file  = %s\n",snode->sd_file) ;
+            printf("    s file   = %s\n",snode->s_file) ;
             printf("    Unrecognised token = %s\n",token) ;
             break ;
         END

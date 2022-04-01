@@ -60,7 +60,7 @@ double         dx_topog   ;  // Horizontal spacing in plot space units
 double         dm_topog   ;  // Horizontal spacing in metres
 double         dd_texture = 100 ;  // Size of texture in plot space units
 double         floor, scale, v1[3], v2[3], v3[3], vv, av ;
-GLdouble       tx1, tx2, ty1, ty2, x1, x2, y1, y2, h1, h2, h3, h4 ;
+GLdouble       tx1, ty1, ty2, x1, x2, y1, y2, h1, h3, h4 ;
 GLdouble       ttx1, ttx2, tty1, tty2 ; // Texture coordinates
 GLdouble       *normals, *heights ;
 int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
@@ -82,6 +82,11 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 
       tile_x = tile_node->tilex ;
       tile_y = tile_node->tiley ;
+      if(ip){
+        printf(" Routine %s, tile_x = %i, tile_y = %i\n",my_name,tile_x,tile_y) ;
+//        ip = (tile_x==1449) && (tile_y==10331) ;
+        printf("  ip = %i\n",ip) ;
+      }
 /*
  *  Define material properties of land.
  *  Determines surface light values before textures are applied.
@@ -92,6 +97,10 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 /*
  *  Check texture reference exists
  */
+      if(!land_texture){
+        printf("  ERROR.  Routine %s called when land_texture not installed\n",
+                                                                       my_name);
+      }
       if(!land_texture->gl_tex_ref_no){
         printf("  ERROR.  Routine %s called when land_texture not installed\n",
                                                                        my_name);
@@ -121,6 +130,11 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
           }else{
             heights[j3*m3 + i3] = tile_height(tile_x, tile_y, i, j, nht);
           }
+          if(ip && i>10 && i<15 && j>10 && j<15){
+            printf("  Heights  i, j = %i, %i :: %f %f :: %i %f\n",
+                  i, j, floor, scale, elevations[j*nht + i], heights[j3*m3 + i3]) ;
+          }
+
         }
       }
 /*
@@ -178,7 +192,6 @@ double s1a[8], s2a[8], sab[8], sm, sign;
           }
           if(ip && (tx_chk==tile_x) && (ty_chk==tile_y) && (i_chk==i) && (j_chk==j) ){
 int ii, jj, kk ;
-double hh  ;
             printf("   Heights around (i,j) = %i  %i  :: \n",i,j) ;
             for(jj=0;jj<5;jj++){
             printf(" j value = %i    :: ",j-2+jj) ;
@@ -242,8 +255,14 @@ double hh  ;
  */
       glNewList(klist,GL_COMPILE) ;
       glBindTexture(GL_TEXTURE_2D, land_texture->gl_tex_ref_no) ;
+
+      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+#if 0
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
+      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) ;
+#endif
 /*
  * Loop over tile
  *
@@ -300,6 +319,13 @@ double hh  ;
           n4   = n2 + 1 ;
           h3 = (heights[n3] - tile_h0)/plot_scale ;
           h4 = (heights[n4] - tile_h0)/plot_scale ;
+
+          if(ip && i>10 && i<15 && j>10 && j<15){
+            printf("  Heights  i, j = %i, %i, heights = %f %f : %f %f : %f %f\n",
+                  i, j, h3, h4, heights[n3], heights[n4], tile_h0, plot_scale) ;
+          }
+
+
 // Flag possible track regions needing a break in the triangle strip
           av = (heights[n4] + heights[n1])*0.5  ;
           l2 = ( ((fabs(heights[n4]-heights[n1])/dm_topog) < 0.04)

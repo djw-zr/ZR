@@ -25,19 +25,23 @@ int generate_shape_display_list(ShapeNode *snode){
   PrimState   *prim_state     ;
   VTXState    *vtx_state      ;
   Matrix4x3   *matrix4x3      ;
-  int         gl_display_list ;
-  int         gl_tex_ref_no   ;
-  int         prim_state_idx  ;
-  int         tex_idx         ;
+  GLuint      gl_display_list ;
+  uint        gl_tex_ref_no   ;
+  uint        prim_state_idx  ;
+  uint        tex_idx         ;
   int         ivtx_state      ;
-  int         ip = 0          ;   //  0 = no printing
-  int         ic = 0, icc = -1     ;   //  Control
-  int         i, j, k, l, m, n ;
-  int         im, ima[10]     ;   // Stack for matrices
+  GLuint      iglret          ;
+  uint        ip = 0          ;   //  0 = no printing
+  int         ic = 0, icc = -1 ;  //  Control
+  uint        i, j, k, l, m, n ;
+  uint        im              ;   // Index on stack
+  int         ima[10]         ;   // Stack for matrices
   char        *name ;
 
 
   char     my_name[] = "generate_shape_display_list" ;
+
+//      ip = !strncmp(snode->name,"US2Snowshed6",12) ;
 
       if(0 == snode->n_lod_controls){
         printf("  No lod_controls for %s\n",snode->name) ;
@@ -53,8 +57,8 @@ int generate_shape_display_list(ShapeNode *snode){
 //      ip = !strcmp(snode->name,"1905-KL");
 //     ip = !strcmp(snode->name,"BBS-HomesteadC");
 //      if(strcmp(snode->name,name_control)== 0){      //  Allow control over items plotted
-//       ip = 1 ;
-//       ic = 1 ;
+//       ip = 0 ;
+//       ic = 0 ;
 //       printf(" New dlist for %s\n",snode->name) ;
 //      }
 
@@ -65,7 +69,7 @@ int generate_shape_display_list(ShapeNode *snode){
  *  Each state has a series of primitive states.  These refer to the textures
  *  requied plus various flags.  Here key items are printed out.
  */
-      if(ip){
+      if(ip>1){
         n = snode->n_prim_states ;
         printf("  Primitive states:  nprim_states = %i\n",n);
         for(i=0;i<n;i++){
@@ -128,14 +132,24 @@ int generate_shape_display_list(ShapeNode *snode){
           dist_level = &(lod_control->dist_level[j]) ;
 
           gl_display_list = glGenLists((GLsizei) 1) ;
+          check_glerror2("Routine generate_shape_display_list : glGenList error") ;
+          if(!gl_display_list){
+            printf("  Display list not generated for shape %s, lod_control = %i/%i, dist level = %i/%i\n",
+                      snode->name, i, snode->n_lod_controls, j, lod_control->n_dist_levels) ;
+            return 1 ;
+          }
+
           glNewList( gl_display_list, GL_COMPILE) ;             //  TEST FOR ERROR
+          check_glerror2("Routine generate_shape_display_list : glNewList error") ;
+          if(ip) printf("  display list = %i\n",gl_display_list) ;
+
           dist_level->gl_display_list = gl_display_list ;
-          if(ip)printf("   dist_level:  j = %i,   gl_display_list = %i\n",j,gl_display_list) ;
+          if(ip>1)printf("   dist_level:  j = %i,   gl_display_list = %i\n",j,gl_display_list) ;
 
           for(k=0;k<dist_level->n_sub_objects;k++){
             sub_object = &(dist_level->sub_object[k]) ;
             vtx_list   = sub_object->vertex         ;
-            if(ip)printf("     sub_object:  k = %2i,  sub_object = %p,  vtx_list = %p\n",
+            if(ip>1)printf("     sub_object:  k = %2i,  sub_object = %p,  vtx_list = %p\n",
                    k,(void *)sub_object, (void *)vtx_list) ;
             for(l=0;l<sub_object->n_tri_lists;l++){
               tri_list = &(sub_object->tri_list[l]) ;
@@ -149,20 +163,30 @@ int generate_shape_display_list(ShapeNode *snode){
               }
               if(ic && i_control1[icc]==0)continue ;   // Only plot when == 1
 
-              if(ip)printf("     tri_list:  l = %i,  tri_list = %p,  n_vertex_idxs = %i\n",
+              if(ip>1)printf("     tri_list:  l = %i,  tri_list = %p,  n_vertex_idxs = %i\n",
                         l, (void *)tri_list, tri_list->n_vertex_idxs) ;
               if(0 == tri_list->n_vertex_idxs) continue ;
 
+              if(ip>1){printf("      Routine %s  AA \n",my_name) ;  fflush(NULL) ;}
               prim_state_idx = tri_list->prim_state_trilist     ;
+              if(ip>1){printf("      Routine %s  BB \n",my_name) ;  fflush(NULL) ;}
               prim_state = &(snode->prim_state[prim_state_idx]) ;
-
+              if(ip>1){printf("      Routine %s  CC \n",my_name) ;  fflush(NULL) ;}
+              if(ip>1){printf("        prim_state = %p\n",(void *)prim_state) ;  fflush(NULL) ;}
+              if(ip>1){printf("        tex_idx = %p\n",(void *)prim_state->tex_idx) ;  fflush(NULL) ;}
+              if((void *)prim_state->tex_idx > (void *)0xA000000){
+                break ;                              //  Skip if error
+              }
 
 //  Each prim state has a texture
               tex_idx = prim_state->tex_idx[0]       ;
+              if(ip>1){printf("      Routine %s  DD \n",my_name) ;  fflush(NULL) ;}
               texlevel_low = &snode->texlevel_low[tex_idx] ;
+              if(ip>1){printf("      Routine %s  EE \n",my_name) ;  fflush(NULL) ;}
               texture      = snode->texture[texlevel_low->iImage]      ;
+              if(ip>1){printf("      Routine %s  FF \n",my_name) ;  fflush(NULL) ;}
 
-              if(ip)printf("      prim_state_idx = %i, prim_state = %p, prim_state->name = %s,"
+              if(ip>1)printf("      prim_state_idx = %i, prim_state = %p, prim_state->name = %s,"
                            " tex_idx = %i, texture = %p\n",
                prim_state_idx, (void *)prim_state, prim_state->name,tex_idx, (void *)texture) ;
 
@@ -188,7 +212,7 @@ int generate_shape_display_list(ShapeNode *snode){
                 }
               }
 
-              if(ip)printf("      gl_tex_ref_no = %i\n",gl_tex_ref_no);
+              if(ip>1)printf("      gl_tex_ref_no = %i\n",gl_tex_ref_no);
 //
 //  and one or more matrices which define the final position of the sub-object.
 //  A wagon may contain one definition of a wheel axel but four sub-objects with
@@ -203,7 +227,7 @@ int generate_shape_display_list(ShapeNode *snode){
                im = 0 ;
                ima[0] = vtx_state->imatrix ;
                while(ima[im] >= 0){
-                 if(im>=10 || ima[im]>snode->nmatrices){
+                 if(im>=10 || ima[im]>(int)snode->nmatrices){
                    printf(" Routine %s, matrix out of bounds for shape %s\n",
                                                                   my_name,snode->name);
                    printf("   im = %i,  iam[im] = %i\n",im,ima[im]);
@@ -218,7 +242,7 @@ int generate_shape_display_list(ShapeNode *snode){
                  if(ic == 0 || i_control2[icc] == 1){
                  if(matrix4x3->type != 0){
 
-                   if(ip)printf(" shape_dlist2 : shape = %s, sub_object = %i, tri_list = %i, prim_state = %i, prim_state->name = %s, vertex_state = %i, hierarchy[vs] = %i, imatrix_type = %i\n",
+                   if(ip>1)printf(" shape_dlist2 : shape = %s, sub_object = %i, tri_list = %i, prim_state = %i, prim_state->name = %s, vertex_state = %i, hierarchy[vs] = %i, imatrix_type = %i\n",
                               snode->name, k, l, prim_state_idx, prim_state->name, ivtx_state,
                               dist_level->hierarchy[ivtx_state],matrix4x3->type) ;
                    if(matrix4x3->type == 1){
@@ -227,7 +251,7 @@ int generate_shape_display_list(ShapeNode *snode){
                                   (GLfloat) matrix4x3->DZ) ;
                    }else{
                      float m[16] ;
-                     make_matrix4x4(m,matrix4x3) ;
+                     msts4x3_to_opengl4x4(m,matrix4x3) ;
                      glMultMatrixf(m) ;
                    }
                  }
@@ -276,8 +300,8 @@ int generate_shape_display_list(ShapeNode *snode){
 }
 
 int  add_texture_pointers_to_shape_items(ShapeNode *snode){
-  int  i       ;
-  int  ip = 0  ;   // 0 = no printing, 1 = error printing only
+  uint  i       ;
+  uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
   TextureNode  *tnode        ;
   char         *name  = NULL ;
   char         my_name[] = "add_texture_pointers_to_shape_items" ;
@@ -291,16 +315,17 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
  */
       for(i=0;i<snode->n_textures;i++){
         snode->texture[i] = NULL ;           //  Initialise link to NULL
-        if(snode->texture_name[i] == NULL)continue ;  //  Skip if name is mising
+        if(snode->texture_name[i] == NULL)continue ;  //  Skip if name is missing
         free(name) ;
         name = strdup(snode->texture_name[i]) ;
         name[strlen(name)-4] = '\0' ;
         if(ip>1)printf("  Texture required = %s\n",name) ;
 /*
  *  Loop through list of textures
+ *  Texture names are set to NULL if there were problems reading the texture
  */
         for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-          if(strcmp_ic(name,tnode->name))continue ;
+          if(!tnode->name || strcmp_ic(name,tnode->name))continue ;
           snode->texture[i] = tnode     ;          // save link
           tnode->needed       = 1         ;
           if(ip>1)printf("  Texture found    = %s\n",tnode->name) ;

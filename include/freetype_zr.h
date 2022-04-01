@@ -21,7 +21,7 @@
 
 
 int freetype_init() ;
-void render_text(const char *text, GLfloat x, GLfloat y, float sx, float sy) ;
+void render_text(const char *text) ;
 void render_text_as_greyscale(const char *text, FT_Face type, int isize) ;
 
 // ZR freetype variables

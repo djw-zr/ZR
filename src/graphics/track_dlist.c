@@ -12,13 +12,13 @@
  *
  *==============================================================================
  */
-int   make_track_display_list(TrkNetNode *section, DynProfile *profile) ;
+int   make_track_display_list(TrkSectNode *section, DynProfile *profile) ;
 
 int   make_track_display_lists(){
 
-int  i ;
-int  ip = 0 ;                        // Debug printing = 1
-TrkNetNode  *track_node       ;  // Track section needing shape
+uint  i ;
+uint  ip = 0 ;                        // Debug printing = 1
+TrkSectNode  *track_node       ;  // Track section needing shape
 DynProfile      *profile          ;  // Profile to use
 char            my_name[]="make_track_display_lists" ;
 
@@ -48,13 +48,14 @@ char            my_name[]="make_track_display_lists" ;
  *  increase in the x-direction.
  */
 
-int   make_track_display_list(TrkNetNode *track_section, DynProfile *track_profile){
+int   make_track_display_list(TrkSectNode *track_section,
+                              DynProfile  *track_profile){
 
-int    i, j, k, l0, l1, m, n ;
-int    n_track_nodes   ;
-int    i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
-int    gl_display_list ;
-int    ip = 0          ;                // debug printing
+uint   i, j, k, l0, l1, m, n ;
+uint   n_track_nodes   ;
+uint   i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
+uint   gl_display_list ;
+uint   ip = 0          ;                // debug printing
 double xx0, yy0, xx1, yy1, xxn, yyn,
        x0, y0, z0, xt, yt,
        x, y, z, xn, yn, zn,
@@ -196,8 +197,8 @@ TextureNode    *tnode        ;
 }
 
 int  add_texture_pointers_to_track_profiles(DynProfile *dnode){
-  int  i, j    ;
-  int  ip = 0  ;   // 0 = no printing, 1 = error printing only
+  uint  i, j    ;
+  uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
   TrackDistLevel   *dist_level   ;
   TrackSubObject   *sub_object   ;
   TextureNode      *tnode        ;
@@ -232,7 +233,7 @@ int  add_texture_pointers_to_track_profiles(DynProfile *dnode){
 *  Compare lower case versions of names (Microsoft feature)
 */
           for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-            if(strcmp_ic(name,tnode->name))continue ;
+            if(!tnode->name || strcmp_ic(name,tnode->name))continue ;
             sub_object->texture = tnode     ;          // save link
             tnode->needed       = 1         ;
             tnode->basic        = 1         ;

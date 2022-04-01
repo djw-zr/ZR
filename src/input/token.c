@@ -192,7 +192,7 @@ char  my_name[] = "new_token" ;
 /*
  *  Normal tokens
  */
-        if(c !='"'){
+      if(c !='"'){
         while((c=fgetc(fp)) != EOF && c != ' ' && c != '\t' && c != '\n' && c!= '\r'
                           && c != '(' && c != ')' && l <4095 ){
           token[l++] = c ;
@@ -200,7 +200,7 @@ char  my_name[] = "new_token" ;
         }
         ungetc(c,fp) ;                         // Put back last character
 //
-//  Tokens that are a stream of text
+//  Tokens that are a stream of text.
 //
       }else{
         lastc = ' ';
@@ -319,11 +319,22 @@ double dtoken(MSfile *msfile){
  * *****************************************************************************
  */
 int  skip_lbr(MSfile *msfile){
+  int  i, n ;
   char *token ;
 
     token = new_token(msfile);
     if( 0 == strcmp(token,eof_mark) ) return(-1) ;
-    if( 0 != strcmp(token,"(") ){
+    if(token[0] == '('){
+      if((n=strlen(token)==1))return 0 ;
+      printf("  routine new token error - token starts with '(')\n");
+      printf("  Token = %s\n",token);
+      for(i=0;i<n;i++)printf(" %c :: ",token[i]) ;
+      printf("\n") ;
+      for(i=1;i<n;i++){
+        token[i-1] = token[i] ;
+      }
+      return_token(token,msfile) ;
+    }else{
       printf("  Routine skip_lbr.  Left bracket not found\n");
       printf("    Token returned is %s\n", token);
       printf("  Program stopping ... \n\n");
@@ -334,6 +345,7 @@ int  skip_lbr(MSfile *msfile){
 /*
  * *****************************************************************************
  * Search for right bracket and skip
+ *   Version aborts if right bracket not found
  * *****************************************************************************
  */
 int  skip_rbr(MSfile *msfile){
@@ -349,24 +361,45 @@ int  skip_rbr(MSfile *msfile){
     }
     return 0;
 }
-
-int  skipto_rbr(MSfile *msfile){
-
-  int  n      ;
+/*
+ *   Version returns '1', if right bracket not immediately found
+ */
+int  skip_rbr_1(MSfile *msfile){
   char *token ;
 
+    token = new_token(msfile);
+    if(0 == strcmp(token,eof_mark)) return(-1) ;
+    if(0 != strcmp(token,")")){
+      return_token(token,msfile) ;
+      return 1;
+    }
+    return 0;
+}
+/*
+ * Skip any intermediate tokens as well
+ */
+
+int  skippast_rbr(MSfile *msfile){
+
+  int  n, ip = 0 ;
+  char *token    ;
+  char *myname = "skippast_rbr" ;
+
+      if(ip)printf("  Enter routine %s\n",myname) ;
       n = 1 ;
       for(;;){
         token = new_tmp_token(msfile) ;
+        if(ip)printf("   New token n= %i, token = %s\n",n,token) ;
         if(!strcmp(token,")"))n-- ;     // Right bracket
         if(!n)break ;                   // n == 0
         if(!strcmp(token,"("))n++ ;     // Left bracket
       }
+      if(ip)printf("  Exit routine %s\n",myname) ;
       return 0;
 }
 /*
  * *****************************************************************************
- * Check for lest and right brackets
+ * Check for left and right brackets
  * *****************************************************************************
  */
 int  is_lbr(char *token){
@@ -453,19 +486,20 @@ int return_token(char *token, MSfile *msfile){
 
 double convert_unit(char *token, char *unit){
 
-int    i,n ;
-int    ip = 0     ;  // Debug
-char   string[20] ;  // storage for units
+int    ip = 0 ;         // Debug
+char   string[32]= "" ; // storage for units
 size_t lt, ls ;
-float  value ;
+float  value = 1.0e9 ;        //  Something really large
 
       if(ip)printf(" convert : token = %s\n",token) ;
       ls = strspn(token,"-1234567890e.") ;
       if(ip)printf(" convert : ls = %i\n",(int)ls) ;
       if(token[ls-1]=='e')ls = ls - 1;
 
-      strcpy(string,&token[ls]) ;
+      strncpy(string,&token[ls],31) ;
       token[ls] = '\0' ;
+      lt = strcspn(string," #") ;
+      string[lt] = '\0' ;
       if(ip)printf("  Number = %s, Unit = %s\n",token,string);
 
       sscanf(token,"%f",&value) ;
@@ -479,19 +513,32 @@ float  value ;
         value = value * 907.18474  ;  // Convert short ton to kg
       }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft")){
         value = value * 12.0 * 0.0254  ;  // Convert feet to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft+1m")){
+        value = value*12.0*0.0254 + 1.0 ;
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft+10in")){
+        value = (value*12.0 + 10.0)*0.0254 ;
       }else if(0==strcmp(unit,"m") && 0==strcmp(string,"in")){
         value = value * 0.0254  ;  // Convert inches to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"in/2")){
+        value = value * 0.0254 * 0.5  ;  // Convert inches/2 to metres
       }else if(0==strcmp(unit,"m") && 0==strcmp(string,"cm")){
         value = value * 0.01  ;  // Convert cm to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"mm")){
+        value = value*0.01 ;       // mm to m
       }else if(0==strcmp(unit,"N") && 0==strcmp(string,"kN")){
         value = value * 1000.0  ;  // Convert kN to N
+      }else if(0==strcmp(unit,"N/m/s") && 0==strcmp(string,"N/m")){
+        value = value ;            // Coding error ?
+      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"mm")){
+        value = value*0.01 ;       // mm to m
+
       }else{
-        printf(" Conversion failed\n")  ;
-        printf("   token = %s\n",token) ;
-        printf("   unit  = %s\n",unit)  ;
-        value = 0./0. ;
-        printf(" value = %f\n",value)   ;
-        exit(1) ;
+        printf(" Conversion failed\n")    ;
+        printf("   token  = %s\n",token)  ;
+        printf("   string = %s\n",string) ;
+        printf("   unit   = %s\n",unit)   ;
+//        value = 0./0. ;
+        printf(" value = %f\n",value)     ;
       }
       return (double)value ;
 }
@@ -556,7 +603,9 @@ int inf(FILE *source, FILE *dest)
           assert(ret != Z_STREAM_ERROR);  /* state not clobbered */
           switch (ret) {
           case Z_NEED_DICT:
-              ret = Z_DATA_ERROR;     /* and fall through */
+              (void)inflateEnd(&strm);
+              ret = Z_DATA_ERROR;
+              return ret;
           case Z_DATA_ERROR:
           case Z_MEM_ERROR:
               (void)inflateEnd(&strm);
@@ -635,10 +684,24 @@ int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip)
       fp_in = msfile->fp ;
       if(ip)printf(" Z1\n");
 /*
- *  Open 'temporary' file
+ *  Open 'temporary' file.
+ *  With GNU/linux - the file is a simple byte stream
+ *                 = usually it will be kept in memory
+ *  With Microsoft - the "b" flag has to be defined to prevent text conversion
+ *                 - setting up an in-memory file is messy
+ *  Here it is assumed that SDL2 is a windows system so the 'temporary'
+ *       file created in the local directory
  */
+#ifdef SDL2
+      fp_out = gopen(tmp_file,"wb+") ;  //  keep file at program end
+//      _rmtmp() ;
+//      set_fmode(_O_BINARY) ;
+//extern int _fmode ;
+//      _fmode = _O_BINARY ;
+//       fp_out = tmpfile() ;
+#else  // GNU/Linux
       fp_out = tmpfile() ;
-//      fp_out = gopen(tmp_file,"w+") ;  //  keep file at program end
+#endif
       if(ip)printf(" Z2  %p\n",(void *)fp_out);
 /*
  *  Decompress
@@ -727,6 +790,7 @@ void init_msfile(MSfile *msfile){
 
 int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 
+  int ip = 0 ;
   int i, iret ;
   uint m, n ;
   int  unicode ;
@@ -736,14 +800,21 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 /*
  *  Initialise tokens
  */
+      iprint = iprint || ip ;
+//    printf(" AAAA texture = %i, iprint = %i\n",texture,iprint) ;
+
       init_token() ;
       if(iprint && n_open_files>0)printf(" n_open_files = %i\n",n_open_files) ;
 /*
  * Open File
  */
+#ifdef MinGW
+      fp = gopen(filename,"rb");
+#else
       fp = gopen(filename,"r");
+#endif
       if(fp==NULL){
-        printf(" File not found\n");
+        printf(" File not found.  File = %s\n",filename);
         return 1 ;
       }
       init_msfile(msfile) ;           // Initialise the data structure
@@ -798,6 +869,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
         string[32] = '\0' ;
 /*
  *  Read size of file
+ *  File is little-endian so each following byte has a value 256 times larger
  */
         n = 0 ;
         m = 1 ;
@@ -833,6 +905,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           return 1;
         }
       }
+//      printf(" BBBB iprint = %i\n",iprint);
 /*
  *  Texture file
  */
@@ -855,6 +928,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 /*
  *  Read second MSTS header
  */
+//      printf(" CCCC iprint = %i\n",iprint);
       if(unicode){
         for(i=16;i<32;i++){
           buffer[i] = getc(fp); getc(fp) ;
@@ -864,6 +938,9 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           buffer[i] = getc(fp);
         }
       }
+//      printf(" DDDD iprint = %i\n",iprint);
+//      for(i=0;i<32;i++)printf(" %x",buffer[i]);
+//      printf("\n") ;
 /*
  *  Check for normal text or binary file
  */
@@ -883,6 +960,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
       if('w' == buffer[21]){
         msfile->world = 1 ;
       }
+//      printf(" EEEE iprint = %i\n",iprint);
 /*
  * Print summary line
  */

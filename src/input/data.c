@@ -24,21 +24,35 @@
 
 int init_data_structures(){
 
-char pdb_file[] = "au_great_zig_zag.trk" ;   // Project file : Name, Description, Route start
-char tdb_file[] = "au_great_zig_zag.tdb" ;   // Track data base : nodes, crossings etc.
-char rdb_file[] = "au_great_zig_zag.rdb" ;   // Road data base  : nodes etc.
-//char ace_file[] = "au_great_zig_zag.ace" ;   // Splash Image
-                                             // not unicode, compress or ascii.
+/*
+ *  Define route files - [Eventually these should be searched for]
+ */
 
-int            i      ;
-int            ip = 0  ;  //  0 = no printing
-TileListNode   *tlnode ;
+#if defined ROUTE_MSTS
+  char *pdb_file = msts_pdb_file ;
+  char *tdb_file = msts_tdb_file ;
+  char *rdb_file = msts_rdb_file ;
+#else
+// Project file : Name, Description, Route start
+  char pdb_file[] = "au_great_zig_zag.trk" ;
+// Track data base : nodes, crossings etc.
+  char tdb_file[] = "au_great_zig_zag.tdb" ;
+// Road data base  : nodes etc.
+  char rdb_file[] = "au_great_zig_zag.rdb" ;
+// Splash Image
+//  char spl_file[] = "au_great_zig_zag.ace" ;
+#endif
+  char spl_file[] = "au_great_zig_zag.ace" ;
+
+uint           i      ;
+uint           ip = 0  ;  //  0 = no printing
+TileListNode   *tl_node ;
 ShapeNode      *snode  ;
 WorldNode      *wnode  ;
 WorldItem      *witem  ;
-TrkNetNode     *tnnode ;
+TrkSectNode    *tnnode ;
 int            wtype   ;
-TextureNode    *tnode  ;
+TextureNode    *tx_node  ;
 DynProfile     *dnode  ;
 RawWagonNode   *rwnode ;
 char           my_name[] = "init_data_structures" ;
@@ -58,6 +72,7 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PROCESS SYSTEM FILES\n") ;
+      printf("***********************************************************\n") ;
       printf("   Read OR project file\n");
       init_pdb(pdb_file) ;
 //   Check that all files have been close
@@ -99,6 +114,7 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PROCESS TILES\n") ;
+      printf("***********************************************************\n") ;
       printf("   Create list of tile filenames\n");
       tilelist_init2();
 
@@ -114,10 +130,10 @@ char           my_name[] = "init_data_structures" ;
  *        the elevations array, part of the TerrainData structure.
  */
       printf("   Read and load tile files\n") ;
-      for(tlnode = tilelist_head;tlnode!=NULL;tlnode=tlnode->next){
-        if(0 == tlnode->t_found) continue ;
-        read_ms_terrain(tlnode)    ;
-        read_elevations(tlnode)    ;
+      for(tl_node = tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
+        if(0 == tl_node->t_found) continue ;
+        read_ms_terrain(tl_node)    ;
+        read_elevations(tl_node)    ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -130,7 +146,7 @@ char           my_name[] = "init_data_structures" ;
  *        The filenames are stored in a linked list of WorldNode
  *        structures, the first pointed to by worldlist_begin (zr.h).
  */
-      printf("   Create list of world filenames\n") ;
+      printf("\n   Create list of world filenames\n") ;
       load_world_filenames() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -143,7 +159,9 @@ char           my_name[] = "init_data_structures" ;
       printf("   Read and load world files\n") ;
       for(wnode=worldlist_beg; wnode!=NULL; wnode=wnode->next){
         load_world(wnode) ;
+        bt_walk_a2z(wnode->shape_tree, add_world_shapes_to_master) ;
       }
+      if(ip)dump_btree(shape_master,0,"X") ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *  3.   Link track vector nodes to their matching world item
@@ -157,7 +175,7 @@ char           my_name[] = "init_data_structures" ;
 /*
  *  4.   Set junction data : left/right handed and index of branch node
  */
-      printf("   Link world files to track vectors\n") ;
+      printf("   Set junction paths\n") ;
       for(i=0;i<track_db.trk_sections_array_size;i++){
         tnnode = &(track_db.trk_sections_array[i]) ;
         if(tnnode->type_of_node == JUNCTION)set_junction_path(tnnode) ;
@@ -191,7 +209,10 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PROCESS WAGONS\n") ;
-      printf("   Scan for wagon and wagon texture files and process\n");
+      printf("***********************************************************\n") ;
+      printf("   Scan for wagon (*.wag, *.eng) files and the associated  \n") ;
+      printf("   shape (*.s, *.sd) and texture files and initialise the  \n") ;
+      printf("   wagon and shape structures                              \n") ;
       scan_for_wagon_files() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -207,6 +228,9 @@ char           my_name[] = "init_data_structures" ;
         load_shape(snode) ;
         if(ip)printf(" Call load_shape_d :: sd_file = %s\n",snode->sd_file) ;
         load_shape_d(snode) ;
+//        if(!strcmp(snode->name,"acelahhl"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"UKRoyalScot"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"dash9"))print_shape_file_data(snode) ;
 //      if(!strcmp(snode->name,"4W-CV-load"))print_shape_file_data(snode) ;
 //      if(!strcmp(snode->name,"4W-CW2"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"1905-I103"))print_shape_file_data(snode) ;
@@ -222,10 +246,11 @@ char           my_name[] = "init_data_structures" ;
  *       ready for use.
  */
       printf("   Read and load wagon texture files\n");
-      for(tnode=wtexturelist_beg; tnode!=NULL; tnode=tnode->next){
-//        if(strncmp(tnode->name,"AU_Ash",6))continue ;
-        load_texture(tnode) ;
-        if(ip)printf(" Texture name = %s\n",tnode->name) ;
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+//        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
+        load_texture(tx_node)    ;
+        convert_texture(tx_node) ;
+        if(ip)printf(" Texture name = %s\n",tx_node->name) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -280,6 +305,7 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PROCESS SHAPES\n") ;
+      printf("***********************************************************\n") ;
       printf("   Create list of shape files \n") ;
       load_shape_filenames() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -290,8 +316,10 @@ char           my_name[] = "init_data_structures" ;
       printf("   Read and load shape files\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
         if(0)printf(" data :: shape name = %s\n",snode->name) ;
+        if(!strcmp(snode->name,"JP1SigGant4"))continue ;
         load_shape(snode) ;
         load_shape_d(snode) ;
+//        if(!strcmp(snode->name,"policePHIL"))print_shape_file_data(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -300,7 +328,7 @@ char           my_name[] = "init_data_structures" ;
  *        After this stage it also contains a pointer to the
  *        structure's ShapeNode in memory.
  */
-      printf("    Add links to shape items used by each world tile\n");
+      printf("   Add links to shape items used by each world tile\n");
       add_shape_pointers_to_world_items() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -332,13 +360,17 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load texture files\n");
       if(ip)printf("   land_texture_default = %s\n",land_texture_default) ;
-      for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-//        if(strncmp(tnode->name,"AU_Ash",6))continue ;
-        load_texture(tnode) ;
+      for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
+//        if(!strncmp(tx_node->name,"AU_Ash",6))continue ;
+        if(load_texture(tx_node))continue ;
+        convert_texture(tx_node) ;
+//        printf("  Land texture = %s,   %s\n",land_texture_default,tx_node->name) ;
 //  Check for interim land texture
-        if(strcmp_ic(tnode->name,land_texture_default))continue;
-        tnode->basic = 1     ;    //  Must be loaded
-        land_texture = tnode ;
+        if(strcmp_ic(tx_node->name,land_texture_default))continue;
+        tx_node->basic = 1     ;    //  Must be loaded
+        tx_node->needed = 1    ;
+        land_texture = tx_node ;
         if(ip)printf("   land_texture = %p\n",(void *)land_texture) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -358,6 +390,7 @@ char           my_name[] = "init_data_structures" ;
       if(zr_road_profile == NULL || zr_road_profile == NULL){
         printf("**********************************************************\n") ;
         printf(" GENERATE NEEDED RAIL AND ROAD PROFILES\n") ;
+        printf("***********************************************************\n") ;
         if(zr_rail_profile == NULL){
           printf("   Make default track profile\n");
           make_default_track_profile() ;                      // track_setup.c
@@ -373,7 +406,9 @@ char           my_name[] = "init_data_structures" ;
  *    Add texture pointers to the profiles
  * *****************************************************************************
  */
+      printf("   Add textures to track profiles\n");
       add_texture_pointers_to_track_profiles(zr_rail_profile) ;
+      printf("   Add textures to road profiles\n");
       add_texture_pointers_to_track_profiles(zr_road_profile) ;
 /*
  * *****************************************************************************
@@ -384,6 +419,7 @@ char           my_name[] = "init_data_structures" ;
       if(0){
         printf("***********************************************************\n") ;
         printf("   Create default track shapes\n") ;
+        printf("***********************************************************\n") ;
         make_track_shapes(zr_rail_profile) ;
         make_road_shapes(zr_road_profile)  ;
         if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -395,10 +431,12 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("***********************************************************\n") ;
       printf(" PRINT SUMMARY DATA\n") ;
+      printf("***********************************************************\n") ;
 // List tiles
 #if 0
+{
 TileListNode *tlist ;
-int   nn, ni ;
+int   i, j, nn, ni ;
       printf("  List of tiles\n") ;
       printf("      tile_west,  tile_east  = %i %i\n",
                                         tile_west, tile_east) ;
@@ -412,16 +450,18 @@ int   nn, ni ;
           printf("    Tile %i %i\n",i,j)    ;
         }
       }
+}
 #endif
 // List track sections
 //   NOTE node N is in trk_sections_array[N-1]
 #if 0
       printf("   List track sections\n");
-      for(i=0;i<(int)track_db.trk_sections_array_size;i++){
-TrkNetNode    *t ;
+      for(i=0;i<track_db.trk_sections_array_size;i++){
+TrkSectNode    *t ;
 //        if(130 != i+1)continue ;
 //        if(565 != i+1)continue ;
-        if(377 != i+1)continue ;
+//        if(377 != i+1)continue ;
+        if(497 != i+1)continue ;
         t = &track_db.trk_sections_array[i] ;
 
         printf("  Track section %3i :: %3i,  type of item = %2i :: %s\n",
@@ -438,9 +478,9 @@ TrkNetNode    *t ;
         printf("        Dyn Node profile   = %p\n",(void *)t->profile);
         printf("        LOD method         = %i\n",t->lod_method) ;
 
-#if 1
+#if 0
         if(track_db.trk_sections_array[i].type_of_node == 1){
-int j,k,uid ;
+uint          j, k, uid ;
 TrkVectorNode *v ;
 WorldItem     *w ;
 DynTrackSect  *d ;
@@ -465,13 +505,13 @@ DynTrackSect  *d ;
              }
              printf("\n") ;
           }
-#if 1
+#if 0
           printf("\n==========================================\n");
           for(j=0;j<t->length_of_vector;j++){
             v = &t->vector[j] ;
             w = v->world_item ;
-            printf("      %3i :: %5i  %5i  :: %i %i : %i %i :: %c %c ::"
-                   "  %8.3f %8.3f %6.3f :: %4i %3i :: %s",j,
+            printf("      %3i :: %5i  %5i  :: %i %i : %i %i :: %c %c :: len ="
+                   "  %8.3f,  rad = %8.3f, ang = %6.3f :: %4i %3i :: %s",j,
                    v->tsec_section_index,v-> tsec_shape_index,
                    v->flag1, v->flag2, v->is_curved, v->is_dynamic,
                    v->string[0],v->string[1],
@@ -480,7 +520,6 @@ DynTrackSect  *d ;
              if(w->worldtype==306){
                for(k=0;k<5;k++){
                  d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
-
                  printf(" %i",d->uid);
                  if(d->uid!=-1)printf(" (%i %.2f %.1f)",d->is_curved, d->param_1,d->param_2);
                }
@@ -506,12 +545,35 @@ DynTrackSect  *d ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 #endif
-//   List and/or print shape data
-//   Shape 'test_shape' is defined in file 'zr.c'.
+/*
+ *   List and/or print shape data
+ *   Shape 'test_shape' is defined in file 'zr.c'.
+ */
 #if 1
+uint       j, k;
+LodControl *lod_control ;
+DistLevel  *dist_level  ;
       printf("   List Shapes :: Test shape = %s\n",test_shape);
       for(snode=shapelist_beg,i=0; snode!=NULL; snode=snode->next,i++){
-//        printf("   Shape : %3i : %s\n",i,snode->name);
+        printf("   Shape : %3i : %s\n",i,snode->name);
+        printf("        nvolumes = %3i, n_lod_controls = %3i\n",
+             snode->nvolumes,snode->n_lod_controls) ;
+        for(i=0;i<snode->nvolumes;i++){
+          printf("    %i  radius = %f,  position = %f %f %f\n",i,
+              snode->shape_vol[i].radius,snode->shape_vol[i].vec.X,
+              snode->shape_vol[i].vec.Y,snode->shape_vol[i].vec.Z) ;
+        }
+        for(i=0;i<snode->n_lod_controls;i++){
+          lod_control = &snode->lod_control[i] ;
+          printf("    %i,  n_dist_levels = %i\n",i,lod_control->n_dist_levels) ;
+          dist_level = lod_control->dist_level ;
+          for(j=0;j<lod_control->n_dist_levels;j++){
+            printf("    %i, %i  n_sub_objects = %i\n",i, j, dist_level[j].n_sub_objects) ;
+            for(k=0;k<dist_level[j].n_sub_objects;k++){
+              printf("    %i, %i, %i vol_idx = %i\n",i,j,k,dist_level[j].sub_object[k].vol_idx) ;
+            }
+          }
+        }
         if(0 == strcmp_ic(snode->name,test_shape)){
           printf("\n  Shape file data:\n") ;
           print_shape_file_data(snode)  ;
@@ -523,12 +585,16 @@ DynTrackSect  *d ;
  */
 #if 0
       printf("   List textures\n");
-      for(tnode=texturelist_beg,i=0; tnode!=NULL; tnode=tnode->next,i++){
-        printf("     Texture : %3i : %s\n",i,tnode->name);
+      for(tx_node=texturelist_beg,i=0; tx_node!=NULL; tx_node=tx_node->next,i++){
+        printf("     Texture : %3i : %s\n",i,tx_node->name);
       }
       printf("   List wagon texture files\n");
-      for(tnode=wtexturelist_beg,i=0; tnode!=NULL; tnode=tnode->next,i++){
-        printf("     Texture : %3i : %s\n",i,tnode->name);
+      for(tx_node=wtexturelist_beg,i=0; tx_node!=NULL; tx_node=tx_node->next,i++){
+        printf("     Texture : %3i : %24s : %2x %2x : %2i : %i %i %i : %4i %4i : %4i %4i %i\n",
+               i,tx_node->name, tx_node->surface_format, tx_node->surface_format_orig,
+               tx_node->n_textures, tx_node->is_alpha, tx_node->is_mask, tx_node->alpha_is_mask,
+               tx_node->width, tx_node->height,
+               tx_node->gl_mem_format, tx_node->gl_mem_packing, tx_node->gl_tex_ref_no) ;
       }
 #endif
 /*
@@ -540,18 +606,18 @@ DynTrackSect  *d ;
   int   i, j, k, kmin, kmax, n ;
   unsigned short  *kp ;
         printf(" List tile data\n") ;
-        for(tlnode = tilelist_head;tlnode!=NULL;tlnode=tlnode->next){
-          if(tlnode->t_found==0) continue ;
+        for(tl_node = tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
+          if(tl_node->t_found==0) continue ;
           printf("\n");
-          printf("  File      = %s\n",tlnode->t_file);
-          printf("    Ybuffer = %s\n",tlnode->terrain_data.ybuffer);
-          for(i=0;i<tlnode->terrain_data.number_of_shaders;i++){
-            printf("    Shader %i,  Name = %s\n",i,tlnode->terrain_data.tile_shader[i].name);
+          printf("  File      = %s\n",tl_node->t_file);
+          printf("    Ybuffer = %s\n",tl_node->terrain_data.ybuffer);
+          for(i=0;i<tl_node->terrain_data.number_of_shaders;i++){
+            printf("    Shader %i,  Name = %s\n",i,tl_node->terrain_data.tile_shader[i].name);
           }
 
-          n = tlnode->terrain_data.terrain_nsamples ;
+          n = tl_node->terrain_data.terrain_nsamples ;
           printf("    nsamples = %i\n",n) ;
-          kp = tlnode->terrain_data.elevations      ;
+          kp = tl_node->terrain_data.elevations      ;
           kmin = kmax = *kp ;
 #if 1
           for(j=0;j<n;j++){
@@ -571,20 +637,20 @@ DynTrackSect  *d ;
 //        in = 1 ;
 
 
-          i = tlnode->tilex - tile_west  ;
-          j = tlnode->tiley - tile_south ;
+          i = tl_node->tilex - tile_west  ;
+          j = tl_node->tiley - tile_south ;
           n = j*(tile_east + 1 - tile_west) + i ;
           printf(" i, j, n = %i %i %i\n",i,j,n);
-          printf(" Check node1 = %p\n",(void *)tlnode);
+          printf(" Check node1 = %p\n",(void *)tl_node);
           printf(" Check node2 = %p\n",(void *)tile_array[n]);
         }
       }
 #endif
 
-      printf("  tile_west  = %i\n",tile_west) ;
-      printf("  tile_east  = %i\n",tile_east) ;
-      printf("  tile_north = %i\n",tile_north) ;
-      printf("  tile_south = %i\n",tile_south) ;
+      printf("    tile_west  = %i\n",tile_west) ;
+      printf("    tile_east  = %i\n",tile_east) ;
+      printf("    tile_north = %i\n",tile_north) ;
+      printf("    tile_south = %i\n",tile_south) ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *  List wagons
@@ -597,7 +663,7 @@ DynTrackSect  *d ;
  */
       trains_init() ;
 
-      printf(" Exit from %s\n",my_name) ;
+      printf("  Exit from %s\n",my_name) ;
       fflush(NULL) ;
 
       return 0 ;
@@ -620,19 +686,20 @@ MSfile    msfile ;
 PdbNode   *pdb ;
 char      myname[] = "init_pdb, in file: data.c" ;
 
-      if(ip)printf("\n  Enter init_pdb\n\n");
+      if(ip)printf("\n   Enter init_pdb\n\n");
 
       full_filename = (char *)malloc(strlen(ORroutedir)+strlen(filename)+1);
       strcpy(full_filename,ORroutedir);
       strcat(full_filename,filename);
-      if(ip)printf("    file_in_name = %s\n",full_filename);
+      if(ip)printf("    filename = %s\n",full_filename);
 
       l = open_msfile(full_filename, &msfile, 0, 0);
       if(l!=0){
-        printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
+        printf("\n\n  ERROR : Routine open_msfile failed to open file\n");
+        printf("      File = %s\n",full_filename) ;
         exit(1) ;
       }
-      if(ip)printf(" msfile pointer  = %p\n\n",(void *)msfile.fp);
+      if(ip)printf("    msfile pointer  = %p\n\n",(void *)msfile.fp);
 //
 //  Create new trknode
 //
@@ -653,9 +720,9 @@ char      myname[] = "init_pdb, in file: data.c" ;
 
       for(;;){
         token = ctoken(&msfile);
+        if(ip)printf(" Token = ::%s::%c\n",token,token[0]) ;
         if(')' == token[0])break ;                   // End of data
         skip_rb = 0 ;
-
         skip_lbr(&msfile);
         SWITCH (token)
           CASE ("RouteID")
@@ -673,6 +740,7 @@ char      myname[] = "init_pdb, in file: data.c" ;
           CASE ("LoadingScreen")
               pdb->LoadingScreen = ctoken(&msfile) ;
               break ;
+          CASE ("Filename")
           CASE ("FileName")
               pdb->FileName = ctoken(&msfile) ;
               break ;
@@ -752,10 +820,23 @@ char      myname[] = "init_pdb, in file: data.c" ;
           CASE ("TempRestrictedSpeed")
               pdb->TempRestrictedSpeed   = dtoken(&msfile) ;
               break ;
+          CASE ("DerailScale")
+              pdb->DerailScale           = dtoken(&msfile) ;
+              break ;
+          CASE ("TimetableTollerance")
+              pdb->TimetableTollerance   = dtoken(&msfile) ;
+              break ;
+          CASE ("GravityScale")
+              pdb->GravityScale          = dtoken(&msfile) ;
+              break ;
+          CASE ("MilepostUnitsKilometers")
+              pdb->MilepostUnitsKilometers = 1 ;
+              break ;
 
           DEFAULT
-              printf("Routine %s\n",myname) ;
-              printf("in DEFAULT &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n");
+              printf("  Routine %s\n",myname) ;
+              printf("  Unrecognised token\n") ;
+              printf("  Token = %s\n",token) ;
               exit(1) ;
               break ;
         END
@@ -765,6 +846,7 @@ char      myname[] = "init_pdb, in file: data.c" ;
       }
       if(NULL != token) free(token) ;
       close_msfile(&msfile);
+      if(ip)printf("\n") ;
 
       return 0;
 }
@@ -796,11 +878,14 @@ int i;
       pdb->TrackGauge         = 0 ;
       pdb->Era                = 0 ;
       pdb->MilepostUnitsMiles = 0 ;
+      pdb->MilepostUnitsKilometers = 0 ;
       pdb->MaxLineVoltage     = 0 ;
 
       pdb->SpeedLimit           = 0.0 ;
       pdb->TerrainErrorScale    = 0.0 ;
       pdb->TempRestrictedSpeed  = 0.0 ;
+      pdb->DerailScale          = 0.0 ;
+      pdb->TimetableTollerance  = 0.0 ;
 
       for(i=0;i<12;i++){
         pdb->Environment[i].weather = NULL ;

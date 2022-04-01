@@ -42,24 +42,35 @@ int scan_for_wagon_files(){
       top_dir = (char *)malloc(l1*sizeof(char)) ;
       strcpy(top_dir,ORdir)                   ;
       strcat(top_dir,"Trains/Trainset/")           ;
+      iret = zr_find_msfile2(top_dir);
+      if(iret){
+        printf("  Routine %s.  Unable to find directory %s\n",my_name,top_dir);
+      }
       if(ip)printf(" Top trainset directory = %s\n",top_dir) ;
 
 // Walk directory
 
-      iret = ftw(top_dir, process_wagon_file, 5) ;
+      if(!iret){
+        iret = ftw(top_dir, process_wagon_file, 5) ;
+      }
       free(top_dir) ;
 
       if(ip)printf(" Return from routine %s\n",my_name) ;
       return iret ;
 }
 
+/*
+ * System routine ftw requires a routine parameter for which the
+ * calling sequence is as follows.  However for processing here
+ * the  second parameter is not required.
+ */
 
-
-int process_wagon_file(const char *fpath, const struct stat *sb,
-                        int typeflag){
+int process_wagon_file(const char *fpath,
+                  __attribute__((unused))const struct stat *sb,
+                  int typeflag){
 
   int   ip = 0          ;     // Debug printing
-  int   n, is           ;
+  int   n               ;
   FILE  *fp             ;
   char  *file_name,           //  Full filename
         *base_name,           //  Base name inc extension
@@ -80,7 +91,11 @@ int process_wagon_file(const char *fpath, const struct stat *sb,
  *  Use realpath to prevet any file name confusion
  *  Malloc variables need to be used permenantly or freed.
  */
-      file_name = realpath(fpath, NULL)      ;  // malloc
+#ifdef MinGW
+      file_name = realpath1(fpath, NULL)     ;  // malloc
+#else
+      file_name = realpath(fpath, NULL)     ;  // malloc
+#endif
       base_name = zr_basename(file_name)     ;  // malloc
       core_name = zr_corename(base_name)     ;  // malloc
       extension = zr_extension(base_name)    ;  // malloc
@@ -142,6 +157,8 @@ int process_wagon_file(const char *fpath, const struct stat *sb,
  *  Check for shape
  */
         s_file = wagon_node->s_file ;
+        if(s_file == NULL) return 0 ;  //  Probably default.wag with extra parameters only
+
         if(ip)printf("    s_file = %s\n",s_file) ;
         if(ip)printf("    wshapelist_beg = %p\n",(void *)wshapelist_beg) ;
         wagon_node->shape = NULL ;
@@ -443,8 +460,8 @@ int init_raw_wagon_nodes(){
 
 int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode){
 //  int  i, j, k, l ;
-  int  i, l    ;
-  int  ip = 0  ;   // 0 = no printing, -1 = error printing only
+  uint  i, l    ;
+  uint  ip = 0  ;   // 0 = no printing, -1 = error printing only
   TextureNode  *tnode        ;
   char         *name  = NULL ;
 //  char         *tname = NULL ;
@@ -517,7 +534,7 @@ int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode){
 
 int check_wagon_textures(int k){
 
-  int         i      ;
+  uint      i      ;
   ShapeNode *snode ;
 
         for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){

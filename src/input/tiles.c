@@ -93,11 +93,15 @@ static TileListNode *tiledata_new(int i, int j)
       tiledata->needed    = 0 ;
       tiledata->gl_display_list = 0    ;
       tiledata->next            = NULL ;
+#ifdef use_vertex_arrays
       tiledata->terrain_data.va_vertex  = NULL ;
       tiledata->terrain_data.va_normal  = NULL ;
       tiledata->terrain_data.va_texture = NULL ;
       tiledata->terrain_data.va_index1  = NULL ;
       tiledata->terrain_data.va_index2  = NULL ;
+      tiledata->terrain_data.nbx  = 0 ;
+      tiledata->terrain_data.nby  = 0 ;
+#endif
       return tiledata ;
 }
 
@@ -239,12 +243,12 @@ int FileNameToTile(char *file, int *tile_x, int *tile_y, int *zoo_m){
  */
 int tilelist_init2(){
 
-  int    i, k, len1, len2 ;
+  int    i, k, len1, len2, iret ;
   int    ip = 0 ;
-  char   *tdir_name       ;
-  DIR    *tdir ;
+  char   *tdir_name      ;
+  DIR    *tdir = NULL    ;
   struct dirent *f_entry ;
-  TileListNode  *tlist ;
+  TileListNode  *tl_node   ;
   char   my_name[] = "tilelist_init2" ;
 
 /*
@@ -255,8 +259,9 @@ int tilelist_init2(){
       strcpy(tdir_name,ORroutedir)     ;
       strcat(tdir_name,"TILES/")       ;
       if(ip)printf(" Trying directory TILES = %s\n",tdir_name) ;
-      tdir = opendir(tdir_name) ;
-      if(tdir == NULL){
+      iret = zr_find_msfile2(tdir_name) ;
+      if(!iret)tdir = opendir(tdir_name) ;
+      if(iret || tdir == NULL){
         printf(" Routine %s : ERROR : Unable to open TILES directory\n",
                                                                my_name) ;
         printf("    Directory name = %s\n", tdir_name) ;
@@ -273,41 +278,41 @@ int tilelist_init2(){
 /*
  *  Create new TileListNode
  */
-        tlist = tiledata_new(0,0) ;
+        tl_node = tiledata_new(0,0) ;
 
-        tlist->name   = (char *)malloc((len2-1)) ;
-        tlist->t_file = (char *)malloc((len1+len2)) ;
+        tl_node->name   = (char *)malloc((len2-1)) ;
+        tl_node->t_file = (char *)malloc((len1+len2)) ;
 
-        strcpy(tlist->t_file, tdir_name) ;
-        strcat(tlist->t_file, f_entry->d_name) ;
-        strncpy(tlist->name, f_entry->d_name,len2-2) ;
-        tlist->name[len2-2] = '\0' ;
+        strcpy(tl_node->t_file, tdir_name) ;
+        strcat(tl_node->t_file, f_entry->d_name) ;
+        strncpy(tl_node->name, f_entry->d_name,len2-2) ;
+        tl_node->name[len2-2] = '\0' ;
 
-        if(ip)printf("    Name     = %s\n", tlist->name) ;
-        if(ip)printf("    Filename = %s\n", tlist->t_file) ;
+        if(ip)printf("    Name     = %s\n", tl_node->name) ;
+        if(ip)printf("    Filename = %s\n", tl_node->t_file) ;
 
-        FileNameToTile(tlist->name,  &tlist->tilex,
-                      &tlist->tiley, &tlist->zoom) ;
-        if(ip)printf("    tilex    = %i\n", tlist->tilex) ;
-        if(ip)printf("    tiley    = %i\n", tlist->tiley) ;
-        if(ip)printf("    zoom     = %i\n", tlist->zoom)  ;
+        FileNameToTile(tl_node->name,  &tl_node->tilex,
+                      &tl_node->tiley, &tl_node->zoom) ;
+        if(ip)printf("    tilex    = %i\n", tl_node->tilex) ;
+        if(ip)printf("    tiley    = %i\n", tl_node->tiley) ;
+        if(ip)printf("    zoom     = %i\n", tl_node->zoom)  ;
 
-        tlist->t_found   = 1     ;
-        tlist->next      = tilelist_head ;
-        tilelist_head    = tlist ;
+        tl_node->t_found   = 1     ;
+        tl_node->next      = tilelist_head ;
+        tilelist_head    = tl_node ;
       }
       tile_west  =  16384 ;
       tile_east  = -16384 ;
       tile_south =  16384 ;
       tile_north = -16384 ;
 
-      for(tlist = tilelist_head; tlist != NULL; tlist=tlist->next){
-        if(tlist->tilex < tile_west ) tile_west  = tlist->tilex ;
-        if(tlist->tilex > tile_east ) tile_east  = tlist->tilex ;
-        if(tlist->tiley < tile_south) tile_south = tlist->tiley ;
-        if(tlist->tiley > tile_north) tile_north = tlist->tiley ;
+      for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
+        if(tl_node->tilex < tile_west ) tile_west  = tl_node->tilex ;
+        if(tl_node->tilex > tile_east ) tile_east  = tl_node->tilex ;
+        if(tl_node->tiley < tile_south) tile_south = tl_node->tiley ;
+        if(tl_node->tiley > tile_north) tile_north = tl_node->tiley ;
         if(ip)printf("    Tiles    = %s   :: %i %i ::   %i %i %i %i\n",
-                          tlist->name, tlist->tilex, tlist->tiley,
+                          tl_node->name, tl_node->tilex, tl_node->tiley,
                           tile_west, tile_east, tile_south, tile_north) ;
       }
       printf("    tile_west    = %i\n", tile_west) ;
@@ -323,10 +328,10 @@ int tilelist_init2(){
 
       for(i=1;i<len1;i++) tile_array[i] = NULL ;
 
-      for(tlist = tilelist_head; tlist != NULL; tlist=tlist->next){
-        k = (tlist->tiley-tile_south)*(tile_east - tile_west + 1)
-            + tlist->tilex-tile_west ;
-        tile_array[k] = tlist ;
+      for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
+        k = (tl_node->tiley-tile_south)*(tile_east - tile_west + 1)
+            + tl_node->tilex-tile_west ;
+        tile_array[k] = tl_node ;
       }
 
       free(tdir_name) ;

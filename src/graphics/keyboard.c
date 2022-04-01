@@ -24,17 +24,23 @@
  */
 void keyboard(unsigned char key, int x, int y){
 
-int  ip = 0                       ;  // 0 = no printing
-int  isign = 1                    ;
+int  ip = 0                       ;  //  0 = no printing
+int  isign = 1                    ;  //  1 or -1
 int  imod, l_shift, l_ctrl, l_alt ;
 int  i, n  ;
 int  new_camera = 0 ;
-double scalei = 1.0/plot_scale ;
-CameraNode    *camera           ;
-TravellerNode *tf = player_train->first->traveller,
-              *tb = player_train->last->traveller ;
-TrkNetNode  *tn1, *tn2, *tfn = tf->tn, *tbn = tb->tn ;
+double        df ;               // lenght of end wagons
+TravellerNode *tff = NULL ,
+              *tbf = NULL ,
+              tf, tb           ;
+TrkSectNode   *tn1 = NULL,
+              *tn2 = NULL,
+              *tfn = NULL,
+              *tbn = NULL      ;
 GLfloat v4[4] ;
+char    *my_name="keyboard" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
 
       imod = glutGetModifiers();
       if(ip>1){
@@ -46,11 +52,13 @@ GLfloat v4[4] ;
       l_ctrl  = imod & GLUT_ACTIVE_CTRL  ;
       l_shift = imod & GLUT_ACTIVE_SHIFT ;
       l_alt   = imod & GLUT_ACTIVE_ALT   ;
-      if(l_ctrl)             ;  // Keep the compiler happy for now
       if(l_shift) isign = -1 ;
 
-      if(ip)printf(" Routine keyboard.  Key : 0x%x  :%c: \n\n",key,key);
-      if(ip)fflush(NULL);
+      if(ip){
+        printf("    Routine keyboard.  Key : 0x%x  :%c: \n",key,key);
+        fflush(NULL);
+        if(l_ctrl){i = x && y ; }            // Keep the compiler happy
+      }
 /*
  *   1.  Keys using 'alt'
  */
@@ -74,6 +82,9 @@ GLfloat v4[4] ;
             break ;
           case 's':
           case 'S':
+            i_zra = 0 ;
+            break ;
+
             light0_spec = zr_fclip(light0_spec +isign * 0.1, 0.0, 1.0) ;
             printf("  Light_0 specular intensity = %f\n",(double)light0_spec) ;
             zr_setv4(v4,light0_spec,light0_spec,light0_spec,1.0) ;
@@ -96,7 +107,7 @@ GLfloat v4[4] ;
             glLightfv(GL_LIGHT0,GL_POSITION,v4) ;
             break ;
 /*
- *  Display world items
+ *  Display world items (alt_left + ..)
  */
           case 'o':
             display_info_radius = display_info_radius/1.3 ;
@@ -126,7 +137,7 @@ GLfloat v4[4] ;
             }
             break ;
 /*
- *   Track Info
+ *   Track Info Window(left alt + t)
  */
           case 't':
             display_track_info_on = !display_track_info_on ;
@@ -143,7 +154,35 @@ GLfloat v4[4] ;
           case 'c':
             id_shape++ ;
             break ;
+/*
+ *  Switches under keyboard control
+ */
+          case '0':
+            i_zra = 0 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '1':
+            i_zra = 1 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '2':
+            i_zra = 2 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '3':
+            i_zra = 3 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
+          case '4':
+            i_zra = 4 ;
+            printf(" i_zra = %i\n",i_zra) ;
+            break ;
 #endif
+        }
+      }else if(l_ctrl){
+        switch (key) {
+
+
         }
       }else{
         switch (key) {
@@ -163,15 +202,60 @@ GLfloat v4[4] ;
             break ;
 //  Change Switch/Points in front of traveller
           case 'g':
-            n = tfn->pin_to_section[tf->idirect ? 1 : 0] ;
-            tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-            if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+            if(player_train){
+              tff = player_train->first->traveller ;
+              if(tff){
+                tf = *tff ;
+                df = tf.wagon->raw_wagon->length ;
+                if(df>0.0) trv_move(&tf, 0.5*df) ;
+                tfn = tf.tn ;
+                n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
+                tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+                if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+              }
+            }
             break ;
 //  Change Switch/Points behind traveller
           case 'G':
-            n = tbn->pin_to_section[tb->idirect ? 0 : 1] ;
-            tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-            if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+            if(player_train){
+              tbf = player_train->last->traveller ;
+              if(tbf){
+                tb = *tbf ;
+                df = tb.wagon->raw_wagon->length ;
+                if(df>0.0) trv_move(&tb, -0.5*df) ;
+                tbn = tb.tn ;
+                n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
+                tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+                if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+              }
+            }
+            break ;
+//  Toggle mirrors out or in
+          case 'P':
+            if(player_train && player_train->motor
+                            && player_train->motor->has_mirrors){
+              player_train->motor->mirrors_out =
+                        !player_train->motor->mirrors_out ;
+            }
+            break ;
+//  Toggle pantographs up or down
+          case 'p':
+            if(player_train && player_train->motor
+                            && player_train->motor->has_pantographs){
+              player_train->motor->pantographs_up =
+                         !player_train->motor->pantographs_up ;
+            }
+            break ;
+//  Toggle wipers on or off
+          case 'V':
+            if(player_train && player_train->motor
+                            && player_train->motor->has_wipers){
+              if(player_train->motor->wipers_on){
+                player_train->motor->wipers_off = 1 ;  // Park at end of sweep
+              }else{
+                player_train->motor->wipers_on  = 1 ;
+              }
+            }
             break ;
 //  Switch frame rate on/off
           case 'Z':
@@ -238,8 +322,10 @@ GLfloat v4[4] ;
           camera_new_position()           ;
         }
       }
-      if(ip)printf(" Exit keyboard\n") ;
-      if(ip)fflush(NULL) ;
+      if(ip){
+        printf("  Exit keyboard\n") ;
+        fflush(NULL) ;
+      }
 }
 
 
@@ -267,6 +353,7 @@ GLfloat v4[4] ;
  *   See man pages.
  *
  * Available GLUT_KEY_* special keys are:
+ *
  * GLUT_KEY_F1, GLUT_KEY_F2, GLUT_KEY_F3, GLUT_KEY_F4, GLUT_KEY_F5,
  * GLUT_KEY_F6, GLUT_KEY_F7, GLUT_KEY_F8, GLUT_KEY_F9, GLUT_KEY_F10,
  * GLUT_KEY_F11,     GLUT_KEY_F12,
@@ -282,7 +369,7 @@ void  specialkey(int key, int ixm, int iym)
   int     i      ;
   int     ip = 0 ;                      // 0 = no printing
   int     imod, l_shift, l_ctrl, l_alt ;
-  double  zz1, zz2, c, s ;
+  double  c, s ;
   double  del_d,                        // delta distance (plot_scale units)
           del_a ;                       // delta angle (degrees)
   GLfloat v4[4] ;
@@ -298,6 +385,7 @@ void  specialkey(int key, int ixm, int iym)
         printf("  ZR - special key ")       ;
         for(i=0;i<16;i++)printf("%i",((key >> (15-i)) & 1)) ;
         printf("\n");
+        i = ixm && iym ;  // Keep the compiler happy
       }
 
       imod = glutGetModifiers();

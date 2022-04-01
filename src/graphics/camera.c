@@ -16,8 +16,8 @@
 
 int cameras_init(){
 
-int        i ;
 CameraNode *camera ;
+
       current_camera = -1 ;   //  Unset
       camera_last    = -1 ;   //  Unset
 /*
@@ -53,12 +53,10 @@ CameraNode *camera ;
 
 int camera_new_position(){
 
-  int          i, j ;
-  int          ip = 0 ;         //  Debug
-  float        rail_height = 0.27 ;  //  Best fit placing wheels on track
-  float       x, y, z, scalei=1.0/plot_scale ;
-  double      angle ;
-  GLdouble ea[4], et[4], ca[4], ct[4], mm[4][4], *mmp  ;
+  int         j ;
+  int         ip = 0 ;         //  Debug
+  double      scalei=1.0/plot_scale ;
+  GLdouble ea[4], et[4], ca[4], ct[4], mm[4][4]  ;
   CameraNode  *camera  ;
   GLfloat     v4[4]  ;
   TravellerNode *t   ;
@@ -225,7 +223,7 @@ int camera_new_position(){
         if(ip)printf(" Camera :: Tile %i %i :: Eye %f %f :: Last %i %i\n",
                   tile_eye_x0, tile_eye_y0, lookat_eye_x, lookat_eye_y,
                   last_eye_x0, last_eye_y0) ;
-        graphics_cull() ;
+        graphics_reset() ;
         last_eye_x0 = tile_eye_x0 ;
         last_eye_y0 = tile_eye_y0 ;
         new_viewpoint = 0 ;
@@ -237,7 +235,11 @@ int camera_new_position(){
  */
       glMatrixMode(GL_MODELVIEW);
       glLoadIdentity();
-      if(ip)printf(" AA gluLookAt\n") ;
+      if(ip)printf(" Camera BB gluLookAt %f %f %f : %f %f %f : %f %f %f\n",
+                lookat_eye_x,lookat_eye_y,lookat_eye_z,
+                lookat_center_x,lookat_center_y,lookat_center_z,
+                lookat_up_x,lookat_up_y,lookat_up_z) ;
+
       gluLookAt(lookat_eye_x,lookat_eye_y,lookat_eye_z,
                 lookat_center_x,lookat_center_y,lookat_center_z,
                 lookat_up_x,lookat_up_y,lookat_up_z) ;
@@ -300,6 +302,8 @@ int camera_new_position(){
       glLightfv(GL_LIGHT0, GL_POSITION, v4);
       initialise_eye_vectors() ;
       initialise_clip_planes(clip_a) ;
+      graphics_reset() ;
+
 #endif
 /*
  *  Exit

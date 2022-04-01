@@ -22,17 +22,16 @@ static double     vnx, vny, vnz ;                //  mathcalls.h has a yn !!
 
 int make_dynamic_display_lists(){
 
-int    i, j, k, l0, l1, m, n ;
-int    n_track_nodes   ;
+uint   i, j, k, l0, l1, n ;
 int    i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
 int    iflag           ;
 int    gl_display_list ;
 int    ip = 0          ;                // debug printing
 double xx0, yy0, xx1, yy1, xxn, yyn,
        x0, y0, z0,
-       x, y, z, xt, yt, zt, xn, yn, zn,
-       u0, v0, u1, v1, xoff, yoff,
-       delta_a, aa, asign, tmp     ;
+       x, y, z, xt, yt, xn, yn, zn,
+       u0, v0, u1, v1,
+       delta_a, aa, asign     ;
 double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
 int    tile_x,  tile_y ;
 
@@ -44,13 +43,12 @@ DynProfile     *track_profile ;
 RailProfile    *rail_profile  ;
 TrackDistLevel *dist_level    ;
 TrackSubObject *sub_object    ;
-TrkVectorNode  *tv0   ;
 TextureNode    *tnode ;
 Vector3x3      *v3x3  ;
 Vector3x3      *v3x3_beg = NULL ;
 Vector3x3      *v3x3_end = NULL ;
 
-double        rx, ry, rz ;
+double        rx, ry     ;
 double        p1, p2, p3 ;
 
 char   my_name[] = "make_dynamic_display_lists" ;

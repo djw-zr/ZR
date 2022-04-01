@@ -1,0 +1,49 @@
+README.WINDOWS
+==============
+
+    The present version of ZR successfully runs on Windows 10 using either the Australian Zig-Zag route or one of the seven MSTS routes.
+
+    The scheme used to do this is to compile the program using the MinGW64 version of the Gnu C compiler, and the SDL2 libraries for the user interface.
+
+    Before doing this though most users will need to install the MinGW64 (Minimum Gnu Windows : 64-bit version) system and the SDL2 system.  Instructions for doing this, which may include renaming file "makefile", are given below.
+
+    The program ZR can then be compiled by changing to the ZR directory, editing the makefile for the route and other options required (see file README.COMPILE) and then issuing the command "mingw64-make" or "mingw32-make zr".  The program can then be run with the command "zr -p".
+
+Installing MinGW64
+
+    The MinGW project is hosted at:
+      https://sourceforge.net/projects/mingw-w64/
+    This includes a download 'button' which in February 2022, results in a download of
+      mingw-w64-v9.0.0.zip
+    This should be uncompressed, generating an executable which is then run to install the MinGW64 system.
+
+    The script should give the option of where to install the files.  On Windows this will usually default to a sub-directory of "Program Files (x64)".  Unfortunately the spaces in this name are likely to causes problems with Linux style commands.  It is therefore better to install MinGW64 in a directory path in which none of the names contain the space character.
+
+    In my case, the directory I chose was "/opt/mingw64", as can be seen in the makefile.  If another base directory is used, the makefile needs to be edited accordingly.
+
+Installing SDL2
+
+    SDL2.0 is available from
+      https://libsdl.org/
+    The downloads page currently (February 2022) includes the runtime binary:
+      SDL2-2.0.20-win32-x64.zip
+    As with MinGW64, this can be downloaded and uncompressed to provide an executable for installing the SDL2 system.
+
+    In my case I installed SDL2 in directory "/opt/sdl2", but again if another directory is used the makefile needs to be edited.
+
+    After installing SDL2, the directory C:\opt\sdl2\bin contains file SDL2.dll.  This could be copied to the central dll directories C:\Windows\System32 (and for x86 versions: C:\Windows\SysWOW64) and then used by all programs.  However, because of virases and potential conflicts, it is safer not to do this but instead copy (or link) the files to the directory where the executable is stored.  In the present case this is the ZR directory.  If the compiled program is later moved to another directory, say the users bin directory, the dll file or link also needs to be moved.
+
+Makefile
+
+    A single makefile can be used for both MinGW and a normal Linux system, but the extra checks this requires makes it more difficult, for somebody who is not used to such files, to interpret the makefile logic.  It is therefore likely that the top level directory in your version of ZR will contain both 'makefile' and 'makefile_w'.
+
+    In that case before running mingw32-make on Windows, the first of the two files should be deleted (or named something like 'makefile_l') and the second be renamed as 'makefile'.
+
+Displaying Text
+
+    The ZR program usually uses freetype routines to display text.  However at present this option does not work on Windows.  Instead a self contained set of typeface routines and data are provided.  These are all based on the equivalent set of routines used by Grub.
+
+Use on other routes
+
+    The main problem arising on new routes is likely to be the misspelling of parameter names - for example COMENT for COMMENT - and the use of parameter names which have not been coded for.  If the problem arises when reading the engine or wagon files, the program should now print out an error message, ignore the parameter and continue without stopping.  The error message can later be bypassed by adding the parameter name to the list of 'CASE's near the end of routine 'read_raw_wagon_file' in "load_wagon_file.c".
+

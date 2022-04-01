@@ -18,7 +18,13 @@ Introduction
 
     The program has been developed using the "Great Zig Zag Railway" route available from:
        https://www.zigzag.coalstonewcastle.com.au/
+       
+Version 0.5.0
+=============
 
+    The program now works with the seven standard MSTS routes as well as the Australian "au_great_zig_zag" route.
+    
+    The program can be compiled and run on 64-bit Windows computers using the SDL2 interface and the MinGW64 package. This contains a Windows compatable set of GNU compilers, include files and libraries. Instructions on installing the required software is given in the document "README.WINDOWS".
 
 Version 0.4.0
 =============

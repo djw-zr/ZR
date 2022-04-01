@@ -3,7 +3,7 @@ README.QUATERNIONS
 
 OR and Rotations
 
-  The OR files can either use 3x3 rotation matrices or quaternions to represent the rotation of objects.  According to wikipedia (https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation) quaternions have the advantage of being more compact and more numerically stable than rotation matrices.
+  The OR files can either use 3x3 rotation matrices or quaternions to represent the rotation of objects.  According to Wikipedia (https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation) quaternions have the advantage of being more compact and more numerically stable than rotation matrices.
 
   They are defined by four numbers.  If these are A, B, C and D, the quaternion is A + Bi + Cj + Dk,  where i, j and k are the unit vectors along the X, Y and Z axes.  A, a scalar, is the cosine of half the  angle of rotation about the axis defined by Bi + Cj + Dk.
 
@@ -13,7 +13,7 @@ OR and Rotations
       2bd-2ac      2cd-2ab      aa-bb-cc+dd  0
       0            0            0            1
 
-  For use with OpenGL, ZR converts the queternion into a unit vector and the angle of rotation.
+  For use with OpenGL, ZR converts the quaternion into a unit vector and the angle of rotation.
 
 glRotate Definition
 ===================

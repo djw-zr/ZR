@@ -133,7 +133,7 @@ int   trv_next(TravellerNode *t){
 int           ip   = 0 ;  //  Debug
 int           iret = 0 ;  //  Return code
 TravellerNode tc       ;  //  Copy
-TrkNetNode    *tn = t->tn      ;
+TrkSectNode   *tn = t->tn      ;
 TrkVectorNode *vn = tn->vector ;
 char          my_name[] = "trv_next" ;
 
@@ -206,8 +206,9 @@ int   trv_prev(TravellerNode *t){
 
 int           ip   = 0 ;  // DEBUG
 int           iret = 0 ;  // Return code
+int           ivector = t->ivector ;
 TravellerNode tc               ;  //  Copy of travelelr node
-TrkNetNode    *tn = t->tn      ;
+TrkSectNode   *tn = t->tn      ;
 TrkVectorNode *vn = tn->vector ;
 char          my_name[] = "trv_prev" ;
 
@@ -218,14 +219,15 @@ char          my_name[] = "trv_prev" ;
 /*
  *  If new node is within group of vectors
  */
-      t->ivector = t->ivector - 1 ;
+      ivector = ivector - 1 ;
       if(ip)printf("        %s : next ivector = %i/%i\n",
-                      my_name, t->ivector, tn->length_of_vector) ;
+                      my_name, ivector, tn->length_of_vector) ;
 /*
  *  If new node is within vector limits - reset traveller
  */
-      if(t->ivector >= 0){
-        vn     = &vn[t->ivector] ;
+      if(ivector >= 0){
+        t->ivector = ivector         ;
+        vn         = &vn[t->ivector] ;
 
         t->vn       = vn          ;
         t->position = vn->length  ;
@@ -260,7 +262,7 @@ char          my_name[] = "trv_prev" ;
         iret = trk_next(t,-1) ;
         if(iret){
           *t = tc ;
-          t->ivector = t->ivector + 1 ;  // Reset vector
+          t->ivector = ivector + 1 ;  // Reset vector
         }
 #else
         if(-1 == trk_next(t,-1)){
@@ -381,24 +383,12 @@ char  my_name[]="trv_print" ;
 
 int  trv_position(TravellerNode *t){
 
-TrkVectorNode  *vn  = t->vn  ;
+TrkVectorNode  *vn  = t->vn       ;
 double         dist = t->position ;
+double         a ;
 
-int          i, ip = 0 ;
-
-
-  TrackSection  *ts  ;
-  DynTrackObj   *dto ;
-  DynTrackSect  *dts ;
-
-  double       east         ;  //  Position
-  double       north        ;
-  double       height       ;
-  double       x,  y,  z, a     ;  //  Position and rotation
-  double       tx, ty, tz, tt   ;  //  Tangent
-  double       nx, ny, nz       ;  //  Normal
-  double       xp, yp, zp, ap   ;
-  char         my_name[] = "trv_position" ;
+int            ip = 0 ;
+char           my_name[] = "trv_position" ;
 
       if(ip){
       printf("\n----------------------------------------------------------\n") ;
@@ -440,7 +430,7 @@ int          i, ip = 0 ;
 #if 0
 int   check_matrices(TravellerNode *t){
 
-TrkNetNode    *nn ;
+TrkSectNode    *nn ;
 TrkVectorNode *vn, *vn1 ;
 WorldItem     *wi, *wi1 ;
 int           lov ;

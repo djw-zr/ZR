@@ -101,12 +101,16 @@ typedef struct pdbnode {
   int    TrackGauge            ;
   int    Era                   ;
   int    MilepostUnitsMiles    ;
+  int    MilepostUnitsKilometers ;
   int    MaxLineVoltage        ;
   int    RouteStart[4]         ;
 
   double SpeedLimit            ;
   double TerrainErrorScale     ;
   double TempRestrictedSpeed   ;
+  double DerailScale           ;
+  double TimetableTollerance   ;
+  double GravityScale          ;
 
   struct envnode  Environment[12] ;
 
@@ -115,7 +119,7 @@ typedef struct pdbnode {
 /*
  * *****************************************************************************
  *  Track Database
- *  Base is usually track_db defined in zr.h
+ *  Database input file is usually track_db defined in zr.h
  * *****************************************************************************
  */
 typedef struct trkvectornode
@@ -125,8 +129,8 @@ uint                    tsec_section_index   ;    //  Index of the track section
 uint                    tsec_shape_index     ;    //  Index of the track shape in file 'tsection.dat'
                                                   //  Pointer to track section
                                                   //  Pointer to track shape
-uint                    wfname_east_x        ;    //  Tile east (MSTS x) location in the world file
-uint                    wfname_north_z       ;    //  TileZ north (MSTS Z) location in the world file
+int                     wfname_east_x        ;    //  Tile east (MSTS x) location in the world file
+int                     wfname_north_z       ;    //  TileZ north (MSTS Z) location in the world file
 uint                    worldfileuid         ;    //  UID of this piece of track in the worldfile
                                                   //  Note world file may differ from tile
 struct worlditem        *world_item          ;    //  Pointer to corresponding world item node
@@ -168,28 +172,30 @@ Vector3                 *left_vector         ;    //  Unit vector to the left ac
 Vector3                 *tangent_vector      ;    //  Unit vector along the track  (including any gradient)
 } TrkVectorNode ;
 
-typedef struct trknetitem
+
+typedef struct trksectnode
 {
-  struct trknetitem     *next ;
+  struct trksectnode     *next ;
   uint                   index_of_node       ;  //  This is used to link sections so must be unique
   enum trackdb           type_of_node        ;  //  [ NONE, VECTOR_SECTION, END_SECTION, JUNCTION ]]
   uint                   jn[3]               ;  //  Data for Junction Node
   uint                   en                  ;  //  Data for End Node
-  uint                   length_of_vector    ;  //  Length of track (number of vector nodes)
-  TrkVectorNode          *vector             ;  //  Pointer to array of vector nodes
+  uint                   length_of_vector    ;  //  Number of vector nodes)
+  TrkVectorNode          *vector             ;  //  Pointer to vector node array
   uint                   trk_item_number     ;  //  Number of track items
-  uint                   *trk_item_vec       ;  //  Pointer to array of track item indices
+  uint                   *trk_item_vec       ;  //  Pointer to item index array
   uint                   type_of_pin[2]      ;  //  Number of: [0] InPins. [1] OutPins
   uint                   pin_to_section[3]   ;  //  Index of connected (pinned) Track Section.
   uint                   pin_info[3]         ;  //  Extra pin data (??)
   uint                   straight            ;  //  Index (1 or 2) of straight branch in junction
   uint                   branch              ;  //  Index (1 or 2) of current switched branch
   DynProfile             *profile            ;  //  Profile used for this track
-  int                    n_dist_levels       ;  //  Number of distance levels
+  uint                   n_dist_levels       ;  //  Number of distance levels
   float                  distance[3]         ;  //  Distances (Copied from profile)
   int                    opengl_display_list[3] ;  //  Corresponding display list
   enum LODMethod         lod_method          ;  // Scheme for combining LOD data (Copied from profile)
-} TrkNetNode ;
+} TrkSectNode;
+
 
 typedef struct trkitemnode
 {
@@ -223,9 +229,19 @@ typedef struct trkitemnode
   uint                   signal_num_dirs     ;
   uint                   signal_dirs[4][4]   ;
 
-  uint                   speedpost_data1     ;  //  Speedpost data
-  uint                   speedpost_data2     ;  //
-  double                 speedpost_data3     ;  //
+  uint                   speedpost_flags     ;  //  Speedpost data
+  int                    is_warning          ;
+  int                    is_limit            ;
+  int                    is_milepost         ;
+  int                    is_resume           ;
+  int                    is_passanger        ;
+  int                    is_freight          ;
+  int                    is_mph              ;
+  int                    show_number         ;
+  int                    show_dot            ;
+  double                 speed_ind           ;  //
+  int                    display_number      ;  //
+  double                 angle               ;
 
   uint                   crossover_data1     ;  //  Crossover data
   uint                   crossover_data2     ;  //
@@ -247,7 +263,7 @@ typedef struct trkdatabase
   uint                  serial_number ;
   uint                  trk_sections_array_size ;
   uint                  trk_items_array_size   ;
-  TrkNetNode            *trk_sections_array     ;
+  TrkSectNode           *trk_sections_array     ;
   TrkItemNode           *trk_items_array       ;
 } TrkDataBase ;
 
@@ -448,6 +464,7 @@ typedef struct texturenode {
   int                n_textures       ;  //  Number of mipmaps (1 if base only)
   GLubyte            **texture        ;  //  Pointers to mipmaps in memory
   int                surface_format   ;  //  MSTS ACE file 'surface format'
+  int                surface_format_orig  ;  //  Original
   GLenum             gl_mem_format    ;  //  GL_RGB, GL_RGBA etc
   GLenum             gl_mem_packing   ;  //  GL_UNSIGNED_BYTE etc
   GLuint             gl_tex_ref_no    ;  //  Output from glGenTexture (openGL)
@@ -554,6 +571,7 @@ typedef struct terraindata{
   TileShader        *tile_shader                   ;  // Array
   TilePatchSet      *tile_patchset                 ;  // Array
   unsigned short    *elevations                    ;  // Array of heights (Y file)
+#ifdef use_vertex_arrays
 //  Vertex array pointers
   GLfloat             *va_vertex                   ;
 #ifdef normal_byte
@@ -573,6 +591,7 @@ typedef struct terraindata{
   int                 nbx                          ;  // Nodes in x direction
   int                 nby                          ;  // Nodes in y direction
   VANode              *va_node                     ;  // Vertex array nodes
+#endif
 } TerrainData ;
 
 /*
@@ -636,9 +655,17 @@ typedef struct matrix4x3 {
   float              DZ ;
 } Matrix4x3 ;
 
+/*
+ *   Sphere enclosing a sub-object.  This is used to quickly determine if
+ *   the sub-object is within view.
+ *
+ *   Usually the number of shapevolumes is one more than the number of sub-objects
+ *   But sometimes there is only one of each.
+ */
+
 typedef struct shapevolume {
-  Vector3            vec ;
-  float              radius ;
+  Vector3            vec    ;  //  Vector from origin of the shape to centre of sphere.
+  float              radius ;  //  Radius of sphere
 } ShapeVolume ;
 
 /*
@@ -667,26 +694,26 @@ typedef struct lightmaterial {
 } LightMaterial ;
 
 typedef struct uvops {
-  int           type         ;
-  int           tex_addr_mode     ;
-  int           src_uv_idx     ;
+  uint          type         ;
+  uint          tex_addr_mode     ;
+  uint          src_uv_idx     ;
   float         unknown_param_3 ;
   float         unknown_param_4 ;
 } UVOps ;
 
 typedef struct lightmodelcfg {
-  int           flags        ;
-  int           n_uv_ops     ;
+  uint          flags        ;
+  uint          n_uv_ops     ;
   UVOps         *uv_ops      ;
 } LightModelCfg ;
 
 typedef struct vtxstate {
   uint          flags         ;
-  int           imatrix       ;
-  int           light_mat_idx ;
-  int           light_cfg_idx ;
+  uint          imatrix       ;
+  uint          light_mat_idx ;
+  uint          light_cfg_idx ;
   uint          light_flags   ;
-  int           imatrix2      ;
+  uint          imatrix2      ;
 } VTXState ;
 
 
@@ -695,10 +722,10 @@ typedef struct primstate {
   char          *name         ;
   uint          flags         ;
   int           ishader       ;
-  int           n_tex_idxs    ;  //  Number of textures required (usually 1)
-  int           *tex_idx      ;  //  Index to texture pointers in shapenode->image_tex
+  uint          n_tex_idxs    ;  //  Number of textures required (usually 1)
+  uint          *tex_idx      ;  //  Index to texture pointers in shapenode->image_tex
   float         zbias         ;
-  int           ivtx_state    ;  //  Index of vertex state in ShapeNode->VTXState structure
+  uint          ivtx_state    ;  //  Index of vertex state in ShapeNode->VTXState structure
   int           alpha_test_mode ;
   int           light_cfgidx  ;
   int           zbuf_mode     ;  //  Usually 1 (presumably meaning 'Use z-buffer')
@@ -706,52 +733,52 @@ typedef struct primstate {
 
 
 typedef struct geom_node {
-  int                tx_light_cmds     ;
-  int                nodex_tx_light_cmds ;
-  int                tri_lists         ;
-  int                line_lists        ;
-  int                pt_lists          ;
-  int                num_prims         ;
-  int                num_flat_sections ;
-  int                num_prim_idxs     ;
+  uint               tx_light_cmds     ;
+  uint               nodex_tx_light_cmds ;
+  uint               tri_lists         ;
+  uint               line_lists        ;
+  uint               pt_lists          ;
+  uint               num_prims         ;
+  uint               num_flat_sections ;
+  uint               num_prim_idxs     ;
 }  GeomNode ;
 
 typedef struct vertex {                   //  Data for each vertex used at this distance/sub-object
-  int                flags             ;
-  int                ipoint            ;  //  Index of vertex in shapenode->vertex list
-  int                inormal           ;  //  Index of normal in shapenode->normal list
-  int                color1            ;  //  Usually solid white (possible backup if texture is missing)
-  int                color2            ;  //  Usually solid black (possible ??)
-  int                n_vertex_uvs      ;  //  Usually 1 (Possibly more if textures merged - see primstate)
-  int                *vertex_uv        ;  //  Indexes of texture coordinates in shapenode->uvpoint list
+  uint               flags             ;
+  uint               ipoint            ;  //  Index of vertex in shapenode->vertex list
+  uint               inormal           ;  //  Index of normal in shapenode->normal list
+  uint               color1            ;  //  Usually solid white (possible backup if texture is missing)
+  uint               color2            ;  //  Usually solid black (possible ??)
+  uint               n_vertex_uvs      ;  //  Usually 1 (Possibly more if textures merged - see primstate)
+  uint               *vertex_uv        ;  //  Indexes of texture coordinates in shapenode->uvpoint list
 }  Vertex ;
 
 typedef struct vertexset {
-  int                vtx_state_idx     ;
-  int                start_vtx_idx     ;
+  uint               vtx_state_idx     ;
+  uint               start_vtx_idx     ;
   int                vtx_count         ;
 }  VertexSet ;
 
 
 typedef struct vertexidx {      //  Triangles for plotting
-  int                a     ;    //  Index of 1st vertex in list : sub_object->vertex
-  int                b     ;    //  Index of 2nd vertex in list : sub_object->vertex
-  int                c     ;    //  Index of 3rd vertex in list : sub_object->vertex
+  uint               a     ;    //  Index of 1st vertex in list : sub_object->vertex
+  uint               b     ;    //  Index of 2nd vertex in list : sub_object->vertex
+  uint               c     ;    //  Index of 3rd vertex in list : sub_object->vertex
 }  VertexIdx ;
 
 typedef struct trilist {        //  Three arrays of triangles to plot with normals and flags.
-  int                prim_state_trilist ; //  Index of Primative State (includes index of Texture)
-  int                n_vertex_idxs    ;   //  Number of triangles
-  VertexIdx          *vertex_idx      ;   //  Sets of triangle vertices to plot
-  int                n_normal_idxs    ;   //  Number - should equal number of triangles
-  int                *normal_idx      ;   //  Corresponding normals in list shapenode->normal
-  int                n_flags          ;   //  Number - should equal number of triangles
-  uint               *flag            ;   //  Corresponding flags
+  uint               prim_state_trilist ;   //  Index of Primative State (includes index of Texture)
+  uint               n_vertex_idxs      ;   //  Number of triangles
+  VertexIdx         *vertex_idx         ;   //  Sets of triangle vertices to plot
+  uint               n_normal_idxs      ;   //  Number - should equal number of triangles
+  uint               *normal_idx        ;   //  Corresponding normals in list shapenode->normal
+  uint               n_flags            ;   //  Number - should equal number of triangles
+  uint              *flag               ;   //  Corresponding flags
 }  TriList ;
 
 typedef struct animkey {
-  int                type             ;
-  int                frame            ;
+  uint               type             ;
+  uint               frame            ;
   float              X                ;
   float              Y                ;
   float              Z                ;
@@ -765,72 +792,74 @@ typedef struct animkey {
 
 
 typedef struct animcontroller {
-  int               type              ;
-  int               n_anim_keys       ;
+  uint              type              ;
+  uint              n_anim_keys       ;
   AnimKey           *anim_key          ;
 } AnimController ;
 
 
 typedef struct animnode {
   char              *name             ;
-  int               n_controllers     ;
+  uint              n_controllers     ;
   AnimController    *controller       ;
 } AnimNode ;
 
 typedef struct animation {
-  int                frame_count      ;
-  int                frame_rate       ;
-  int                n_anim_nodes     ;
+  uint               frame_count      ;
+  uint               frame_rate       ;
+  uint               n_anim_nodes     ;
   AnimNode           *anim_node       ;
 } Animation ;
 
 
 typedef struct subobject {
   uint               flags             ;
-  int                sort_vector_idx   ;
-  int                vol_idx           ;
+  uint               sort_vector_idx   ;
+  uint               vol_idx           ;  // Possibly the shapevolume to use but usually = -1
+                                          // Anyway the shapevolumes are also usually roughly equal
+                                          // and the first (so far) is always the largest.
   uint               src_vtx_fmt_flags ;
   uint               dst_vtx_fmt_flags ;
-  int                face_normals      ;
-  int                tx_light_cmds     ;
-  int                nodex_tri_list_idxs ;
-  int                tri_list_idxs     ;
-  int                linelist_idxs     ;
-  int                nodex_tri_list_idxs2 ;
-  int                tri_lists         ;
-  int                line_lists        ;
-  int                pt_lists          ;
-  int                nodex_tri_lists   ;
-  int                n_geom_nodes      ;
+  uint               face_normals      ;
+  uint               tx_light_cmds     ;
+  uint               nodex_tri_list_idxs ;
+  uint               tri_list_idxs     ;
+  uint               linelist_idxs     ;
+  uint               nodex_tri_list_idxs2 ;
+  uint               tri_lists         ;
+  uint               line_lists        ;
+  uint               pt_lists          ;
+  uint               nodex_tri_lists   ;
+  uint               n_geom_nodes      ;
   GeomNode           *geom_node        ;
-  int                n_node_maps       ;
-  int                *node_map         ;
-  int                n_shaders         ;
-  int                *shader           ;
-  int                n_light_cfgs      ;
-  int                *light_cfg        ;
+  uint               n_node_maps       ;
+  uint               *node_map         ;
+  uint               n_shaders         ;
+  uint               *shader           ;
+  uint               n_light_cfgs      ;
+  uint               *light_cfg        ;
 
-  int                n_vertices        ;  //  Number of vertices used for this distance/sub-object
+  uint               n_vertices        ;  //  Number of vertices used for this distance/sub-object
   Vertex             *vertex           ;  //  List of vertices with normals and texture coordinates
-  int                n_vertex_sets     ;  //  Number
+  uint               n_vertex_sets     ;  //  Number
   VertexSet          *vertex_set       ;  //  Start and end of sections within 'vertex' list (Use??)
-  int                n_tri_lists       ;  //  Number of lists of triangles to plot
+  uint               n_tri_lists       ;  //  Number of lists of triangles to plot
   TriList            *tri_list         ;  //  Lists of triangles and associated information
 }  SubObject ;
 
 typedef struct distance_level {
   float              dlevel_selection  ;  //  Maximum distance(m) for this level of detail.
-  int                n_hierarchy       ;  //  Size of hierarchy array
+  uint               n_hierarchy       ;  //  Size of hierarchy array
   int                *hierarchy        ;  //  If hierarchy[i] = j, then the matrix[j]
                                   // transformation must be applied before matrix [i]
-  int                n_sub_objects     ;  //  Number of sub-objects to plot
+  uint                n_sub_objects     ;  //  Number of sub-objects to plot
   SubObject          *sub_object       ;  //  Pointers to sub-object data
-  int                gl_display_list   ;  // Dsplay list for this sub-object in this range
+  uint               gl_display_list   ;  // Dsplay list for this sub-object in this range
 }  DistLevel ;
 
 typedef struct lodcontrol {
   int                dlev_bias         ;
-  int                n_dist_levels     ;  //  Number of levels of detail
+  uint               n_dist_levels     ;  //  Number of levels of detail
   DistLevel          *dist_level       ;  //  Pointers to detail data for various distances
 }  LodControl ;
 
@@ -849,55 +878,55 @@ typedef struct shapenode {
   char               *name     ;
   char               *s_file   ;
   char               *sd_file  ;
-  int                basic     ;             // = 1 always needed
-  int                needed    ;             // = 1 if needed for graphics
-  int                loaded    ;             // = 1 if loaded into graphics card
+  uint               basic     ;             // = 1 always needed
+  uint               needed    ;             // = 1 if needed for graphics
+  uint               loaded    ;             // = 1 if loaded into graphics card
 //  int                gl_display_list ;     //  OpenGl display list index
 //  int                gl_display_list2 ;
   uint               flags1    ;
   uint               flags2    ;
-  int                nvolumes  ;
-  ShapeVolume        *shape_vol ;
-  int                nshaders  ;
+  uint               nvolumes  ;    // Number of shape volumes (1 per lod_control ??)
+  ShapeVolume        *shape_vol ;   // Array of shape volumes
+  uint               nshaders  ;
   char               **shader  ;
-  int                nfilters  ;
+  uint               nfilters  ;
   char               **filter  ;
-  int                npoints   ;
+  uint               npoints   ;
   Vector3            *point    ;          //  Array of vectors
-  int                nnormals  ;
+  uint               nnormals  ;
   Vector3            *normal   ;          //  Array of normal vectors
-  int                nuvpoints ;
+  uint               nuvpoints ;
   UVVector2          *uvpoint  ;          //  Array of texture vectors
-  int                nsort_vectors ;
+  uint               nsort_vectors ;
   Vector3            *sort_vector  ;
-  int                ncolors   ;
+  uint               ncolors   ;
   RGBA               *color    ;
-  int                nmatrices ;
+  uint               nmatrices ;
   Matrix4x3          *matrix   ;          //  MSTS 4x3 matrices
-  int                *matrix_role     ;   //  1:2 = wheels, 3:4 bogies
-  int                n_textures       ;   //  Number of textures used (OR: nimages)
+  uint               *matrix_role     ;   //  1:2 = wheels, 3:4 bogies
+  uint               n_textures       ;   //  Number of textures used (OR: nimages)
   char               **texture_name   ;   //  (OR: image)
   TextureNode        **texture        ;   //  Array of pointers to the Textures
                                           //  used by this shape (OR: image_tex)
-  int                use_texture ;        //  = 1 if texture available
-  int                n_texlevel_low   ;
+  uint               use_texture ;        //  = 1 if texture available
+  uint               n_texlevel_low   ;
   TexLevelLow        *texlevel_low    ;   //  Low level data on displaying textures
-  int                nlight_materials ;
+  uint               nlight_materials ;
   LightMaterial      *light_material  ;
-  int                nlight_model_cfgs ;
+  uint               nlight_model_cfgs ;
   LightModelCfg      *light_model_cfg  ;
-  int                n_vtx_states      ;
+  uint               n_vtx_states      ;
   VTXState           *vtx_state        ;
-  int                n_prim_states     ;
+  uint               n_prim_states     ;
   PrimState          *prim_state       ;
 
-  int                dlevel_selection  ;
-  int                nhierarchy        ;    //  CONFUSE WITH distance level !!!!  Should be hier...
+  uint               dlevel_selection  ;
+  uint               nhierarchy        ;    //  CONFUSE WITH distance level !!!!  Should be hier...
   int                *hierarchy        ;
-  int                *hierarchy_flag   ;    //  1=Wheel, 2=Bogie
-  int               n_lod_controls    ;
+  uint               *hierarchy_flag   ;    //  1=Wheel, 2=Bogie
+  uint               n_lod_controls    ;
   LodControl         *lod_control      ;
-  int                n_animations      ;
+  uint               n_animations      ;
   Animation          *animation        ;
 // SD File Data
   int                esd_detail_level          ;
@@ -917,8 +946,8 @@ typedef struct shapenode {
   float              esd_bounding_box_ymax     ;
   float              esd_bounding_box_zmin     ;
   float              esd_bounding_box_zmax     ;
-  int                n_esd_complex_box         ;
-  float              *esd_complex_box          ;  //  Array
+  uint               n_esd_complex_box         ;
+  float              *esd_complex_box          ;  //  Array n*3
 } ShapeNode  ;
 
 

@@ -21,18 +21,19 @@
  * *****************************************************************************
  */
 char *read_scaled_token(MSfile *msfile) ;
+int  init_rawenginenode(RawWagonNode *w)   ;
 //int  check_wheel_radii(RawWagonNode *w) ;
 char string[4096] ;
 
 int read_raw_wagon_file(RawWagonNode *w){
 
-int      i, l, n, cdir_len ;
+int      i, l, cdir_len ;
 int      ip = 0 ;  //Debug
 float    temp   ;
 MSfile   msfile0           ;
 MSfile   *msfile = &msfile0 ;
 char     my_name[] = "read_raw_wagon_file" ;
-char     *string,
+char     *string = NULL,
          *token = NULL ,
          *cdir  = NULL ,             //  Current wagon directory
          *no_type        = "No Type",
@@ -55,7 +56,7 @@ char     ffname[] = "__FILE__"  ;
       if(ip)printf(" msfile file     = %s\n",w->file);
       if(ip)printf(" msfile pointer  = %p\n\n",(void *)msfile->fp);
 
-      cdir = dirname(w->file) ;
+      cdir = zr_full_parentdir(w->file) ;
       cdir_len = strlen(cdir) ;
       if(ip)printf(" DD cdir_len = %i, cdir = %s\n",cdir_len,cdir) ;
 /*
@@ -71,9 +72,16 @@ char     ffname[] = "__FILE__"  ;
  */
       if(NULL != w->name)free(w->name);
       w->name = ctoken(msfile) ;
+//      ip = !strcmp(w->name,"US2Freightcar3") ;
+//      ip = !strcmp(w->name,"Superliner") ;
+//      ip = (!strcmp(w->name,"KIHA140") || !strcmp(w->name,"kiha140") ) ;
+//      ip = !strcmp(w->name,"AcelaHHLCO") ;
 //      ip = !strcmp(w->name,"NI4wHopUnb2LD") ;
 //      ip = !strcmp(w->name,"1905-P708") ;     <- Has the extra engine data
-      if(ip)printf("  Name  = %s\n",w->name) ;
+      if(ip){
+        printf("  File = %s\n",w->file);
+        printf("  Name = %s\n",w->name) ;
+      }
 
       w->ncoupling = 0 ;
 //
@@ -86,11 +94,14 @@ char     ffname[] = "__FILE__"  ;
 
       w->type      = no_type  ;
       w->full_name = no_description  ;
+      w->shape     = NULL ;
+      w->s_file    = NULL     ;
       w->fs_file   = NULL     ;   //  Freight shape file
       w->f_shape   = NULL     ;
       w->f_max_level = 0.0    ;
       w->f_min_level = 0.0    ;
       w->f_anim_flag = 0      ;
+      w->brakeequipmenttype = NULL ;
 
 /*
  * ***********************************************************************
@@ -98,13 +109,15 @@ char     ffname[] = "__FILE__"  ;
  * ***********************************************************************
  */
       for(;;){
+        if(ip)printf(" AAAA\n") ;
         token = new_tmp_token(msfile);
         if(ip)printf(" AA Token = :%s:\n",token) ;
         if(is_rbr(token)) break ;  // End of Wagon data
         SWITCH(token)
           CASE("Comment")
+          CASE("comment")
             skip_lbr(msfile) ;
-            skipto_rbr(msfile) ;
+            skippast_rbr(msfile) ;
             break ;
           CASE("Type")
             skip_lbr(msfile) ;
@@ -163,14 +176,15 @@ char     ffname[] = "__FILE__"  ;
             w->height = convert_unit(token,"m") ;
             token = read_scaled_token(msfile) ;
             w->length = convert_unit(token,"m") ;
-            skip_rbr(msfile) ;
+            skippast_rbr(msfile) ;
             break ;
           CASE("Mass")
             skip_lbr(msfile) ;
             token = read_scaled_token(msfile) ;
             if(ip)printf("  Mass = %s\n",token) ;
             w->mass  = convert_unit(token,"kg") ;
-            skip_rbr(msfile) ;
+            if(ip)printf("  Mass = %f\n",w->mass) ;
+            skippast_rbr(msfile) ;
             break ;
 /*
  *  NOTE OpenRails also allows for a 'engine' wheel radius
@@ -225,6 +239,14 @@ char     ffname[] = "__FILE__"  ;
                         w->stiffness22  = convert_unit(token,"N/m") ;
                         skip_rbr(msfile) ;
                         break ;
+                      CASE("Damping")
+                        skip_lbr(msfile) ;
+                        token = new_tmp_token(msfile) ;
+                        w->damping21  = convert_unit(token,"N/m/s") ;
+                        token = new_tmp_token(msfile) ;
+                        w->damping22  = convert_unit(token,"N/m/s") ;
+                        skip_rbr(msfile) ;
+                        break ;
                       CASE("Break")
                         skip_lbr(msfile) ;
                         token = new_tmp_token(msfile) ;
@@ -242,11 +264,14 @@ char     ffname[] = "__FILE__"  ;
                         skip_rbr(msfile) ;
                         break ;
                       CASE("Comment")
+//                      CASE("comment")
                         skip_lbr(msfile) ;
-                        skipto_rbr(msfile) ;
+                        skippast_rbr(msfile) ;
                         break ;
                       DEFAULT
-                        printf(" Error token not recognised.  Token = %s\n",token);
+                         printf("     Routine %s. Wagon %s. Spring token not recognised.  Token = %s\n",
+                                      my_name,w->name,token);
+
                         exit(1) ;
                     END
                   }
@@ -256,11 +281,17 @@ char     ffname[] = "__FILE__"  ;
                   w->couplinghasrigidconnection2 = itoken(msfile) ;
                   skip_rbr(msfile) ;
                   break ;
+                CASE("comment")
+                CASE("Velocity")
+                CASE("CouplingUniqueType")
+                  skip_lbr(msfile) ;
+                  skippast_rbr(msfile) ;
+                  break ;
                 DEFAULT
-                  printf(" Routine %s. Wagon %s. Token not recognised.  Token = %s\n",
+                  printf("     Routine %s. Wagon %s. Coupling token not recognised.  Token = %s\n",
                   my_name,w->name,token);
                   skip_lbr(msfile)   ;
-                  skipto_rbr(msfile) ;
+                  skippast_rbr(msfile) ;
 
 //                  exit(1) ;
               END
@@ -277,8 +308,17 @@ char     ffname[] = "__FILE__"  ;
             }
             break ;
           CASE("BrakeEquipmentType")
-            skip_lbr(msfile) ;
-            w->brakeequipmenttype = ctoken(msfile) ;
+            skip_lbr(msfile)        ;
+            string = ctoken(msfile) ;         // malloc
+            if(w->brakeequipmenttype){
+              printf("     Routine: %s, wagon: %s\n",my_name, w->name) ;
+              printf("       BrakeEquipmentType already set.\n") ;
+              printf("         old version = %s\n",w->brakeequipmenttype) ;
+              printf("         new version = %s\n",string) ;
+              free(string) ; string = NULL ;  // malloc no longer needed
+            }else{
+              w->brakeequipmenttype = string ;
+            }
             if(ip)printf("    BrakeEquipmentType = :%s:\n",
                                                w->brakeequipmenttype) ;
             skip_rbr(msfile) ;
@@ -514,12 +554,15 @@ char     ffname[] = "__FILE__"  ;
                   }
                   skip_rbr(msfile) ;
                   break ;
+                CASE("Sound")
+                  skip_lbr(msfile)   ;
+                  skippast_rbr(msfile) ;
+                  break ;
                 DEFAULT
-                  printf(" Routine %s. Wagon %s. Token not recognised.  Token = %s\n",
+                  printf("     Routine %s. Wagon %s. Inside token not recognised.  Token = %s\n",
                    my_name,w->name,token);
                   skip_lbr(msfile)   ;
-                  skipto_rbr(msfile) ;
-//                  exit(1) ;
+                  skippast_rbr(msfile) ;
               END
             }
             break ;
@@ -538,47 +581,133 @@ char     ffname[] = "__FILE__"  ;
             skip_rbr(msfile) ;
             break ;
 
+          CASE("Pantograph")
+//            init_rawenginenode(w) ;
+            w->has_pantographs = 1;
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
+          CASE("Wiper")
+//            init_rawenginenode(w) ;
+            w->has_wipers = 1;
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
+          CASE("Mirror")
+//            init_rawenginenode(w) ;
+            w->has_mirrors = 1;
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
+          CASE("Door")
+            w->has_doors = 1;
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
 
-
+          CASE("Wheelset")
+          CASE("Relaxation")
+          CASE("Friction")
+//          CASE("comment")
+          CASE("Adheasion")
+          CASE("ExtraParameters")
+//  Unused MSTS Parameters
+          CASE("Velocity")
+          CASE("Buffers")
+          CASE("DerailRailHeight")
+          CASE("DerailRailForce")
+          CASE("DerailBufferForce")
+          CASE("AntiSlip")
+          CASE("EmergencyBrakeResMaxPressure")
+          CASE("IntakePoint")
+          CASE("Lights")
+          CASE("NumberOfHandbrakeLeverSteps")
+          CASE("InertiaTensor")
+          CASE("QuickReleaseTriggerRate")
+          CASE("QuickReleaseMagnification")
+          CASE("QuickApplicationTriggerRate")
+          CASE("QuickApplicationMagnification")
+          CASE("EmergencyBrakeTriggerRate")
+          CASE("TrainPipeLeakRate")
+          CASE("AuxilaryLeakRate")
+          CASE("NumberOfHandbrakeLeverSteps")
+          CASE("MaxTilt")
+          CASE("BrakeDistributorFullServicePressure")
+          CASE("BrakeDistributorMaxAuxilaryResPressure")
+          CASE("BrakeDistributorEmergencyResPressure")
+          CASE("BrakeDistributorReleaseRate")
+          CASE("BrakeDistributorApplicationRate")
+          CASE("BrakeDistributorTrainPipeControlRatio")
+          CASE("BrakeDistributorNormalFullReleasePressure")
+          CASE("Sound")
+          CASE("Thumbnail")
+          CASE("RetainingValveSlowReleaseRate")
+          CASE("BrakeCylinderPressureForMaxBrakeBrakeForce")
+          CASE("BrakeAirPressureGainInResForOnePoundFromPipe")
+          CASE("Centre")
+          CASE("Id")
+          CASE("#Size")
+          CASE("PassengerCapacity")
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
 
           DEFAULT
-            printf(" Routine %s. Wagon %s. Token not recognised.  Token = %s\n",
+            printf("     Routine %s. Wagon %s. Token not recognised.  Token = %s\n",
                    my_name,w->name,token);
             skip_lbr(msfile)   ;
-            skipto_rbr(msfile) ;
+            skippast_rbr(msfile) ;
         END
+        if(ip)printf(" ZZZZ\n") ;
+
       }
       free(cdir) ;
       if(ip)printf(" WWWWWWWWWWWWWWWWWWWWW\n") ;
       fflush(NULL) ;
 //      check_wheel_radii(w) ;
       close_msfile(msfile) ;
+      if(ip)printf(" Exit routine %s\n",my_name) ;
 
       return 0 ;
 }
 
 /*
- *  File 1905-C144.eng contains a length which is split between lines
+ *  In a number of the wagon files, tokens containing measurements are often
+ *  in a form of free format.
+ *
+ *  Examples are file Trains/Trainset/AU_NSW_1905-Locos/1905-C144.eng, part
+ *  of au_great_zig_zag contains Size on two lines:
+ *    Size ( 2.71577m 7.4
+ *      7m )
+ *
+ *  MSTS file TRAINS/TRAINSET/US2FREIGHTCAR3/US2Freightcar3.s contains
+ *    Mass ( "98.163t #24.186t empty, 98.163t full" )
+ *
  *  I do not know how often this occurs but this routine is designed to
  *  deal with some such cases, returning a temporary string
  *  Possibilities are "( 52 ft^2 )" or ( 52 )
+ *
+ *  MSTS file TRAINS/TRAINSET/US2FREIGHTCAR3/US2Freightcar3.s contains
+ *    Mass ( "98.163t #24.186t empty, 98.163t full" )
  */
 
 char *read_scaled_token(MSfile *msfile){
-  int  l, n ;
+  uint l, n ;
   char *token ;
 
       token = new_tmp_token(msfile) ;
       strncpy(string,token,256);
 
-      l = strlen(string) ;
+      l = strlen(string) ;                 // length of string
       n = strspn(string,"1234567890-.e");
 //      printf(" read_scaled_token 1 : l = %i, n = %i, string = %s\n",l,n,string);
       if(l==n){
         token = new_tmp_token(msfile) ;
-        if(is_rbr(token)){
+        l = strlen(token) ;
+        n = strspn(token,"1234567890-.e") ;
+        if(l==n ||is_rbr(token)){
           return_token(token,msfile) ;
-        }else{
+        }else if(token[0]!='#'){
           strncat(string,token,256-l) ;
         }
       }
@@ -603,19 +732,19 @@ int  check_wheel_radii(RawWagonNode *w){
 ShapeNode  *shape  ;
 Matrix4x3  *matrix ;
 LodControl *lod_control ;
-DistLevel *dist_level   ;
-int        *hierarchy   ;
+DistLevel  *dist_level  ;
+int        *hierarchy   ;   ///  Can be -1
 
-int        nmatrices    ;
-int        n_hierarchy ;
+uint        nmatrices    ;
+uint        n_hierarchy ;
 //ShapeNode  *shape ;
 //Matrix4x3  *matrix ;
 //int        nmatrices ;
 char       *name ;
 char       *myname = "check_wheel_radii" ;
 
-int    ip = 1 ;   // DEBUG
-int    i, j ;
+uint    ip = 0 ;   // DEBUG
+uint    i, j ;
 double radius ;
 
       printf("  ENTER %s\n",myname) ;
@@ -648,8 +777,8 @@ double radius ;
       printf("  dist_level     = %p\n",(void *)dist_level) ;
 
       printf("  n_hierarchy    = %i\n",dist_level->n_hierarchy) ;
-      n_hierarchy   = dist_level->n_hierarchy   ;
-      hierarchy   = dist_level->hierarchy   ;
+      n_hierarchy  = dist_level->n_hierarchy   ;
+      hierarchy    = dist_level->hierarchy   ;
       printf("  hierarchy      = %p\n",(void *)hierarchy) ;
 
       printf("  ENTER %s %p\n",myname,(void *)w) ;
@@ -704,6 +833,17 @@ double radius ;
         free(name) ;
         printf(" LL\n") ;
       }
-
       return 0;
 }
+
+#if 0
+int  init_rawenginenode(RawWagonNode *w){
+
+      if(!w->raw_engine)w->raw_engine = (RawEngineNode *)malloc(sizeof(RawEngineNode)) ;
+      w->raw_engine->has_wipers      = 0 ;
+      w->raw_engine->has_mirrors     = 0 ;
+      w->raw_engine->has_pantographs = 0 ;
+      return 0;
+}
+#endif
+

@@ -32,6 +32,9 @@ int   error ;
 char  my_name[] = "freetype_init" ;
 char  font_file[256] ;
 
+#ifdef NO_SDL_TTF
+      return 0;
+#endif
 
       error = FT_Init_FreeType(&ft_lib) ;
       if(error){
@@ -91,10 +94,12 @@ char  font_file[256] ;
 }
 
 
-void render_text(const char *text, GLfloat x, GLfloat y, float sx, float sy) {
+//void render_text(const char *text, GLfloat x, GLfloat y, float sx, float sy) {
+void render_text(const char *text) {
 
 static int ip  = 0 ;
-int        i,j,k,l,i1,j1,m, error ;
+unsigned int iu, iu1 ;
+int          j, k, l, i1, j1, m, error ;
 const char *p;
 
 FT_GlyphSlot g  ;
@@ -133,8 +138,10 @@ char bitmap[256] ;
         error = FT_Render_Glyph(ft_tahoma->glyph, FT_RENDER_MODE_MONO );
         if(error)printf(" Render Glyph ERROR %i\n",error) ;
 //        FT_Load_Char(face,0,FT_LOAD_RENDER) ;
-        if(ip)printf(" II3 ::%c:: \n",(int) *p) ;
-        fflush(NULL) ;
+        if(ip){
+          printf(" II3 ::%c:: \n",(int) *p) ;
+          fflush(NULL) ;
+        }
 
         g = ft_tahoma->glyph ;
         if(ip)printf(" glyph_slot = %p\n",(void *)g );
@@ -150,21 +157,22 @@ char bitmap[256] ;
           g->bitmap.pixel_mode,
           g->bitmap.num_grays,
           g->bitmap.rows - g->bitmap_top ) ;
+
 //  Copy from freetype bitmap buffer to OpenGL bitmap
         b = (char *)g->bitmap.buffer ;
-        for(j=0;j<g->bitmap.rows;j++){
-          j1 = g->bitmap.rows - 1 - j ;
-          for(i=0;i<g->bitmap.pitch;i++){
-            bitmap[j1*g->bitmap.pitch + i]
-                               = b[j*g->bitmap.pitch + i] ;
+        for(iu=0;iu<g->bitmap.rows;iu++){
+          iu1 = g->bitmap.rows - 1 - iu ;
+          for(j=0;j<g->bitmap.pitch;j++){
+            bitmap[iu1*g->bitmap.pitch + j]
+                               = b[iu*g->bitmap.pitch + j] ;
           }
         }
 
         if(ip){
           b = (char *)g->bitmap.buffer ;
-          for(j=0;j<g->bitmap.rows;j++){
-            j1 = g->bitmap.rows - 1 - j ;
-            for(i=0;i<g->bitmap.pitch;i++){
+          for(iu=0;iu<g->bitmap.rows;iu++){     // rows - unsigned int
+            iu1 = g->bitmap.rows - 1 - iu ;
+            for(j=0;j<g->bitmap.pitch;j++){  // pitch - int
               for(k=7;k>-1;k--){
                 m = (*b & (1<<k))? 1 : 0 ;
                 printf(" %i",m) ;
@@ -177,8 +185,8 @@ char bitmap[256] ;
 
           printf("==============================\n") ;
           b = (char *)bitmap ;
-          for(j=0;j<g->bitmap.rows;j++){
-            for(i=0;i<g->bitmap.pitch;i++){
+          for(iu=0;iu<g->bitmap.rows;iu++){
+            for(j=0;j<g->bitmap.pitch;j++){
               for(k=7;k>-1;k--){
                 m = (*b & (1<<k))? 1 : 0 ;
                 printf(" %i",m) ;
@@ -242,24 +250,25 @@ char bitmap[256] ;
  */
 void render_text_as_greyscale(const char *text, FT_Face type, int isize) {
 
-static int ip  = 0 ;
-int        i,j,k,l,i1,j1,m, error ;
-const char *p;
+static int   ip  = 0 ;
+unsigned int  iu, iu1 ;
+int           j, k, m, error ;
+const char   *p  ;
 
-FT_GlyphSlot g  ;
+FT_GlyphSlot g   ;
 FT_UInt      glyph_index ;
-GLuint tex;
-GLuint vbo;
+GLuint       tex ;
+GLuint       vbo ;
 char  my_name[]="render_text_as_greyscale" ;
-char  *b ;
-char  c ;
+char  *b         ;
+char  c          ;
 //  __attribute__ :: an attempt to see of it removed need for
 //                   repeated calls to
 //   glGetFloatv(GL_CURRENT_RASTER_POSITION,posn)
 char bitmap[4096] __attribute__ ((aligned (8)))  ;
 GLfloat xx, yy, xp, yp;
-GLfloat posn[4] ;
-GLboolean boo ;
+GLfloat posn[4]  ;
+GLboolean boo    ;
 
 /*
  * Specify size
@@ -332,19 +341,19 @@ GLboolean boo ;
           g->bitmap.rows - g->bitmap_top ) ;
 //  Copy from freetype bitmap buffer to OpenGL bitmap
         b = (char *)g->bitmap.buffer ;
-        for(j=0;j<g->bitmap.rows;j++){
-          j1 = g->bitmap.rows - 1 - j ;
-          for(i=0;i<g->bitmap.pitch;i++){
-            bitmap[j1*g->bitmap.pitch + i]
-                               = b[j*g->bitmap.pitch + i] ;
+        for(iu=0;iu<g->bitmap.rows;iu++){
+          iu1 = g->bitmap.rows - 1 - iu ;
+          for(j=0;j<g->bitmap.pitch;j++){
+            bitmap[iu1*g->bitmap.pitch + j]
+                               = b[iu*g->bitmap.pitch + j] ;
           }
         }
 
         if(ip){
           b = (char *)g->bitmap.buffer ;
-          for(j=0;j<g->bitmap.rows;j++){
-            j1 = g->bitmap.rows - 1 - j ;
-            for(i=0;i<g->bitmap.pitch;i++){
+          for(iu=0;iu<g->bitmap.rows;iu++){
+            iu1 = g->bitmap.rows - 1 - iu ;
+            for(j=0;j<g->bitmap.pitch;j++){
               for(k=7;k>-1;k--){
                 m = (*b & (1<<k))? 1 : 0 ;
                 printf(" %i",m) ;
@@ -357,8 +366,8 @@ GLboolean boo ;
 
           printf("==============================\n") ;
           b = (char *)bitmap ;
-          for(j=0;j<g->bitmap.rows;j++){
-            for(i=0;i<g->bitmap.pitch;i++){
+          for(iu=0;iu<g->bitmap.rows;iu++){
+            for(j=0;j<g->bitmap.pitch;j++){
               for(k=7;k>-1;k--){
                 m = (*b & (1<<k))? 1 : 0 ;
                 printf(" %i",m) ;

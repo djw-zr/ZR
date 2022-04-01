@@ -31,7 +31,7 @@
 #include <assert.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_opengl.h>
-#include <SDL2/SDL_ttf.h>
+//#include <SDL2/SDL_ttf.h>
 
 #include <GL/gl.h>
 #include <GL/glext.h>
@@ -44,12 +44,15 @@ u32 WindowFlags       ;
 SDL_Window   *Window  ;
 SDL_GLContext Context ;
 SDL_Event    *Event   ;
+int sdl2_double_buffer = 0 ;   // Set to 1 if double buffering
+
+#ifdef USE_SDLTTF
 TTF_Font     *ttf_font ;
 TTF_Font     *ttf_font_f12,
              *ttf_font_f14,
              *ttf_font_f16,
              *ttf_font_f18 ;
-
+#endif
 
 b32 Running    = 1 ;
 b32 FullScreen = 0 ;
@@ -62,16 +65,24 @@ int  keyboard_sdl(SDL_Event *event )       ;
 
 #endif
 
+/*
+ *  glError variables
+ */
+GLenum   gl_errorCode ;
+GLubyte *gl_errString = (GLubyte *)"No OpenGL Error";
+
+
 int     l_plot = 0  ;   // True if plotting on
 int     tst_tile_x =  1448 ;       //  Initial test  1448
 int     tst_tile_y = 10331 ;       //  Initial test 10331
-int     n_vanodes_d  ;   //  Used to store number of va nodes displayed
-int     id_shape = 1 ;       // Used to debug display
-
+int     n_vanodes_d    ;           //  Used to store number of va nodes displayed
+int     id_shape = 1   ;           //  Used to debug display
 
 GLdouble pi     = M_PI       ;
 GLdouble radian = M_PI/180.0 ;
 GLdouble degree = 180.0/M_PI ;
+GLfloat  gl_offset1 = -1.0    ;
+GLfloat  gl_offset2 = -2.0    ;
 /*
  *  The 3D view is defined by the variables specifying the viewport
  *  and the "lookat_" variables which specify the position of the eye
@@ -102,8 +113,11 @@ GLdouble viewport_fovy   = 30.0 ;
 GLdouble viewport_aspect =  1.0 ;
 GLdouble viewport_near_m =  1.0 ;    // Nearest point displayed 1 m(m)
 //GLdouble viewport_far_m  = 10240.0 ; // Furthest point displayed
+#ifdef sketch_tracks_and_roads
+GLdouble viewport_far_m  = 20480.0 ; // Furthest point displayed
+#else
 GLdouble viewport_far_m  = 2048.0 ; // Furthest point displayed
-
+#endif
 double    tile_size  = 2048.0    ;  // Size of tile (m)
 double    plot_scale = 2048.0    ;  // Size in m of one unit in plotting space
 
@@ -163,6 +177,59 @@ GLdouble offset_center_x =   0.5  ;     //  Initial losition looked at
 GLdouble offset_center_y =   0.5  ;
 GLdouble offset_center_z =   0.0  ;
 #endif
+#elif defined ROUTE_USA1
+//   Baltimore
+GLdouble offset_eye_x    =   11.955162 ;      //  Initial position of eye
+GLdouble offset_eye_y    =   23.442479 ;
+GLdouble offset_eye_z    =    0.114801 ;
+GLdouble offset_center_x =   11.929563 ;     //  Initial losition looked at
+GLdouble offset_center_y =   23.438227 ;
+GLdouble offset_center_z =    0.112526 ;
+#elif defined ROUTE_USA2
+GLdouble offset_eye_x    =   96.969761 ;      //  Initial position of eye
+GLdouble offset_eye_y    =   17.013034 ;
+GLdouble offset_eye_z    =    0.104136 ;
+GLdouble offset_center_x =   96.962818 ;     //  Initial losition looked at
+GLdouble offset_center_y =   17.022474 ;
+GLdouble offset_center_z =    0.104134 ;
+#elif defined ROUTE_EUROPE1
+GLdouble offset_eye_x    =    1.170625 ;      //  Initial position of eye
+GLdouble offset_eye_y    =   41.379704 ;
+GLdouble offset_eye_z    =    0.031768 ;
+GLdouble offset_center_x =    1.154148 ;     //  Initial losition looked at
+GLdouble offset_center_y =   41.399151 ;
+GLdouble offset_center_z =    0.026397 ;
+#elif defined ROUTE_EUROPE2
+GLdouble offset_eye_x    =    0.864958 ;      //  Initial position of eye
+GLdouble offset_eye_y    =    1.213952 ;
+GLdouble offset_eye_z    =    0.396184 ;
+GLdouble offset_center_x =    0.940787 ;     //  Initial losition looked at
+GLdouble offset_center_y =    1.252589 ;
+GLdouble offset_center_z =    0.387239 ;
+#elif defined ROUTE_JAPAN1
+GLdouble offset_eye_x    =    6.687026 ;      //  Initial position of eye
+GLdouble offset_eye_y    =    0.953594 ;
+GLdouble offset_eye_z    =    0.050969 ;
+GLdouble offset_center_x =    6.620887 ;     //  Initial losition looked at
+GLdouble offset_center_y =    0.900036 ;
+GLdouble offset_center_z =    0.042024 ;
+#elif defined ROUTE_JAPAN2
+GLdouble offset_eye_x    =   31.997668 ;      //  Initial position of eye
+GLdouble offset_eye_y    =    0.911984 ;
+GLdouble offset_eye_z    =    0.115911 ;
+GLdouble offset_center_x =   31.927571 ;     //  Initial losition looked at
+GLdouble offset_center_y =    0.961066 ;
+GLdouble offset_center_z =    0.115911 ;
+#elif defined ROUTE_TUTORIAL
+GLdouble offset_eye_x    =    2.028417 ;      //  Initial position of eye
+GLdouble offset_eye_y    =   11.507974 ;
+GLdouble offset_eye_z    =    0.005371 ;
+GLdouble offset_center_x =    1.979062 ;     //  Initial losition looked at
+GLdouble offset_center_y =   10.094621 ;
+GLdouble offset_center_z =    0.005371 ;
+/*
+ *   Zig-Zag Route
+ */
 #elif 0
 //  Position at Origin
 GLdouble offset_eye_x    =   0.000  ;     //  Initial position of eye
@@ -235,7 +302,7 @@ GLdouble offset_eye_z    =   0.005559 ;
 GLdouble offset_center_x =   3.116628 ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.579307 ;
 GLdouble offset_center_z =   0.005559 ;
-#elif 1
+#elif 0
 //  Position at Bowenfels Station
 GLdouble offset_eye_x    =   3.203460  ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.494317  ;
@@ -259,7 +326,7 @@ GLdouble offset_eye_z    =   0.016  ;
 GLdouble offset_center_x =   4.434  ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.411  ;
 GLdouble offset_center_z =   0.016  ;
-#elif 1
+#elif 0
 //  Position near points east of Lithgow
 GLdouble offset_eye_x    =   4.8240  ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.5679  ;
@@ -267,7 +334,7 @@ GLdouble offset_eye_z    =   0.0180  ;
 GLdouble offset_center_x =   4.8490  ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.5867  ;
 GLdouble offset_center_z =   0.0180  ;
-#elif 1
+#elif 0
 //  Position at Lithgow
 GLdouble offset_eye_x    =   4.9649 ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.3976  ;
@@ -341,7 +408,25 @@ int     ortho_col = 0 ;      // Colour used for debug
  *  Default texture to topography
  *  [Simple scheme for use until proper implimentation of land textures}
  */
-char    land_texture_default[] = "BrownScrub" ;
+#ifdef ROUTE_USA2
+//char    land_texture_default[] = "bluediamond" ;
+//char    land_texture_default[] = "US2GrassTrans" ;
+char    land_texture_default[] = "US2ScrubTrans" ;
+#elif defined ROUTE_USA1
+char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined ROUTE_EUROPE1
+char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined ROUTE_EUROPE2
+char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined ROUTE_JAPAN1
+char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined ROUTE_JAPAN2
+char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined ROUTE_TUTORIAL
+char    *land_texture_default = "ACleanTrackBase" ;
+#else
+char    *land_texture_default = "BrownScrub" ;
+#endif
 TextureNode *land_texture = NULL              ;  // Non-zero if present
 
 /*
@@ -378,7 +463,7 @@ int    icount = 0;
 int    ipp = 0 ;
 time_t time_now, time_last = 0, time_inc ;
 int    fps   = 0 ;              // Frames per second when set
-int    l_fps = 0 ;              // When set print frames per second
+int    l_fps = 1 ;              // When set print frames per second
 
 /*
  *==============================================================================
@@ -404,10 +489,14 @@ void  keyboard(unsigned char key, int x, int y);
 void  display(void) ;
 void  reinit_vars(void) ;
 void  specialkey(int key, int ixm, int iym) ;
-int   print_string_in_window(GLfloat rx, GLfloat ry, char *string);
+int   print_string_in_window(GLfloat wx, GLfloat wy, char *string);
 int   print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string);
-int   print_string_in_window3(GLfloat rx, GLfloat ry, char *string, int font_size);
+int   print_string_in_window3(GLfloat wx, GLfloat wy, char *string, int font_size);
+int   print_string_in_window_z(char *string, int font_size);
 int   glutPrintString(char *string, void *font) ;
+#if defined GLUT || defined USE_ZRGLUT
+void   glutBitmapCharacter( void* fontID, int character ) ;
+#endif
 
 void  myLookAt(void)           ;
 void  reshape(int w, int h)    ;
@@ -420,7 +509,7 @@ void  mark_shapes(void)        ;
 void  mark_textures(void)      ;
 void  cull_textures(void)      ;
 void  cull_display_lists(void) ;
-void  graphics_cull(void)      ;
+void  graphics_reset(void)     ;
 void  cull_topography_display_lists(void) ;
 void  load_topography_display_lists(void) ;
 void  load_needed_textures()   ;
@@ -438,7 +527,7 @@ int   make_tile_topog_display_list(TileListNode *tnode, GLuint klist) ;
 int   make_dynamic_display_lists() ;
 void  makeCheckImages(void) ;
 int   initialise_eye_vectors() ;
-int   check_in_scene(GLdouble x,GLdouble y,GLdouble z,GLdouble r,GLdouble d) ;
+int   check_in_scene(GLdouble x,GLdouble y,GLdouble z,GLdouble r) ;
 
 // Utilities
 

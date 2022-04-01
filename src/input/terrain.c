@@ -102,10 +102,16 @@ int read_ms_terrain(TileListNode *tile)
       label_length1 = read_uint8(fp)  ;
       remaining_bytes1 = block_bytes1 - 9 ;
 
-//      printf(" AA itoken1 = %i, flags1 = %i, remaining_bytes1 = %i, label_length1 = %i\n",
-//                 itoken1, flags1, remaining_bytes1, label_length1) ;
-//      printf(" AA token_idc[%i] %x = %s\n",itoken1,itoken1,token_idc[itoken1]) ;
-//      printf(" AA token_id[%s] = %i\n","TERRAIN",TERRAIN) ;
+      if(ip) {
+        printf(" AA itoken1          = %X  :: %i\n", itoken1, itoken1) ;
+        printf(" AA flags1           = %X  :: %i\n", flags1,  flags1 ) ;
+        printf(" AA block_bytes1     = %X  :: %i\n", block_bytes1, block_bytes1) ;
+        printf(" AA label_length1    = %X  :: %i\n", label_length1, label_length1 ) ;
+        printf(" AA remaining_bytes1 = %X  :: %i\n", remaining_bytes1, remaining_bytes1) ;
+
+        printf(" AA token_idc[%i] %x = %s\n",itoken1,itoken1,token_idc[itoken1]) ;
+        printf(" AA token_id[%s] = %x :: %i\n","TERRAIN",TERRAIN,TERRAIN) ;
+      }
 
       switch(itoken1) {                                       // SWITCH 1
         case(TERRAIN) :
@@ -632,13 +638,14 @@ int read_ms_terrain(TileListNode *tile)
 }
 
 int read_elevations(TileListNode *tlnode){
-  int    len, len2, i, j, k;
+  int    len, len2, i, j, k, iret;
   int    ip = 0 ;    // 0 = no printing
+  size_t isize ;
   unsigned short  *z ;
-  char   *name,
+  char   *name = NULL,
          *full_name ;
   char    myname[] = "read_elevations" ;
-  FILE   *fp ;
+  FILE   *fp = NULL ;
 
       if(ip)printf("\n  Enter routine : %s\n",myname);
       name = tlnode->terrain_data.ybuffer;
@@ -649,38 +656,55 @@ int read_elevations(TileListNode *tlnode){
       strcpy(full_name   ,ORroutedir)    ;
       strcat(full_name   ,"TILES/")      ;
       strcat(full_name   ,name)          ;
-      if(ip)printf("  Full name = %s\n",full_name);
-      if(ip)printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
-
-
-      fp = gopen(full_name,"r");
-      if(NULL == fp){
+      if(ip){
+        printf("  Full name = %s\n",full_name);
+        printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
+//        ip =  (abs(tlnode->tilex-1449)<3)  && (abs(tlnode->tiley-10331)<3) ;
+      }
+/*
+ *   Look for file allowing for uppercase/lowercase confision
+ */
+      iret = zr_find_msfile2(full_name) ;
+/*
+ *   Open topography files (*_y.raw)
+ *   These are binary files.  The Windows' C runtime routine fread
+ *   needs the 'b' flag to prevent the preprocessing/translation
+ *   that occurs with Windows text files.  Other systems ignore
+ *   the extra flag.
+ */
+      if(!iret)fp = gopen(full_name,"rb");
+      if(iret || NULL == fp){
         printf(" Routine %s,   file not found : %s\n",myname,name);
-        free(name) ;
         free(full_name);
+        return 1 ;
       }else{
         if(ip)printf("  File found\n") ;
-        free(full_name) ;
         len  = tlnode->terrain_data.terrain_nsamples;
         len2 = len*len ;
         tlnode->terrain_data.elevations = (unsigned short *)malloc(len2*sizeof(short)) ;
         z = tlnode->terrain_data.elevations;
-//        fread((void *)tlnode->terrain_data.elevations,(size_t) len, sizeof(short), fp);
-        for(j=0;j<len;j++){
-          for(i=0;i<len;i++,z++){
-            *z = read_uint16(fp);
-//            if(i<30 && j<30)printf(" ZZ  i= %i, j = %i, z = %p, %i\n",i,j,(void *)z,(int)*z) ;
-          }
+/*
+ *  Read topography
+ */
+        isize = fread(z,sizeof(short),(size_t)len2,fp) ;
+        if(isize != (size_t)len2){
+          printf("  Routine %s\n",myname)  ;
+          printf("  Read truncated while reading topography from\n")  ;
+          printf("  file : %s\n",full_name) ;
         }
+        free(full_name) ;
         gclose(fp) ;
-
-        if(ip)printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
-        if(tlnode->tilex == 1455 && tlnode->tiley == 10331){
+        tlnode->loaded = 1 ;
+/*
+ *  Print topography ??
+ */
+        if(ip){
+          printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
           z = tlnode->terrain_data.elevations;
           if(ip)printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
-          for(j=0;j<10;j++){
+          for(j=11;j<15;j++){
             if(ip)printf(" elevation j = %i,  ",j);
-            for(i=0;i<10;i++){
+            for(i=11;i<15;i++){
               k = j+len * i ;
 //              printf("  %p",(void *)&z[k]);
               if(ip)printf("  %6i",(int)z[k]);
@@ -689,6 +713,5 @@ int read_elevations(TileListNode *tlnode){
           }
         }
       }
-      tlnode->loaded = 1 ;
       return 0;
 }

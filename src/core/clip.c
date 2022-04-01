@@ -13,13 +13,6 @@
  *==============================================================================
  */
 
-/*
- * *****************************************************************************
- *   Reshape - called when window size is changed
- *         also called when the graphics screen is opened
- * *****************************************************************************
- */
-
 void matmult(GLfloat *res, GLfloat *a, GLfloat *b) ;
 
 int  initialise_clip_planes(GLfloat clipv[6][4]){
@@ -123,11 +116,12 @@ GLfloat prodmat[16]    ;
 
 void matmult(GLfloat *res, GLfloat *a, GLfloat *b) {
 
-  int i, j, k ;
+int i, j, k ;
+
       for(i=0;i<4;i++) {
         for(j=0;j<4;j++) {
           res[i*4+j] = 0.0;
-          for (int k = 0; k < 4; k++) {
+          for(k=0;k<4;k++) {
             res[i*4+j] += a[i*4+k] * b[k*4+j];
           }
         }
@@ -141,7 +135,7 @@ void matmult(GLfloat *res, GLfloat *a, GLfloat *b) {
  */
 void  check_clip_planes(){
 
-int      i, j, k ;
+int      k ;
 GLfloat  x, y, z, sum[6] ;
 
       x = lookat_eye_x ;

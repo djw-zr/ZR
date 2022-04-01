@@ -31,9 +31,17 @@ static uint   SF_Global            = 0x00200000 ;
 static uint   PD_PlatformLeft      = 0x00000002 ;
 static uint   PD_PlatformRight     = 0x00000004 ;
 
+typedef struct carspawnobj {
+  uint            carspawnerlist_idx ;
+  float           car_frequency      ;  //  Default 5
+  float           car_av_speed       ;  // Default 20 m/s (~50 mph)
+  char            *list_name         ;
+} CarSpawnObj ;
+
+
 typedef struct dyntracksect {
   uint            is_curved          ;  // SubBlock 1 = curved, 0 = straight
-  uint            uid                ;  // Id
+  int             uid                ;  // Id  (maybe -1??)
   float           param_1            ;  // Length (m) for straight,
                                         // Arc (radians) for curved
   float           param_2            ;  // 0 for straight,
@@ -48,12 +56,12 @@ typedef struct dyntrackobj {
   float           dist_level[3]      ;
   float           elevation          ;
   DynTrackSect    dyn_trk_sect[5]    ;
-  TrkNetNode      *tsnode            ;  // Generated node used to hold
+  TrkSectNode     *tsnode            ;  // Generated node used to hold
                                         //   display list for dynamic track
 } DynTrackObj ;
 
 typedef struct trackobj {
-  uint           section_idx         ;
+  uint           section_idx         ;  //  Index of track section
   float          elevation           ;
   uint           collide_flags       ;
   int            tile_x              ;  // Position of Junction Node
@@ -61,6 +69,7 @@ typedef struct trackobj {
   float          X                   ;  //        "
   float          Y                   ;  //        "
   float          Z                   ;  //        "
+  TrkVectorNode  *track_vec          ;  //  Pointer to corresponding vector node
 } TrackObj ;
 
 typedef struct forestobj {
@@ -98,6 +107,10 @@ typedef struct signalobj {
   uint             *u_data1          ;
   uint             *tr_item          ;
 } SignalObj ;
+
+typedef struct staticobj {
+  int              no_direct_light   ;
+} StaticObj ;
 
 typedef struct levelcrobj {
   float            warning_time      ;
@@ -147,6 +160,7 @@ typedef struct worlditem {
   char             *filename       ;   //  Shape file name from world file
   ShapeNode        *snode          ;   //  Pointer to shape node
   uint             static_flags    ;   //  See SD constants (at start of file)
+  uint             collide_flags   ;   //  As it says
 // Vector and Quaternon defining objects position and orientation in tile
   double           X               ;   //  X position in tile, geographic coords
   double           Y               ;   //  Y position in tile
@@ -163,21 +177,25 @@ typedef struct worlditem {
   double           ANG             ;   //  Angle of rotation (degrees)
 
   int              vdb_id          ;
+  int              iz_off          ;   //  PolygonOffset flag (0,1,2)
   uint             static_detail_level ;
   int              n_tr_item       ;
   float            tr_item_db[4]   ;
   float            tr_item_db_id[4];
+  double           max_vis_distance ;
   union {                                 //  Item specific data
     TrackObj       track_obj       ;
-    ForestObj      forest_obj      ;
-    SpeedPostObj   speed_post_obj  ;
-    SidingObj      siding_obj      ;
     DynTrackObj    dyn_track_obj   ;
-    TransferObj    transfer_obj    ;
-    SignalObj      signal_obj      ;
+    CarSpawnObj    car_spawn_obj   ;
+    ForestObj      forest_obj      ;
     LevelCrObj     levelcr_obj     ;
     PickupObj      pickup_obj      ;
     PlatformObj    platform_obj    ;
+    SidingObj      siding_obj      ;
+    SignalObj      signal_obj      ;
+    StaticObj      static_obj      ;
+    SpeedPostObj   speed_post_obj  ;
+    TransferObj    transfer_obj    ;
   } u ;
 } WorldItem ;
 
@@ -221,6 +239,7 @@ typedef struct worldnode {
   uint             vdbid_count ;     //  Number of visibility spheres
   VDbSphere        *vdb_sphere ;     //  Info on visibiliaty from a distance
   WorldItem        *world_item ;     //  List of fixed structures
+  BTree            *shape_tree ;     //  Btree containing shapes
 } WorldNode ;
 
 /*
