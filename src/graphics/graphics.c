@@ -132,6 +132,7 @@ int  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string){
 //char my_name[] = "print_string_in_window2" ;
 //      printf("  Enter %s\n",my_name) ;
 
+      glPushAttrib(GL_ENABLE_BIT) ;
       glDisable(GL_LIGHTING)  ;
       glDisable(GL_TEXTURE_2D) ;
       glEnable(GL_BLEND)      ;
@@ -139,9 +140,7 @@ int  print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string){
       glRasterPos3d(rx, ry, rz) ;
       print_string_in_window_z(string, 12) ;
 
-      glEnable(GL_LIGHTING)  ;
-      glEnable(GL_TEXTURE_2D) ;
-      glEnable(GL_BLEND)      ;
+      glPopAttrib() ;
       return 0 ;
       }
 
@@ -561,15 +560,16 @@ double x, y, z, e, n, h ;
 }
 /*
  *   Transform a MSTS wagon coordinate to the corresponding local co-ordinate
- *   including the translation along the current rail vector.  This mimics
+ *   including the translation along the current track vector.  This mimics
  *   the transformation used when drawing wagons and is used to check if a
  *   wagon is within the scene
  *
  *   x0, y0, z0  ::  Wagon vector
- *   xt, yt, zt  ::  position relative to origin of rail vector (metres)
- *   a,  b,  c   ::  rotations of rail about its origin (degrees)
+ *   xt, yt, zt  ::  position relative to origin of track vector (metres)
+ *   a,  b,  c   ::  rotations of track about its origin (degrees)
  *   scalei      ::  convert from metres to model grid unit
- *   rx, ry, rz  ::  position of rail vector origin (grid units)
+ *   rx, ry, rz  ::  position of track vector origin (grid units)
+ *
  */
 int  mstswagon2local(double x0, double y0, double z0,
                      double xt, double yt, double zt,
@@ -583,22 +583,23 @@ double x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, cc, ss;
       x1 = x0 + xt ;
       y1 = y0 + yt ;
       z1 = z0 + zt ;
-
+//  Roll
       cc = cos(c*radian) ; ss = sin(c*radian) ;
       x2 = cc*x1 - ss*y1 ;
       y2 = ss*x1 + cc*y1 ;
       z2 = z1 ;
-
+//  Pitch
       cc = cos(a*radian) ; ss = sin(a*radian) ;
       x3 = x2 ;
       y3 = cc*y2 - ss*z2 ;
       z3 = ss*y2 + cc*z2 ;
-
+//  Yaw
       cc = cos(b*radian) ; ss = sin(b*radian) ;
       x4 = cc*x3 + ss*z3 ;
       y4 = y3 ;
       z4 =-ss*x3 + cc*z3 ;
-
+//  Convert from MSTS coordinates to ZR model coordinates
+//          and add rail vector origin
       *x  = scalei*x4 + rx ;
       *y  = scalei*z4 + ry ;
       *z  = scalei*y4 + rz ;

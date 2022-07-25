@@ -1,4 +1,4 @@
- /*
+/*
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
@@ -148,6 +148,7 @@ int   trains_init(void){
 //      position_train("T02",533,11,0,0.0) ;
 //      position_train("T02",467,7,0,0.0) ;
 #endif
+
 #if 1
       add_new_train("T03") ;
 //      add_wagon_to_train("T02","SD40", 1) ;  //  Shape errors ??
@@ -240,7 +241,14 @@ int   trains_init(void){
 //      add_wagon_to_train("T07","SD40", 1) ;
       add_wagon_to_train("T07","Dash9", 1) ;
 
-      position_train("T07",205,2,0,0.0) ;  // Maria - Baloon
+      position_train("T07",205,2,0,0.0) ;  //  Maria - Baloon
+#endif
+
+#if 1
+      add_new_train("T08") ;
+//      add_wagon_to_train("T07","SD40", 1) ;
+      add_wagon_to_train("T08","Dash9", 1) ;
+      position_train("T07",449,4,0,0.0) ;  //  Crossing with rising arms
 #endif
 
 
@@ -386,6 +394,9 @@ int   trains_init(void){
       add_wagon_to_train("T01","Dash9", 1) ;
       position_train("T01",13,2,0,0.0) ;
 
+/*
+ *  ZIG ZAG Route
+ */
 #else
 
 #if 1
@@ -431,7 +442,9 @@ int   trains_init(void){
 //      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
 //      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
 // This does afffect position
-      position_train("T01",392,1,0,0.0) ;
+        position_train("T01",392,1,0,0.0) ;  // Default
+//      position_train("T01",356,35,1,0.0) ;
+//      position_train("T01",363,1,1,0.0) ;
 #endif
 #if 1
       add_new_train("T02") ;
@@ -563,10 +576,9 @@ int   trains_init(void){
       mark_textures()              ;
 //      load_needed_display_lists()  ;
 
-      zr_clock_gettime(zr_clock_1) ;
-      update_trains(zr_clock_1[1]) ;  // Update using monotonic time
-      zr_clock_gettime(zr_clock_1) ;
-      update_trains(zr_clock_1[1]) ;  // Update using monotonic time
+      clock_gettime(CLOCK_MONOTONIC, &run_clock1) ;
+      update_trains() ;  // Update using monotonic time
+      update_trains() ;  // Update using monotonic time
 
       if(ip)print_train_data() ;
 
@@ -946,7 +958,7 @@ int  copy_traveller_position(TravellerNode *tv, TravellerNode *tv0) {
 }
 
 
-int update_trains(struct timespec time_now){
+int update_trains(void){
 
   int         ip = 0 ;
 
@@ -958,13 +970,12 @@ int update_trains(struct timespec time_now){
   double    time, del_t  ;
   double    dist_moved   ;
   double    dist         ;
-  static double time_last = -1.0   ;
   char      *my_name = "update_trains" ;
+#if 0
+  static double time_last = -1.0   ;
 
-      if(ip)printf("  Enter %s\n",my_name) ;
-
-      time = (time_now.tv_sec - run_clock0.tv_sec)
-           + (time_now.tv_nsec - run_clock0.tv_nsec)*0.000000001 ;
+      time = (run_clock1.tv_sec - run_clock0.tv_sec)
+           + (run_clock1.tv_nsec - run_clock0.tv_nsec)*0.000000001 ;
       if(time_last<0.0){
         if(ip)printf("  Routine %s, time = %f, time_last = %f\n",
                 my_name,time,time_last) ;
@@ -972,8 +983,15 @@ int update_trains(struct timespec time_now){
         return 0         ;
       }
       del_t = time - time_last ;
+#else
+      time = run_seconds ;
+      del_t = delta_seconds ;
+#endif
 
-      if(ip)print_train_data() ;
+      if(ip){
+        printf("  Enter %s\n",my_name) ;
+        print_train_data() ;
+      }
 
 /*
  *==============================================================================

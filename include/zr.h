@@ -164,6 +164,7 @@ struct timespec zr_clock_2[4] ;
 double zr_clock_time[4][5]  ;      //  Arrays to use for timing
 double start_seconds        ;      //  Start time (seconds) from zr.c
 double run_seconds          ;      //  Run time (seconds) from start of display loop
+double delta_seconds        ;      //  Interval since last entering display loop
 double last_1s = 0.0        ;      //  Last time when 1s timer reset
 double last_5s = 0.0        ;      //  Last time when 5s timer reset
 double last_30s = 0.0       ;      //  Last time when 30s timer reset

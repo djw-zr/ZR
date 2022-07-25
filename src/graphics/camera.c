@@ -140,7 +140,7 @@ int camera_new_position(){
  *   Todo:  Use extra parameter to skip this transform
  *==============================================================================
  */
-        transform_travel_posn(t, &mm[0][0]) ;
+        traveller2modelview(t, &mm[0][0]) ;
 
         if(ip){
           printf(" Routine %s\n",my_name) ;

@@ -24,13 +24,14 @@
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
-SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout
+SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout \
+             src/setup
 
 #  Specify Compiler and Compiler Options
 CC       = gcc
 CFLAGS   = -m64 -march=native -mcmodel=large
-CFLAGS  += -O3 #         Level 3 compiler optimisation
-#CFLAGS  += -g3 -Og #    For valgrind use -g and -Og optimisation
+#CFLAGS  += -O3 #         Level 3 compiler optimisation
+CFLAGS  += -g3 -Og #    For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable

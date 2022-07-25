@@ -17,11 +17,9 @@
  *
  *==============================================================================
  */
-int  trv_next(TravellerNode *t) ;
-int  trv_prev(TravellerNode *t) ;
+
 int  trv_position(TravellerNode *t) ;
 int  check_matrices(TravellerNode *t) ;
-int  trv_initv(TravellerNode *tn, int itrack, int ivector, int idirect) ;
 
 /*
  *  Routine to move traveller a fixed distance

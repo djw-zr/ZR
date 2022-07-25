@@ -136,8 +136,11 @@ char    my_name[] = "trv_ploc" ;
  *
  *  Returns 0 : no error
  *          1 : end if track reached
- *  If a traveller attempts to join a junction from the 'wrong' branch
+ *  If a normal traveller attempts to join a junction from the 'wrong' branch
  *  the movement is allowed but the global flag "junction_error" is set.
+ *  However in the case of pseudo travellers, ones without waggons (used to
+ *  search for level crossings and other objects then the flag is not set.
+ *
  */
 int   trk_next(TravellerNode *t, int inext){
 
@@ -248,6 +251,7 @@ uint    n_sect                         ;  // new section
 
       if(j>0){
         if((uint)j!=tn->branch){
+          if(!t->wagon) return 1 ;  //  Pseudo traveller
           printf("  Routine %s.  Trying to enter switch from wrong branch\n",my_name);
           printf("    Number of in and out pins %i %i\n", n_in_pins, n_ot_pins) ;
           printf("    Pinned sections:          %i %i %i\n",
@@ -318,6 +322,5 @@ uint    n_sect                         ;  // new section
         printf("    iposition = %f %f\n",t->position,t->vn->length);
         trv_position(t) ;
       }
-//      exit(1) ;
       return 0 ;
 }

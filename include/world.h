@@ -123,6 +123,15 @@ typedef struct levelcrobj {
   float            initial_timing    ;
   float            serious_timing    ;
   float            anim_timing       ;
+  int              n_tracks          ;  //  Number of tracks at crossing
+  int              *track_id         ;
+  float            *track_dist       ;
+  int              n_roads           ;  //  Number of roads at crossing
+  int              *road_id          ;
+  float            *road_dist        ;
+ //  Gate position : Open means open for road traffic
+  int              should_be_open    ;  //  should be 1 = open, 0 = closed
+  float            gate_position     ;  //  1.0 = open, 0.0 = closed
 } LevelCrObj ;
 
 typedef struct pickupobj {
@@ -176,13 +185,15 @@ typedef struct worlditem {
   double           AZ              ;   //  Z coordinate of rotation vector
   double           ANG             ;   //  Angle of rotation (degrees)
 
+  double           max_vis_distance ;
+  double           anim_value      ;   //  Variable used for animation
+
   int              vdb_id          ;
   int              iz_off          ;   //  PolygonOffset flag (0,1,2)
   uint             static_detail_level ;
-  int              n_tr_item       ;
-  float            tr_item_db[4]   ;
-  float            tr_item_db_id[4];
-  double           max_vis_distance ;
+  int              n_tr_item       ;   //  Number of associated track items (<9)
+  int              tr_item_db[8]   ;   //  0 = Track, 1 = Road ??
+  int              tr_item_db_id[8];   //  ID of track items
   union {                                 //  Item specific data
     TrackObj       track_obj       ;
     DynTrackObj    dyn_track_obj   ;
@@ -198,6 +209,57 @@ typedef struct worlditem {
     TransferObj    transfer_obj    ;
   } u ;
 } WorldItem ;
+
+/*
+ *  Level Crossing Summary Node
+ *
+ *    For each world node (or tile) this provides a list of local level crossings
+ *    and links to the corresponding world items and rail or road track items.
+ *
+ *    With MSTS, each level crossing structure has its own track and road item used
+ *    to trigger opening of the gates by trains or to identify where road traffic
+ *    should stop when the gates are closed to traffic.
+ *
+ *    Eventually the plan is to combine the logic, so that where the crossing has
+ *    two or more structures (i.e. pairs of gates or pairs of lifting arms),
+ *    all are linked to the same set of track and road items.
+ */
+
+
+typedef struct levelxsnode {
+  uint            n_world            ;  // Number of linked world items
+  uint            n_rail             ;  // Number of linked rail items
+  uint            n_road             ;  // Number of linked road items
+  WorldItem       **world_item       ;  // Array of n_world pointers to world items
+  uint            *rail_track_item   ;  // Array of n_rail indices of rail track items
+  uint            *road_track_item   ;  // Array of n_road indices of road track items
+  uint            *rail_index        ;  // Array of n_rail track section indices
+  uint            *rail_i_vec        ;  // Array of n_rail track vector indices
+  double          *rail_dist         ;  // Array of n_rail distance along track sections
+  uint            *road_index        ;  // Array of n_road track section indices
+  uint            *road_i_vec        ;  // Array of n_road track vector indices
+  double          *road_dist         ;  // Array of n_road distance along track sections
+} LevelXSNode ;
+
+/*
+ *  Signal Summary Node
+ *
+ *    For each world node (or tile) this provides a list of signals and links
+ *    to the corresponding world items and rail track items.
+ *
+ *    The aim here is to eventually combine the elements of a level crossing so that
+ *    where the crossing has two or more gates, all are linked to the same set of
+ *    track and road items.
+ */
+
+
+typedef struct sigsnode {
+  uint            n_world            ;  // Number of linked world items
+  uint            n_rail             ;  // Number of linked rail items
+  WorldItem       **world_item       ;  // Array of pointers to world items
+  TrkItemNode     **rail_track_item  ;  // Array of pointers to rail track items
+} SigSNode ;
+
 
 /*
  *  Visibility sphere
@@ -238,8 +300,12 @@ typedef struct worldnode {
   int              tr_watermark  ;
   uint             vdbid_count ;     //  Number of visibility spheres
   VDbSphere        *vdb_sphere ;     //  Info on visibiliaty from a distance
-  WorldItem        *world_item ;     //  List of fixed structures
+  WorldItem        *world_item ;     //  Linked List of fixed structures
   BTree            *shape_tree ;     //  Btree containing shapes
+  uint             n_level_XS  ;     //  Number of level crossing sumary nodes
+  uint             n_sig_S     ;     //  Number of level crossing sumary nodes
+  LevelXSNode      *level_XS   ;     //  Array of level crossing summary nodes
+  SigSNode         *signal_S   ;     //  Array of signal summary nodes
 } WorldNode ;
 
 /*

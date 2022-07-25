@@ -196,6 +196,7 @@ TrkVectorNode *vec          ;
       trk_cell_north = in ;
       trk_min_height = h0 ;
       trk_max_height = h1 ;
+      tile_h0 = 100.0*floor(trk_min_height/100.0) ;
 
       free(datafile) ;
       close_msfile(&msfile) ;
@@ -244,7 +245,7 @@ TrkVectorNode  *trk_vec_node ;
             trk_path->type_of_node = JUNCTION ;
             skip_lbr(msfile) ;
               trk_path->jn[0]=itoken(msfile) ;  //  Shape describing this junction ?
-              trk_path->jn[1]=itoken(msfile) ;
+              trk_path->jn[1]=itoken(msfile) ;  //  Usually non-zero - the curved path ??
               trk_path->jn[2]=itoken(msfile) ;
             skip_rbr(msfile) ;
             break ;

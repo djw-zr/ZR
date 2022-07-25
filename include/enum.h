@@ -33,7 +33,7 @@ enum PitchControl {
  *  enums used to read and process MSTS data
  */
 enum trackdb {
-      NONE,
+      NONE = 0,
       VECTOR_SECTION,
       END_SECTION,
       JUNCTION,
@@ -50,21 +50,22 @@ enum trackdb {
       EMPTY_ITEM
 } ;
 
-const char *token_trackdb[14] = {
+const char *token_trackdb[15] = {
 /*   0  */    "NONE",
 /*   1  */    "VECTOR_SECTION",
 /*   2  */    "END_SECTION",
-/*   3  */    "CROSSOVER",
-/*   4  */    "HAZZARD",
-/*   5  */    "PICKUP",
-/*   6  */    "PLATFORM",
-/*   7  */    "LEVEL_CROSSING",
-/*   8  */    "SIDING",
-/*   9  */    "SIGNALS",
-/*  10  */    "SOUND_REGION",
-/*  11  */    "SPEED_POST",
-/*  12  */    "CAR_SPAWNER",
-/*  13  */    "EMPTY_ITEM"
+/*   3  */    "JUNCTION",
+/*   4  */    "CROSSOVER",
+/*   5  */    "HAZZARD",
+/*   6  */    "PICKUP",
+/*   7  */    "PLATFORM",
+/*   8  */    "LEVEL_CROSSING",
+/*   9  */    "SIDING",
+/*  10  */    "SIGNALS",
+/*  11  */    "SOUND_REGION",
+/*  12  */    "SPEED_POST",
+/*  13  */    "CAR_SPAWNER",
+/*  14  */    "EMPTY_ITEM"
 } ;
 
 /*
@@ -2118,14 +2119,14 @@ const char *token_idc[1552] = {
 /*  353  161 */     "",
 /*  354  162 */     "",
 /*  355  163 */     "",
-/*  356  164 */     "GANTRY?",      /*  YET ANOTHER GANTRY ?? */
-/*  357  165 */     "CARSPAWNER?",  /*  YET ANOTHER CAR SPAWNER ?? */
+/*  356  164 */    "GANTRY?",      /*  YET ANOTHER GANTRY ?? */
+/*  357  165 */    "CARSPAWNER?",  /*  YET ANOTHER CAR SPAWNER ?? */
 /*  358  166 */     "",
 /*  359  167 */     "PICKUP?",      /*  YET ANOTHER PICKUP ?? */
 /*  360  168 */    "PLATFORM",
 /*  361  169 */    "SIDING?",       /*  YET ANOTHER SIDING ?? */
 /*  362  16A */    "LEVELCR",
-/*  363  16B */     "TRANSFER?",    /*  YET ANOTHER TRANSFER ?? */
+/*  363  16B */    "TRANSFER?",    /*  YET ANOTHER TRANSFER ?? */
 /*  364  16C */    "SPEEDPOST",
 /*  365  16D */    "HAZARD",
 /*  366  16E */     "",

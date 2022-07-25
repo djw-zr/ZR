@@ -73,6 +73,10 @@ int   add_texture_pointers_to_track_profiles(DynProfile *dnode) ;
 int   make_track_display_lists() ;
 int   create_dynamic_track_node(WorldItem *world_item) ;
 
+/*  Iitialise summary structures */
+
+int setup_level_crossings(void) ;
+
 int   read_tr_items_files(char *filename) ;
 int   read_tr_items(MSfile *fp, char *header);
 
@@ -97,20 +101,23 @@ int   trains_init(void) ;
 int   add_new_train(char *name) ;
 int   add_wagon_to_train(char *train, char *wagon, int idirn) ;
 int   position_train(char *name, int itrack, int ivector, int idirect, double d) ;
+int   trv_next(TravellerNode *t) ;
+int   trv_prev(TravellerNode *t) ;
 int   trv_initv(TravellerNode *tn, int itrack, int ivector, int idirect) ;
-int   update_trains(struct timespec t) ;
+int   update_trains(void) ;
+int   update_level_crossings(void) ;
 int   print_wagon_data(void) ;
 int   print_wagon_data_to_file(char *filename) ;
 int   check_wheel_radii(RawWagonNode *w) ;
 
 //  Graphics routines
 void  display(void) ;
-int   display_shape(ShapeNode *shape, DistLevel *dist_level) ;
+int   display_shape(WorldItem *witem, ShapeNode *shape, DistLevel *dist_level) ;
 int   display_wshape(WagonNode *wagon, ShapeNode *shape, DistLevel *dist_level) ;
 
 //  Msfile routines (token.c)
 
-int  open_msfile(char *filename, MSfile *msfile, int texture, int iprint) ;
+int   open_msfile(char *filename, MSfile *msfile, int texture, int iprint) ;
 int   close_msfile(MSfile *msfile)   ;
 
 //  Text routines (token.c)
@@ -173,37 +180,47 @@ int   print_shape_file_data(ShapeNode *snode) ;
 int   add_shape_pointers_to_world_items() ;
 void  add_world_shapes_to_master(void *b) ;
 
-int generate_shape_display_list(ShapeNode *snode) ;
-int add_texture_pointers_to_shape_items(ShapeNode *snode) ;
-int sort_textures(TextureNode **t) ;
-int convert_texture(TextureNode *t) ;
+int   generate_shape_display_list(ShapeNode *snode) ;
+int   add_texture_pointers_to_shape_items(ShapeNode *snode) ;
+int   sort_textures(TextureNode **t) ;
+int   convert_texture(TextureNode *t) ;
 
-int  scan_for_wagon_files()                              ;
-int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode) ;
+int   scan_for_wagon_files()                              ;
+int   add_texture_pointers_to_wagon_shapes(ShapeNode *snode) ;
 ShapeNode *find_wagon(char *name)                           ;
-int  trv_print(TravellerNode *tn)                           ;
-int  trk_next(TravellerNode *t, int inext)                  ;
+int   trv_print(TravellerNode *tn)                           ;
+int   trk_next(TravellerNode *t, int inext)                  ;
 
 
 
-int  global2local(int tile_e0, int tile_n0, double h0, double size, double scale,
-                 int tile_e,  int tile_n,  double e,  double n,    double h,
-                 double *x,    double *y,    double *z) ;
-int  local2msts(int tile_e0, int tile_n0, double h0, double size, double scale,
-                double x,     double y,     double z,  int *tile_e, int *tile_n,
-                double *e,    double *n,    double *h) ;
-int transform_travel_posn(TravellerNode *t, GLdouble *mview) ;
-int zr_print_modelview() ;
+int   global2local(int tile_e0, int tile_n0, double h0, double size, double scale,
+                  int tile_e,  int tile_n,  double e,  double n,    double h,
+                  double *x,    double *y,    double *z) ;
+int   local2msts(int tile_e0, int tile_n0, double h0, double size, double scale,
+                 double x,     double y,     double z,  int *tile_e, int *tile_n,
+                 double *e,    double *n,    double *h) ;
+int   traveller2modelview(TravellerNode *t, GLdouble *mview) ;
 
-int  test_transforms() ;
-int  test_trav()       ;
-int  init_trav_1(TravellerNode *t) ;
-int  trv_move(TravellerNode *t, double dist) ;
+int   rotate_axis_angle(double x,   double y,   double z,
+                        double ax,  double ay,  double az,  double ang,
+                        double *xx, double *yy, double *zz) ;
+int   rotate_axis_angle_010(double ax,  double ay,  double az,  double ang,
+                            double *xx, double *yy, double *zz) ;
+int  mstswagon2local(double x0, double y0, double z0,
+                     double xt, double yt, double zt,
+                     double a,  double b,  double c,
+                     double scalei,
+                     double rx, double ry, double rz,
+                     double *x, double *y, double *z);
+int   zr_print_modelview() ;
 
-void  zr_clock_gettime(struct timespec clock[4]) ;
+int    test_transforms() ;
+int    test_trav()       ;
+int    init_trav_1(TravellerNode *t) ;
+int    trv_move(TravellerNode *t, double dist) ;
+
+void   zr_clock_gettime(struct timespec clock[4]) ;
 
 //  Freetype
 
-int  freetype_init() ;
-
-
+int    freetype_init() ;

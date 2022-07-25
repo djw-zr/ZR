@@ -20,7 +20,7 @@ int        ip = 0  ;
 int        tx, ty  ;
 GLfloat    xc, yc, zc   ;
 GLfloat    xx, yy, zz   ;
-GLfloat    m2d = 1.0/plot_scale ;  // Convert from metres to display usints
+GLfloat    m2d = 1.0/plot_scale ;  // Convert from metres to display uints
 GLfloat    dist, dist0, height0  ;
 
 WorldNode   *wnode ;
@@ -64,20 +64,36 @@ char        string[2048] ;
           dist = (xx-xc)*(xx-xc) + (yy-yc)*(yy-yc) ;
           if(dist > dist0)continue ;
 
-          glColor3f((GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ;
+          glColor3d(0.0,1.0,1.0) ;
           glBegin(GL_LINES) ;
             glVertex3d(xx, yy, zz) ;
             zz = zz + height0      ;
             glVertex3d(xx, yy, zz) ;
           glEnd() ;
           if(witem->uid == 4485){
-            glColor3f(1.0,1.0,0.0) ;
+            glColor3d(1.0,1.0,0.0) ;
           }else{
-            glColor3f(1.0,1.0,1.0) ;
+            glColor3d(1.0,1.0,1.0) ;
           }
+#if 0
           sprintf(string," - WORLD   :: uid = %i, type =  %i"
                          " :: item at :: %f %f %f ",
                          witem->uid,witem->worldtype,xx,yy,zz);
+#else
+    sprintf(string," - WORLD   :: uid = %i, type =  %i"
+                         " :: item at :: %f %f %f :: %i %i",
+                         witem->uid,witem->worldtype,witem->X,witem->Y,witem->Z,
+                         wnode->tile_x, wnode->tile_y);
+#endif
+          print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
+
+          sprintf(string," - TR ITEMS :: %i :: %i %i %i %i :: %i %i %i %i",
+                         witem->n_tr_item,
+                         witem->tr_item_db[0],witem->tr_item_db[1],
+                         witem->tr_item_db[2],witem->tr_item_db[3],
+                         witem->tr_item_db_id[0],witem->tr_item_db_id[1],
+                         witem->tr_item_db_id[2],witem->tr_item_db_id[3] );
+          zz = zz - m2d ;
           print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
         }
       }
@@ -132,7 +148,7 @@ int  display_help(){
 
       sprintf(s1," Special Keys - with 'alt'");
       print_string_in_window3(10.0,h-240.0,s1,12) ;
-      sprintf(s1," World items : 'n' - toggle, 'o'/'p' increase/decrease distance, 'k'/'l' increase/decrease height");
+      sprintf(s1," World items : 'n' - toggle, 'm'/'b' increase/decrease distance to marker, 'o'/'p'  radius around marker, 'k'/'l' height of items ");
       print_string_in_window3(10.0,h-260.0,s1,12) ;
       sprintf(s1,"  Trains         : 'F7' - cycle                 Track info.   : 't' - toggle");
       print_string_in_window3(10.0,h-280.0,s1,12) ;
@@ -154,13 +170,17 @@ int  display_help(){
 
 int   display_track_info(TravellerNode *t){
 
-int           n ;
+int           n, ip = 0 ;
 GLfloat       w = viewport_width ;
 GLfloat       h = viewport_height ;
 TrkSectNode   *tn = t->tn,
               *tn1, *tn2            ;
 TrkVectorNode *vn = t->vn ;
 char          s1[1024],s2[1024],s3[1024],s4[1024] ;
+char         *my_name = "display_track_info" ;
+
+      if(ip)printf("Enter %s\n",my_name) ;
+
 //
 // Plot grey background for text
 //
@@ -224,6 +244,8 @@ char          s1[1024],s2[1024],s3[1024],s4[1024] ;
       print_string_in_window3(10.0,h-50.0,s2,12) ;
       print_string_in_window3(10.0,h-75.0,s3,12) ;
       print_string_in_window3(10.0,h-100.0,s4,12) ;
+
+      if(ip)printf("Exit  %s\n",my_name) ;
 
       return 0 ;
       }
@@ -665,3 +687,60 @@ char    string[256] = "GL error = ";
       return ;
 }
 
+/*
+ * =============================================================================
+ *
+ *   Routine to display platforms and/or sidings
+ *   Key F6 toggles display
+ *   Key Shift+F6 cycles through both, platforms/sidings
+ *
+ * =============================================================================
+ */
+int display_platforms_and_sidings(){
+
+int         i, type_of_node ;
+double      scale = 1.0/plot_scale ;
+double      x, y, z, dist   ;
+TrkItemNode *trk_item       ;
+char        string[256]     ;
+
+      glDisable(GL_BLEND)      ;
+      glShadeModel(GL_FLAT)     ;
+
+      for(i=0;i<(int)track_db.trk_items_array_size;i++){
+        trk_item = &track_db.trk_items_array[i] ;
+        type_of_node = trk_item->type_of_node ;
+        if(PLATFORM != type_of_node && SIDING != type_of_node)continue ;
+        if(PLATFORM == type_of_node && 2 == show_platforms_or_sidings)continue ;
+        if(SIDING   == type_of_node && 1 == show_platforms_or_sidings)continue ;
+
+        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+              trk_item->tile_east_x, trk_item->tile_north_z,
+              trk_item->east_x, trk_item->north_z, trk_item->height_y,
+              &x, &y, &z );
+        dist = pow(x-lookat_eye_x,2) + pow(y-lookat_eye_y,2) ;
+        if(dist > 0.04)continue ;
+
+        glDisable(GL_LIGHTING)   ;
+        glDisable(GL_TEXTURE_2D) ;
+        glColor3f(0.8,1.0,0.8) ;
+        glBegin(GL_LINES) ;
+          glVertex3d(x, y, z) ;
+          z = z + 6.0*scale ;
+          glVertex3d(x, y, z) ;
+        glEnd() ;
+        glColor3f(1.0,1.0,1.0) ;
+
+        if(PLATFORM == type_of_node){
+          sprintf(string,"%s",trk_item->platform_name) ;
+          print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+        }else if(SIDING == type_of_node){
+          sprintf(string,"%s",trk_item->siding_name) ;
+          print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+        }
+      glEnable(GL_LIGHTING)   ;
+      glEnable(GL_TEXTURE_2D) ;
+      glDisable(GL_BLEND) ;
+      }
+      return 0 ;
+}

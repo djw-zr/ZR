@@ -78,6 +78,9 @@ int     tst_tile_y = 10331 ;       //  Initial test 10331
 int     n_vanodes_d    ;           //  Used to store number of va nodes displayed
 int     id_shape = 1   ;           //  Used to debug display
 
+int show_platforms_and_sidings = 0 ;  //  Turn on/off
+int show_platforms_or_sidings  = 0 ;  //  Cycle both/platforms/sidings
+
 GLdouble pi     = M_PI       ;
 GLdouble radian = M_PI/180.0 ;
 GLdouble degree = 180.0/M_PI ;
@@ -515,6 +518,8 @@ void  load_topography_display_lists(void) ;
 void  load_needed_textures()   ;
 void  load_needed_display_lists() ;
 int   use_tile(int ix, int iy) ;
+
+int   sketch_track_routes(int i) ;  // Sketch routes of tracks
 
 int   display_extra_data(void) ;
 int   display_track_info(TravellerNode *t) ;

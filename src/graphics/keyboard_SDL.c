@@ -193,12 +193,16 @@ char        my_name[] = "keyboard_sdl" ;
             if(display_info){
               offset_center_x = offset_eye_x + 1.3*(offset_center_x - offset_eye_x) ;
               offset_center_y = offset_eye_y + 1.3*(offset_center_y - offset_eye_y) ;
+              lookat_center_x = lookat_eye_x + 1.3*(offset_center_x - offset_eye_x) ;
+              lookat_center_y = lookat_eye_y + 1.3*(offset_center_y - offset_eye_y) ;
             }
             break ;
           case 'b':
             if(display_info){
               offset_center_x = offset_eye_x + (offset_center_x - offset_eye_x)/1.3 ;
               offset_center_y = offset_eye_y + (offset_center_y - offset_eye_y)/1.3 ;
+              lookat_center_x = lookat_eye_x + (offset_center_x - offset_eye_x)/1.3 ;
+              lookat_center_y = lookat_eye_y + (offset_center_y - offset_eye_y)/1.3 ;
             }
             break ;
 /*
@@ -311,7 +315,16 @@ double        df          ;
                   tbn = tb.tn ;
                   n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
                   tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                  if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+                  if(tn2->branch != 0){
+                    witem = tn2->vector->world_item ;
+                    if(tn2->branch == 1){
+                      tn2->branch =2 ;
+                      witem->anim_value = 0.5 ;
+                    }else{
+                      tn2->branch =1 ;
+                      witem->anim_value = 0.0 ;
+                    }
+                  }
                 }
               }
 #else
@@ -319,7 +332,16 @@ double        df          ;
               tn = tr_node->tn ;
               n = tn->pin_to_section[tr_node->idirect ? 0 : 1] ;
               tn1 = &track_db.trk_sections_array[n-1]   ;  // Section behind
-              if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+                if(tn2->branch != 0){
+                  witem = tn2->vector->world_item ;
+                  if(tn2->branch == 1){
+                    tn2->branch =2 ;
+                    witem->anim_value = 0.5 ;
+                  }else{
+                    tn2->branch =1 ;
+                    witem->anim_value = 0.0 ;
+                  }
+                }
 #endif
             }else{
 #if 1
@@ -338,7 +360,16 @@ double        df          ;
                   tfn = tf.tn ;
                   n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
                   tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                  if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+                  if(tn1->branch != 0){
+                    witem = tn1->vector->world_item ;
+                    if(tn1->branch == 1){
+                      tn1->branch =2 ;
+                      witem->anim_value = 0.5 ;
+                    }else{
+                      tn1->branch =1 ;
+                      witem->anim_value = 0.0 ;
+                    }
+                  }
                 }
               }
 #else
@@ -347,7 +378,16 @@ double        df          ;
               tn = tr_node->tn ;
               n = tn->pin_to_section[tr_node->idirect ? 1 : 0] ;
               tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-              if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+              if(tn1->branch != 0){
+                witem = tn1->vector->world_item ;
+                if(tn1->branch == 1){
+                  tn1->branch =2 ;
+                  witem->anim_value = 0.5 ;
+                }else{
+                  tn1->branch =1 ;
+                  witem->anim_value = 0.0 ;
+                }
+              }
 #endif
             }
             break ;

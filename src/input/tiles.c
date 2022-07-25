@@ -319,6 +319,8 @@ int tilelist_init2(){
       printf("    tile_east    = %i\n", tile_east) ;
       printf("    tile_south   = %i\n", tile_south) ;
       printf("    tile_north   = %i\n", tile_north) ;
+      tile_x0 = tile_west  ;
+      tile_y0 = tile_south ;
 /*
  *  Fill tile array
  */

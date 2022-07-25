@@ -134,9 +134,9 @@ int                     wfname_north_z       ;    //  TileZ north (MSTS Z) locat
 uint                    worldfileuid         ;    //  UID of this piece of track in the worldfile
                                                   //  Note world file may differ from tile
 struct worlditem        *world_item          ;    //  Pointer to corresponding world item node
-double                  ax                   ;    //  Rotation axis
-double                  ay                   ;
-double                  az                   ;
+double                  ax                   ;    //  Rotation axis (x,y,z).  Unit vector.
+double                  ay                   ;    //    Copied from world structure so may not correspond
+double                  az                   ;    //    to tangent at start of vector,
 double                  ang                  ;    //  Angle of rotation (degrees)
 
 uint                    flag1                ;    //  Usually 0 may point to conecting pin in junction, sometimes 2
@@ -153,9 +153,9 @@ double                  a_east_x             ;    //  Angle around east describi
 double                  a_height_y           ;    //  Angle around vertical axis describing the initial direction of the node
 double                  a_north_z            ;    //  Angle around north axis describing the initial direction of the node
 
-double                  length               ;
-double                  radius               ;
-double                  angle                ;
+double                  length               ;    //  Length of vector section
+double                  radius               ;    //  Radius of curve
+double                  angle                ;    //  Arc seen from centre of curvature  (radians)
 
 /*
  *   Sub modes are added to better represent curved tracks.  The first sub-node corresponds to the current node
@@ -178,7 +178,7 @@ typedef struct trksectnode
   struct trksectnode     *next ;
   uint                   index_of_node       ;  //  This is used to link sections so must be unique
   enum trackdb           type_of_node        ;  //  [ NONE, VECTOR_SECTION, END_SECTION, JUNCTION ]]
-  uint                   jn[3]               ;  //  Data for Junction Node
+  uint                   jn[3]               ;  //  Data for Junction Node.  jn[1] may refer to tsection.dat
   uint                   en                  ;  //  Data for End Node
   uint                   length_of_vector    ;  //  Number of vector nodes)
   TrkVectorNode          *vector             ;  //  Pointer to vector node array

@@ -37,6 +37,7 @@ TrkSectNode   *tn1 = NULL,
               *tn2 = NULL,
               *tfn = NULL,
               *tbn = NULL      ;
+WorldItem     *witem           ; // World item for junctions
 GLfloat v4[4] ;
 char    *my_name="keyboard" ;
 
@@ -128,19 +129,23 @@ char    *my_name="keyboard" ;
             if(display_info){
               offset_center_x = offset_eye_x + 1.3*(offset_center_x - offset_eye_x) ;
               offset_center_y = offset_eye_y + 1.3*(offset_center_y - offset_eye_y) ;
+              lookat_center_x = lookat_eye_x + 1.3*(offset_center_x - offset_eye_x) ;
+              lookat_center_y = lookat_eye_y + 1.3*(offset_center_y - offset_eye_y) ;
             }
             break ;
           case 'b':
             if(display_info){
               offset_center_x = offset_eye_x + (offset_center_x - offset_eye_x)/1.3 ;
               offset_center_y = offset_eye_y + (offset_center_y - offset_eye_y)/1.3 ;
+              lookat_center_x = lookat_eye_x + (offset_center_x - offset_eye_x)/1.3 ;
+              lookat_center_y = lookat_eye_y + (offset_center_y - offset_eye_y)/1.3 ;
             }
             break ;
 /*
  *   Track Info Window(left alt + t)
  */
           case 't':
-            display_track_info_on = !display_track_info_on ;
+            if(++display_track_info_on >3) display_track_info_on = 0;
             break ;
 /*
  *  Debug display of engines and trucks
@@ -211,7 +216,16 @@ char    *my_name="keyboard" ;
                 tfn = tf.tn ;
                 n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
                 tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                if(tn1->branch != 0)tn1->branch = (tn1->branch==1) ? 2 : 1 ;
+                if(tn1->branch != 0){
+                  witem = tn1->vector->world_item ;
+                  if(tn1->branch == 1){
+                    tn1->branch =2 ;
+                    witem->anim_value = 0.5 ;
+                  }else{
+                    tn1->branch =1 ;
+                    witem->anim_value = 0.0 ;
+                  }
+                }
               }
             }
             break ;
@@ -226,7 +240,16 @@ char    *my_name="keyboard" ;
                 tbn = tb.tn ;
                 n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
                 tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                if(tn2->branch != 0)tn2->branch = (tn2->branch==1) ? 2 : 1 ;
+                if(tn2->branch != 0){
+                  witem = tn2->vector->world_item ;
+                  if(tn2->branch == 1){
+                    tn2->branch =2 ;
+                    witem->anim_value = 0.5 ;
+                  }else{
+                    tn2->branch =1 ;
+                    witem->anim_value = 0.0 ;
+                  }
+                }
               }
             }
             break ;
@@ -506,6 +529,15 @@ void  specialkey(int key, int ixm, int iym)
 #endif
       }else if(key == GLUT_KEY_F1){
         display_help_on = !display_help_on ;
+        return ;
+      }else if(key == GLUT_KEY_F6){
+        if(l_shift){
+          if(++show_platforms_or_sidings == 3)
+            show_platforms_or_sidings = 0 ;
+        }else{
+          show_platforms_and_sidings = !show_platforms_and_sidings ;
+          show_platforms_or_sidings = 0 ;
+        }
         return ;
       }else if(key == GLUT_KEY_F8){
         display_switches_on = !display_switches_on ;

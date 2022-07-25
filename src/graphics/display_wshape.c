@@ -40,17 +40,15 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
   int         is_pantograph = 0 ;   //  = 1 when pantograph being processed
   char        *name ;
 
-Animation *animation     ;
-AnimNode  *anim_node     ;
-AnimController *c0, *c1, *cc ;
-AnimKey        *a0       ;
-uint      n_anim_nodes   ;
-uint      n_controllers  ;
-uint      n_anim_keys    ;
-uint       i0, i1        ;
-double    wa, dw, w0, w1 ;
-
-
+  Animation *animation     ;
+  AnimNode  *anim_node     ;
+  AnimController *c0, *c1, *cc ;
+  AnimKey        *a0       ;
+  uint      n_anim_nodes   ;
+  uint      n_controllers  ;
+  uint      n_anim_keys    ;
+  uint       i0, i1        ;
+  double    wa, dw, w0, w1 ;
 
   char     my_name[] = "display_wshape" ;
 /*
@@ -144,7 +142,7 @@ double    wa, dw, w0, w1 ;
  *     each of which has a series of distance_levels  (usually 1, 2 or 3)
  *       each distance_level has a range (metres) and a number of sub_objects
  *         each sub_object then has a series of triangle lists
- *           each triangle_list has pointers to textures and the sets  of
+ *           each triangle_list has pointers to textures and the sets of
  *                  triangles to plot
  *
  *   In the current version of this routine the decision on which lod_control
@@ -168,11 +166,12 @@ double    wa, dw, w0, w1 ;
  */
       if(ip)printf("  dist_level    = %p\n", (void *)dist_level) ;
       if(ip)printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
+
       for(k=0;k<dist_level->n_sub_objects;k++){
         if(ip)printf("  Start loop for sub-object %i\n",k) ;
         sub_object = &(dist_level->sub_object[k]) ;
         vtx_list   = sub_object->vertex         ;
-        if(ip)printf("\n  Sub_object:  k = %2i,  sub_object = %p,  vtx_list = %p,"
+        if(ip)printf("    Sub_object:  k = %2i,  sub_object = %p,  vtx_list = %p,"
                       "  n_tri_lists = %i\n",
                 k,(void *)sub_object, (void *)vtx_list,sub_object->n_tri_lists) ;
 /*
@@ -183,7 +182,7 @@ double    wa, dw, w0, w1 ;
         for(l=0;l<sub_object->n_tri_lists;l++){
           tri_list = &(sub_object->tri_list[l]) ;
           if(ip){
-            printf("\n ===================================================\n") ;
+            printf(" ===================================================\n") ;
             printf("    Tri_list:  l = %i,  tri_list = %p,  n_vertex_idxs = %i\n",
                     l, (void *)tri_list, tri_list->n_vertex_idxs) ;
             printf("               ip = %i, ic = %i, icc = %i\n",ip,ic,icc) ;
@@ -206,11 +205,6 @@ double    wa, dw, w0, w1 ;
             tex_idx = prim_state->tex_idx[0]       ;
             texlevel_low = &snode->texlevel_low[tex_idx] ;
             texture      = snode->texture[texlevel_low->iImage]      ;
-
-//  Tempory fix for bug (overwriting?) affecting two(?) MSTS textures
-
-//              if((long long)texture < (long long)0x100000 ||
-//                 (long long)texture > (long long)0x100000000) texture = NULL ;
 
             gl_tex_ref_no = (texture == NULL ? 0 : texture->gl_tex_ref_no) ;
             if(ip){
@@ -263,7 +257,9 @@ double    wa, dw, w0, w1 ;
           }
           ivtx_state = prim_state->ivtx_state       ;
           vtx_state  = &(snode->vtx_state[ivtx_state]) ;
-
+/*
+ *  Initialise array "ima" for this sub-object
+ */
           im = 0 ;
           ima[0] = vtx_state->imatrix ;
           if(ip){
@@ -295,7 +291,13 @@ double    wa, dw, w0, w1 ;
           glMatrixMode(GL_MODELVIEW) ;
           glPushMatrix() ;
 /*
- *  Loop over hierarchy
+ *  Cycle backwards through array 'ima' to apply hierarchy matrices
+ *
+ *  For efficiency each matrix is flagged as being one of four matrix types
+ *     0 = Unit diagonal, no translation
+ *     1 = Translation only
+ *     2 = Rotation and/or scaling, no translation
+ *     3 = Rotation and/or scaling, translation
  */
           if(ip){printf("  Hierarchy  im = %i\n",im) ;  fflush(NULL) ; }
           while(im--){
@@ -311,14 +313,8 @@ double    wa, dw, w0, w1 ;
             is_mirror     = !strncmp_ic(matrix4x3->name,"mirror",6) ;
             is_pantograph = !strncmp_ic(matrix4x3->name,"pantograph",10) ;
 /*
- *   Matrix types (Routine check_matrix4x3, file system.c)
- *     0 = Unit diagonal, no translation
- *     1 = Translation only
- *     2 = Non unit matrix, no translation
- *     3 = Non-unit matrix, translation
+ *  Animation for matrix im
  */
-
-//  Animation for matrix im
             if(animation){
               anim_node = &(animation->anim_node[ima[im]])  ;
               n_controllers = anim_node->n_controllers      ;
@@ -331,7 +327,6 @@ double    wa, dw, w0, w1 ;
  *  No animations (except possibly this is a wheel or bogie)
  *  For the moment mirrors and pantographs remain in the default poition (down or closed)
  */
-//            if(n_controllers == 0  || is_wheel  || is_mirror || is_pantograph){
             if(n_controllers == 0  || is_wheel){
               if(ip)printf("    shape = %s, sub_object = %i, tri_list = %i\n"
                            "                prim_state = %i, prim_state->name = %s,\n"
@@ -372,7 +367,7 @@ double    wa, dw, w0, w1 ;
 
               }
 /*
- *  Process animations for engines only (AS YET)
+ *  Process animations for engines
  */
             }else if(is_engine){
               if(ip)printf("  Animation : ivtx_state = %i, im = %i, Matrix = %i \n", ivtx_state, im, ima[im]);
@@ -394,8 +389,8 @@ double    wa, dw, w0, w1 ;
                 exit(1) ;
               }
 /*
-*  Order pairs so that transforation matrix is applied before before rotation matrix
-*/
+ *  Order pairs so that transforation matrix is applied before before rotation matrix
+ */
               c0 = c1 = NULL ;
               if(n_controllers == 1){
                 c0 = &(anim_node->controller[0]) ;
@@ -482,8 +477,6 @@ double x, y, z ;
                     printf("      Animate 0: a, dw, wa : %f,  %f,  %f\n",
                                                       wagon->wheel_angle, dw, wa) ;
                     printf("      Animate 0: Weight    : %f,  %f\n",w0,w1) ;
-                    printf("      Animate 0: Translate : %f,  %f,  %f\n",
-                                                            a0[i0].X,a0[i0].Y,a0[i0].Z) ;
                     printf("      Animate 0: Translate : %f,  %f,  %f\n",
                                                             a0[i0].X,a0[i0].Y,a0[i0].Z) ;
                     printf("      Animate  : Translate : %f,  %f,  %f\n",x,y,z) ;

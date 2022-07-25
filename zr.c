@@ -47,6 +47,7 @@ int   i_count = 0           ;  // Used to count number of debug print statements
 float d_rotate  = 90.0      ;  // Deug : default rotation angle (0, 90)
 float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 
+//char test_shape[] = "A1tPnt6dLft" ;
 char test_shape[] = "BBS-SL" ;
 //char test_shape[] = "JP1SigGant4" ;
 //char test_shape[] = "policePHIL" ;
@@ -338,7 +339,7 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
 //        printf("  GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = %i\n",GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
 
 #ifdef _MultiSample
-      glutSetOption(GL_MULTISAMPLE, 4);
+      glutSetOption(GLUT_MULTISAMPLE, 4);     //  Available with freeglut, not glut
       glEnable(GL_MULTISAMPLE_ARB);
       glEnable(GL_MULTISAMPLE);
 GLint  isbuf, isnum;
@@ -443,6 +444,8 @@ int  ip = 0 ;
 #include "road_setup.c"
 #include "trk_itm_db.c"
 #include "trk_sct_db.c"
+#include "track_init.c"
+#include "setup_level_crossing.c"
 #include "dynamic.c"
 #include "make_texture_resident.c"
 #include "graphics_init.c"
@@ -467,6 +470,7 @@ int  ip = 0 ;
 #include "texture.c"
 #include "terrain.c"
 #include "tiles.c"
+#include "update_level_crossings.c"
 #include "world.c"
 #include "load_wagon_file.c"
 #include "load_wagon_files.c"

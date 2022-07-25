@@ -315,11 +315,13 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load shape files\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
-        if(0)printf(" data :: shape name = %s\n",snode->name) ;
+        if(1)printf(" data :: shape name = %s\n",snode->name) ;
         if(!strcmp(snode->name,"JP1SigGant4"))continue ;
         load_shape(snode) ;
         load_shape_d(snode) ;
-//        if(!strcmp(snode->name,"policePHIL"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"A1tPnt6dLft"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"UKCrossGate_fix"))print_shape_file_data(snode) ;
+        if(!strcmp(snode->name,"Jp1CarCrossing"))print_shape_file_data(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -426,6 +428,12 @@ char           my_name[] = "init_data_structures" ;
       }
 /*
  * *****************************************************************************
+ *    For each world tile generate a list of level crossings
+ * *****************************************************************************
+ */
+      setup_level_crossings() ;
+/*
+ * *****************************************************************************
  *    Print summary data
  * *****************************************************************************
  */
@@ -461,22 +469,23 @@ TrkSectNode    *t ;
 //        if(130 != i+1)continue ;
 //        if(565 != i+1)continue ;
 //        if(377 != i+1)continue ;
-        if(497 != i+1)continue ;
+//        if(497 != i+1)continue ;
         t = &track_db.trk_sections_array[i] ;
 
         printf("  Track section %3i :: %3i,  type of item = %2i :: %s\n",
                i,t->index_of_node,t->type_of_node,token_trackdb[t->type_of_node]) ;
         printf("        Junction Node data = %i,%i,%i\n",
                  t->jn[0],t->jn[1],t->jn[2]) ;
-        printf("        End Node data      = %i\n",t->en) ;
-        printf("        Number of vectors  = %i,\n",t->length_of_vector) ;
-        printf("        Number of items    = %i,\n",t->trk_item_number)  ;
-        printf("        Pin types and links= %i %i :: %i %i %i :: %i %i %i\n",
+        printf("        End Node data       = %i\n",t->en) ;
+        printf("        Number of vectors   = %i,\n",t->length_of_vector) ;
+        printf("        Vector1, World name = %s\n",t->vector->world_item->filename) ;
+        printf("        Number of items     = %i,\n",t->trk_item_number)  ;
+        printf("        Pin types and links = %i %i :: %i %i %i :: %i %i %i\n",
                   t->type_of_pin[0],t->type_of_pin[1],
                   t->pin_to_section[0],t->pin_to_section[1],t->pin_to_section[2],
                   t->pin_info[0],t->pin_info[1],t->pin_info[2]) ;
-        printf("        Dyn Node profile   = %p\n",(void *)t->profile);
-        printf("        LOD method         = %i\n",t->lod_method) ;
+        printf("        Dyn Node profile    = %p\n",(void *)t->profile);
+        printf("        LOD method          = %i\n",t->lod_method) ;
 
 #if 0
         if(track_db.trk_sections_array[i].type_of_node == 1){
@@ -549,7 +558,7 @@ DynTrackSect  *d ;
  *   List and/or print shape data
  *   Shape 'test_shape' is defined in file 'zr.c'.
  */
-#if 1
+#if 0
 uint       j, k;
 LodControl *lod_control ;
 DistLevel  *dist_level  ;

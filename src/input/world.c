@@ -195,8 +195,17 @@ int  load_world(WorldNode *wnode){
         msblock1 = &(msfile->level[1])  ;
         itoken  = istoken ;
 
-        if(ip)printf("\n  Level 1 : token = %i  %s  : block data length = %i \n",
+//        ip = (itoken == LEVELCR) ;
+
+        if(ip){
+          printf("\n  Level 1 : token = %i  %s  : block data length = %i \n",
            itoken,token_idc[itoken], msblock1->length-msblock1->l_label-9) ;
+          printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
+          printf("  Tile_X = %i\n",wnode->tile_x);
+          printf("  Tile_Z = %i\n",wnode->tile_y);
+          printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
+      }
+
         if(itoken == VDBIDCOUNT){
           wnode->vdbid_count = read_uint32(fp) ;
           if(ip)printf("    vdbid_count = %i\n",wnode->vdbid_count) ;
@@ -319,7 +328,7 @@ int  load_world(WorldNode *wnode){
             wnode->world_item = world_item ;
           }
           world_item->worldtype = itoken ;
-#if 1
+
           if(itoken == CARSPAWNER || itoken == 357){
             if(ip)printf("  Initialise car spawner variables\n") ;
             world_item->u.car_spawn_obj.carspawnerlist_idx =    0 ;
@@ -328,8 +337,16 @@ int  load_world(WorldNode *wnode){
             world_item->u.car_spawn_obj.list_name          = NULL ;
           }else if(itoken == STATIC || COLLIDEOBJECT == itoken){
             world_item->u.static_obj.no_direct_light  = 0 ;
+          }else if(itoken == LEVELCR) {
+            world_item->u.levelcr_obj.n_tracks    = 0    ;
+            world_item->u.levelcr_obj.track_id    = NULL ;
+            world_item->u.levelcr_obj.track_dist  = NULL ;
+            world_item->u.levelcr_obj.n_roads     = 0    ;
+            world_item->u.levelcr_obj.road_id     = NULL ;
+            world_item->u.levelcr_obj.road_dist   = NULL ;
+            world_item->u.levelcr_obj.should_be_open = 1   ;
+            world_item->u.levelcr_obj.gate_position  = 1.0 ;
           }
-#endif
 /*
  *   Process level 3 tokens
  */
@@ -350,9 +367,9 @@ int  load_world(WorldNode *wnode){
               world_item->X = read_real32(fp) ;  // MSTS X
               world_item->Z = read_real32(fp) ;  // MSTS Y
               world_item->Y = read_real32(fp) ;  // MSTS Z
-              if(ip1)printf("            POSITION  :: world_item->X, Y, Z     = %f %f %f\n",
+              if(ip || ip1)printf("            POSITION  :: world_item->X, Y, Z     = %f %f %f  :: %i %i\n",
                    world_item->X, world_item->Y,
-                   world_item->Z) ;
+                   world_item->Z, wnode->tile_x, wnode->tile_y) ;
             }else if(QDIRECTION == itoken2){
               world_item->A = read_real32(fp) ;    //  Direction vector
               world_item->B = read_real32(fp) ;    //    times
@@ -384,7 +401,7 @@ int  load_world(WorldNode *wnode){
                 world_item->AY  = 0.0 ;
                 world_item->AZ  = 1.0 ;
               }
-              if(ip1)printf("            QDIRECTION :: world_item->AX, AY, AZ, ANG = "
+              if(ip || ip1)printf("            QDIRECTION :: world_item->AX, AY, AZ, ANG = "
                             "%f %f %f : %f\n",
                    world_item->AX, world_item->AY,
                    world_item->AZ, world_item->ANG) ;
@@ -402,10 +419,21 @@ int  load_world(WorldNode *wnode){
               world_item->static_flags = read_uint32(fp) ;
               if(ip)printf("      world_item->static_flags = %i\n",world_item->static_flags);
             }else if(TRITEMID == itoken2){
-              world_item->tr_item_db[world_item->n_tr_item]      = read_int32(fp) ;
-              world_item->tr_item_db_id[world_item->n_tr_item++] = read_int32(fp) ;
+              if(world_item->n_tr_item<=8){
+                world_item->tr_item_db[world_item->n_tr_item]      = read_int32(fp) ;
+                if(ip)printf("      world_item->n_tr_item       = %i\n",world_item->n_tr_item );
+                if(ip)printf("      world_item->tr_item_db[]    = %i\n",world_item->tr_item_db[world_item->n_tr_item] );
+                world_item->tr_item_db_id[world_item->n_tr_item] = read_int32(fp) ;
+                if(ip)printf("      world_item->tr_item_db_id[] = %i\n",world_item->tr_item_db_id[world_item->n_tr_item] );
+                world_item->n_tr_item++ ;
+              }else{
+                printf(" ERROR Routine %s.  World item: %i %s %s\n", my_name, world_item->uid, token_idc[world_item->worldtype], world_item->filename) ;
+                printf("       World item has more than 8 associated track items\n") ;
+                read_int32(fp) ; read_int32(fp) ; // Skip track item
+              }
             }else if(MAXVISDISTANCE == itoken2){
-                world_item->max_vis_distance             = read_real32(fp) ;
+              world_item->max_vis_distance               = read_real32(fp) ;
+              if(ip)printf("      world_item->max_vis_distance = %f\n",world_item->max_vis_distance);
 
 // TRACK OBJECT
             }else if(TRACKOBJ == itoken && SECTIONIDX == itoken2){
@@ -552,14 +580,18 @@ DynTrackSect *dyn_trk_sect ;
                 world_item->u.signal_obj.tr_item[i]        = read_uint32(fp) ;
                 end_block(msfile,4) ;
                 end_block(msfile,3) ;
-// ENDOF SUB BLOCK
+// END OF SUB BLOCK
               }
+
 //  LEVELCR OBJECT
             }else if(itoken == LEVELCR && LEVELCRPARAMETERS == itoken2){
               world_item->u.levelcr_obj.warning_time      = read_real32(fp) ;
               world_item->u.levelcr_obj.minimum_distance  = read_real32(fp) ;
+              if(ip)printf("      warning_time        = %f\n",world_item->u.levelcr_obj.warning_time);
+              if(ip)printf("      minimum_distance    = %f\n",world_item->u.levelcr_obj.minimum_distance);
             }else if(itoken == LEVELCR && CRASHPROBABILITY == itoken2){
               world_item->u.levelcr_obj.crash_probability = read_int32(fp) ;
+              if(ip)printf("      crash_probability   = %i\n",world_item->u.levelcr_obj.crash_probability);
             }else if(itoken == LEVELCR && LEVELCRDATA == itoken2){
                 world_item->u.levelcr_obj.level_cr_data_1  = read_int32(fp) ;
                 world_item->u.levelcr_obj.level_cr_data_2  = read_int32(fp) ;
@@ -568,10 +600,17 @@ DynTrackSect *dyn_trk_sect ;
                 world_item->u.levelcr_obj.silent =
                   !(world_item->u.levelcr_obj.visible) ||
                   (world_item->u.levelcr_obj.level_cr_data_1 & 0x6) == 0x6 ;
+              if(ip)printf("      level_cr_data_1     = %i\n",world_item->u.levelcr_obj.level_cr_data_1);
+              if(ip)printf("      level_cr_data_2     = %i\n",world_item->u.levelcr_obj.level_cr_data_2);
+              if(ip)printf("      visible             = %i\n",world_item->u.levelcr_obj.visible);
+              if(ip)printf("      silent              = %i\n",world_item->u.levelcr_obj.silent);
             }else if(itoken == LEVELCR && LEVELCRTIMING == itoken2){
                 world_item->u.levelcr_obj.initial_timing   = read_real32(fp) ;
                 world_item->u.levelcr_obj.serious_timing   = read_real32(fp) ;
                 world_item->u.levelcr_obj.anim_timing      = read_real32(fp) ;
+              if(ip)printf("      initial_timing      = %f\n",world_item->u.levelcr_obj.initial_timing);
+              if(ip)printf("      serious_timing      = %f\n",world_item->u.levelcr_obj.serious_timing);
+              if(ip)printf("      anim_timing         = %f\n",world_item->u.levelcr_obj.anim_timing);
 //  PICKUP OBJECT
             }else if((PICKUP_ALT == itoken || 359 == itoken) && SPEEDRANGE == itoken2){
               world_item->u.pickup_obj.min_mps             = read_real32(fp) ;
@@ -643,6 +682,8 @@ DynTrackSect *dyn_trk_sect ;
 
 int world_item_init(WorldItem *world_item){
 
+int i ;
+
       world_item->next          = NULL ;
       world_item->filename      = NULL ;
       world_item->snode         = NULL ;
@@ -657,11 +698,17 @@ int world_item_init(WorldItem *world_item){
       world_item->B             = 0.0  ;
       world_item->C             = 0.0  ;
       world_item->D             = 0.0  ;
+      world_item->anim_value    = 0.0  ;
       world_item->vdb_id        = 0    ;
       world_item->iz_off        = 0    ;
       world_item->n_tr_item     = 0    ;
       world_item->max_vis_distance    = 10000.0 ;
       world_item->static_detail_level = 0       ;
+      for(i=0;i<4;i++){
+        world_item->tr_item_db[i]    = 0  ;
+        world_item->tr_item_db_id[i] = 0  ;
+      }
+
 
       return 0;
 }

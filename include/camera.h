@@ -18,7 +18,7 @@ int camera_changed =  1  ;  //  If non-zero camera position needs updating
 int camera_last    = -1  ;  //  Previous camera position
 
 /*
-*  Note all camera positions are relative to origin of
+*  Note: all camera positions are relative to origin of
 *  current wagon except for the roaming camera
  */
 
