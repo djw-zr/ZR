@@ -399,7 +399,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
               }else if(!(a_lin && a_tcb )){
                 msts4x3_to_opengl4x4(m16,matrix4x3) ;
                 if(a_lin){                            //  Rotate only
-                  for(i=12; j<15;i++) m16[i] = 0.0 ;
+                  for(i=12; i<15;i++) m16[i] = 0.0 ;
                   glMultMatrixf(m16) ;
                 }else{                                // Translate only
                   glTranslatef((GLfloat) m16[12], (GLfloat) m16[13], (GLfloat) m16[14]) ;
