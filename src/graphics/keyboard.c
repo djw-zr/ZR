@@ -15,11 +15,13 @@
  *==============================================================================
  */
 
+static double key_release_seconds = 0.0 ;
 
 /*
  *==============================================================================
  *   Routine Keyboard
- *   See routine special key for keys moving the viewpoint
+ *   See routine 'specialkey' for F1 type keys and the arrow keys used with ZR
+ *   to move the viewpoint
  *==============================================================================
  */
 void keyboard(unsigned char key, int x, int y){
@@ -27,13 +29,13 @@ void keyboard(unsigned char key, int x, int y){
 int  ip = 0                       ;  //  0 = no printing
 int  isign = 1                    ;  //  1 or -1
 int  imod, l_shift, l_ctrl, l_alt ;
-int  i, n  ;
+int  i, n, iret     ;
 int  new_camera = 0 ;
 double        df ;               // lenght of end wagons
 TravellerNode *tff = NULL ,
               *tbf = NULL ,
               tf, tb           ;
-TrkSectNode   *tn1 = NULL,
+TrkSector   *tn1 = NULL,
               *tn2 = NULL,
               *tfn = NULL,
               *tbn = NULL      ;
@@ -56,7 +58,8 @@ char    *my_name="keyboard" ;
       if(l_shift) isign = -1 ;
 
       if(ip){
-        printf("    Routine keyboard.  Key : 0x%x  :%c: \n",key,key);
+        printf("    Routine keyboard.  Key : 0x%x  :%c: C=%i S=%i A=%i\n",
+               key,key, l_ctrl, l_shift, l_alt);
         fflush(NULL);
         if(l_ctrl){i = x && y ; }            // Keep the compiler happy
       }
@@ -147,6 +150,7 @@ char    *my_name="keyboard" ;
           case 't':
             if(++display_track_info_on >3) display_track_info_on = 0;
             break ;
+#if 0
 /*
  *  Debug display of engines and trucks
  */
@@ -159,99 +163,88 @@ char    *my_name="keyboard" ;
           case 'c':
             id_shape++ ;
             break ;
+#endif
+/*
+ *  glutIgnoreKeyRepeat appears to turn it off permanently
+ */
+          case 'c':
+            if(key_release_seconds == 0.0){
+              key_release_seconds=run_seconds;
+            }else if(run_seconds-key_release_seconds < 0.2){
+              break ;
+            }
+            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
+//          printf(" glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) \n") ;
+            turntable_rotating = rotate_tt_clockwise() ;
+            break ;
+          case 'C':
+            if(key_release_seconds == 0.0){
+              key_release_seconds=run_seconds;
+            }else if(run_seconds-key_release_seconds < 0.2){
+              break ;
+            }
+            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
+//          printf(" glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) \n") ;
+            turntable_rotating = rotate_tt_anticlockwise() ;
+            break ;
 /*
  *  Switches under keyboard control
+ *  For the moment may be used to debug code
  */
           case '0':
             i_zra = 0 ;
-            printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" i_zra = %i\n",i_zra) ;
             break ;
           case '1':
             i_zra = 1 ;
-            printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" i_zra = %i\n",i_zra) ;
             break ;
           case '2':
             i_zra = 2 ;
-            printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" i_zra = %i\n",i_zra) ;
             break ;
           case '3':
             i_zra = 3 ;
-            printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" i_zra = %i\n",i_zra) ;
             break ;
           case '4':
             i_zra = 4 ;
-            printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" i_zra = %i\n",i_zra) ;
             break ;
 #endif
         }
-      }else if(l_ctrl){
-        switch (key) {
-
-
-        }
+/*
+ *   Modifier keys not used
+ */
       }else{
         switch (key) {
-//  Increase speed backwards
+//  Break or Increase speed backwards
           case 'a':
-            player_train->speed -= 1.0 ;
+            if(player_train->motor){
+              if(player_train->speed< 0.2){ player_train->speed -= 0.1 ; }
+              else                        { player_train->speed -= 0.2 ; }
+              if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
+            }
             break ;
-//  Increase speed
+//  Break or Increase speed
           case 'd':
-            player_train->speed += 1.0 ;
-//            printf("  KB :: player_train->speed = %f\n",player_train->speed);
-            fflush(NULL) ;
+              if(player_train->speed>-0.2){ player_train->speed += 0.1 ; }
+              else                        { player_train->speed += 0.2 ; }
+              if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
             break ;
-//  Stop
+//  Emergency Stop
           case 's':
             player_train->speed = 0.0 ;
             break ;
 //  Change Switch/Points in front of traveller
           case 'g':
-            if(player_train){
-              tff = player_train->first->traveller ;
-              if(tff){
-                tf = *tff ;
-                df = tf.wagon->raw_wagon->length ;
-                if(df>0.0) trv_move(&tf, 0.5*df) ;
-                tfn = tf.tn ;
-                n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
-                tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                if(tn1->branch != 0){
-                  witem = tn1->vector->world_item ;
-                  if(tn1->branch == 1){
-                    tn1->branch =2 ;
-                    witem->anim_value = 0.5 ;
-                  }else{
-                    tn1->branch =1 ;
-                    witem->anim_value = 0.0 ;
-                  }
-                }
-              }
-            }
+            change_forward_switch_for_player_train() ;
+            clear_track_beyond_next_switch() ;
             break ;
 //  Change Switch/Points behind traveller
           case 'G':
-            if(player_train){
-              tbf = player_train->last->traveller ;
-              if(tbf){
-                tb = *tbf ;
-                df = tb.wagon->raw_wagon->length ;
-                if(df>0.0) trv_move(&tb, -0.5*df) ;
-                tbn = tb.tn ;
-                n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
-                tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                if(tn2->branch != 0){
-                  witem = tn2->vector->world_item ;
-                  if(tn2->branch == 1){
-                    tn2->branch =2 ;
-                    witem->anim_value = 0.5 ;
-                  }else{
-                    tn2->branch =1 ;
-                    witem->anim_value = 0.0 ;
-                  }
-                }
-              }
-            }
+            change_rearward_switch_for_player_train() ;
+            clear_track_beyond_previous_switch() ;
             break ;
 //  Toggle mirrors out or in
           case 'P':
@@ -279,6 +272,16 @@ char    *my_name="keyboard" ;
                 player_train->motor->wipers_on  = 1 ;
               }
             }
+            break ;
+//  Trigger Water Column for Steam Trains
+          case 'T':
+            if(key_release_seconds == 0.0){
+              key_release_seconds=run_seconds;
+            }else if(run_seconds-key_release_seconds < 0.2){
+              break ;
+            }
+            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
+            start_transfer() ;
             break ;
 //  Switch frame rate on/off
           case 'Z':
@@ -351,12 +354,75 @@ char    *my_name="keyboard" ;
       }
 }
 
+/*
+ * With key repeat on - the normal keyboard software option
+ * the program thought tha they were released every 1/10 second approx
+ * and pressed down again.
+ */
+
+void keyboard_up(unsigned char key, int x, int y){
+
+int  ip = 0                       ;  //  0 = no printing
+int  i                            ;
+int  imod, l_shift, l_ctrl, l_alt ;
+char *my_name="keyboard_up" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+
+      imod = glutGetModifiers();
+      l_ctrl  = imod & GLUT_ACTIVE_CTRL  ;
+      l_shift = imod & GLUT_ACTIVE_SHIFT ;
+      l_alt   = imod & GLUT_ACTIVE_ALT   ;
+
+      if(ip>1){
+        printf("    Routine %s.  Key : 0x%x  :%c: C=%i S=%i A=%i\n",
+               my_name,key,key, l_ctrl, l_shift, l_alt);
+        printf("  Routine %s.  Modifier %x",my_name, imod) ;
+        printf("  Routine %s.  Modifier ", my_name)        ;
+        for(i=0;i<16;i++)printf("%i",((imod >> (15-i)) & 1)) ;
+        printf("\n\n");
+      }
+/*
+ *  Detect 'c' key release when turntable is rotating.
+ *  Detecting release of <Alt>+C does not work if <Alt> released first.
+ */
+      if(turntable_rotating){
+        switch (key) {
+          case 'c':
+          case 'C':
+            end_tt_rotation() ;
+            turntable_rotating = 0;
+            key_release_seconds = run_seconds ;
+            break ;
+          default :
+// Keep the compiler happy
+            if(0 && l_ctrl && l_shift && l_alt){i = x && y ; }
+            break ;
+        }
+        glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+/*
+ *   Transfer:  water tower, coal stage etc.
+ */
+      }else if(current_transfer && current_transfer->on){
+        switch (key) {
+          case 'T':
+          case 't':
+            stop_transfer() ;
+            key_release_seconds = run_seconds ;
+           break ;
+          default:
+            break ;
+        }
+        glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+      }
+      return ;
+}
 
 /*
  *==============================================================================
  *  Special Key
  *
- *  Handles all keys in which modifiers are in use:
+ *  Handles keyboard special keys (F1, F2, .. arrow keys, ... etc):
  *
  *   It determines which modifiers are being used by calling
  *       int glutgetModifiers(void);
@@ -539,18 +605,25 @@ void  specialkey(int key, int ixm, int iym)
           show_platforms_or_sidings = 0 ;
         }
         return ;
-      }else if(key == GLUT_KEY_F8){
-        display_switches_on = !display_switches_on ;
-        return ;
       }else if(key == GLUT_KEY_F7 && l_alt){
-        if(NULL == player_train->next){
-          player_train = trainlist_beg ;
-        }else{
-          player_train = player_train->next ;
-        }
+        do{
+          if(NULL == player_train->next){
+            player_train = trainlist_beg ;
+          }else{
+            player_train = player_train->next ;
+          }
+        }while(!player_train->motor) ; //  Skip 'trains' without engines
+
         current_camera = 1    ;
         camera_changed = 1    ;
         camera_new_position() ;
+        new_viewpoint = 1     ;
+        return ;
+      }else if(key == GLUT_KEY_F8){
+        display_switches_on = !display_switches_on ;
+        return ;
+      }else if(key == GLUT_KEY_F9){
+        display_train_operations_on = !display_train_operations_on ;
         return ;
       }else{
         if(ip)printf(" Keyboard : No action required\n\n");

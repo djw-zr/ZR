@@ -85,6 +85,11 @@ char     my_name[] = "graphics_init" ;
       if(ip)printf("   Origin for 3D graphics:  Tile = %i, %i.  Height = %.2f m.\n",
                                           tile_x0, tile_y0, tile_h0) ;
 /*
+ *  Initialise display sub-windows
+ */
+      init_train_operations_window(1) ;
+
+/*
  *  Initialise cameras
  *
  *  This is needed to initialise the eye position before the required
@@ -136,7 +141,8 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 /*
  *  Initialise shapes and textures
  *
- *   Not required - the same calls are made by the above camera routine
+ *   Not required - the same calls are made by the camera routine
+ *                  camera_new_position which calls graphics_reset.
  */
       if(ip)printf("   Load required shapes and textures\n") ;
       if(ip>1)printf("   Call clear_needed_flags\n") ;
@@ -199,7 +205,7 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
  */
 void graphics_reset(void)
 {
-int  ip = 0                   ;  //  = 0 for no debug printing
+int  ip = 0 ;  //  = 0 for no debug printing
 char *my_name = "graphics_reset" ;
 
       if(ip)printf("  ===================================================\n");
@@ -370,14 +376,15 @@ int         ip = 0  ;    // Debug printing
       if(ip)printf("   Process shape textures\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
         if(0 == snode->needed) continue ;
-        if(ip>1)printf("     Shape  %s  needs textures:\n",snode->name) ;
+        if(ip>1)printf("     Shape  %s, s_file %s\n",snode->name, snode->s_file) ;
         n = snode->n_textures ;
         for(i=0; i<n; i++){
-          if(ip>1)printf("     %i, %i ::  %p\n",i, n, (void *)snode->texture[i]) ;
+          if(ip>1)printf("     %i, %i ::  %p  ::  %s\n",
+                 i, n, (void *)snode->texture[i], snode->texture[i]->name) ;
           if(NULL == snode->texture[i]) continue;
           tx_node = snode->texture[i] ;
           tx_node->needed = 1           ;
-          if(ip)printf("     %i, %i ::  %s\n",i, n, tx_node->name) ;
+          if(ip==1)printf("    Texture  %i, %i ::  %s\n",i, n, tx_node->name) ;
         }
       }
       if(ip)printf("   Process wagon textures\n");
@@ -550,8 +557,9 @@ VANode       * va_node ;
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
         ix = tl_node->tilex ;
         iy = tl_node->tiley ;
-        if(ip)printf("   Tile  %i  %i  use_tile = %i\n",ix,iy,use_tile(ix,iy)) ;
-        if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
+        if(ip)printf("   Tile  %i  %i  use_tile = %i, vertex = %p\n",
+           ix,iy,use_tile(ix,iy),(void *)tl_node->terrain_data.va_vertex) ;
+        if((iy < 10261 || iy > 10265) && !use_tile(ix,iy)) continue ;     // Tile topography not needed
         tl_node->needed = 1 ;
 #ifdef use_vertex_arrays
         if(NULL == tl_node->terrain_data.va_vertex){
@@ -587,6 +595,9 @@ int            ip = 0 ;
 
       if(ip)printf("   Enter load_needed_textures\n");
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+//        ip = (tx_node == land_texture) ;
+        if(ip)printf("     Texture name = %s, needed = %i, loaded = %i\n",
+                                tx_node->name,tx_node->needed, tx_node->loaded);
         if(!strcmp_ic(tx_node->name,land_texture_default) && ip){
           printf(" Routine load_needed_textures  ================\n") ;
           printf("  Texture = %s\n",tx_node->name) ;
@@ -595,18 +606,21 @@ int            ip = 0 ;
           printf("   loaded = %i\n",tx_node->loaded) ;
         }
         if(0 == tx_node->needed || 1 == tx_node->loaded) continue ;
-        if(ip)printf("     Install normal texture : %s\n",tx_node->name) ;
         make_texture_resident(tx_node) ;
         tx_node->loaded = 1 ;
+        if(ip)printf("       Texture name = %s, needed = %i, loaded = %i, pointer = %p\n",
+                        tx_node->name,tx_node->needed, tx_node->loaded, (void *)tx_node );
       }
 
       for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tx_node->name,tx_node->needed, tx_node->loaded);
+        if(ip)printf("     Texture name = %s, needed = %i, loaded = %i\n",
+                                tx_node->name,tx_node->needed, tx_node->loaded);
         if(0 == tx_node->needed || 1 == tx_node->loaded) continue ;
         if(ip>1)printf("     Install wagon texture : %s\n",tx_node->name) ;
         make_texture_resident(tx_node) ;
         tx_node->loaded = 1 ;
-        if(ip)printf("  Texture name = %s, needed = %i, loaded = %i\n",tx_node->name,tx_node->needed, tx_node->loaded);
+        if(ip)printf("       Texture name = %s, needed = %i, loaded = %i, pointer = %p\n",
+                        tx_node->name,tx_node->needed, tx_node->loaded, (void *)tx_node );
       }
       return ;
 }
@@ -620,7 +634,7 @@ void load_needed_display_lists(void)
 {
 ShapeNode  *snode ;
 LodControl *lod_control ;
-int        ip = 3 ;
+int        ip = 0 ;
 uint       i, j   ;
 int        ic = 0, id = 0, ie = 0 ;
 

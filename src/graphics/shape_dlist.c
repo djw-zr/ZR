@@ -308,7 +308,7 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
 
       if(ip>1){
         printf("   Enter routine %s\n",my_name) ;
-        printf("    Finding textures for shape %s\n",snode->name) ;
+        printf("    Finding textures for shape %s :: %s\n",snode->name, snode->s_file) ;
       }
 /*
  *  Loop through required textures
@@ -328,7 +328,7 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
           if(!tnode->name || strcmp_ic(name,tnode->name))continue ;
           snode->texture[i] = tnode     ;          // save link
           tnode->needed       = 1         ;
-          if(ip>1)printf("  Texture found    = %s\n",tnode->name) ;
+          if(ip>1)printf("  Texture found    = %s,  %s\n",tnode->name, tnode->filename) ;
           break ;
         }
         if(ip && snode->texture[i] == NULL){

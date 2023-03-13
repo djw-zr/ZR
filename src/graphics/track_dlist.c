@@ -12,13 +12,13 @@
  *
  *==============================================================================
  */
-int   make_track_display_list(TrkSectNode *section, DynProfile *profile) ;
+int   make_track_display_list(TrkSector *section, DynProfile *profile) ;
 
 int   make_track_display_lists(){
 
 uint  i ;
 uint  ip = 0 ;                        // Debug printing = 1
-TrkSectNode  *track_node       ;  // Track section needing shape
+TrkSector  *track_node       ;  // Track section needing shape
 DynProfile      *profile          ;  // Profile to use
 char            my_name[]="make_track_display_lists" ;
 
@@ -48,7 +48,7 @@ char            my_name[]="make_track_display_lists" ;
  *  increase in the x-direction.
  */
 
-int   make_track_display_list(TrkSectNode *track_section,
+int   make_track_display_list(TrkSector *track_section,
                               DynProfile  *track_profile){
 
 uint   i, j, k, l0, l1, m, n ;
@@ -76,11 +76,11 @@ TextureNode    *tnode        ;
       }
 
 
-      ip = (123 == track_section->index_of_node) ;
+      ip = (123 == track_section->uid) ;
        ip = 0 ;
       if(ip){
         printf("  Enter routine %s\n",my_name) ;
-        printf("  Index of node = %i\n",track_section->index_of_node) ;
+        printf("  Index of node = %i\n",track_section->uid) ;
       }
 
       track_section->n_dist_levels = track_profile->n_dist_levels ;

@@ -20,6 +20,7 @@
  #ifdef zr_freetype
   #define USE_FREETYPE
  #else
+//  #define USE_SDLTTF
   #define USE_ZRGLUT
  #endif
 #else
@@ -34,6 +35,7 @@
 #include <string.h>
 #include <libgen.h>
 #include <math.h>
+#include <limits.h>
 #include <stdlib.h>
 //#include <assert.h>
 #include <time.h>
@@ -86,15 +88,18 @@
 #include "btree.h"
 typedef u_int uint ;
 
+#include "typedef.h"
 #include "msts.h"      //  Set up msts structures (if needed)
 #include "enum.h"
 #include "struct.h"
-#include "track.h"
 #include "wagon.h"
 #include "world.h"
+#include "track.h"
 #include "display_info.h"
 #include "train.h"
 #include "camera.h"
+#include "sigscr.h"
+#include "signals.h"
 #include "functions.h"    //  Call this last
 
 #ifndef SDL2
@@ -155,7 +160,7 @@ char    *ZRconfig   ;        // Location of user config file ($Home/.zr/config)
 char    *ZRfonts    ;        // Location of user font file ($Home/.zr/fonts)
 char    eof_mark[] = "******Z" ;   // Use to flag end-of-file in text files.
 
-int     n_open_files = 0  ; // used by gopen and gclose
+int     n_open_files = 0  ;  // used by gopen and gclose
 
 struct timespec run_clock0  ;      //  Start time
 struct timespec run_clock1  ;      //  Current time
@@ -165,9 +170,11 @@ double zr_clock_time[4][5]  ;      //  Arrays to use for timing
 double start_seconds        ;      //  Start time (seconds) from zr.c
 double run_seconds          ;      //  Run time (seconds) from start of display loop
 double delta_seconds        ;      //  Interval since last entering display loop
+double last_p2s  = 0.0      ;      //  Last time when 0.2s timer reset
 double last_1s = 0.0        ;      //  Last time when 1s timer reset
 double last_5s = 0.0        ;      //  Last time when 5s timer reset
 double last_30s = 0.0       ;      //  Last time when 30s timer reset
+int    l_time_p2s = 0       ;      //  0.2 s timer
 int    l_time_1s = 0        ;      //  1 s timer
 int    l_time_5s = 0        ;      //  5 s timer
 int    l_time_30s = 0       ;      //  30 s timer
@@ -186,6 +193,7 @@ int     i_control1_old[200],
 int     l_disp0 = 1,            //  True for printing during display()
         l_disp1 = 0 ;           //  True if new position
 int     i_zra   = 0 ;           //  Switch under keyboard control
+int     l_ip    = 0 ;           //  Used to control some debug printing
 
 // Top level pointers to structures
 
@@ -200,7 +208,8 @@ TrackSection  *track_section_end = NULL ;
 TrackShape    *track_shape_beg   = NULL ;
 TrackShape    *track_shape_end   = NULL ;
 
-BTree         *shape_master = NULL ; // Btree containing all shapes used by world files
+BTree         *shape_master = NULL ;  // Btree containing all shapes used by world files
+BTree         *enum_master  = NULL ;  // Btree linking enum strings to values
 
 // Tiles
 
@@ -250,6 +259,33 @@ DynProfile  *zr_rail_profile = NULL   ;
 DynProfile  *zr_road_profile = NULL   ;
 int         make_default_track_profile() ;
 
+//Signals
+//  The raw database with descriptions of each of the signal types
+//  The main database with information on each signal
+
+RawSignalDB raw_signal_db0    ;   //  Database with descriptions of the different types of signal
+RawSignalDB *raw_signal_db = &raw_signal_db0 ;
+int         n_signals       = 0    ;
+SignalDB    *signallist_beg = NULL ;   //  The signal database - each of the individual signals
+SignalDB    *signallist_end = NULL ;
+nodeType    *sTree = NULL     ;
+
+int         n_turntables       = 0    ;
+int         turntable_rotating = 0    ;
+TurnTable   *turntablelist_beg = NULL ;
+TurnTable   *turntablelist_end = NULL ;
+TurnTable   *current_turntable = NULL ;  //
+TrkSector   end_sector0               ;  //  Dummy end sector for turntables
+
+int          n_transfers       = 0    ;
+TransferNode *transferlist_beg = NULL ;
+TransferNode *transferlist_end = NULL ;
+TransferNode *current_transfer = NULL ;
+
+int         n_levelcrossings   = 0    ;
+
+
+
 
 int         trk_cell_west,       //  Index of western track cell row
             trk_cell_east,       //  Index of eastern track cell tow
@@ -275,6 +311,7 @@ CrossoverItem   *crossover_item0    ;
 PickupItem      *pickup_item0       ;
 SoundRegionItem *soundregion_item0  ;
 HazzardItem     *hazzard_item0       ;
+
 
 // Special matrices
 

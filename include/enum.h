@@ -12,6 +12,13 @@
  *
  *==============================================================================
  */
+
+/*
+ *  Function
+ */
+
+int enum_btree_init(void) ;
+
 /*
  *  enums for track - unfortunately in C all enums have to be different
  *                    even when in different groups
@@ -27,6 +34,28 @@ enum PitchControl {
       ZR_PC_NONE             ,   // No pitch control method specified.
       CHORDLENGTH         ,   // Constant length of chord
       CHORDDISPLACEMENT       // Maximum displacement of chord from arc.
+} ;
+
+/*
+ *   enums for Matrices
+ */
+
+enum MatrixType {
+      MAT_UNIT,
+      MAT_TRANSLATE,
+      MAT_ROTATE,
+      MAT_GENERAL
+} ;
+
+enum MatrixAnim {
+      MAT_NONE,
+      MAT_WHEEL,
+      MAT_DRIVER_WHEEL,
+      MAT_ROD,
+      MAT_BOGIE,
+      MAT_WIPER,
+      MAT_MIRROR,
+      MAT_PANTOGRAPH
 } ;
 
 /*
@@ -69,7 +98,113 @@ const char *token_trackdb[15] = {
 } ;
 
 /*
- *  These are the OR token_id values listed in tokenid.cs
+ *  enums used by ZR in processing signals
+ *  See 'SignalEnums.cs'.
+ *  Each name starts SIG_ to be unique
+ *  Note some code may need SIG_UNKNOWN to be the last in the list
+ */
+
+enum signal_block_enum {
+      SIG_CLEAR,             // Block ahead is clear and accessible
+      SIG_OCCUPIED,          //             is occupied by one or more wagons not moving in opposite direction
+      SIG_JN_OBSTRUCTED      //             is impassable due to switch position, a moving train or not accessable
+} ;
+const char *token_signal_block[3] = {
+/*   0  */    "SIG_CLEAR",
+/*   1  */    "SIG_OCCUPIED",
+/*   2  */    "SIG_JN_OBSTRUCTED"
+} ;
+
+enum signal_function_enum {
+      SIG_NORMAL,            // Signal function is normal - usually requires action
+      SIG_DISTANCE,          //                 distance
+      SIG_REPEATER,          //                 repeater
+      SIG_SHUNTING,          //                 shunting
+      SIG_INFO,              //                 Signal provides information only (i.e. direction lights)
+      SIG_SPEED,             //                 Speedpost (not part of MSTS)
+      SIG_ALERT,             //                 Alert     (not part of MSTS)
+      SIG_UNKNOWN            // Last in list
+} ;
+const char *token_signal_function[8] = {
+/*   0  */    "SIG_NORMAL",
+/*   1  */    "SIG_DISTANCE",
+/*   2  */    "SIG_REPEATER",
+/*   3  */    "SIG_SHUNTING",
+/*   4  */    "SIG_INFO",
+/*   5  */    "SIG_SPEED",
+/*   6  */    "SIG_ALERT",
+/*   7  */    "SIG_UNKNOWN"
+} ;
+
+/*
+ *  The size of this enum should be the same as the dimensions of
+ *  the array 'sig_draw_a' in structure 'sigtype' in file 'signals.h'.
+ */
+enum signal_aspect_enum {
+      SIG_STOP = 0,          // Signal aspect stop
+      SIG_STOP_AND_PROCEED,  //               stop and proceed
+      SIG_RESTRICTING,       //               restricting
+      SIG_APPROACH_1,        //               approach 1
+      SIG_APPROACH_2,        //               approach 2
+      SIG_APPROACH_3,        //               approach 3
+      SIG_CLEAR_1,           //               clear 1
+      SIG_CLEAR_2,            //              clear 2
+      SIG_UNDEFINED
+} ;
+const char *token_signal_aspect[9] = {
+/*   0  */    "SIG_STOP",
+/*   1  */    "SIG_STOP_AND_PROCEED",
+/*   2  */    "SIG_RESTRICTING",
+/*   3  */    "SIG_APPROACH_1",
+/*   4  */    "SIG_APPROACH_2",
+/*   5  */    "SIG_APPROACH_3",
+/*   6  */    "SIG_CLEAR_1",
+/*   7  */    "SIG_CLEAR_2",
+/*   8  */    "SIG_UNDEFINED"
+} ;
+
+
+enum signal_flag_enum {
+      SIG_FLAG_NULL      = 0,     // Signal aspect or signal function is unknown
+      SIG_FLAG_FLASHING  = 1,     // Signal flashes
+      SIG_FLAG_ASAP      = 2     // As soon as possible ??
+} ;
+
+enum signal_feature_enum{
+      SIG_NUMBER_PLATE   = 0,
+      SIG_GRADIENT_PLATE
+} ;
+
+/*
+ *   Transfer enums
+ */
+
+const char *token_transfer[15] = {
+/*   0  */    "",
+/*   1  */    "FreightGrain",
+/*   2  */    "FreightCoal",
+/*   3  */    "FreightGravel",
+/*   4  */    "FreightSand",
+/*   5  */    "FuelWater",
+/*   6  */    "FuelCoal",
+/*   7  */    "FuelDiesel",
+/*   8  */    "FuelWood",
+/*   9  */    "FuelSand"
+/*  10  */    "FreightGeneral",
+/*  11  */    "FreightLivestock",
+/*  12  */    "FreightFuel",
+/*  13  */    "FreightMilk",
+/*  14  */    "SpecialMail",
+} ;
+
+
+
+
+
+
+
+/*
+ *  These are the primary Openrails OR token_id values listed in tokenid.cs
  *  All these names have been changed to upper case as this is
  *  the standard used for enums.  Where this has resulted in conflicts with the
  *  enums above, (NONE, PLATFORM, SIDING, PICKUP the characters "_ALT" have been
@@ -346,10 +481,15 @@ enum token_id {
         FOREST = 308,
         COLLIDEOBJECT = 311,
         SIGNAL_ALT = 317,        //  SIGNAL IS A COMPILER RESERVED WORD
-        PLATFORM_ALT = 360,
-        LEVELCR = 362,
-        SPEEDPOST = 364,
-        HAZARD=365,
+        GANTRY = 356,
+        CARSPAWNER,
+        PICKUP_ALT = 359,
+        PLATFORM_ALT,
+        SIDING_ALT,
+        LEVELCR,
+        TRANSFER,
+        SPEEDPOST,
+        HAZARD,
 
 
 
@@ -1741,12 +1881,13 @@ enum token_id {
 
         // THESE ASSIGNED ID'S ARE ARBITRARY - I HAVEN'T SEEN THEM IN A COMPRESSED MSTS W FILE YET
         // TODO DETERMINE PROPER ID FROM A COMPRESSED WORLD FILE
-        CARSPAWNER,
-        SIDING_ALT,
+        // DJW :: Added '2' when word moved to position above
+        CARSPAWNER2,
+        SIDING2,
         DYNTRACK,
-        TRANSFER,
-        GANTRY,
-        PICKUP_ALT,
+        TRANSFER2,
+        GANTRY2,
+        PICKUP2,
 
         WAGON,
         ENGINE,
@@ -2119,14 +2260,14 @@ const char *token_idc[1552] = {
 /*  353  161 */     "",
 /*  354  162 */     "",
 /*  355  163 */     "",
-/*  356  164 */    "GANTRY?",      /*  YET ANOTHER GANTRY ?? */
-/*  357  165 */    "CARSPAWNER?",  /*  YET ANOTHER CAR SPAWNER ?? */
+/*  356  164 */    "GANTRY",
+/*  357  165 */    "CARSPAWNER",
 /*  358  166 */     "",
-/*  359  167 */     "PICKUP?",      /*  YET ANOTHER PICKUP ?? */
-/*  360  168 */    "PLATFORM",
-/*  361  169 */    "SIDING?",       /*  YET ANOTHER SIDING ?? */
+/*  359  167 */    "PICKUP_ALT",   /*  PICKUP   USED BY TRACK DATABASE */
+/*  360  168 */    "PLATFORM_ALT",  /*  PLATFORM USED BY TRACK DATABASE */
+/*  361  169 */    "SIDING_ALT",   /*  SIDING   USED BY TRACK DATABASE */
 /*  362  16A */    "LEVELCR",
-/*  363  16B */    "TRANSFER?",    /*  YET ANOTHER TRANSFER ?? */
+/*  363  16B */    "TRANSFER",
 /*  364  16C */    "SPEEDPOST",
 /*  365  16D */    "HAZARD",
 /*  366  16E */     "",
@@ -3303,12 +3444,12 @@ const char *token_idc[1552] = {
 /* 1537  601 */    "DERAILSCALE",
 /* 1538  602 */    "TIMETABLETOLLERANCE",
 /* 1539  603 */    "DEMPATH",
-/* 1540  604 */    "CARSPAWNER",
-/* 1541  605 */    "SIDING_ALT",
+/* 1540  604 */    "CARSPAWNER2",
+/* 1541  605 */    "SIDING2",
 /* 1542  606 */    "DYNTRACK",
-/* 1543  607 */    "TRANSFER",
-/* 1544  608 */    "GANTRY",
-/* 1545  609 */    "PICKUP_ALT",
+/* 1543  607 */    "TRANSFER2",
+/* 1544  608 */    "GANTRY2",
+/* 1545  609 */    "PICKUP2",
 /* 1546  60A */    "WAGON",
 /* 1547  60B */    "ENGINE",
 /* 1548  60C */    "ORTSLISTNAME",

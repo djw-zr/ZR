@@ -145,7 +145,7 @@ int          *section       = NULL ;
           l = strlen(ORdir) + strlen("Global/") + strlen(base_name) + 1 ;
           if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
-          if(ip)printf(" string = %s\n",string);
+//          if(ip)printf(" string = %s\n",string);
           strcpy(string,ORdir) ;
           if(ip)printf(" string = %s\n",string);
           strcat(string,"Global/") ;
@@ -164,8 +164,12 @@ int          *section       = NULL ;
 // Check file exists
         iret = zr_find_msfile2(string) ;
         if(iret){
-          printf("    Routine %s.  Data file does not exist\n",my_name) ;
-          printf("    Filename = %s\n",string)  ;
+          if(idir == 0){
+            printf("    Routine %s.  Top level tsection.dat  file does not exist\n",
+                    my_name) ;
+            printf("    Filename = %s\n",string)  ;
+            continue ;
+          }
           return 0 ;
         }
         if(ip)printf("  Routine %s.  Opening file %s\n",my_name,string) ;

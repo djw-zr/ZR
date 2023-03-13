@@ -30,7 +30,7 @@ int    ip = 0          ;                // debug printing
 double xx0, yy0, xx1, yy1, xxn, yyn,
        x0, y0, z0,
        x, y, z, xt, yt, xn, yn, zn,
-       u0, v0, u1, v1,
+       u0, v0, u1, v1, vtx0, vty0,
        delta_a, aa, asign     ;
 double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
 int    tile_x,  tile_y ;
@@ -65,17 +65,21 @@ char   my_name[] = "make_dynamic_display_lists" ;
         tile_x = wnode->tile_x ;
         tile_y = wnode->tile_y ;
 //  Switch on debug pringing for a particular tile
-//        ip = ((tile_x == 1448) && (tile_y = 10332)) ;
+//        ip = ((tile_x == -12584) && (tile_y == 14767 || tile_y == 14768)) ;
         if(ip)printf("  ++ World tile node = %p\n",(void *)wnode) ;
         if(ip)printf("  ++ World tile %i  %i\n",tile_x, tile_y) ;
         for(witem = wnode->world_item ; witem != NULL; witem = witem->next){
+          if(ip && 0)printf("  ++ World tile %i  %i :: witem = %i\n",
+                            tile_x, tile_y, witem->uid) ;
           if(witem->worldtype != DYNTRACK && witem->worldtype != 306)continue ;
 //  Switch on debug pringing for a particular tile and uid
-//          ip = ip && (witem->uid == 225) ;
+//          ip = ip && (witem->uid == 4505) ;
+
           if(ip)printf("  World tile node = %p\n",(void *)wnode) ;
           if(ip)printf("  World tile %i  %i\n",tile_x, tile_y) ;
           fflush(NULL) ;
-          if(ip)printf("  World item node = %p\n",(void *)witem) ;
+          if(ip)printf("  World item node = %p, %i\n",
+                                                (void *)witem, witem->uid) ;
           if(ip)printf("  World item:  %i %i :: %.3f   %.3f   %.3f\n",
             witem->uid, witem->worldtype, witem->X, witem->Y, witem->Z) ;
           fflush(NULL) ;
@@ -94,7 +98,7 @@ char   my_name[] = "make_dynamic_display_lists" ;
           if(ip)printf("  v3x3_beg = %p\n",(void *)v3x3_beg );
           if(ip)printf("  v3x3_end = %p\n",(void *)v3x3_end );
 /*
- *  Loop over the dynamic track sectors
+ *  Loop over the dynamic track vectors
  */
           ditem = &(witem->u.dyn_track_obj) ;
           if(0)printf(" AA %p\n",(void *)ditem);
@@ -102,20 +106,26 @@ char   my_name[] = "make_dynamic_display_lists" ;
             if(0)printf(" BB\n");
             dsect = &(ditem->dyn_trk_sect[i]) ;
             if(0)printf(" BB %p\n",(void *)dsect);
-            p1 = dsect->param_1 ;                    //  Distance or Angle
-            p2 = dsect->param_2 ;                    //  Zero     or Radius
-            p3 = dsect->delta_y ;
-            if(ip)printf(" BB i = %i, params  = %.3f %.3f %.3f\n",i, p1,p2,p3);
+            p1 = dsect->param_1 ;         //  Distance (m) or Angle (radians)
+            p2 = dsect->param_2 ;         //  Zero  (straight) or Radius (curved)
+            p3 = dsect->delta_y ;         //  Elevation change
+            if(ip)printf("/n New vector i = %i, params  = %.3f %.3f %.3f\n",
+                                                                 i, p1,p2,p3);
             if(p1 == 0.0 && p2 == 0.0)continue ;
 // Straight section   p1 = length (m)  p2 = zero
-            if(p2 == 0){
-             if(ip)printf(" CC\n");
+            if(p2 == 0.0){
+              if(ip)printf("   CC S  Straight section.  vxx, vyy = %f %f\n",
+                           vxx, vyy);
               vxx = vxx + p1*vtx ;
               vyy = vyy + p1*vty ;
               v3x3->next = make_vector3x3() ;
               v3x3       = v3x3->next ;
+              if(ip)printf("   CC S                     vxx, vyy = %f %f,"
+                           " vtx, vty = %f %f\n", vxx, vyy, vtx, vty);
 // Curved section   p1 = angle (radians),  p2 = radius (m).
             }else{
+              if(ip)printf("   CC C  Curved section.    vxx, vyy = %9.3f %9.3f,"
+                           " vtx, vty = %9.3f %9.3f\n", vxx, vyy, vtx, vty);
               aa = fabs(p1) ;
               asign = (p1 >= 0) ? 1.0 : -1.0 ;
               if(track_profile->pitch_control == CHORDLENGTH){
@@ -123,11 +133,12 @@ char   my_name[] = "make_dynamic_display_lists" ;
               }else{
                 delta_a = 2.0*sqrt(track_profile->pitch_max/p2) ;
               }
-              if(ip)printf(" pitch_max = = %10.4f\n",track_profile->pitch_max);
-              if(ip)printf(" BBB p1, p2, aa, asign = %.3f %.3f %.3f %.3f\n",p1,p2,aa,asign);
+              if(ip)printf("   pitch_max = = %10.4f\n",track_profile->pitch_max);
+              if(ip)printf("   BBB p1, p2, aa, asign = %.3f %.3f %.3f %.3f\n",
+                                                               p1,p2,aa,asign);
               n = ceil(aa/delta_a)  ;
               delta_a = aa/n        ;
-              if(ip)printf(" FF n = %i,  delta_a = %.3f\n",n,delta_a);
+              if(ip)printf("   FF n = %i,  delta_a = %.3f\n",n,delta_a);
 
               if(p1>0){
                 rx = vxx + vty*p2 ;
@@ -136,31 +147,36 @@ char   my_name[] = "make_dynamic_display_lists" ;
                 rx = vxx - vty*p2 ;
                 ry = vyy + vtx*p2 ;
               }
-
+              if(ip)printf("    Central position : rx, ry = %9.3f  %9.3f\n",rx, ry) ;
+              vtx0 = vtx ;
+              vty0 = vty ;
               for(j=0, aa=delta_a; j<n; j++, aa+=delta_a){
                 if(p1 > 0){
-                  vxx = rx + p2*sin(aa) ;  //  Center line
-                  vyy = ry + p2*cos(aa) ;
-                  vtx = cos(aa) ;                                      //  Tangent
-                  vty =-sin(aa) ;
+                  vxx = rx + vtx0*p2*sin(aa) - vty0*p2*cos(aa) ;  //  Center line
+                  vyy = ry + vtx0*p2*cos(aa) + vty0*p2*sin(aa) ;
+                  vtx = vtx0*cos(aa) + vty0*sin(aa) ;             //  Tangent
+                  vty =-vtx0*sin(aa) + vty0*cos(aa);
                 }else{
-                  vxx = rx + p2*sin(aa) ;  //  Center line
-                  vyy = ry - p2*cos(aa) ;
-                  vtx =  cos(aa) ;                    //  Tangent
-                  vty =  sin(aa) ;
+                  vxx = rx + vtx0*p2*sin(aa) + vty0*p2*cos(aa);  //  Center line
+                  vyy = ry - vtx0*p2*cos(aa) + vty0*p2*sin(aa) ;
+                  vtx =  vtx0*cos(aa) - vty0*sin(aa) ;           //  Tangent
+                  vty =  vtx0*sin(aa) + vty0*cos(aa) ;
                 }
                 v3x3->next = make_vector3x3() ;
                 v3x3       = v3x3->next ;
-                if(ip)printf(" GG  vxx, vyy = %9.3f  %9.3f :: vtx, vty =  %9.3f  %9.3f\n",
-                                       vxx,vyy,vtx,vty);
+                if(ip)printf("   GG     aa = %f,   vxx, vyy = %9.3f  %9.3f "
+                             ":: vtx, vty =  %6.3f  %6.3f ::   %6.3f\n",aa,
+                             vxx,vyy,vtx,vty,
+                             sqrt(vtx*vtx+vty*vty));
               }
             }
             v3x3_end = v3x3 ;
-            if(ip)printf(" CC2 %p %p\n",(void *)v3x3,(void *)v3x3_end );
+            if(ip)printf("   CC2 %p %p\n",(void *)v3x3,(void *)v3x3_end );
           }
 /*
  *   Create display list for distance levels
  */
+          if(ip)printf(" ZZ  Generate display lists\n");
           for(i=0;i<3;i++){
             dist_level = &(track_profile->dist_level[i])     ;
 //          track_section->distance[i] = dist_level->distance ;  //  Copy distances for later use

@@ -33,6 +33,7 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
   int         tex_idx         ;
   int         ivtx_state      ;
   int         is_wheel        ;   //  = 1 when wheels being processed
+  int         is_engine_wheel ;   //  = 1 when engine wheels being processed
   int         is_bogie        ;   //  = 1 when bogie being processed
   int         is_engine = 0   ;
   int         is_wiper  = 0   ;   //  = 1 when wiper being processed
@@ -63,12 +64,6 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
 //     ip = !ic && !strcmp(snode->name,"UKRoyalScot");
 //     ip = !ic && !strcmp(snode->name,"acelahhl") && (dist_level->dlevel_selection < 110.0) ;
 //     ip = !ic && !strcmp(snode->name,"1905-S654");
-//     ip = !strcmp(snode->name,"Vduct_1Arch-1Track");
-//     ip = !strcmp(snode->name,"AU_Cedar_20m");
-//      ip = !strcmp(snode->name,"AU_Ash_20m");
-//      ip = !strcmp(snode->name,"underground_marker");
-//      ip = !strcmp(snode->name,"1905-KL");
-//     ip = !strcmp(snode->name,"BBS-HomesteadC");
 //      if(strcmp(snode->name,name_control)== 0){      //  Allow control over items plotted
 //       ip = 0 ;
 //       ic = 1 ;
@@ -80,11 +75,7 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
         printf(" Generate display for : %s\n",snode->name) ;
       }
 
-      if(0 == strcmp(snode->name,"underground_marker")) return 0;
-      if(0 == strcmp(snode->name,"ctn_point_indication")) return 0;
-
       is_engine = wagon->is_engine ;
-
 /*
  *==============================================================================
  *  Print section
@@ -307,11 +298,23 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
               printf("  Hierarchy AA  im = %i, ima[im] = %i,  Name = %s\n",
                         im,ima[im],matrix4x3->name) ;
             }
-            is_wheel = !strncmp_ic(matrix4x3->name,"wheel",5) ;
+#if 0
+            is_wheel = !strncmp_ic(matrix4x3->name,"wheels",6) ;
+            is_engine_wheel = is_wheel && 7 == strlen(matrix4x3->name) ;
+//            if(is_wheel)printf("   Matrix = %s, is_engine = %i, is_wheel = %i, is_engine_wheel = %i\n",
+//                    matrix4x3->name,is_engine,is_wheel,is_engine_wheel) ;
             is_bogie = !strncmp_ic(matrix4x3->name,"bogie",5) ;
             is_wiper = !strncmp_ic(matrix4x3->name,"wiper",5) ;
             is_mirror     = !strncmp_ic(matrix4x3->name,"mirror",6) ;
             is_pantograph = !strncmp_ic(matrix4x3->name,"pantograph",10) ;
+#else
+             is_engine_wheel = matrix4x3->anim == MAT_DRIVER_WHEEL ;
+             is_wheel        = matrix4x3->anim == MAT_WHEEL || is_engine_wheel ;
+             is_bogie        = matrix4x3->anim == MAT_BOGIE      ;
+             is_wiper        = matrix4x3->anim == MAT_WIPER      ;
+             is_mirror       = matrix4x3->anim == MAT_MIRROR     ;
+             is_pantograph   = matrix4x3->anim == MAT_PANTOGRAPH ;
+#endif
 /*
  *  Animation for matrix im
  */
@@ -338,13 +341,13 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
                 printf("    PrimState name = %s\n",prim_state->name) ;
               }
 // Translation only
-              if(matrix4x3->type == 1){
+              if(matrix4x3->type == MAT_TRANSLATE){
                 glTranslatef((GLfloat) matrix4x3->DX,
                              (GLfloat) matrix4x3->DY,
                              (GLfloat) matrix4x3->DZ) ;
                 if(ip)printf("      Translate :: %f %f %f\n",matrix4x3->DX, matrix4x3->DY, matrix4x3->DZ) ;
 // General Matrix but not unit diagonal
-              }else if(matrix4x3->type){
+              }else if(matrix4x3->type != MAT_UNIT){
                 float m[16] ;
                 msts4x3_to_opengl4x4(m,matrix4x3) ;
                 glMultMatrixf(m) ;
@@ -353,12 +356,14 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
 /*
  *  1.  Wheels :  Apply rotation to wheels around MSTS 'x' axis
  */
-              if(is_wheel){
-                wagon->wheel_angle = fmod(wagon->wheel_angle,360.0);
-                if(wagon->wheel_angle<0.0)wagon->wheel_angle += 360.0 ;
+              if(is_engine_wheel){
+                glRotatef((GLfloat) wagon->driverwheel_angle,
+                          (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0) ;
+                if(ip)printf("      Driver Wheel angle :: %f\n",wagon->driverwheel_angle) ;
+              }else if(is_wheel){
                 glRotatef((GLfloat) wagon->wheel_angle,
                           (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0) ;
-                if(ip)printf("      Wheel rotate :: %f\n",wagon->wheel_angle) ;
+                if(ip)printf("      Wheel angle :: %f\n",wagon->wheel_angle) ;
 /*
  *  2.  Bogies ;  Do nothing ?
  */
@@ -447,9 +452,9 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
                 }else{
                   if(ip)printf("    Set running gear angle\n") ;
                   dw = 360.0/(n_anim_keys-1) ;
-                  wagon->wheel_angle = fmod(wagon->wheel_angle,360.0);
-                  if(wagon->wheel_angle<0.0)wagon->wheel_angle += 360.0 ;
-                  wa = wagon->wheel_angle/dw ;
+//                  wagon->wheel_angle = fmod(wagon->wheel_angle,360.0);
+//                  if(wagon->wheel_angle<0.0)wagon->wheel_angle += 360.0 ;
+                  wa = wagon->driverwheel_angle/dw ;
                   i0 = (wa>=0) ? wa : 0 ;
                   if(i0>(n_anim_keys-1))i0 = n_anim_keys-1 ;
                   i1 = i0 + 1 ;

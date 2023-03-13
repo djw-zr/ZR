@@ -660,6 +660,11 @@ int read_elevations(TileListNode *tlnode){
         printf("  Full name = %s\n",full_name);
         printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);
 //        ip =  (abs(tlnode->tilex-1449)<3)  && (abs(tlnode->tiley-10331)<3) ;
+        printf("  X = %i, Y = %i, N = %i\n",
+                    tlnode->terrain_data.nbx,
+                    tlnode->terrain_data.nby,
+                    tlnode->terrain_data.terrain_nsamples
+                    ) ;
       }
 /*
  *   Look for file allowing for uppercase/lowercase confision

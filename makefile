@@ -12,7 +12,7 @@
 #   This version of the makefile is designed for use with Linux
 #
 #   For valgrind compile with "-g -Og", then run:
-#   valgrind -v -v --leak-check=yes --track-origins=yes -s --main-stacksize=100000000 ./zr -p
+#   valgrind -v -v --leak-check=yes --track-origins=yes -s --main-stacksize=200000000 ./zr -p
 #
 ################################################################################
 #
@@ -24,14 +24,14 @@
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
-SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout \
-             src/setup
+SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout src/setup
 
 #  Specify Compiler and Compiler Options
 CC       = gcc
+LD       = gcc
 CFLAGS   = -m64 -march=native -mcmodel=large
-CFLAGS  += -O3 #         Level 3 compiler optimisation
-#CFLAGS  += -g3 -Og #    For valgrind use -g and -Og optimisation
+#CFLAGS  += -O3 #         Level 3 compiler optimisation
+CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable
@@ -60,8 +60,9 @@ CFLAGS += -D_MultiSample
 #CFLAGS += -DROUTE_EUROPE1 #  Settle line
 #CFLAGS += -DROUTE_EUROPE2 #  Innsbruck - St Anton
 #CFLAGS += -DROUTE_JAPAN1 #   Tokyo - Hakone
-#CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line
+#CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line             Segmentation
 #CFLAGS += -DROUTE_TUTORIAL
+#CFLAGS += -DROUTE_AU_NSW_SW_SS
 
 #  Conditionals
 
@@ -93,8 +94,21 @@ CFILES := $(shell find $(SRC_DIR) -name "*.c")
 
 #  Makefile targets:
 
-zr: zr.c $(HFILES) $(CFILES) makefile
-	$(CC) zr.c -o $@ $(CFLAGS) $(LDFLAGS)
+zr: zr.c $(HFILES) $(CFILES) makefile sigscr.o y.tab.o lex.yy.o
+	$(CC) zr.c -c $(CFLAGS)
+	$(LD) zr.o sigscr.o y.tab.o lex.yy.o -o $@ $(CFLAGS) $(LDFLAGS)
+
+sigscr.o: src/input/sigscr.c makefile
+	$(CC) src/input/sigscr.c -c $(CFLAGS)
+
+y.tab.o: src/input/y.tab.c makefile
+	$(CC) src/input/y.tab.c  -c $(CFLAGS)
+
+lex.yy.o: src/input/lex.yy.c makefile
+	$(CC) src/input/lex.yy.c -c $(CFLAGS)
+
+#.c.o:   makefile
+#	$(CC) -c $*.c $(CFLAGS)
 
 paths:
 	$(CC) zr.c -o $@ $(CFLAGS) $(LDFLAGS) -E -v

@@ -83,24 +83,51 @@ static TileListNode *tiledata_new(int i, int j)
 {
   TileListNode *tiledata ;
 
+
       tiledata = (TileListNode *)malloc(sizeof(TileListNode)) ;
+      tiledata->next      = NULL ;
       tiledata->tilex     = i ;
       tiledata->tiley     = j ;
+      tiledata->zoom      = 0 ;
       tiledata->name      = NULL ;
       tiledata->t_file    = NULL ;
       tiledata->t_found   = 0 ;
       tiledata->loaded    = 0 ;
       tiledata->needed    = 0 ;
-      tiledata->gl_display_list = 0    ;
-      tiledata->next            = NULL ;
+      tiledata->gl_display_list = 0  ;
+
+      tiledata->terrain_data.terrain_errthreshold_scale = 0.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_SW = 0.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_SE = 0.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_NE = 0.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_NW = 0.0 ;
+      tiledata->terrain_data.terrain_alwaysselect_maxdist   = 0.0 ;
+      tiledata->terrain_data.terrain_nsamples               = 0   ;
+      tiledata->terrain_data.terrain_sample_rotation        = 0.0 ;
+      tiledata->terrain_data.terrain_sample_floor           = 0.0 ;
+      tiledata->terrain_data.terrain_sample_scale           = 0.0 ;
+      tiledata->terrain_data.terrain_sample_size            = 0.0 ;
+      tiledata->terrain_data.ybuffer                        = NULL ;
+      tiledata->terrain_data.ebuffer                        = NULL ;
+      tiledata->terrain_data.nbuffer                        = NULL ;
+      tiledata->terrain_data.asbuffer                       = 0   ;
+      tiledata->terrain_data.fbuffer                        = 0   ;
+      tiledata->terrain_data.number_of_shaders              = 0   ;
+      tiledata->terrain_data.number_of_patchsets            = 0   ;
+      tiledata->terrain_data.tile_shader                    = NULL ;
+      tiledata->terrain_data.tile_patchset                  = NULL ;
+      tiledata->terrain_data.elevations                     = NULL ;
 #ifdef use_vertex_arrays
       tiledata->terrain_data.va_vertex  = NULL ;
       tiledata->terrain_data.va_normal  = NULL ;
       tiledata->terrain_data.va_texture = NULL ;
+      tiledata->terrain_data.nva_index1 = 0    ;
       tiledata->terrain_data.va_index1  = NULL ;
+      tiledata->terrain_data.nva_index2 = 0    ;
       tiledata->terrain_data.va_index2  = NULL ;
       tiledata->terrain_data.nbx  = 0 ;
       tiledata->terrain_data.nby  = 0 ;
+      tiledata->terrain_data.va_node    = NULL ;
 #endif
       return tiledata ;
 }

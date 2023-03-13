@@ -22,6 +22,7 @@ char  string[256] ;
 char *my_name = "make_texture_resident" ;
 
 //      ip = !strcmp(tx_node->name,"brake3") ;
+//      ip = (tx_node == land_texture) ;
 
       if(ip)printf("  Enter make_texture_resident\n") ;
 //      printf("  tx_node  = %p\n",(void *)tx_node) ;
@@ -33,7 +34,7 @@ char *my_name = "make_texture_resident" ;
 
       if(ip)printf("    Old ref number = %i\n",tx_node->gl_tex_ref_no) ;
       if(0 != tx_node->gl_tex_ref_no){
-        printf("  Routine %s.  Texture %s already is already bound to index %i",
+        printf("  Routine %s.  Texture %s already is already bound to index %i\n",
                    my_name, tx_node->name, tx_node->gl_tex_ref_no) ;
         return 0 ;
       }

@@ -45,22 +45,22 @@
  *  TravellerNodes contain information on the position of
  *  each traveller in space and relative to the track layout.
  *
- *  When each train moves the primary traveller on the engine is moved a
- *  distance corresponding to the speed of the train and the time since the
- *  last update.  Other travellers on engines and wagons in the train are
- *  moved so that the track separation between travellers remains constant.
+ *  When each train moves the primary traveller at the back of the train
+ *  is moved a distance corresponding to the speed of the train and the time
+ *  since the last update.  Other travellers on engines and wagons in the train
+ *  have their variables updated each timestep that the train moves - such
+ *  that the track separation between travellers remains constant.
  *
+ *  Note:  if(idirect == 0) ang_deg = ang_deg + 180 (traveller.c)
+ *
+ *  Note:  typedefs moved to typedef.h
  */
 
-typedef struct travellernode  TravellerNode  ;
-typedef struct wagonnode      WagonNode      ;
-typedef struct trainnode      TrainNode      ;
-//typedef struct enginenode     EngineNode     ;
 
 struct travellernode {
   ShapeNode    *shape       ;  //  Shape of current wagon
-  WagonNode    *wagon       ;  //  Current wagon
-  TrkSectNode  *tn          ;  //  Current track section in track network
+  WagonNode    *wagon       ;  //  Current wagon  (== NULL for dummy wagons)
+  TrkSector    *tn          ;  //  Current track section in track network
   TrkVectorNode *vn         ;  //  Current vector in track section
 
   double       x            ;  //  Position (m) of traveller
@@ -68,12 +68,13 @@ struct travellernode {
   double       z            ;  //         ...
   double       ang_deg      ;  //  Rotation of traveller relative to start point
                                //  degrees
-  double       position     ;  //  Position within section
+  double       vect_position ;  //  Position within track vector
+  double       sect_distance ;  //  Distance within track section
 
-  uint          itrack       ;  //  Current track node
-  uint          ivector      ;  //  Index of current vector
-  uint          idirect      ;  //  1/0 = increase/decrease in distance moved by
-                               //        traveller increases vector position
+  uint         itrack       ;  //  Current track node
+  uint         ivector      ;  //  Index of current vector
+  uint         idirect      ;  //  1/0 = increase/decrease in distance moved by
+                               //        train increases traveller vector position
 }  ;
 
 /*
@@ -91,7 +92,7 @@ struct wagonnode{
   char          *name      ;  //  Name of wagon type (as in raw_wagon)
   int           index      ;  //  Position of wagon in train or consist
   int           is_engine  ;  //  True (non-zero) if this has a motor
-  int           train_dir  ;  //  True if wagon in same direction as train
+  uint          train_dir  ;  //  True if wagon in same direction as train
   int           n_travel   ;  //  Number of traveller nodes.
   int           has_wipers   ;  // = 1 when engine has wipers
   int           wipers_on    ;  // = 1 when wipers switched on
@@ -112,23 +113,9 @@ struct wagonnode{
 
   TravellerNode *traveller ;  //  Vector of traveller nodes
   ShapeNode     *shape     ;  //  Shape node defining wagon
-  RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data
-//  EngineNode    *engine    ;  //
+  RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data (wagon.h)
 } ;
-#if 0
-struct enginenode{
-  int           has_wipers   ;  // = 1 when engine has wipers
-  int           wipers_on    ;  // = 1 when wipers switched on
-  int           wipers_off   ;  // = 1 when wiper switched off
-  double        wipers_ang   ;  // 0 to 360 - converted 0.5(sin(ang)+1.0)
-  int           has_mirrors  ;  // = 1 when engine has driver mirrors
-  int           mirrors_out  ;  // = 1 when mirrors (moving) out
-  double        mirrors_dist ;  // 0 to 1
-  int           has_pantographs  ;  // = 1 when engine has pantographs
-  int           pantographs_up   ;  // = 1 when pantographs (being) raised
-  double        pantographs_dist ;  // 0 to 1
-} ;
-#endif
+
 
 /*
  *   TrainNode is used to specify either a 'train', located on the
@@ -140,8 +127,11 @@ struct trainnode{
   struct trainnode  *next  ;  // Next train in linked list
   char              *name  ;  // Unique name of train (or consist)
   double            speed  ;  // Speed of train
+  int               n_wagons ; // Number of wagons
   WagonNode         *motor ;  // Pointer to primary motor or NULL
   WagonNode         *first ;  // Pointer to first wagon in train
   WagonNode         *last  ;  // Pointer to last wagon in train
+  TravellerNode     front  ;  // Location of the front of the train
+  TravellerNode     back   ;  // Location of the back of the train
 } ;
 

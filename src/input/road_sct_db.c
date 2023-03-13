@@ -73,8 +73,8 @@ int init_road_db(char * filename)
  */
     road_db.trk_sections_array_size = itoken(&msfile) ;
 //    printf("  trk_sec_array_size = %i\n",road_db.trk_sections_array_size);
-    road_db.trk_sections_array = (TrkSectNode *)
-              malloc(road_db.trk_sections_array_size*sizeof(TrkSectNode));
+    road_db.trk_sections_array = (TrkSector *)
+              malloc(road_db.trk_sections_array_size*sizeof(TrkSector));
 /*
  *   Cycle over the set of road sections
  */
@@ -97,8 +97,8 @@ int init_road_db(char * filename)
  */
     road_db.trk_items_array_size = itoken(&msfile) ;
 //    printf("  road_item_array_size = %i\n",road_db.trk_items_array_size);
-    road_db.trk_items_array = (TrkItemNode *)
-                  malloc(road_db.trk_items_array_size*sizeof(TrkItemNode));
+    road_db.trk_items_array = (TrkItem *)
+                  malloc(road_db.trk_items_array_size*sizeof(TrkItem));
 /*
  *   Cycle over the track items
  */
@@ -124,7 +124,7 @@ int init_road_db(char * filename)
 uint            ie = 0, iw = 0, in = 0, is = 0 ;
 double          de = 0, dw = 0, dn = 0, ds = 0 ,
                  h0 = 100000.0, h1 = 0.0 ;;
-TrkSectNode   *road_sec_node ;
+TrkSector   *road_sec_node ;
 TrkVectorNode    *vec          ;
 
     for(i=0;i<(int)road_db.trk_sections_array_size;i++){
@@ -212,7 +212,7 @@ TrkVectorNode    *vec          ;
  * **********************************************************************
  */
 
-void read_road_path(TrkSectNode *road_path, MSfile *msfile)
+void read_road_path(TrkSector *road_path, MSfile *msfile)
 {
  int    j, n   ;             // loop integers
  char   *token ;
@@ -228,7 +228,7 @@ void read_road_path(TrkSectNode *road_path, MSfile *msfile)
 //  Save node index
     skip_lbr(msfile) ;
     init_road_path(road_path) ;
-    road_path->index_of_node = itoken(msfile) ;
+    road_path->uid = itoken(msfile) ;
 /*
  *  Loop through all possible second level TrackNode tokens
  *   TrJunctionNode, TrEndNode, TrVectorNode,  UiD, TrPins,
@@ -289,12 +289,12 @@ void read_road_path(TrkSectNode *road_path, MSfile *msfile)
                 skip_lbr(msfile);
                  n = itoken(msfile);                  // Number of Track Items
                  road_path->trk_item_number = n;
-                 road_path->trk_item_vec = (uint *)malloc(n*sizeof(uint));
+                 road_path->trk_item_list = (uint *)malloc(n*sizeof(uint));
                  for(j=0;j<n;j++){
                     token = new_tmp_token(msfile);  //  TrItemRef
                     if(is_rbr(token)) break ;
                     skip_lbr(msfile);
-                    road_path->trk_item_vec[j] = itoken(msfile) ;
+                    road_path->trk_item_list[j] = itoken(msfile) ;
                     skip_rbr(msfile) ;
                  }
                  skip_rbr(msfile) ;
@@ -358,10 +358,10 @@ void read_road_path(TrkSectNode *road_path, MSfile *msfile)
   return ;
 }
 
-void init_road_path(TrkSectNode *road_path)
+void init_road_path(TrkSector *road_path)
 {
   int  i;
-       road_path->index_of_node    = 0;
+       road_path->uid    = 0;
        road_path->type_of_node     = 0;
        road_path->length_of_vector = 0 ;
 

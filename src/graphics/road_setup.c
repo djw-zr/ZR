@@ -16,8 +16,8 @@
  *==============================================================================
  */
 
-TrkSectNode  *next_road_node(TrkSectNode *road_section) ;
-int  add_sub_nodes_to_road(TrkSectNode *road_section, DynProfile *profile) ;
+TrkSector  *next_road_node(TrkSector *road_section) ;
+int  add_sub_nodes_to_road(TrkSector *road_section, DynProfile *profile) ;
 int   initialise_road_shape(ShapeNode *shapenode) ;
 
 /*
@@ -145,7 +145,7 @@ char            my_name[]="make_default_road_profile" ;
 int  make_road_shapes(){
 uint i ;
 int  ip = 0 ;                        // Debug printing = 1
-TrkSectNode   *road_node       ;  // Road section needing shape
+TrkSector   *road_node       ;  // Road section needing shape
 //DynProfile       *road_profile    ;  // Track Profile to use
 char             my_name[]="make_road_shapes" ;
 
@@ -170,7 +170,7 @@ char             my_name[]="make_road_shapes" ;
  *  Routine to add extra road nodes on curves.  Needed when using a road profile
  */
 
-int  add_sub_nodes_to_road(TrkSectNode *road_section, DynProfile *profile){
+int  add_sub_nodes_to_road(TrkSector *road_section, DynProfile *profile){
 
 uint          i, j, n   ;
 int           ip = 0 ;                                // Debug printing = 1
@@ -194,7 +194,7 @@ double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
               xc1  = 0.1, yc1  = 0.0  ;
 TrkVectorNode *tv0,               //  Current road vector node
               *tv1  = NULL ;      //  Next road vector
-TrkSectNode *ts1 = NULL ;      //  Next road section
+TrkSector *ts1 = NULL ;      //  Next road section
 char          *my_name="add_sub_nodes_to_road" ;
 
       if(ip)printf("\n    Enter routine %s\n",my_name) ;
@@ -262,9 +262,9 @@ int ii, jj ;
             while(a1-a0 <-pi)a1 = a1 + 2.0*pi ;
           }else{
             printf(" Routine %s : Error : Angle between track sections > 1 radian.\n",my_name);
-            printf("  Track section 0 = %i\n",road_section->index_of_node) ;
+            printf("  Track section 0 = %i\n",road_section->uid) ;
             printf("   Angle a0 (deg) = %f\n",degree*tv0->a_height_y);
-            if(last_node)printf("  Track section 1 = %i\n",ts1->index_of_node) ;
+            if(last_node)printf("  Track section 1 = %i\n",ts1->uid) ;
             printf("   Angle a1 (deg) = %f\n",degree*tv1->a_height_y);
           }
         }
@@ -411,12 +411,12 @@ int ii, jj ;
  *  Routine to find the next node.
  */
 
-TrkSectNode  *next_road_node(TrkSectNode *road_section){
+TrkSector  *next_road_node(TrkSector *road_section){
 
 int             next_node_index, n ;
 int             ip = 0 ;                      // Dubug printing when ip == 1
 char            my_name[] = "next_road_node" ;
-TrkSectNode  *t              ;
+TrkSector  *t              ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -437,10 +437,10 @@ TrkSectNode  *t              ;
       }
 
       t = &(road_db.trk_sections_array[next_node_index-1]) ;
-      if(next_node_index != (int)t->index_of_node){
+      if(next_node_index != (int)t->uid){
         printf(" Routine %s : Error :  Unable to find next track section.\n",my_name) ;
         printf("   Index requested = %i\n",   next_node_index)         ;
-        printf("   Index found     = %i\n",   t->index_of_node)        ;
+        printf("   Index found     = %i\n",   t->uid)        ;
         printf("   Program stopping...\n")                             ;
         exit(1) ;
       }
@@ -460,7 +460,7 @@ TrkSectNode  *t              ;
  *          triangle strips on the vertices at the sub-object level.
  */
 
-int   make_road_shape(TrkSectNode *tracknode, DynProfile *profile){
+int   make_road_shape(TrkSector *tracknode, DynProfile *profile){
 
 int        i, n           ;
 int        ip = 0         ;  // Debug printing
@@ -477,7 +477,7 @@ char       my_name[]="make_road_shape" ;
       shapenode = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
       initialise_road_shape(shapenode) ;
 
-      n = sprintf(string256,"TrkSect%06i",tracknode->index_of_node);
+      n = sprintf(string256,"TrkSect%06i",tracknode->uid);
       if(n>255){
         printf("  Buffer overflow in routine %s\n",my_name) ;
         exit(1) ;

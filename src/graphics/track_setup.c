@@ -16,7 +16,7 @@
  *==============================================================================
  */
 
-TrkSectNode  *next_track_node(TrkSectNode *track_section) ;
+TrkSector  *next_track_node(TrkSector *track_section) ;
 static int ipp_track = 0 ;           //  Debug
 
 /*
@@ -394,7 +394,7 @@ char            my_name[]="make_default_track_profile" ;
 int  make_track_shapes(){
 uint i ;
 int  ip = 0, ipp = 0 ;                        // Debug printing = 1
-TrkSectNode  *track_node       ;  // Track section needing shape
+TrkSector  *track_node       ;  // Track section needing shape
 DynProfile      *track_profile    ;  // Track Profile to use
 char            my_name[]="make_track_shapes" ;
 
@@ -407,7 +407,7 @@ char            my_name[]="make_track_shapes" ;
       track_profile = zr_rail_profile ;
       for(i=0;i<track_db.trk_sections_array_size;i++){
         track_node = &(track_db.trk_sections_array[i]) ;
-//        ipp = ip && (123 == track_node->index_of_node) ;
+//        ipp = ip && (123 == track_node->uid) ;
         ipp_track = ipp ;
         if(ipp)printf("    make_track_shapes i = %i\n",i) ;
         if(ipp){
@@ -425,7 +425,7 @@ int       i_asntt = 20 ;      //  Used for debug printing
  *  Routine to add extra track nodes on curves.  Needed when using a track profile
  */
 
-int  add_sub_nodes_to_track(TrkSectNode *track_section, DynProfile *profile){
+int  add_sub_nodes_to_track(TrkSector *track_section, DynProfile *profile){
 
 uint          i, j, n                            ;
 int           ip = 0 ;                                // Debug printing = 1
@@ -449,7 +449,7 @@ double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
               xc1  = 0.1, yc1  = 0.0  ;
 TrkVectorNode *tv0,               //  Current track vector node
               *tv1  ;             //  Next track vector
-TrkSectNode *ts1 = NULL ;      //  Next track section
+TrkSector *ts1 = NULL ;      //  Next track section
 char          *my_name="add_sub_nodes_to_track" ;
 
       ip = ipp_track ;
@@ -458,7 +458,7 @@ char          *my_name="add_sub_nodes_to_track" ;
       if(ip){
         printf("      Type of node = %i    (VECTOR =  %i END = %i, JUNCTION = %i).\n",
                  track_section->type_of_node,VECTOR_SECTION,END_SECTION,JUNCTION);
-        printf("      Index of node = %i\n",track_section->index_of_node ) ;
+        printf("      Index of node = %i\n",track_section->uid ) ;
       }
 /*
  * Skip if not a vector node (i.e. Junction or End Node)
@@ -520,9 +520,9 @@ int ii, jj ;
             while(a1-a0 <-pi)a1 = a1 + 2.0*pi ;
           }else{
             printf(" Routine %s : Error : Angle between track sections > 1 radian.\n",my_name);
-            printf("  Track section 0 = %i\n",track_section->index_of_node) ;
+            printf("  Track section 0 = %i\n",track_section->uid) ;
             printf("   Angle a0 (deg) = %f\n",degree*tv0->a_height_y);
-            if(last_node)printf("  Track section 1 = %i\n",ts1->index_of_node) ;
+            if(last_node)printf("  Track section 1 = %i\n",ts1->uid) ;
             printf("   Angle a1 (deg) = %f\n",degree*tv1->a_height_y);
           }
         }
@@ -670,12 +670,12 @@ int ii, jj ;
  *  This is normally a junction node or an end node
  */
 
-TrkSectNode  *next_track_node(TrkSectNode *track_section){
+TrkSector  *next_track_node(TrkSector *track_section){
 
 int             next_node_index, n ;
 int             ip = 0 ;                      // Dubug printing when ip == 1
 char            my_name[] = "next_track_node" ;
-TrkSectNode  *t              ;
+TrkSector  *t              ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -696,10 +696,10 @@ TrkSectNode  *t              ;
       }
 
       t = &(track_db.trk_sections_array[next_node_index-1]) ;
-      if(next_node_index != (int)t->index_of_node){
+      if(next_node_index != (int)t->uid){
         printf(" Routine %s : Error :  Unable to find next track section.\n",my_name) ;
         printf("   Index requested = %i\n",   next_node_index)         ;
-        printf("   Index found     = %i\n",   t->index_of_node)        ;
+        printf("   Index found     = %i\n",   t->uid)        ;
         printf("   Program stopping...\n")                             ;
         exit(1) ;
       }
@@ -719,7 +719,7 @@ TrkSectNode  *t              ;
  *          triangle strips on the vertices at the sub-object level.
  */
 
-int   make_track_shape(TrkSectNode *tracknode, DynProfile *profile){
+int   make_track_shape(TrkSector *tracknode, DynProfile *profile){
 
 int        i, n           ;
 static int ipp = 0 ;
@@ -736,7 +736,7 @@ char       my_name[]="make_track_shape" ;
       shapenode = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
       initialise_track_shape(shapenode) ;
 
-      n = sprintf(string256,"TrkSect%06i",tracknode->index_of_node);
+      n = sprintf(string256,"TrkSect%06i",tracknode->uid);
       if(n>255){
         printf("  Buffer overflow in routine %s\n",my_name) ;
         exit(1) ;

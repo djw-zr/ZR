@@ -100,6 +100,80 @@ char         c1, c2 ;
      return 0 ;
 }
 
+/*
+ *  Routine to return a new string with start and end quotes removed.
+ */
+
+char *strip_quotes(char *string1){
+
+unsigned int n, i ;
+char         *string2 ;
+
+      n = strlen(string1) ;
+      if(string1[0] != '"' || string1[n-1] != '"') return string1 ;
+      string2 =strndup(&string1[1],n-2) ;
+      free(string1) ;
+      return string2 ;
+}
+
+/*
+ *  Routine to compare strings with start and end quotes removed.
+ */
+
+int strcmp_nq(char *s1a, char *s2a){
+
+int  iret ;
+char *s1 = strdup(s1a) ;
+char *s2 = strdup(s2a) ;
+
+      s1 = strip_quotes(s1);
+      s2 = strip_quotes(s2);
+      iret = strcmp(s1,s2) ;
+      free(s1) ;
+      free(s2) ;
+      return iret ;
+}
+/*
+ *  Routine to compare strings with start and end quotes removed.
+ */
+
+int strcmp_nqic(char *s1a, char *s2a){
+
+int  iret ;
+char *s1 = strdup(s1a) ;
+char *s2 = strdup(s2a) ;
+
+      s1 = strip_quotes(s1);
+      s2 = strip_quotes(s2);
+      iret = strcmp_ic(s1,s2) ;
+      free(s1) ;
+      free(s2) ;
+      return iret ;
+}
+
+/*
+ * Routine to strip quotes and any extension from a filename
+ * and convert to lower case.
+ *
+ * Designed to convert names of textures and other MSTS strings
+ * to a consistent format
+ */
+void  zr_str2lcnqne(char *string){
+
+  int i, j, n ;
+      n = strlen(string) ;
+      for(i=0,j=0;i<n;i++){
+        if(string[i] == '"')  ;
+        else if(string[i] == '.'){
+          break ;
+        }else{
+          string[j++] = tolower(string[i]) ;
+        }
+      }
+      string[j] = '\0' ;
+      return ;
+}
+
 /**
  *  char *zr_basename(char *fname)
  *
@@ -513,6 +587,20 @@ int  i, j, n  ;
       return 0 ;
 }
 
+char *zr_to_upper(char *string){
+
+ int i, n ;
+ static char *upper = NULL;
+
+     if(upper)free(upper);
+     upper = NULL ;
+     n = strlen(string) ;
+     upper = (char *)malloc(n+1) ;
+     for(i=0;i<n;i++)upper[i]=toupper(string[i]);
+     upper[n]='\0' ;
+     return upper ;
+}
+
 //#ifdef MinGW
 #if 0
 /*
@@ -728,7 +816,7 @@ static int icounta[] = {0, 0, 0, 0, 0} ;
  *            2 if it represents rotation and/or stretching,
  *            3 if it represents both.
  */
-int check_matrix4x3(Matrix4x3 *m){
+enum MatrixType check_matrix4x3(Matrix4x3 *m){
 
 int k = 0 ;
 
@@ -736,7 +824,12 @@ int k = 0 ;
          m->BX != 0.0 || m->BY != 1.0 || m->BZ != 0.0 ||
          m->CX != 0.0 || m->CY != 0.0 || m->CZ != 1.0) k = 2  ;
       if(m->DX != 0.0 || m->DY != 0.0 || m->DZ != 0.0) k++    ;
-      return k ;
+      switch (k){
+        case 0: return MAT_UNIT      ;
+        case 1: return MAT_TRANSLATE ;
+        case 2: return MAT_ROTATE    ;
+      }
+      return MAT_GENERAL ;
 }
 
 /**

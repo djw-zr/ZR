@@ -21,7 +21,7 @@
 
 int display_tile_vertex_array(TileListNode *tnode){
 
-int            ip = 0     ;  // Debug printing
+int            ip = 0    ;  // Debug printing
 char           my_name[] = "display_tile_vertex_arrays" ;
 
 GLfloat        *vertex  ;
@@ -47,7 +47,7 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 
       if(ip)printf(" Enter routine %s : %i %i : %i \n",
         my_name,tnode->tilex,tnode->tiley,tnode->needed) ;
-      if(tnode->needed == 0) return 0;
+//      if(tnode->needed == 0) return 0;
       if(!land_texture->gl_tex_ref_no){
         printf("  ERROR.  Routine %s called when land_texture not installed\n",
                                                                        my_name);
@@ -72,14 +72,17 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 /*
  *  Main Loop
  */
+
       nv = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+      if(ip)printf("  Dimensions %i %i : %i\n",
+             tnode->terrain_data.nbx,tnode->terrain_data.nby,nv) ;
       for(iv=0;iv<nv;iv++){
         va_node = &(tnode->terrain_data.va_node[iv]) ;
         if(0 == va_node->in_use) continue ;
 /*
  *  Check clip planes
  */
-        if(!check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za))continue ;
+//        if(!check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za))continue ;
 
         vertex  = va_node->va_vertex  ;
         normal  = va_node->va_normal  ;

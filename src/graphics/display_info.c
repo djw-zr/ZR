@@ -81,9 +81,9 @@ char        string[2048] ;
                          witem->uid,witem->worldtype,xx,yy,zz);
 #else
     sprintf(string," - WORLD   :: uid = %i, type =  %i"
-                         " :: item at :: %f %f %f :: %i %i",
+                         " :: item at :: %f %f %f :: %i %i :: %s",
                          witem->uid,witem->worldtype,witem->X,witem->Y,witem->Z,
-                         wnode->tile_x, wnode->tile_y);
+                         wnode->tile_x, wnode->tile_y, witem->filename);
 #endif
           print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
 
@@ -109,9 +109,9 @@ int  display_help(){
   GLfloat       h = viewport_height ;
   char          s1[1024] ;
 
- //
-// Plot grey background for text
-//
+/*
+ * Plot grey background for text
+ */
       glColor4f(0.8,0.8,0.8,0.9) ;
       glBegin(GL_QUADS) ;
         glVertex2f(  0.0,h - 300.0) ;
@@ -141,9 +141,9 @@ int  display_help(){
       sprintf(s1,"              : 'Cntl' plus arrow keys turns left, right, up and down");
       print_string_in_window3(10.0,h-170.0,s1,12) ;
 
-      sprintf(s1," Switches : 'F8' - toggle display, 'g' - toggle switch in front, 'G' - toggle switch behind");
+      sprintf(s1," Switches : 'F8' - toggle switch display, 'g' - toggle switch in front, 'G' - toggle switch behind, 'F6' - toggle platforms and sidings");
       print_string_in_window3(10.0,h-190.0,s1,12) ;
-      sprintf(s1,"               : 'V' - toggle wipers, 'P' - toggle pantographs, 'p' - toggle mirrors");
+      sprintf(s1,"               : 'V' - toggle wipers, 'P' - toggle pantographs, 'p' - toggle mirrors,  'F9' - toggle track operations window.");
       print_string_in_window3(10.0,h-210.0,s1,12) ;
 
       sprintf(s1," Special Keys - with 'alt'");
@@ -173,7 +173,7 @@ int   display_track_info(TravellerNode *t){
 int           n, ip = 0 ;
 GLfloat       w = viewport_width ;
 GLfloat       h = viewport_height ;
-TrkSectNode   *tn = t->tn,
+TrkSector   *tn = t->tn,
               *tn1, *tn2            ;
 TrkVectorNode *vn = t->vn ;
 char          s1[1024],s2[1024],s3[1024],s4[1024] ;
@@ -205,7 +205,7 @@ char         *my_name = "display_track_info" ;
       glColor3f(0.0,0.0,0.0) ;
       sprintf(s1," Track Data:  Wagon Shape: %s",t->shape->name);
       sprintf(s2," > TN %4i, Pin %i %i :: TN %i %i %i :: ST %i BR %i ",
-             tn1->index_of_node,     // Index of 'forward' end node
+             tn1->uid,     // Index of 'forward' end node
              tn1->type_of_pin[0],    // Number of 'in' nodes
              tn1->type_of_pin[1],    // Number of 'out' nodes
              tn1->pin_to_section[0], // Index of first connecting section
@@ -224,7 +224,7 @@ char         *my_name = "display_track_info" ;
              tn->length_of_vector,   // Number of sub-sections in track section
              t->idirect,             // True if forward direction of traveller
                                      //  is the same as current track section
-             t->position,            // Position of traveller within 'vector'
+             t->vect_position,       // Position of traveller within 'vector'
              vn->length,             // Length of sub-section
              vn->radius,             // Radius of curved sub-sections
              vn->angle,              // Angle (radian?) subtended by
@@ -232,7 +232,7 @@ char         *my_name = "display_track_info" ;
              vn->is_dynamic,         // True if 'dynamic' track
              vn->is_curved) ;        // True if sub-section is curved
       sprintf(s4," < TN %4i, Pin %i %i :: TN %i %i %i :: ST %i BR %i ",
-             tn2->index_of_node,     // Index of 'behind' end node
+             tn2->uid,     // Index of 'behind' end node
              tn2->type_of_pin[0],    // Number of 'in' nodes
              tn2->type_of_pin[1],    // Number of 'out' nodes
              tn2->pin_to_section[0], // Index of first connecting section
@@ -441,7 +441,7 @@ TravellerNode *tff  = train->first->traveller,
               *tbf  = train->last->traveller,
               tf = *tff,             //  Copy front traveller
               tb = *tbf ;            //  Copy back traveller
-TrkSectNode   *tfn = tf.tn,
+TrkSector   *tfn = tf.tn,
               *tbn = tb.tn,
               *tfn1, *tfn2   ;        // Pointers to track sections
 TrkVectorNode *vn = tf.vn  ;         // Pointer to current track vector
@@ -463,7 +463,7 @@ double        df, db ;               // lenght of end wagons
       n = tfn->pin_to_section[tf.idirect ? 0 : 1] ;
       tfn2 = &track_db.trk_sections_array[n-1]   ;  // Section behind
 
-      index = tfn->index_of_node ;
+      index = tfn->uid ;
 
       if(ip && l_time_30s){
              printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
@@ -553,7 +553,7 @@ double        df, db ;               // lenght of end wagons
       n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
       tfn2 = &track_db.trk_sections_array[n-1]   ;  // Section behind
 
-      index = tbn->index_of_node ;
+      index = tbn->uid ;
 
       if(tfn2->type_of_node == END_SECTION){
         ii[6] = -1 ;
@@ -701,7 +701,7 @@ int display_platforms_and_sidings(){
 int         i, type_of_node ;
 double      scale = 1.0/plot_scale ;
 double      x, y, z, dist   ;
-TrkItemNode *trk_item       ;
+TrkItem *trk_item       ;
 char        string[256]     ;
 
       glDisable(GL_BLEND)      ;
@@ -732,15 +732,197 @@ char        string[256]     ;
         glColor3f(1.0,1.0,1.0) ;
 
         if(PLATFORM == type_of_node){
-          sprintf(string,"%s",trk_item->platform_name) ;
+          sprintf(string,"%s :: %s :: %i ",trk_item->platform_name,
+                  trk_item->platform_data1,trk_item->platform_data2) ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
         }else if(SIDING == type_of_node){
-          sprintf(string,"%s",trk_item->siding_name) ;
+          sprintf(string,"%s :: %s :: %i",trk_item->siding_name,
+                  trk_item->siding_data1,trk_item->siding_data2) ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
         }
       glEnable(GL_LIGHTING)   ;
       glEnable(GL_TEXTURE_2D) ;
       glDisable(GL_BLEND) ;
       }
+      return 0 ;
+}
+
+/*
+ * =============================================================================
+ *
+ *   Routine to display the train operations window
+ *   Key F9 toggles display
+ *
+ * =============================================================================
+ */
+
+int display_train_operations(TrainNode *train){
+
+  int    ip = 0 ;
+  int      i, n, n_wagons, l_pixels, h_pixels ;
+  int      isx, isw ;
+  F9_Data  *f9 = &(f9_data) ;
+  GLfloat  w = viewport_width ;
+  GLfloat  h = viewport_height ;
+  WagonNode *wagon ;
+  double   x1, x2, y1, y2, xc, y3, y4, y5, y6, xx1, xx2, xx3, yy3 ;
+  double   dx ;
+  char     string[256]     ;
+  char     *my_name = "display_train_operations" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+
+      if(train != f9_data.last_train){
+        f9_data.wagon_n0 = 0 ;
+        f9_data.n_wagons = 0 ;
+        for(wagon = train->first; wagon!=NULL; wagon=wagon->next)
+                                                    f9_data.n_wagons++ ;
+        f9_data.dx = (f9_data.x3-f9_data.x2)/((double)f9_data.n_wagons) ;
+        f9_data.last_train = train ;
+      }
+      if(train->speed != 0.0){
+        if(ip)printf("  Train operations window needs train to be stopped\n") ;
+        display_train_operations_on = 0 ;
+      }
+      x1 = f9->x0 ;
+      y1 = f9->y0 ;
+      x2 = f9->x1 ;
+      y2 = f9->y1 ;
+      xc = f9->xc ;
+      y3 = f9->y3 ;
+      y4 = f9->y2 ;
+      y5 = f9->y4 ;
+      y6 = f9->y5 ;
+      n_wagons = f9_data.n_wagons ;
+      if(ip)printf("  Routine %s.  n_wagons = %i\n",my_name, n_wagons) ;
+/*
+ *   Slider
+ */
+      if(f9_data.n_wagons <=6){
+        f9_data.x4 = f9_data.x2 ;
+        f9_data.x5 = f9_data.x4 ;
+      }else{
+        f9_data.x4 =  f9_data.x2 + f9_data.wagon_n0*f9_data.dx ;
+        f9_data.x5 =  f9_data.x4 + 6*f9_data.dx ;
+      }
+/*
+ *  Window title
+ */
+      glColor4f(0.0,0.0,0.0,0.9) ;
+      sprintf(string,"Train Operations") ;
+      print_string_in_window3(xc-50, y3+6.0, string, 12) ;
+/*
+ * Use light grey for lines
+ */
+      glColor4f(0.4,0.4,0.4,0.9) ;
+      glBegin(GL_LINES) ;
+        glVertex2f(x1, y3) ;
+        glVertex2f(x2, y3) ;
+        glVertex2f(x1, y4) ;
+        glVertex2f(x2, y4) ;
+      glEnd() ;
+      glBegin(GL_TRIANGLES) ;
+        glVertex2f(x1, 0.5*(y1+y4)) ;
+        glVertex2f(x1 + (y4-y1), y1) ;
+        glVertex2f(x1 + (y4-y1), y4) ;
+        glVertex2f(x2, 0.5*(y1+y4)) ;
+        glVertex2f(x2 - (y4-y1), y1) ;
+        glVertex2f(x2 - (y4-y1), y4) ;
+      glEnd() ;
+/*
+ *  Plot train
+ */
+      if(n_wagons<8){
+        xx1 = xc - 0.5*(n_wagons*80.0 + (n_wagons-1)*10.0) ;
+      }else{
+        xx1 = x1 ;
+      }
+      xx2 = xx1 + 80.0 ;
+      n = 0 ;
+      i = 0 ;
+      h_pixels = 12 ;
+      yy3 = y5 + h_pixels/2 ;
+      for(wagon = train->first; wagon!=NULL; wagon=wagon->next, i++){
+        if(i<f9->wagon_n0)continue ;
+        sprintf(string,"%s - %i",train->name,i) ;
+        l_pixels = width_string_in_window( string, h_pixels) ;
+        xx3 = 0.5*(xx1+xx2-l_pixels) ;
+
+        if(wagon->is_engine)glColor4f(1.0,0.5,0.5,1.0) ;
+        else                glColor4f(1.0,1.0,1.0,1.0) ;
+        print_string_in_window3(xx3, yy3, string, h_pixels) ;
+
+        glColor4f(0.4,0.4,0.4,0.9) ;
+        glBegin(GL_QUADS) ;
+          glVertex2f(xx1, y5) ;
+          glVertex2f(xx2, y5) ;
+          glVertex2f(xx2, y6) ;
+          glVertex2f(xx1, y6) ;
+        glEnd() ;
+        xx1 = xx2 + 10.0 ;
+        xx2 = xx1 + 80.0 ;
+        n++ ;
+        if(n==6)break ;
+      }
+/*
+ *  Plot connections
+ */
+      if(n_wagons>1){
+        if(n_wagons<8){
+          xx1 = 0.5*(x1 + x2 - n_wagons*80.0 - (n_wagons-1)*10.0) ;
+        }else{
+          xx1 = x1 ;
+        }
+        xx2 = xx1 + 80.0 ;
+        i = 1 ;
+        glBegin(GL_LINES) ;
+          for(wagon = train->first; wagon!=NULL; wagon=wagon->next){
+            if(i == n_wagons || i == 6)break ;
+            glVertex2f(xx2,      y5) ;
+            glVertex2f(xx2+10.0, y6) ;
+            glVertex2f(xx2,      y6) ;
+            glVertex2f(xx2+10.0, y5) ;
+            xx1 = xx2 + 10.0 ;
+            xx2 = xx1 + 80.0 ;
+            i++ ;
+          }
+        glEnd() ;
+      }
+/*
+ *  plot slider
+ */
+      if(n_wagons>6){
+#if 0
+        isx = f9_data.x2 + (f9_data.wagon_n0*(f9_data.x3 - f9_data.x2))/f9_data.n_wagons ;
+        isw = (6*(f9_data.x3 - f9_data.x2))/f9_data.n_wagons ;
+        glBegin(GL_QUADS) ;
+          glVertex2f(isx+1,   f9_data.y0+3) ;
+          glVertex2f(isx+isw, f9_data.y0+3) ;
+          glVertex2f(isx+isw, f9_data.y2-2) ;
+          glVertex2f(isx+2,   f9_data.y2-2) ;
+        glEnd() ;
+#else
+//        if(l_time_1s)printf("  Slider  %i %i :: %i %i\n",
+//                                   f9_data.x4,f9_data.x5,f9_data.y1,f9_data.y2) ;
+        glBegin(GL_QUADS) ;
+          glVertex2f(f9_data.x4+2, f9_data.y0+3) ;
+          glVertex2f(f9_data.x5+4, f9_data.y0+3) ;
+          glVertex2f(f9_data.x5+4, f9_data.y2-2) ;
+          glVertex2f(f9_data.x4+2, f9_data.y2-2) ;
+        glEnd() ;
+
+#endif
+      }
+
+/*
+ * Plot light grey background for text
+ */
+      glColor4f(0.8,0.8,0.8,0.9) ;
+      glBegin(GL_QUADS) ;
+        glVertex2f(x1, y1) ;
+        glVertex2f(x2, y1) ;
+        glVertex2f(x2, y2) ;
+        glVertex2f(x1, y2) ;
+      glEnd() ;
       return 0 ;
 }

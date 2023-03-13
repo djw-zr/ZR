@@ -9,7 +9,8 @@
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
  *   Subroutines to initialise the track items - this includes determining
- *   the item position in terms of track section vector and distance along vector.
+ *   the item position in terms of track section vector and distance
+ *   along the vector.
  *
  * *****************************************************************************
  */
@@ -29,8 +30,8 @@ double      trk_item_e, trk_item_n ;
 double      trk_vect_e, trk_vect_n, trk_vect_len, dist ;
 
 
-TrkItemNode   *trk_item ;
-TrkSectNode   *trk_sect ;
+TrkItem   *trk_item ;
+TrkSector   *trk_sect ;
 TrkVectorNode *trk_vect ;
 char          *my_name = "find_track_item_positions" ;
 
@@ -81,7 +82,7 @@ int      i, j, k, ip = 0   ;
 double  scale = 1.0/plot_scale ;
 double  x = 0., y=0.0 , z=0.0, dist ;
 
-TrkItemNode     *trk_item  ;
+TrkItem     *trk_item  ;
 WorldItem       *w ;
 char     string[256] ;
 char     *my_name = "sketch_track_items" ;
@@ -117,7 +118,7 @@ char     *my_name = "sketch_track_items" ;
  *    on exit  enables  GL_LIGHTING, GL_TEXTURE_2D and GL_BLEND
  *
  */
-        sprintf(string," TRACK ITEM - %i  %i %s\n",trk_item->index_of_node,
+        sprintf(string," TRACK ITEM - %i  %i %s\n",trk_item->uid,
                                                    trk_item->type_of_node,
                                      token_trackdb[trk_item->type_of_node]) ;
         print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string) ;
@@ -162,7 +163,7 @@ char     *my_name = "sketch_track_items" ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
         }else if(SIGNALS == trk_item->type_of_node){
           sprintf(string," SIGNALS - %s :: %i :: %f:: %s\n",trk_item->signal_data1,
-                                                      trk_item->signal_data2,
+                                                      trk_item->signal_direction,
                                                       trk_item->signal_data3,
                                                       trk_item->siding_name) ;
           z = z - 1.0*scale ;

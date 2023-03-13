@@ -28,7 +28,7 @@ int init_data_structures(){
  *  Define route files - [Eventually these should be searched for]
  */
 
-#if defined ROUTE_MSTS
+#if defined ROUTE_MSTS  || defined ROUTE_AU_NSW_SW_SS
   char *pdb_file = msts_pdb_file ;
   char *tdb_file = msts_tdb_file ;
   char *rdb_file = msts_rdb_file ;
@@ -50,15 +50,24 @@ TileListNode   *tl_node ;
 ShapeNode      *snode  ;
 WorldNode      *wnode  ;
 WorldItem      *witem  ;
-TrkSectNode    *tnnode ;
+TrkSector    *tnnode ;
+TrkItem    *tinode ;
 int            wtype   ;
 TextureNode    *tx_node  ;
 DynProfile     *dnode  ;
 RawWagonNode   *rwnode ;
+SigScriptFile  *sig_script ;
 char           my_name[] = "init_data_structures" ;
 
       printf("***********************************************************\n") ;
       printf(" Enter %s\n",my_name) ;
+      enum_btree_init() ;
+#if 1
+      printf("   pdb_file = %s\n",pdb_file) ;
+      printf("   tdb_file = %s\n",tdb_file) ;
+      printf("   rdb_file = %s\n",rdb_file) ;
+#endif
+//      if(1)exit(0) ;
 /*
  * *****************************************************************************
  *  First read the project files in the route directory. In the
@@ -77,7 +86,6 @@ char           my_name[] = "init_data_structures" ;
       init_pdb(pdb_file) ;
 //   Check that all files have been close
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-
 /*
  *  2.  The track database (*.tdb)
  *      The data is stored in track_db (zr.h), a structure of
@@ -170,6 +178,8 @@ char           my_name[] = "init_data_structures" ;
       printf("   Link world files to track vectors\n") ;
       for(i=0;i<track_db.trk_sections_array_size;i++){
         tnnode = &(track_db.trk_sections_array[i]) ;
+//        printf("/*  Routine %s, Track Section Node %i, Index %i, Type %i\n",
+//            my_name, i, tnnode->uid, tnnode->type_of_node) ;
         add_world_item_pointers_to_track_vectors(tnnode) ;
       }
 /*
@@ -180,6 +190,11 @@ char           my_name[] = "init_data_structures" ;
         tnnode = &(track_db.trk_sections_array[i]) ;
         if(tnnode->type_of_node == JUNCTION)set_junction_path(tnnode) ;
       }
+/*
+ *  5.   Set location of track items as distance along track section
+ */
+      printf("   Set track item positions\n") ;
+      set_track_items_posn(&track_db) ;
 /*
  * *****************************************************************************
  *  Process the files describing engines and wagons.
@@ -315,13 +330,16 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load shape files\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
-        if(1)printf(" data :: shape name = %s\n",snode->name) ;
+        if(ip)printf(" data :: shape name = %s :: %s\n",snode->name, snode->s_file) ;
         if(!strcmp(snode->name,"JP1SigGant4"))continue ;
         load_shape(snode) ;
         load_shape_d(snode) ;
+        correct_shape(snode) ;
+//        if(!strcmp(snode->name,"underground_marker"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"A1tPnt6dLft"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"UKCrossGate_fix"))print_shape_file_data(snode) ;
-        if(!strcmp(snode->name,"Jp1CarCrossing"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"Jp1CarCrossing"))print_shape_file_data(snode) ;
+//        if(!strcmp_ic(snode->name,"US2BSignal3"))print_shape_file_data(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -333,6 +351,24 @@ char           my_name[] = "init_data_structures" ;
       printf("   Add links to shape items used by each world tile\n");
       add_shape_pointers_to_world_items() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ * *****************************************************************************
+ *  Process the signal files
+ *  These are read here so that the signal texture file(s) are known.  The files
+ *  sigcfg.dat and sigscr.data should be in the main "Route" directory
+ *  (ORRoutedir))
+ * *****************************************************************************
+ */
+      printf("***********************************************************\n") ;
+      printf(" READ SIGNAL FILES\n") ;
+      printf("***********************************************************\n") ;
+      printf("   Read signal description file \n");
+      read_signals_db() ;
+      printf("   Read signal script file \n");
+//  Sometimes there are more than one signal script files.  This assumes that
+//  only one is valid as in the AU_NSW_SW_SS route
+      read_sigscr_file(ORroutedir,"sigscr.dat") ;
+
 /*
  * *****************************************************************************
  *  Process the files containing the textures needed by the world
@@ -353,6 +389,9 @@ char           my_name[] = "init_data_structures" ;
  *
  * *****************************************************************************
  */
+      printf("***********************************************************\n") ;
+      printf(" READ TEXTURE FILES\n") ;
+      printf("***********************************************************\n") ;
       printf("   Create list of texture filenames \n") ;
       load_texture_filenames() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -361,7 +400,7 @@ char           my_name[] = "init_data_structures" ;
  *         The data is added to the TextureNode
  */
       printf("   Read and load texture files\n");
-      if(ip)printf("   land_texture_default = %s\n",land_texture_default) ;
+      if(ip || 1)printf("   land_texture_default = %s\n",land_texture_default) ;
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
         if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
 //        if(!strncmp(tx_node->name,"AU_Ash",6))continue ;
@@ -373,7 +412,7 @@ char           my_name[] = "init_data_structures" ;
         tx_node->basic = 1     ;    //  Must be loaded
         tx_node->needed = 1    ;
         land_texture = tx_node ;
-        if(ip)printf("   land_texture = %p\n",(void *)land_texture) ;
+        if(ip || 1)printf("   land_texture = %p\n",(void *)land_texture) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -383,6 +422,7 @@ char           my_name[] = "init_data_structures" ;
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
         add_texture_pointers_to_shape_items(snode) ;
       }
+
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  * *****************************************************************************
@@ -422,15 +462,38 @@ char           my_name[] = "init_data_structures" ;
         printf("***********************************************************\n") ;
         printf("   Create default track shapes\n") ;
         printf("***********************************************************\n") ;
-        make_track_shapes(zr_rail_profile) ;
-        make_road_shapes(zr_road_profile)  ;
+        make_track_shapes() ;
+        make_road_shapes()  ;
         if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
       }
+/*
+ * *****************************************************************************
+ *  Initialise the signal structures.
+ * *****************************************************************************
+ */
+      printf("***********************************************************\n") ;
+      printf(" INITIALSE SIGNALS\n") ;
+      printf("***********************************************************\n") ;
+      printf("   Add links to textures needed by the signals\n");
+      add_texture_pointers_to_signals() ;
+      printf("   Initialise other raw signal pointers\n");
+      setup_raw_signals() ;
+      printf("   Initialise individual signals\n");
+      setup_signals() ;
+/*
+ * *****************************************************************************
+ *    Read turntable file and generate a list of turntables
+ * *****************************************************************************
+ */
+      read_turntable_file() ;
+      setup_turntables()    ;
+      setup_transfers()     ;
 /*
  * *****************************************************************************
  *    For each world tile generate a list of level crossings
  * *****************************************************************************
  */
+      printf("   Initialise level crossings \n");
       setup_level_crossings() ;
 /*
  * *****************************************************************************
@@ -465,27 +528,34 @@ int   i, j, nn, ni ;
 #if 0
       printf("   List track sections\n");
       for(i=0;i<track_db.trk_sections_array_size;i++){
-TrkSectNode    *t ;
+uint j ;
+TrkSector *ts ;
+TrkItem *ti ;
 //        if(130 != i+1)continue ;
 //        if(565 != i+1)continue ;
 //        if(377 != i+1)continue ;
-//        if(497 != i+1)continue ;
-        t = &track_db.trk_sections_array[i] ;
+        if(534 != i+1)continue ;
+        ts = &track_db.trk_sections_array[i] ;
 
         printf("  Track section %3i :: %3i,  type of item = %2i :: %s\n",
-               i,t->index_of_node,t->type_of_node,token_trackdb[t->type_of_node]) ;
+               i,ts->uid,ts->type_of_node,token_trackdb[ts->type_of_node]) ;
         printf("        Junction Node data = %i,%i,%i\n",
-                 t->jn[0],t->jn[1],t->jn[2]) ;
-        printf("        End Node data       = %i\n",t->en) ;
-        printf("        Number of vectors   = %i,\n",t->length_of_vector) ;
-        printf("        Vector1, World name = %s\n",t->vector->world_item->filename) ;
-        printf("        Number of items     = %i,\n",t->trk_item_number)  ;
+                 ts->jn[0],ts->jn[1],ts->jn[2]) ;
+        printf("        End Node data       = %i\n",ts->en) ;
+        printf("        Number of vectors   = %i,\n",ts->length_of_vector) ;
+        printf("        Vector1, World name = %s\n",ts->vector->world_item->filename) ;
+        printf("        Number of items     = %i,\n",ts->trk_item_number)  ;
+        for(j=0;j<ts->trk_item_number;j++){
+          ti = &(track_db.trk_items_array[ts->trk_item_list[j]])    ;
+          printf("        Item     = %i : %i :: %i %i\n",
+                 j,ts->trk_item_list[j],ti->uid, ti->type_of_node) ;
+        }
         printf("        Pin types and links = %i %i :: %i %i %i :: %i %i %i\n",
-                  t->type_of_pin[0],t->type_of_pin[1],
-                  t->pin_to_section[0],t->pin_to_section[1],t->pin_to_section[2],
-                  t->pin_info[0],t->pin_info[1],t->pin_info[2]) ;
-        printf("        Dyn Node profile    = %p\n",(void *)t->profile);
-        printf("        LOD method          = %i\n",t->lod_method) ;
+                  ts->type_of_pin[0],ts->type_of_pin[1],
+                  ts->pin_to_section[0],ts->pin_to_section[1],ts->pin_to_section[2],
+                  ts->pin_info[0],ts->pin_info[1],ts->pin_info[2]) ;
+        printf("        Dyn Node profile    = %p\n",(void *)ts->profile);
+        printf("        LOD method          = %i\n",ts->lod_method) ;
 
 #if 0
         if(track_db.trk_sections_array[i].type_of_node == 1){
@@ -493,6 +563,7 @@ uint          j, k, uid ;
 TrkVectorNode *v ;
 WorldItem     *w ;
 DynTrackSect  *d ;
+TrkSector     *t = &(track_db.trk_sections_array[i]) ;
           for(j=0;j<t->length_of_vector;j++){
             v = &t->vector[j] ;
             w = v->world_item ;
@@ -514,7 +585,7 @@ DynTrackSect  *d ;
              }
              printf("\n") ;
           }
-#if 0
+  #if 0
           printf("\n==========================================\n");
           for(j=0;j<t->length_of_vector;j++){
             v = &t->vector[j] ;
@@ -535,12 +606,10 @@ DynTrackSect  *d ;
              }
              printf("\n") ;
            }
-#endif
+ #endif
         }
 #else
-        if(130 == i+1 || 1){
-//         list_track_section(&track_db.trk_sections_array[i]) ;
-        }
+         list_track_section(&track_db.trk_sections_array[i]) ;
 #endif
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -548,9 +617,13 @@ DynTrackSect  *d ;
 // List track items
 #if 0
       printf("   List track items\n");
-      for(i=0;i<(int)track_db.trk_items_array_size;i++){
-        printf("    Track item %3i,  type of item = %2i :: %s\n", i,track_db.trk_items_array[i].type_of_node,
-         token_trackdb[track_db.trk_items_array[i].type_of_node]) ;
+      for(i=0;i<track_db.trk_items_array_size;i++){
+        tinode = &track_db.trk_items_array[i] ;
+        printf("    Track item %3i,  type of item = %2i :: %s",
+               i,tinode->type_of_node,token_trackdb[tinode->type_of_node]) ;
+        if(tinode->type_of_node == PICKUP)printf(" :: %i  %s",
+                                tinode->pickup_data1,tinode->pickup_data2) ;
+        printf("\n") ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 #endif
@@ -565,6 +638,7 @@ DistLevel  *dist_level  ;
       printf("   List Shapes :: Test shape = %s\n",test_shape);
       for(snode=shapelist_beg,i=0; snode!=NULL; snode=snode->next,i++){
         printf("   Shape : %3i : %s\n",i,snode->name);
+# if 0
         printf("        nvolumes = %3i, n_lod_controls = %3i\n",
              snode->nvolumes,snode->n_lod_controls) ;
         for(i=0;i<snode->nvolumes;i++){
@@ -583,6 +657,7 @@ DistLevel  *dist_level  ;
             }
           }
         }
+# endif
         if(0 == strcmp_ic(snode->name,test_shape)){
           printf("\n  Shape file data:\n") ;
           print_shape_file_data(snode)  ;
@@ -660,6 +735,11 @@ DistLevel  *dist_level  ;
       printf("    tile_east  = %i\n",tile_east) ;
       printf("    tile_north = %i\n",tile_north) ;
       printf("    tile_south = %i\n",tile_south) ;
+
+      printf("    Number of signals    = %i\n", n_signals)    ;
+      printf("    Number of transfers  = %i\n", n_transfers)  ;
+      printf("    Number of turntables = %i\n", n_turntables) ;
+      printf("    Number of level crossings = %i\n", n_levelcrossings) ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *  List wagons

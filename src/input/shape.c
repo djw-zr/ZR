@@ -114,7 +114,7 @@ BTree  *btree_node   ;
  */
         for(i=0;i<n;i++){
 //  Determine core name and convert to lower case
-          free(name) ;
+          if(name){free(name); name = NULL;}
           name = zr_basename2(namelist[i]->d_name) ;
           str2lc(name)        ;
 /*
@@ -198,10 +198,10 @@ BTree  *btree_node   ;
           if(f != NULL)gclose(f) ;
           free(namelist[i]) ;
         }
-        free(namelist);
-//        closedir(sdir) ;
-        free(sdir_name) ;
+        if(namelist)free(namelist);
+        if(sdir_name)free(sdir_name) ;
       }
+      if(name)free(name) ;
       return 0;
 }
 
@@ -268,6 +268,7 @@ int  init_shape_node(ShapeNode *shape){
           shape->esd_bounding_box_zmin     = 0.0 ;
           shape->esd_bounding_box_zmax     = 0.0 ;
 
+          shape->no_culling         = 0 ;
 
       return 0;
 }
@@ -578,7 +579,6 @@ float  X, Y, Z, R ;
         if(0 != snode->nmatrices) {
           snode->matrix = (Matrix4x3 *)
                               malloc(snode->nmatrices*sizeof(Matrix4x3));
-          snode->matrix_role = (uint *)malloc(snode->nmatrices*sizeof(uint)) ;
           for(i=0;i<snode->nmatrices;i++){
 // 2 MATRIX
             open_named_block(msfile, 2, MATRIX) ;
@@ -613,10 +613,31 @@ float  X, Y, Z, R ;
 #endif
             end_block(msfile,2) ;
 /*
- *  Calculate and save matrix type (no-op, translation, rotation)
+ *  Determine matrix type (no-op, translation, rotation)
  */
             snode->matrix[i].type = check_matrix4x3(&(snode->matrix[i])) ;
-            snode->matrix_role[i] = 0 ;
+/*
+ *  Determine corresponding animation class
+ */
+            if(!strncmp_ic(snode->matrix[i].name,"wheels",6)){
+              if(7 == strlen(snode->matrix[i].name)){
+                snode->matrix[i].anim = MAT_DRIVER_WHEEL ;
+              }else{
+                snode->matrix[i].anim = MAT_WHEEL ;
+              }
+            }else if(!strncmp_ic(snode->matrix[i].name,"rod",3)){
+              snode->matrix[i].anim = MAT_ROD ;
+            }else if(!strncmp_ic(snode->matrix[i].name,"bogie",5)){
+              snode->matrix[i].anim = MAT_BOGIE ;
+            }else if(!strncmp_ic(snode->matrix[i].name,"wiper",5)){
+              snode->matrix[i].anim = MAT_WIPER ;
+            }else if(!strncmp_ic(snode->matrix[i].name,"mirror",6)){
+              snode->matrix[i].anim = MAT_MIRROR ;
+            }else if(!strncmp_ic(snode->matrix[i].name,"pantograph",10)){
+              snode->matrix[i].anim = MAT_PANTOGRAPH ;
+            }else{
+              snode->matrix[i].anim = MAT_NONE ;
+            }
           }
         }
         end_block(msfile,1) ;
@@ -634,7 +655,7 @@ float  X, Y, Z, R ;
         snode->texture = (TextureNode **)
                                 malloc(snode->n_textures*sizeof(TextureNode *));
         for(i=0;i<snode->n_textures;i++){
-          snode->texture[i] = NULL ;
+          snode->texture[i] = NULL ;         // Set once textures have been read
 // 2 IMAGE
           open_named_block(msfile, 2, IMAGE) ;
           snode->texture_name[i] = read_ucharz_a(msfile);
@@ -647,11 +668,11 @@ float  X, Y, Z, R ;
  * =============================================================================
  *
  *  Token TEXTURE refers to a low level texture structure containing
- *  the index if an element in the list of texture images used by the shape
+ *  the index of an element in the list of texture images used by the shape
  *  plus flags to be used in displaying the texture.
  *
  *  The openrails code gives the structure the name Textures.  However this name
- *  is used by OpenGL and otehr graphics systems to describe the texture image.
+ *  is used by OpenGL and other graphics systems to describe the texture image.
  *  In ZR the alternative name TexLevelLow is used
  *
  *  Openrails provides the information:
@@ -902,6 +923,7 @@ float  X, Y, Z, R ;
                 for(j=0;j<lod_control->n_dist_levels;j++){
                   DistLevel *dist_level = &(lod_control->dist_level[j]) ;
 //  Initialise
+                  dist_level->index            = j ;
                   dist_level->dlevel_selection = 0.0 ;
                   dist_level->n_hierarchy      = 0 ;
                   dist_level->n_sub_objects    = 0 ;
@@ -1402,6 +1424,10 @@ float  X, Y, Z, R ;
         end_block(msfile,1) ;
       }
       close_msfile(msfile);
+
+/*
+ *  EXIT
+ */
       if(ip){
         printf(" *****************************************************************\n") ;
         printf(" *   EXIT  ROUTINE  %s\n",myname) ;
@@ -1429,6 +1455,9 @@ int  print_shape_file_data(ShapeNode *snode){
 
 
 #if 1
+      printf( "  basic     = %i\n",snode->basic  ) ;
+      printf( "  needed    = %i\n",snode->needed ) ;
+      printf( "  loaded    = %i\n",snode->loaded ) ;
       printf( "  flags1    = %x\n",snode->flags1 ) ;
       printf( "  flags2    = %x\n",snode->flags2 ) ;
       printf( "  nvolumes  = %i\n",snode->nvolumes ) ;
@@ -1449,6 +1478,10 @@ int  print_shape_file_data(ShapeNode *snode){
       printf( "  nnormals  = %i\n",snode->nnormals ) ;
       printf( "  nuvpoints = %i\n",snode->nuvpoints ) ;
       printf( "  nsort_vectors      = %i\n",snode->nsort_vectors ) ;
+      printf( "  ncolors            = %i\n",snode->ncolors ) ;
+      for(i=0;i<snode->ncolors;i++)printf("  Colour %i :: R G B = %f %f %f :: A = %f\n",
+                                          i, snode->color[i].R, snode->color[i].G,
+                                             snode->color[i].B, snode->color[i].A) ;
       printf( "  nmatrices          = %i\n",snode->nmatrices ) ;
       for(i=0;i<snode->nmatrices;i++){
         printf("  Matrix      = %i\n",i) ;
@@ -1518,8 +1551,6 @@ int  print_shape_file_data(ShapeNode *snode){
         printf( "      light_flags   %i = %i\n",i,snode->vtx_state[i].light_flags ) ;
         printf( "      imatrix2      %i = %i\n",i,snode->vtx_state[i].imatrix2 ) ;
       }
-
-
       printf( "\n  n_prim_states       = %i\n",snode->n_prim_states ) ;
       nn = snode->n_prim_states ;
       for(i=0;i<nn;i++){
@@ -1561,11 +1592,16 @@ DistLevel *dist_level = &(snode->lod_control[i].dist_level[j]) ;
           printf("..............................................................\n") ;
 
           printf("==============================================================================\n");
-          printf("=========  Start Sub Object               ====================================\n");
+          printf("=========  Start Sub-Objects              ====================================\n");
           printf("==============================================================================\n");
+          printf( "      Number of Sub-Objects = %i\n", dist_level->n_sub_objects) ;
 
           for(k=0;k<dist_level->n_sub_objects;k++){
 SubObject *sub_object = &(dist_level->sub_object[k]) ;
+            printf("==============================================================================\n");
+            printf("=========  Start New SubObject            ====================================\n");
+            printf("==============================================================================\n");
+            printf( "      Sub Object index      = %i\n", k) ;
             printf( "      flags                 = %i\n",sub_object->flags ) ;
             printf( "      sort_vector_idx       = %i\n",sub_object->sort_vector_idx ) ;
             printf( "      vol_idx               = %i\n",sub_object->vol_idx ) ;
@@ -1634,13 +1670,16 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
             }
 
             printf("==============================================================================\n");
-            printf("=====      Start Tri Lists                ====================================\n");
+            printf("=====      Start Tri-Lists                ====================================\n");
             printf("==============================================================================\n");
 
 
-            printf( "      n_tri_lists           = %i\n",sub_object->n_tri_lists ) ;
+            printf( "      Number of Tri-Lists     = %i\n",sub_object->n_tri_lists ) ;
             ll =  sub_object->n_tri_lists;
             for(l=0;l<ll;l++){
+              printf("==============================================================================\n");
+              printf("=====      Start New Tri-Lists            ====================================\n");
+              printf("==============================================================================\n");
               printf( "\n        prim_state_idx     %i     = %i\n",l,sub_object->tri_list[l].prim_state_trilist ) ;
               printf(   "        n_vertex_idxs      %i     = %i\n",l,sub_object->tri_list[l].n_vertex_idxs ) ;
               if(ip){
@@ -1802,3 +1841,37 @@ void init_tri_list(TriList *t){
   return ;
 }
 
+/*
+ *  Either the following shape files contain errors or ZR is not displaying
+ *  them correctly.
+ *
+ *  OESignal01 :  Double signal in EUROPE2 route
+ *             :  Distance level 0 (< 50m) is missing the top signal arm
+ *             :  Solution - copy the data from distance level 1.
+ */
+
+int correct_shape(ShapeNode *snode){
+
+  int ip = 0 ;
+  char *name1   = "OESignal01" ;
+  char *my_name = "correct_shape" ;
+
+      if(!strcmp_nqic(snode->name,name1)){
+SubObject *so =  &(snode->lod_control[0].dist_level[0].sub_object[1]) ;
+// First free malloc memory in sub-object
+        if(so->geom_node) free(so->geom_node) ;
+        if(so->node_map)  free(so->node_map) ;
+        if(so->shader)    free(so->shader) ;
+        if(so->light_cfg) free(so->light_cfg) ;
+        if(so->vertex)    free(so->vertex) ;
+        if(so->vertex_set)free(so->vertex_set) ;
+        if(so->tri_list)  free(so->tri_list) ;
+//  Copy across distance 1 data
+        *so = snode->lod_control[0].dist_level[1].sub_object[1] ;
+
+        if(ip)printf("  Routine %s.  Shape = %s\n",my_name,name1) ;
+      }
+
+
+      return 0 ;
+}

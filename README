@@ -12,13 +12,22 @@ Introduction
 
     At the lowest level the program includes routines to read most, if not all,  OpenRails and MSTS style text, compressed and binary files.  This allows the files describing the landscape, fixed shapes (stations, tracks, buildings, rail crossings, signals, etc.) and wagons (including engines, carriages and freight) to be read and the contents used to generate the display.
 
-    Wheels and engine running gear rotate and move correctly.  Trains can be constructed and the settings of points/switches changed to allow them to reach any part of the track.
+    In version 0.6.0 most, if not all, of the basic train operations are animated.  Wheels and engine running gear rotate and move correctly.  Trains can be split and joined.  The settings of junctions can be changed to allow trains to reach any part of the track.  Signals respond to the position of trains and the setting of junctions.  Turntables and water towers are also animated.
 
-    There are also compiler options which separately display wagons/engines, shapes and textures.  However the remaining OpenRails code, which includes all the active dynamics, still has to be converted.
+    There are compiler options which separately display wagons/engines, shapes and textures.  However the remaining OpenRails code, which includes the detailed dynamics, still has to be converted.
 
     The program has been developed using the "Great Zig Zag Railway" route available from:
        https://www.zigzag.coalstonewcastle.com.au/
-       
+
+Version 0.6.0
+=============
+
+    The program now animates signals, reading and interpreting the signal script files using software described in the sister github repository ZR_Scripts.
+    
+    Turntables and transfers (i.e. water towers) are now animated.
+    
+    Trains can be split (using the F9 key and a mouse click).  Engines, wagons and carriages couple when 'colliding' at slow speed.
+    
 Version 0.5.1
 =============
 

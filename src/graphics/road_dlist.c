@@ -12,14 +12,14 @@
  *
  *==============================================================================
  */
-int   make_road_display_list(TrkSectNode *section, DynProfile *profile) ;
+int   make_road_display_list(TrkSector *section, DynProfile *profile) ;
 int   ip_road_display = 0 ;
 
 int   make_road_display_lists(){
 
 uint  i ;
 uint  ip = 0 ;                        // Debug printing = 1
-TrkSectNode  *road_section    ;  // Track section needing shape
+TrkSector  *road_section    ;  // Track section needing shape
 //DynProfile      *road_profile    ;  // Track Profile to use
 char            my_name[]="make_road_display_lists" ;
 char            default_name[]="Default Road Profile" ;
@@ -54,7 +54,7 @@ char            default_name[]="Default Road Profile" ;
  *  increase in the x-direction.
  */
 
-int   make_road_display_list(TrkSectNode *track_section, DynProfile *road_profile){
+int   make_road_display_list(TrkSector *track_section, DynProfile *road_profile){
 
 uint   i, n, j, k, l0, l1, m    ;
 uint            n_road_nodes   ;

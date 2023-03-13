@@ -14,7 +14,7 @@
  * *****************************************************************************
  */
 
-int read_road_item(TrkItemNode *road_item, MSfile *msfile)
+int read_road_item(TrkItem *road_item, MSfile *msfile)
 {
 char   myname[] = "read_road_item" ;
 char *token = NULL ;
@@ -50,7 +50,7 @@ char *token = NULL ;
         SWITCH(token)
           CASE("TrItemId")
             skip_lbr(msfile) ;
-            road_item->index_of_node = itoken(msfile) ;
+            road_item->uid = itoken(msfile) ;
             skip_rbr(msfile) ;
             break;
 

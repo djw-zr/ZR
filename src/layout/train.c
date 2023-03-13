@@ -16,6 +16,8 @@
 int print_train_data(void) ;
 int check_train_movement(TrainNode *t) ;
 
+static TrainNode  *build_train ;
+
 /*
  *  Routine to initialise the trains and thei positions.  The composition of
  *  each train can be done either through a set of subroutines (add_train(),
@@ -26,6 +28,7 @@ int check_train_movement(TrainNode *t) ;
 int   trains_init(void){
 
   int  ip = 0 ;
+  int  i ;
   char *my_name = "trains_init" ;
 
 /*
@@ -64,6 +67,22 @@ int   trains_init(void){
 #endif
 
 #if 1
+      add_new_train("T02") ;
+      add_wagon_to_train("T02","AcelaHHL", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCAFE", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
+      add_wagon_to_train("T02","AcelaHHLBC", 1) ;
+      position_train("T02",700,2,0,0.0) ;     //  Siding
+#endif
+
+
+#if 1
       add_new_train("T03") ;
       add_wagon_to_train("T03","AcelaHHL", 1) ;
       add_wagon_to_train("T03","AcelaHHLCO", 1) ;
@@ -75,24 +94,8 @@ int   trains_init(void){
       add_wagon_to_train("T03","AcelaHHLCO", 1) ;
       add_wagon_to_train("T03","AcelaHHLCO", 1) ;
       add_wagon_to_train("T03","AcelaHHLBC", 1) ;
-      position_train("T03",700,2,0,0.0) ;     //  Siding
-#endif
-
-
-#if 1
-      add_new_train("T04") ;
-      add_wagon_to_train("T04","AcelaHHL", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCAFE", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T04","AcelaHHLBC", 1) ;
-//      position_train("T04",1119,16,0,0.0) ;     //  Station Platform
-      position_train("T04",1146,8,0,10.0) ;     //  Station Platform
+//      position_train("T03",1119,16,0,0.0) ;     //  Station Platform
+      position_train("T03",1146,8,0,10.0) ;     //  Station Platform
 #endif
 
 
@@ -143,73 +146,75 @@ int   trains_init(void){
       add_wagon_to_train("T02","US2DbleHgtFrghtBl", 1) ; //  Double stacked blue containers
       add_wagon_to_train("T02","US2FCarYE2", 1)      ;   //  Empty yellow open-sided wagon
       add_wagon_to_train("T02","US2Freightcar5", 1)  ;   //  Empty flat freight car
-//      position_train("T02",512,4,1,0.0) ;     //  Whitefish siding
-      position_train("T02",541,1,1,0.0) ;     //  Whitefish siding
+      position_train("T02",512,4,1,0.0) ;     //  Whitefish siding
+//      position_train("T02",541,1,1,0.0) ;     //  Whitefish siding
+//      position_train("T02",541,9,1,-30.0) ;     //  Whitefish siding near signals
+//      position_train("T02",485,15,1,0.0) ;     //  Whitefish approach
 //      position_train("T02",533,11,0,0.0) ;
 //      position_train("T02",467,7,0,0.0) ;
 #endif
 
 #if 1
-      add_new_train("T03") ;
+      add_new_train("T02") ;
 //      add_wagon_to_train("T02","SD40", 1) ;  //  Shape errors ??
-      add_wagon_to_train("T03","Dash9", 1) ;
+      add_wagon_to_train("T02","Dash9", 1) ;
 
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
-      add_wagon_to_train("T03","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("T02","US2Freightcar3", 1) ;
 
-      position_train("T03",431,3,0,0.0) ;    //  Columbia Falls Siding
+      position_train("T02",431,3,0,0.0) ;    //  Columbia Falls Siding
+#endif
+
+#if 1
+      add_new_train("T03") ;
+      add_wagon_to_train("T03","GP38", 1) ;
+
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("T03","US2Freight6", 1) ;
+
+      position_train("T03",694,1,0,0.0) ;   //  Kalispell
 #endif
 
 #if 1
       add_new_train("T04") ;
       add_wagon_to_train("T04","GP38", 1) ;
 
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
-      add_wagon_to_train("T04","US2Freight6", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("T04","US2Freightcar4", 1) ;
 
-      position_train("T04",694,1,0,0.0) ;   //  Kalispell
-#endif
-
-#if 1
-      add_new_train("T05") ;
-      add_wagon_to_train("T05","GP38", 1) ;
-
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-      add_wagon_to_train("T05","US2Freightcar4", 1) ;
-
-      position_train("T05",125,1,1,0.0) ;   // Cutback
+      position_train("T04",125,1,1,0.0) ;   // Cutback
 #endif
 
 #if 1
@@ -248,7 +253,7 @@ int   trains_init(void){
       add_new_train("T08") ;
 //      add_wagon_to_train("T07","SD40", 1) ;
       add_wagon_to_train("T08","Dash9", 1) ;
-      position_train("T07",449,4,0,0.0) ;  //  Crossing with rising arms
+      position_train("T08",449,4,0,0.0) ;  //  Crossing with rising arms
 #endif
 
 
@@ -298,19 +303,19 @@ int   trains_init(void){
       position_train("T02",329,10,0,30.0) ;
 
 
-      add_new_train("T03") ;
-      add_wagon_to_train("T03","Scotsman", 1) ;
-      add_wagon_to_train("T03","ScotsTender", 1) ;
-      add_wagon_to_train("T03","ScotsCar1", 1) ;
-      add_wagon_to_train("T03","ScotsCar1", 1) ;
-      add_wagon_to_train("T03","ScotsCar1", 1) ;
-      add_wagon_to_train("T03","ScotsCar3", 1) ;
-      add_wagon_to_train("T03","ScotsCar3", 1) ;
-      add_wagon_to_train("T03","ScotsCar3", 1) ;
-      add_wagon_to_train("T03","ScotsCar3", 1) ;
-      add_wagon_to_train("T03","ScotsCar3", 1) ;
+      add_new_train("T02") ;
+      add_wagon_to_train("T02","Scotsman", 1) ;
+      add_wagon_to_train("T02","ScotsTender", 1) ;
+      add_wagon_to_train("T02","ScotsCar1", 1) ;
+      add_wagon_to_train("T02","ScotsCar1", 1) ;
+      add_wagon_to_train("T02","ScotsCar1", 1) ;
+      add_wagon_to_train("T02","ScotsCar3", 1) ;
+      add_wagon_to_train("T02","ScotsCar3", 1) ;
+      add_wagon_to_train("T02","ScotsCar3", 1) ;
+      add_wagon_to_train("T02","ScotsCar3", 1) ;
+      add_wagon_to_train("T02","ScotsCar3", 1) ;
 
-      position_train("T03",384,17,0,10.0) ;
+      position_train("T02",384,17,0,10.0) ;
 
 
 #elif defined ROUTE_EUROPE2
@@ -356,27 +361,27 @@ int   trains_init(void){
 //      add_wagon_to_train("T02","30000", 1) ;
       position_train("T02",282,4,0,0.0) ;
 
+      add_new_train("T02") ;
+      add_wagon_to_train("T02","KIHA140", 1) ;
+      position_train("T02",309,3,0,0.0) ;
+
       add_new_train("T03") ;
-      add_wagon_to_train("T03","KIHA140", 1) ;
-      position_train("T03",309,3,0,0.0) ;
+      add_wagon_to_train("T03","2000", 1) ;
+      add_wagon_to_train("T03","2000RearEng", 1) ;
+      position_train("T03",255,6,0,0.0) ;
 
       add_new_train("T04") ;
       add_wagon_to_train("T04","2000", 1) ;
       add_wagon_to_train("T04","2000RearEng", 1) ;
-      position_train("T04",255,6,0,0.0) ;
-
-      add_new_train("T05") ;
-      add_wagon_to_train("T05","2000", 1) ;
-      add_wagon_to_train("T05","2000RearEng", 1) ;
-      position_train("T05",266,6,0,35.0) ;
+      position_train("T04",266,6,0,35.0) ;
 
 
       add_new_train("T06") ;
       add_wagon_to_train("T06","2000", 1) ;
       add_wagon_to_train("T06","2000RearEng", 1) ;
-//      add_wagon_to_train("T03","Genesis", 1) ;     //  Amtrack
-//      add_wagon_to_train("T03","Series7000Carg", 1) ;
-//      add_wagon_to_train("T03","2000ACarriage", 1) ;
+//      add_wagon_to_train("T02","Genesis", 1) ;     //  Amtrack
+//      add_wagon_to_train("T02","Series7000Carg", 1) ;
+//      add_wagon_to_train("T02","2000ACarriage", 1) ;
 
       position_train("T06",310,9,0,0.0) ;
 
@@ -394,62 +399,149 @@ int   trains_init(void){
       add_wagon_to_train("T01","Dash9", 1) ;
       position_train("T01",13,2,0,0.0) ;
 
+
+#elif defined ROUTE_AU_NSW_SW_SS
+
+#if 1
+      add_new_train("T01") ;
+      add_wagon_to_train("T01","AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("T01","AU_NSW_3028_tender", 1) ;
+      for(i=0;i<30;i++){
+        add_wagon_to_train("T01","AU_NSW_Dtruck2_Coal", 1) ;
+      }
+      add_wagon_to_train("T01","LHG_Brake_Van", 1) ;
+      position_train("T01",730,1,1,1.0) ;    // Near Lithgow
+#endif
+#if 1
+      add_new_train("T02") ;
+      add_wagon_to_train("T02","AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("T02","AU_NSW_3028_tender", 1) ;
+      position_train("T02",659,7,0,0.0) ;    // Near Mount Victoria
+
+      add_new_train("T02") ;
+      add_wagon_to_train("T02","AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("T02","AU_NSW_3028_tender", 1) ;
+      position_train("T02",4321,1,0,1.0) ;    // Near Clyde
+
+      add_new_train("T03") ;
+      add_wagon_to_train("T03","AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("T03","AU_NSW_3028_tender", 1) ;
+      position_train("T03",5076,2,1,0.0) ;    //  Redfern
+
+      add_new_train("T04") ;
+      add_wagon_to_train("T04","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T04","AU_NSW_3102_tender", 1) ;
+      position_train("T04",5911,2,0,0.0) ;    // Sydney
+
+      add_new_train("T06") ;
+      add_wagon_to_train("T06","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T06","AU_NSW_3102_tender", 1) ;
+      position_train("T06",1023,2,0,0.0) ;    // Works
+
+      add_new_train("T07") ;
+      add_wagon_to_train("T07","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T07","AU_NSW_3102_tender", 1) ;
+      position_train("T07",1611,2,1,0.0) ;    // Rooty Hill
+
+      add_new_train("T08") ;
+      add_wagon_to_train("T08","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T08","AU_NSW_3102_tender", 1) ;
+      position_train("T08",3262,2,0,0.0) ;    // Cambelltown
+
+      add_new_train("T09") ;
+      add_wagon_to_train("T09","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T09","AU_NSW_3102_tender", 1) ;
+      position_train("T09",760,3,1,0.0) ;    // Lithgow Loop
+
+      add_new_train("T10") ;
+      add_wagon_to_train("T10","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T10","AU_NSW_3102_tender", 1) ;
+      position_train("T10",3161,1,1,0.0) ;    //  Richmond
+
+      add_new_train("T11") ;
+      add_wagon_to_train("T11","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T11","AU_NSW_3102_tender", 1) ;
+      position_train("T11",1701,1,0,0.0) ;    //  Blacktown
+
+      add_new_train("T12") ;
+      add_wagon_to_train("T12","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T12","AU_NSW_3102_tender", 1) ;
+      position_train("T12",2250,3,1,0.0) ;    //  Clyburn
+
+      add_new_train("T13") ;
+      add_wagon_to_train("T13","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T13","AU_NSW_3102_tender", 1) ;
+      position_train("T13",2747,5,0,0.0) ;    //  Chester Hill
+
+      add_new_train("T14") ;
+      add_wagon_to_train("T14","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T14","AU_NSW_3102_tender", 1) ;
+      position_train("T14",5062,3,1,0.0) ;    //  Sydney Raiway Sidings
+
+      add_new_train("T15") ;
+      add_wagon_to_train("T15","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T15","AU_NSW_3102_tender", 1) ;
+      position_train("T15",7706,2,0,0.0) ;    //  Back of beyond /Town no name
+                                              // 1423 10258
+
+      add_new_train("T16") ;
+      add_wagon_to_train("T16","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T16","AU_NSW_3102_tender", 1) ;
+      position_train("T16",8051,3,0,0.0) ;    //  Yennora
+
+      add_new_train("T18") ;
+      add_wagon_to_train("T18","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T18","AU_NSW_3102_tender", 1) ;
+      position_train("T18",7495,5,0,0.0) ;    //  Goulburn
+
+      add_new_train("T19") ;
+      add_wagon_to_train("T19","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T19","AU_NSW_3102_tender", 1) ;
+      position_train("T19",7035,3,0,0.0) ;    //  Moss Vale
+
+      add_new_train("T20") ;
+      add_wagon_to_train("T20","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T20","AU_NSW_3102_tender", 1) ;
+      position_train("T20",6683,3,1,0.0) ;    //  Picton
+
+      add_new_train("T21") ;
+      add_wagon_to_train("T21","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T21","AU_NSW_3102_tender", 1) ;
+      position_train("T21",3244,4,0,0.0) ;    //  Cambelltown
+
+      add_new_train("T22") ;
+      add_wagon_to_train("T22","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T22","AU_NSW_3102_tender", 1) ;
+      position_train("T22",4668,3,0,0.0) ;    //  Line to Newcastle
+
+      add_new_train("T23") ;
+      add_wagon_to_train("T23","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T23","AU_NSW_3102_tender", 1) ;
+      position_train("T23",1122,5,1,0.0) ;    //  Mudgee / Wallerwang
+
+      add_new_train("T24") ;
+      add_wagon_to_train("T24","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T24","AU_NSW_3102_tender", 1) ;
+      position_train("T24",1290,2,0,0.0) ;    //  North-west Collery
+
+      add_new_train("T25") ;
+      add_wagon_to_train("T25","AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("T25","AU_NSW_3102_tender", 1) ;
+      position_train("T25",1038,2,1,0.0) ;    //  Bowenfeld
+
+#endif
+
+
 /*
  *  ZIG ZAG Route
  */
 #else
 
-#if 1
       add_new_train("T01") ;
-#if 1
-      add_wagon_to_train("T01","1905-S654", 1) ;
-#else
-      add_wagon_to_train("T01","1905-D347", 1) ;
-      add_wagon_to_train("T01","1905-D347-t", 1) ;
-#endif
-      add_wagon_to_train("T01","AU_NSW_Dtruck1_Empty", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck2_Empty", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_Empty", 1) ;
-#if 0
-//      add_wagon_to_train("T01","4W-CV-load", 0) ;
-      add_wagon_to_train("T01","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T01","NI4wHopUnb4MT", 1) ;
-      add_wagon_to_train("T01","4W-CV-mty", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_FlatSheet", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_HumpSheet", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_Coal", 1) ;
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_Ballast", 1) ;
-      add_wagon_to_train("T01","JWW_Htype_L", 1) ;
-      add_wagon_to_train("T01","JWW_Htype_E", 1) ;
+      add_wagon_to_train("T01","1905-I103", 1) ;
+      position_train("T01",387,3,0,-50.0) ;     //  Station Bowenfels
 
-      add_wagon_to_train("T01","AU_NSW_Dtruck3_Coal", 1) ;
-      add_wagon_to_train("T01","JWW_Htype_L", 1) ;
-      add_wagon_to_train("T01","JWW_Htype_E", 1) ;
-      add_wagon_to_train("T01","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T01","NI4wHopUnb4MT", 1) ;
-//      position_train("T01",376,1,1,0.0) ;
-//      position_train("T01",123,1,1,0.0) ;
-//      position_train("T01",377,6,0,0.0) ;
-//  The direction here has no ef2fect on the way the wagon is displayed
-//  before or after movement - whatever teh train direction
-//  The error only occurs when the train direction is reverse - but
-//  is corrected as soon as the train moves!!!!!!
-      add_wagon_to_train("T01","4W-HG-Brake-Van", 0) ;
-      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
-      add_wagon_to_train("T01","4W-HG-Brake-Van", 0) ;
-      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
-#endif
-//      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
-//      add_wagon_to_train("T01","4W-HG-Brake-Van", 1) ;
-// This does afffect position
-        position_train("T01",392,1,0,0.0) ;  // Default
-//      position_train("T01",356,35,1,0.0) ;
-//      position_train("T01",363,1,1,0.0) ;
-#endif
-#if 1
       add_new_train("T02") ;
-
-      add_wagon_to_train("T02","1905-I103", 1) ;
 
       add_wagon_to_train("T02","4W-LV-load", 1) ;
       add_wagon_to_train("T02","4W-LV-mty", 1) ;
@@ -470,11 +562,19 @@ int   trains_init(void){
       add_wagon_to_train("T02","AU_NSW_Dtruck3_HumpSheet", 1) ;
 
       add_wagon_to_train("T02","4W-HG-Brake-Van", 1) ;
-      position_train("T02",373,1,1,0.0) ;
+
+      position_train("T02",408,3,0,0.0) ;     //  Station Bowenfels
+
+//      add_wagon_to_train("T02","4W-HG-Brake-Van", 1) ;
+//      position_train("T02",376,1,1,10.0) ;     //  Station Bowenfels
+//      position_train("T02",373,1,1,0.0) ;     //  Station Bowenfels
+//      position_train("T02",373,1,0,0.0) ;     //  Train Reversed
+//      position_train("T02",357,3,0,0.0) ;
 //      position_train("T02",384,1,1,0.0) ;
-#endif
-#if 1
+//      position_train("T02",356,33,0,0.0) ;  //  Near Bowenfels Level Crossing 1
+
       add_new_train("T03") ;
+
       add_wagon_to_train("T03","1905-A115", 1) ;
       add_wagon_to_train("T03","1905-A115-t", 1) ;
       add_wagon_to_train("T03","1905-J484", 1) ;
@@ -487,30 +587,35 @@ int   trains_init(void){
       add_wagon_to_train("T03","1905-CBC", 1) ;
       add_wagon_to_train("T03","1905-CBC", 1) ;
       add_wagon_to_train("T03","1905-HO-JWW", 1) ;
+
+      position_train("T03",356,1,1,0.0) ;   // Bowenfels End-of-Line
 //      position_train("T03",384,1,1,0.0) ;
-      position_train("T03",356,1,1,0.0) ;
 //      position_train("T03",415,1,0,0.0) ;
-#endif
-#if 1
+
       add_new_train("T04") ;
+
       add_wagon_to_train("T04","1905-O449", 1) ;
       add_wagon_to_train("T04","1905-O449-t", 1) ;
-      add_wagon_to_train("T04","4W-CV-load", 1) ;
-      add_wagon_to_train("T04","4W-CV-mty", 1) ;
-      add_wagon_to_train("T04","4W-CW2-LD", 1) ;
-      add_wagon_to_train("T04","4W-CW2", 1) ;
-      add_wagon_to_train("T04","4W-GSV2-Pigs", 1) ;
-      add_wagon_to_train("T04","4W-GSV2-Sheep", 1) ;
-      add_wagon_to_train("T04","4W-GSV2", 1) ;
-      add_wagon_to_train("T04","4W-GSV2", 1) ;
-      add_wagon_to_train("T04","4W-LV-load", 1) ;
-      add_wagon_to_train("T04","4W-LV-mty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
       add_wagon_to_train("T04","4W-HG-Brake-Van", 1) ;
-      position_train("T04",415,1,0,0.0) ;
-#endif
 
-#if 1
+      position_train("T04",431,4,0,70.0) ;
+
       add_new_train("T05") ;
+
       add_wagon_to_train("T05","1905-B319", 1) ;
       add_wagon_to_train("T05","1905-B319-t", 1) ;
       add_wagon_to_train("T05","1905-P708", 1) ;
@@ -532,52 +637,146 @@ int   trains_init(void){
       add_wagon_to_train("T05","4W-CV-load", 1) ;
       add_wagon_to_train("T05","4W-CV-load", 1) ;
       add_wagon_to_train("T05","4W-CV-load", 1) ;
+      add_wagon_to_train("T05","4W-CV-load", 1) ;
+      add_wagon_to_train("T05","4W-CV-mty", 1) ;
+      add_wagon_to_train("T05","4W-CW2-LD", 1) ;
+      add_wagon_to_train("T05","4W-CW2", 1) ;
+      add_wagon_to_train("T05","4W-GSV2-Pigs", 1) ;
+      add_wagon_to_train("T05","4W-GSV2-Sheep", 1) ;
+      add_wagon_to_train("T05","4W-GSV2", 1) ;
+      add_wagon_to_train("T05","4W-GSV2", 1) ;
+      add_wagon_to_train("T05","4W-LV-load", 1) ;
+      add_wagon_to_train("T05","4W-LV-mty", 1) ;
       position_train("T05",242,2,0,0.0) ;
-#endif
 
-#if 1
       add_new_train("T06") ;
-      add_wagon_to_train("T06","1905-S654", 1) ;
-      add_wagon_to_train("T06","1905-C144", 1) ;
-      add_wagon_to_train("T06","1905-C144-t", 1) ;
-      add_wagon_to_train("T06","4W-CV-load", 1) ;
-      add_wagon_to_train("T06","4W-CV-load", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb1LD", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb1MT", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb2LD", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb2MT", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb3LD", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb3MT", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb4LD", 1) ;
+
+      add_wagon_to_train("T06","1905-D347", 1) ;
+      add_wagon_to_train("T06","1905-D347-t", 1) ;
+      add_wagon_to_train("T06","4W-CV-load", 0) ;
+      add_wagon_to_train("T06","4W-CV-mty", 1) ;
+
+      add_wagon_to_train("T06","AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck2_Empty", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_Empty", 1) ;
+
+      add_wagon_to_train("T06","WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("T06","WVR-4W-AcidTank-9", 1) ;
       add_wagon_to_train("T06","NI4wHopUnb4MT", 1) ;
+      add_wagon_to_train("T06","NI4wHopUnb4MT", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_FlatSheet", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_HumpSheet", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_Coal", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_Coal", 1) ;
+      add_wagon_to_train("T06","AU_NSW_Dtruck3_Ballast", 1) ;
+
+      add_wagon_to_train("T06","JWW_Htype_E", 1) ;
+      add_wagon_to_train("T06","JWW_Htype_L", 1) ;
+      add_wagon_to_train("T06","JWW_Htype_L", 1) ;
+      add_wagon_to_train("T06","JWW_Htype_E", 1) ;
+      add_wagon_to_train("T06","4W-HG-Brake-Van", 1) ;
+
+      position_train("T06",189,5,0,0.0) ;
+
+//      position_train("T06",376,1,1,0.0) ;
+//      position_train("T06",123,1,1,0.0) ;
+//      position_train("T06",377,6,0,0.0) ;
+//        position_train("T06",554,4,0,-10.0) ;  // Mt Victoria Turntable
+//        position_train("T06",251,3,0,0.0) ;  // Golburn - Train shed line 3
+//        position_train("T06",541,5,0,0.0) ;  // Mt Victoria
+//        position_train("T06",356,13,1,10.0) ;  // Bowenfels distant
+//        position_train("T06",356,33,1,10.0) ;  // Bowenfels level crossing
+//        position_train("T06",392,1,0,20.0) ;  // Default Bowenfels siding
+//      position_train("T06",363,1,1,0.0) ;
+
+      add_new_train("T07") ;
+
+      add_wagon_to_train("T07","1905-S654", 1) ;
+      add_wagon_to_train("T07","1905-C144", 1) ;
+      add_wagon_to_train("T07","1905-C144-t", 1) ;
+      add_wagon_to_train("T07","4W-CV-load", 1) ;
+      add_wagon_to_train("T07","1905-C144", 1) ;
+      add_wagon_to_train("T07","1905-C144-t", 1) ;
+      add_wagon_to_train("T07","4W-CV-load", 1) ;
+      add_wagon_to_train("T07","4W-CV-load", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb1LD", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb1MT", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb2LD", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb2MT", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb3LD", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb3MT", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb4LD", 1) ;
+      add_wagon_to_train("T07","NI4wHopUnb4MT", 1) ;
+
 /*
  *  These wagons cause a segmentation fault
  */
-//      add_wagon_to_train("T05","WVR-4W-AcidTank-9-LD", 1) ;
-//      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      position_train("T06",51,12,0,0.0) ;
+//      add_wagon_to_train("T04","WVR-4W-AcidTank-9-LD", 1) ;
+//      add_wagon_to_train("T04","WVR-4W-AcidTank-9", 1) ;
+
+      position_train("T07",51,12,0,0.0) ;
+
+      add_new_train("T08") ;
+
+      add_wagon_to_train("T08","1905-T524", 1) ;
+      add_wagon_to_train("T08","1905-T524-t", 1) ;
+      add_wagon_to_train("T08","4W-CV-load", 1) ;
+      add_wagon_to_train("T08","1905-AD-Sleeper", 1) ;
+      add_wagon_to_train("T08","1905-AB-Diner", 1) ;
+      add_wagon_to_train("T08","1905-CBC", 1) ;
+      add_wagon_to_train("T08","1905-CBC", 1) ;
+      add_wagon_to_train("T08","1905-CBC", 1) ;
+      add_wagon_to_train("T08","1905-HO-JWW", 1) ;
+
+      position_train("T08",485,5,0,0.0) ;
+
+      add_new_train("T09") ;
+
+      add_wagon_to_train("T09","1905-S654", 1) ;
+      add_wagon_to_train("T09","AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("T09","AU_NSW_Dtruck2_FlatSheet", 1) ;
+
+      position_train("T09",269,10,0,0.0) ;
+
+//  Wagons in Sidings
+
+      add_new_train("T10") ;
+      add_wagon_to_train("T10","4W-CV-load", 1) ;
+      add_wagon_to_train("T10","AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("T10","AU_NSW_Dtruck1_Empty", 1) ;
+      position_train("T10",213,3,1,10.0) ;
+
+      add_new_train("T11") ;
+      add_wagon_to_train("T11","AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("T11","AU_NSW_Dtruck1_Ballast", 1) ;
+      position_train("T11",271,2,0,0.0) ;
+
+//  Engines in shed
+
+      add_new_train("T12") ;
+      add_wagon_to_train("T12","1905-T524", 1) ;
+      add_wagon_to_train("T12","1905-T524-t", 1) ;
+      position_train("T12",251,5,0,20.0) ;
+
+      add_new_train("T13") ;
+      add_wagon_to_train("T13","1905-C144", 1) ;
+      add_wagon_to_train("T13","1905-C144-t", 1) ;
+      position_train("T13",258,4,1,5.0) ;
+
+
+//  Trucks only in Bowenfels Siding
+
+      add_new_train("T14") ;
+      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("T14","AU_NSW_Dtruck1_Empty", 1) ;
+      position_train("T14",392,1,1,30.0) ;     //  Station Bowenfels Siding
+
 #endif
 
-#if 1
-      add_new_train("T07") ;
-      add_wagon_to_train("T07","1905-T524", 1) ;
-      add_wagon_to_train("T07","1905-T524-t", 1) ;
-      add_wagon_to_train("T07","4W-CV-load", 1) ;
-      add_wagon_to_train("T07","1905-AD-Sleeper", 1) ;
-      add_wagon_to_train("T07","1905-AB-Diner", 1) ;
-      add_wagon_to_train("T07","1905-CBC", 1) ;
-      add_wagon_to_train("T07","1905-CBC", 1) ;
-      add_wagon_to_train("T07","1905-CBC", 1) ;
-      add_wagon_to_train("T07","1905-HO-JWW", 1) ;
-      position_train("T07",485,5,0,0.0) ;
-#endif
-
-#endif
       mark_textures()              ;
-//      load_needed_display_lists()  ;
-
       clock_gettime(CLOCK_MONOTONIC, &run_clock1) ;
-      update_trains() ;  // Update using monotonic time
       update_trains() ;  // Update using monotonic time
 
       if(ip)print_train_data() ;
@@ -624,6 +823,7 @@ WagonNode *wagon_init(char *name){
       w->index      = 0     ;
       n = strlen(raw->file) ;
       w->is_engine  = !strcmp(".eng",&(raw->file[n-4]));
+      w->is_engine  = raw->is_engine ;
       w->train_dir  = 1     ;     // Initialise as 'true'
       w->n_travel   = 1     ;     // NOTE Change for multi-bogie wagons
       w->dist_front = 10.0  ;     // NOTE Change once sd file read
@@ -735,12 +935,16 @@ char      *my_name = "add_new_train" ;
       t->motor = NULL ;
       t->first = NULL ;
       t->last  = NULL ;
+      init_trav(&t->front) ;
+      init_trav(&t->back) ;
+
 
       if(NULL == trainlist_beg) trainlist_beg = t ;
       if(NULL != trainlist_end){
         trainlist_end->next = t ;
       }
-      trainlist_end = t       ;
+
+      trainlist_end = build_train = t ;
       if(NULL == player_train) player_train = t ;
       if(ip){
         printf("  Routine %s : train beg    = %s\n",my_name,trainlist_beg->name) ;
@@ -751,6 +955,7 @@ char      *my_name = "add_new_train" ;
 }
 /*
  *==============================================================================
+ *
  *==============================================================================
  */
 
@@ -760,7 +965,7 @@ char      *my_name = "add_new_train" ;
   TrainNode     *t  = NULL ;
   WagonNode     *w  = NULL ;
   RawWagonNode  *rw = NULL ;
-  TravellerNode *tv = NULL ;
+  TravellerNode *z1 = NULL ;
   char         *my_name = "add_wagon_to_train" ;
 
 /*
@@ -777,24 +982,27 @@ char      *my_name = "add_new_train" ;
         if(!strcmp(t->name,train)) break ;
       }
       if(t==NULL){
-        printf(" Routine %s.\n  Unable to fine train with name %s\n",
+        printf(" Routine %s.\n  Unable to find train with name %s\n",
                my_name,train) ;
-        exit(1) ;
       }
+      t = build_train ;               //  Always use default
+      if(!t) return 0 ;               //  No build train defined
+
 /*
  *==============================================================================
  *  Find wagon in list of raw wagons
  *==============================================================================
  */
       for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next){
-        if(ip && 0)printf(" Routine %s, wagon name = %s :: %s\n",my_name,
+        if(ip && 1)printf(" Routine %s, wagon = %s, wagon name = %s :: %s\n",
+                    my_name, wagon,
                     rw->name, rw->shape->name) ;
-        if(!strcmp(rw->name,wagon)) break ;
+        if(!strcmp_ic(rw->name,wagon)) break ;
       }
       if(rw==NULL){
         printf(" Routine %s.\n  Unable to find wagon with name %s\n",
                my_name,wagon) ;
-        exit(1) ;
+               exit(1) ;
       }
 /*
  *==============================================================================
@@ -802,7 +1010,7 @@ char      *my_name = "add_new_train" ;
  *==============================================================================
  */
       w  = (WagonNode *)malloc(sizeof(WagonNode)) ;
-      tv = (TravellerNode *)malloc(sizeof(TravellerNode)) ;
+      z1 = (TravellerNode *)malloc(sizeof(TravellerNode)) ;
 
       w->next        = NULL  ;
       w->prev        = NULL  ;
@@ -816,15 +1024,26 @@ char      *my_name = "add_new_train" ;
       w->dist_back   = w->dist_front  ;
       w->wheel_angle = (360.0*rand())/RAND_MAX ;
       w->driverwheel_angle = (360.0*rand())/RAND_MAX ;
-      w->traveller   = tv ;
+      w->traveller   = z1 ;
       w->shape       = rw->shape ;
       w->raw_wagon   = rw        ;
-//      w->engine      = NULL      ;
+      w->has_wipers  = 0 ;
+      w->has_mirrors     = rw->has_mirrors ;
+      w->has_pantographs = rw->has_pantographs ;
+      w->wipers_on  = 0   ;
+      w->wipers_off = 0   ;
+      w->wipers_ang = 0.0 ;
 
-      tv->shape  = w->shape ;
-      tv->wagon  = w        ;
-      tv->shape->needed = 1 ;
-      tv->shape->loaded = 0 ;
+      w->mirrors_out  = 0   ;
+      w->mirrors_dist = 0.0 ;
+
+      w->pantographs_up   = 0   ;
+      w->pantographs_dist = 0.0 ;
+
+      z1->shape  = w->shape ;
+      z1->wagon  = w        ;
+      z1->shape->needed = 1 ;
+      z1->shape->loaded = 0 ;
 
 
       if(t->first == NULL) t->first = w ;
@@ -842,26 +1061,9 @@ char      *my_name = "add_new_train" ;
  */
       if(w->is_engine && t->motor == NULL){
         t->motor = w ;
-//        w->engine = (EngineNode *)malloc(sizeof(EngineNode)) ;
-//        if(rw->raw_engine != NULL){
-          w->has_wipers      = rw->has_wipers  ;
-          w->has_mirrors     = rw->has_mirrors ;
-          w->has_pantographs = rw->has_pantographs ;
-//        }else{
-//          w->has_wipers      = 0  ;
-//          w->has_mirrors     = 0 ;
-//          w->has_pantographs = 0 ;
-//        }
-
-        w->wipers_on  = 0   ;
-        w->wipers_off = 0   ;
-        w->wipers_ang = 0.0 ;
-
-        w->mirrors_out  = 0   ;
-        w->mirrors_dist = 0.0 ;
-
-        w->pantographs_up   = 0   ;
-        w->pantographs_dist = 0.0 ;
+        w->has_wipers      = rw->has_wipers  ;
+        w->has_mirrors     = rw->has_mirrors ;
+        w->has_pantographs = rw->has_pantographs ;
 
         if(ip){
           printf("*** Routine %s.  Wagon %s has_wipers      = %i\n",my_name,w->name,w->has_wipers);
@@ -900,14 +1102,14 @@ int       i       ;
 int position_train(char *train, int itrack, int ivector, int idirect, double distance){
 
   int           ip  = 0    ;  // Debug
+  int           n          ;
   TrainNode     *t  = NULL ;
   WagonNode     *w  = NULL ;
-  TravellerNode *tv = NULL ;
+  TravellerNode *z1 = NULL ;
   double       dist = distance ;
   char         *my_name = "position_train" ;
 
       if(ip)printf("  Routine %s :: AA\n",my_name) ;
-      fflush(NULL) ;
 /*
  *  Find train in TrainNode list
  */
@@ -915,244 +1117,356 @@ int position_train(char *train, int itrack, int ivector, int idirect, double dis
         if(!strcmp(t->name,train)) break ;
       }
       if(ip)printf("  Routine %s :: BB\n",my_name) ;
-      fflush(NULL) ;
       if(t==NULL){
         printf(" Routine %s.\n  Unable to fine train with name %s\n",
                my_name,train) ;
-        exit(1) ;
       }
-
-      fflush(NULL) ;
+      t = build_train ;  //  Always assume default
+      if(!t) return 0 ;
 /*
  *  Loop over wagons
  */
-      for(w = t->last ; w != NULL ; w=w->prev){
+      for(w = t->last, n=0 ; w != NULL ; w=w->prev, n++){
         if(ip)printf("  Routine %s :: train = %s, dist = %f, wagon = %s\n",
                                       my_name,t->name,dist,w->name) ;
-        fflush(NULL) ;
-        tv = w->traveller ;
-        trv_initv(tv, itrack, ivector, idirect) ;
-        trv_move(tv, dist) ;    //  Initialise tv - even if dist == 0.
+        z1 = w->traveller ;
+        trv_initv(z1, itrack, ivector, idirect) ;
+        trv_move(z1, dist) ;    //  Initialise z1 - even if dist == 0.
         if(w->prev != NULL){
           dist += w->dist_front + w->prev->dist_back ;
         }
       }
-      l_disp1 = 1 ;  // Switch on printing DEBUG
-      return 0 ;
-}
+      t->n_wagons = n ;
+/*
+ *  Position front and back of train
+ */
+      copy_traveller_position(&(t->front), t->first->traveller) ;
+      trv_move(&(t->front), 0.5*t->first->raw_wagon->length) ;
+      copy_traveller_position(&(t->back), t->last->traveller) ;
+      trv_move(&(t->back), -0.5*t->last->raw_wagon->length) ;
 
-int  copy_traveller_position(TravellerNode *tv, TravellerNode *tv0) {
-
-      tv->tn = tv0->tn ;
-      tv->vn = tv0->vn ;
-      tv->x  = tv0->x  ;
-      tv->y  = tv0->y  ;
-      tv->z  = tv0->z  ;
-      tv->ang_deg  = tv0->ang_deg  ;
-      tv->position = tv0->position ;
-      tv->itrack   = tv0->itrack ;
-      tv->ivector  = tv0->ivector ;
-      tv->idirect  = tv0->idirect ;
+      build_train = NULL ;
 
       return 0 ;
 }
 
+/*
+ *  Routine copy traveller used to copy second traveller position without
+ *  affecting name or shape variables
+ */
+
+int  copy_traveller_position(TravellerNode *z1, TravellerNode *z0) {
+
+      z1->tn = z0->tn ;
+      z1->vn = z0->vn ;
+      z1->x  = z0->x  ;
+      z1->y  = z0->y  ;
+      z1->z  = z0->z  ;
+      z1->ang_deg  = z0->ang_deg  ;
+      z1->vect_position = z0->vect_position ;
+      z1->sect_distance = z0->sect_distance ;
+      z1->itrack   = z0->itrack ;
+      z1->ivector  = z0->ivector ;
+      z1->idirect  = z0->idirect ;
+
+      return 0 ;
+}
+
+/*
+ *   Routine to update train positions
+ */
+
+static TravellerNode *gzl = NULL ;
 
 int update_trains(void){
 
-  int         ip = 0 ;
+  int       ip = 0 ;
 
   int       iret = 0 ;  //  Return code
-  TrainNode *t       ;
-  WagonNode *w       ;
-  TravellerNode *tv      ;
-  TravellerNode *tv0     ;
+  int       i_crash   = 0 ;
+  int       i_collide = 0 ;
+  int       idirect  ;
+  int       isect    ;
+  TrainNode *t0, *t1 = NULL ;
+  WagonNode *w           ;
+  TravellerNode *z0, *z1, gz0, gz1 ;
+  TrkSector     *ts      ;
+  double    d0, d1, d2   ;
+  double    length       ;
   double    time, del_t  ;
-  double    dist_moved   ;
-  double    dist         ;
+  double    dist_to_move ;
+  double    dist_remain, dist_moved   ;
   char      *my_name = "update_trains" ;
-#if 0
-  static double time_last = -1.0   ;
 
-      time = (run_clock1.tv_sec - run_clock0.tv_sec)
-           + (run_clock1.tv_nsec - run_clock0.tv_nsec)*0.000000001 ;
-      if(time_last<0.0){
-        if(ip)printf("  Routine %s, time = %f, time_last = %f\n",
-                my_name,time,time_last) ;
-        time_last = time ;
-        return 0         ;
-      }
-      del_t = time - time_last ;
-#else
-      time = run_seconds ;
-      del_t = delta_seconds ;
-#endif
 
       if(ip){
-        printf("  Enter %s\n",my_name) ;
-        print_train_data() ;
+        printf("\n  Enter %s.  Run seconds = %f\n",my_name,run_seconds) ;
+//        print_train_data() ;
       }
-
+      time = run_seconds ;
 /*
  *==============================================================================
  *  Loop over trains
  *==============================================================================
  */
-      for(t = trainlist_beg; t != NULL ; t=t->next){
-        if(ip)printf("  Routine %s :: train = %s, speed = %f\n",
-                                                 my_name,t->name,t->speed) ;
+      for(t0 = trainlist_beg; t0 != NULL ; t0=t0->next){
+
+        if(ip)printf("  Routine %s. Main Loop :: train = %s, speed = %f\n",
+                                                 my_name,t0->name,t0->speed) ;
+        del_t = delta_seconds ;
+        if(0.0 == t0->speed) continue ;    //  Nothing to be done
+        if(ip)printf("\n  Routine %s.  Train is moving\n",my_name) ;
+        camera_changed = 1 ;               //  If connected to this train
+        junction_error = 0 ;
 /*
- *  Check train movement
+ *  First move to limit of train in direction of motion
  */
-        if(0.0 == t->speed) continue ;
-
-        iret = check_train_movement(t) ;  //  Check for obstructions
-        if(iret)continue               ;  //  Train stopped by obstruction
-
-        if(ip)printf("  Routine %s :: AA :: train = %s\n",my_name,t->name) ;
-        dist_moved = t->speed*del_t ;
-        w  = t->last ;
-        if(ip)printf("  Routine %s :: wagon = %s\n",my_name,w->name) ;
-        tv0 = w->traveller ;
-        iret = trv_move(tv0,dist_moved) ;
-/*
-*  Check if end of line or attempt to enter junction from the wrong direction
-*/
-        if(iret){
-          t->speed = 0.0 ;
-          if(iret == 1) {
-            printf("  Train %s derailed at junction.  Switch incorrectly set.\n",
-                                                                  t->name) ;
-          }else{
-            printf("  Train %s crashed into buffers at end of line\n",t->name) ;
-          }
-        }
-        camera_changed = 1 ;
-        if(w->train_dir){
-          w->wheel_angle = w->wheel_angle +
-                          degree*dist_moved*w->raw_wagon->inv_wheelradius ;
+        if(t0->speed > 0.0){
+          w = t0->first          ;    //  Front of train
+          if(w == NULL) return 0 ;
+          gz0  = *w->traveller   ;    //  Make temporary traveller
+          iret = trv_move(&gz0, 0.5*w->raw_wagon->length) ;
         }else{
-          w->wheel_angle = w->wheel_angle -
-                          degree*dist_moved*w->raw_wagon->inv_wheelradius ;
+          w = t0->last            ;    //  Back of train
+          if(w == NULL) return 0 ;
+          gz0 = *w->traveller    ;     //  Make temporary traveller
+          iret = trv_move(&gz0,-0.5*w->raw_wagon->length) ;
         }
-        w->wheel_angle = fmod((double)w->wheel_angle, (double)360.0) ;
-        if(w->wheel_angle<0.0)w->wheel_angle += 360.0 ;
-        if(ip){
-          printf("  Routine %s AA1 :: first  = %p, last = %p\n",
-                                  my_name,(void *)t->first,(void *)t->last) ;
-          printf("  Routine %s AA2 :: wagon  = %p, prev = %p\n",
-                                        my_name,(void *)w,(void *)w->prev) ;
+        if(iret || junction_error){
+          printf("  Routine %s.  Train overlaps buffers or incorrectly"
+                                                    " set junction\n",my_name) ;
+          trv_print(&gz0) ;
+          exit (0) ;
         }
-        if(ip)printf(" Wagon = %s,  Angle = %f\n",w->name,w->wheel_angle ) ;
+        gz1  = gz0             ;    //  Make a copy
+/*
+ *  Next check for train collision with buffers or incorrectly set junction
+ *  during the current timestep
+ */
+        dist_to_move = del_t*t0->speed ;
+        dist_remain  = dist_to_move ;
 
-        if(ip)trv_print(w->traveller) ;
-#if 0
-//     Model position
-        tv = w->traveller ;
-        vn = tv->vn ;
-        a = degree*vn->a_east_x   ;
-        b = degree*vn->a_height_y ;
-        c = degree*vn->a_north_z  ;
+        iret = trv_move(&gz1, dist_to_move) ; //  Move temporary traveller
 /*
- *   Convert from MSTS location to coordinates used for graphics
+ *  If crash detected, print error and change timestep for this train
+ *  Unfortunately dist_remain is not changed (yet).
  */
-          global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                         vn->tile_east_x, vn->tile_north_z,
-                         vn->east_x , vn->north_z, vn->height_y+rail_height,
-                         &x0, &y0, &z0) ;
-          printf("\n") ;
-          printf("  AA %f  %f  %f :: %f %f %f\n",x0,y0,z0,tv->x,tv->y,tv->z)
-#endif
-/*
- *==============================================================================
- *  Loop over wagons - starting with last and moving forward
- *==============================================================================
- */
-        dist = 0.0 ;
-        for(w=w->prev; w!=NULL; w=w->prev){
-          if(ip)printf("  Routine %s :: wagon = %s\n",my_name,w->name) ;
-#if 1
-          dist = dist_moved + (w->dist_back + w->next->dist_front) ;
-          if(ip){
-            printf("  Routine %s BB1 :: train = %s, wagon = %s\n",
-                                                  my_name,t->name,w->name) ;
-            printf("  Routine %s BB2 :: wagon = %p, next = %p\n",
-                                        my_name,(void *)w,(void *)w->next) ;
-            printf("  Routine %s BB3 :: train = %s, wagon = %s, dist = %f %f %f\n",
-                my_name,t->name,w->name, w->dist_back, w->next->dist_front, dist) ;
-          }
-          tv = w->traveller ;
-          dist = (w->dist_back + w->next->dist_front) ;
-          copy_traveller_position(tv,tv0) ;
-          iret = trv_move(tv, dist) ;
-#else
-          dist = dist_moved + (w->dist_back + w->next->dist_front) ;
-          iret = trv_move(tv,dist_moved) ;
-#endif
-          if(ip)trv_print(w->traveller) ;
-#if 0
-//     Model position
-          tv = w->traveller ;
-          vn = tv->vn ;
-          a = degree*vn->a_east_x   ;
-          b = degree*vn->a_height_y ;
-          c = degree*vn->a_north_z  ;
-/*
- *   Convert from MSTS location to coordinates used for graphics
- */
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                        vn->tile_east_x, vn->tile_north_z,
-                        vn->east_x , vn->north_z, vn->height_y+rail_height,
-                        &x1, &y1, &z1) ;
-        printf("  BB %f  %f  %f :: %f %f %f\n",x1,y1,z1,tv->x,tv->y,tv->z)
-#endif
-/*
- *  Check if end of line or attempt to enter junction from the wrong direction
- */
-          if(iret || junction_error){
-            t->speed = 0.0 ;
-            if(iret)printf("  Train %s reached end of line\n",t->name) ;
-            if(junction_error)printf("  Train %s derailed at junction.  Switch incorrectly set.\n",
-                                                                          t->name) ;
-          }
-          tv0 = tv ;
-          if(ip){
-            printf(" BB Wagon = %s,  DistMoved = %f\n",w->name,dist_moved ) ;
-            printf(" BB Wagonw->engine = %s,  Radius    = %f\n",w->name,w->raw_wagon->wheelradius ) ;
-            printf(" BB Wagon = %s,  InvRadius = %f\n",w->name,w->raw_wagon->inv_wheelradius ) ;
-            printf(" BB Wagon = %s,  Angle     = %f\n",w->name,w->wheel_angle ) ;
-          }
-/*
- *  Update wheel angle
- */
-          if(w->train_dir){
-            w->wheel_angle += degree*dist_moved*w->raw_wagon->inv_wheelradius;
+        i_crash = (iret || junction_error) ;
+        if(i_crash){
+          del_t = (fabs(dist_to_move) - fabs(dist_remain))/fabs(t0->speed) ;
+          if(iret){
+            printf("  Train %s crashed into end of line.\n",t0->name) ;
           }else{
-            w->wheel_angle -= degree*dist_moved*w->raw_wagon->inv_wheelradius;
+            printf("  Train %s derailed at junction.\n",t0->name) ;
           }
-          w->wheel_angle = fmod((double)w->wheel_angle, (double)360.0) ;
-          if(w->wheel_angle<0.0)w->wheel_angle += 360.0 ;
-          if(w->wheel_angle<0.0 || w->wheel_angle>360.0)printf(" Train.c :: wheel angle = %f\n",
-            w->wheel_angle) ;
+/*
+ *  If the train has not crashed, user traveller gz0 to check for
+ *  collisions with other trains.  .
+ */
+        }else{
+          dist_moved  = 0.0 ;
+          dist_remain = dist_to_move ;
+          do{
+            idirect = gz0.idirect  ;
+            isect   = gz0.itrack   ;
+            ts      = &track_db.trk_sections_array[isect-1] ; //  Remember '-1'!
+            if(ip)printf("\n  Track section = %i, idirect = %i, speed = %f, name = %s"
+                   "   dist remain = %f\n",
+                        isect, idirect, t0->speed,
+                        (gz0.wagon) ? gz0.wagon->name : "(null)", dist_remain ) ;
 
+            if(gz0.idirect && t0->speed>0.0){
+              d0 = gz0.sect_distance ;
+              d1 = d0 + dist_remain ;
+              if(d1 > ts->length){
+                d1 = ts->length ;
+                dist_remain  -= (ts->length - d0) ;
+              }else{
+                dist_remain = 0.0 ;
+              }
+            }else if(gz0.idirect && t0->speed<0.0){
+              d1   = gz0.sect_distance ;
+              d0   = d1 + dist_remain  ;
+              if(d0 < 0.0){
+                d0 = 0 ;
+                dist_remain += d1 ;
+              }else{
+                dist_remain = 0.0 ;
+              }
+            }else if(!gz0.idirect && t0->speed>0.0){
+              d1   = gz0.sect_distance ;
+              d0   = d1 - dist_remain  ;
+              if(d0 < 0.0){
+                d0 = 0 ;
+                dist_remain -= d1 ;
+              }else{
+                dist_remain = 0.0 ;
+              }
+            }else{
+              d0 = gz0.sect_distance ;
+              d1 = d0 - dist_remain ;
+              if(d1 > ts->length){
+                d1 = ts->length ;
+                dist_remain  -= (ts->length - d0) ;
+              }else{
+                dist_remain = 0.0 ;
+              }
+            }
+            if(ip)printf("  TT  d0 = %f, d1 = %f, d_remain = %f\n",d0, d1, dist_remain) ;
+/*
+*  Loop over all other trains searching for collisions.
+*  This is linited to collisions between the front and end of trains
+*  Collisions with wagons at crossovers and junctions are not covered.
+*/
+            i_collide = 0 ;
+            for(t1 = trainlist_beg; t1!=NULL; t1=t1->next){
+              if(t1 == t0)continue ;
+              z0 = &(t1->front) ;
+              z1 = &(t1->back)  ;
+              if(ip)printf("    Train0 = %s, Front = %i %f, Back = %i %f  "
+                                "Motor = %i %f\n",
+                    t0->name, t0->front.itrack,
+                              t0->front.sect_distance,
+                              t0->back.itrack,
+                              t0->back.sect_distance,
+                    (t0->motor) ?t0->motor->traveller->itrack : 0,
+                    (t0->motor) ?t0->motor->traveller->sect_distance : 0.0) ;
+
+              if(ip)printf("    Train1 = %s, Front = %i %f, Back = %i %f  "
+                           "Motor = %i %f  ::   %i %f :: %i %f %f\n",
+                    t1->name, z0->itrack, z0->sect_distance,
+                              z1->itrack, z1->sect_distance,
+                    (t1->motor) ?t1->motor->traveller->itrack : 0,
+                    (t1->motor) ?t1->motor->traveller->sect_distance : 0.0,                              gz0.itrack, gz0.sect_distance, isect, d0, d1) ;
+  /*
+  *  Does either end of the second train lie in the same track section
+  *              and within the distance moved by the ?
+  */
+              if(ip)printf("  Z0 :: %f %f :: %f\n",d0, d1, z0->sect_distance ) ;
+              if(ip)printf("  Z1 :: %f %f :: %f\n",d0, d1, z1->sect_distance ) ;
+              if(isect == (int) z0->itrack){
+                if(z0->sect_distance > d0 && z0->sect_distance < d1){
+                  i_collide = 1 ;   //  Collision with front of train t1
+                  if(ip)printf("  COLLIDE with front of train t1\n") ;
+                  dist_moved += (z0->idirect) ? (z0->sect_distance - d0)
+                                              : (d1 - z0->sect_distance) ;
+                  break ;
+                }
+              }
+              if(isect == (int)z1->itrack){
+                if(z1->sect_distance > d0 && z1->sect_distance < d1){
+                  i_collide = -1 ;   //  Collision with back of train t1
+                  if(ip)printf("  COLLIDE with back of train t1\n") ;
+                  dist_moved += (z0->idirect) ? (z1->sect_distance - d0)
+                                              : (d1 - z1->sect_distance) ;
+                  break ;
+                }
+              }
+            }
+            if(i_collide) break ;
+/*
+ *  If dist_remain != 0.0, move ghost traveller to next section.
+ *  This also checks for possible crashes.
+ */
+            if(dist_remain == 0.0)break ;
+
+            if( idirect == (dist_remain > 0.0) ){
+              i_crash = trk_next(&gz0,1) ;
+            }else{
+              i_crash = trk_next(&gz0,-1) ;
+            }
+            if(i_crash){
+              printf("  Routine %s error.  End of line or junction error"
+                                " while checking for train collisions\n", my_name) ;
+              printf("   idirect = %i\n",idirect) ;
+              trv_print(&gz0) ;
+              exit(1) ;
+            }
+          }while(dist_remain != 0.0) ;
+/*
+ *  In the case of train collisions, set the timestep sufficient to move the
+ *  train to the collision point.  The coupling togeather of trains approaching
+ *  each other at low speed is treated near the end.
+ */
+         if(i_collide){
+            del_t = fabs(dist_moved/t0->speed) ;
+            if(ip)printf(" Collide. Dist moved = %f, speed = %f, del_t = %f\n",
+                          dist_moved, t0->speed, del_t) ;
+          }
+        }
+/*
+ *  End of checks for current train.
+ *  Next update each of the engines and wagons in the train
+ */
+        for(w=t0->last; w!=NULL; w=w->prev){
+          if(w == t0->last){
+            dist_moved = del_t*t0->speed ;
+          }else{
+            dist_moved = (w->dist_back + w->next->dist_front)        ;
+            copy_traveller_position(w->traveller,w->next->traveller) ;
+          }
+          iret = trv_move(w->traveller, dist_moved) ;
+/*
+ *  Update wheels on wagon
+ */
+          dist_moved = del_t*t0->speed ;
+          if(w->train_dir){
+            w->wheel_angle += degree*dist_moved*w->raw_wagon->inv_wheelradius ;
+          }else{
+            w->wheel_angle -= degree*dist_moved*w->raw_wagon->inv_wheelradius ;
+          }
+          while(w->wheel_angle > 360.0) w->wheel_angle -= 360.0 ;
+          while(w->wheel_angle <   0.0) w->wheel_angle += 360.0 ;
+
+          if(w->is_engine){
+            if(w->train_dir){
+              w->driverwheel_angle +=
+                              degree*dist_moved*w->raw_wagon->inv_driverwheelradius ;
+            }else{
+              w->driverwheel_angle -=
+                              degree*dist_moved*w->raw_wagon->inv_driverwheelradius ;
+            }
+            while(w->driverwheel_angle > 360.0) w->driverwheel_angle -= 360.0 ;
+            while(w->driverwheel_angle <   0.0) w->driverwheel_angle += 360.0 ;
+          }
         }  //  End loop over wagons
+/*
+ *  Update train's front and back travellers
+ */
+        copy_traveller_position(&(t0->front), t0->first->traveller) ;
+        trv_move(&(t0->front), 0.5*t0->first->raw_wagon->length) ;
+        copy_traveller_position(&(t0->back), t0->last->traveller) ;
+        trv_move(&(t0->back), -0.5*t0->last->raw_wagon->length) ;
+/*
+ *  Current train in final position ;  Process any train collision.
+ */
+        if(i_collide != 0){
+          printf("  TRAINS COLLIDE   Speed = %f\n", t0->speed) ;
+          if(!t1){
+            printf("  Routine %s error."
+                   "  Train pointer t1 set to NULL after crash.\n",my_name) ;
+          }
+          if(fabs(t0->speed) < 2.0){               //  A bit high!
+            join_trains(t0,t1,i_collide) ;
+          }else{
+            crash_trains(t0,t1,i_collide) ;
+          }
+        }else if(i_crash != 0){
+          crash_train(t0,i_crash) ;
+        }
       }    //  End loop over trains
-      time_last = time ;
+/*
+ *==============================================================================
+ *  Second loop over trains and wagons
+ *  Update variables which do not involve train movement using full del_t
+ *==============================================================================
+ */
+      del_t = delta_seconds ;
 
+      for(t0 = trainlist_beg; t0 != NULL ; t0=t0->next){
+        for(w=t0->last; w!=NULL; w=w->prev){
 /*
- *==============================================================================
- *  Loop over trains updating other variables
- *==============================================================================
- */
-      for(t = trainlist_beg; t != NULL ; t=t->next){
-/*
- *==============================================================================
- *  Loop over wagons - starting with last and moving forward
- *==============================================================================
- */
-        for(w=t->last; w!=NULL; w=w->prev){
-/*
- *  Wipers
+ *  Engine Wipers
  */
           if(w->has_wipers && w->wipers_on){
 //            printf("    WIPER ANG = %f, dell_t = %f\n",w->wiper_ang,del_t) ;
@@ -1171,7 +1485,7 @@ int update_trains(void){
 //          printf("    WIPER ANG = %f, dell_t = %f,  wiper_on = %i\n",
 //                  w->wiper_ang,del_t,w->wiper_on) ;
 /*
- *  Mirrors
+ *  Engine Mirrors
  */
           if(w->has_mirrors){
             if(w->mirrors_out && w->mirrors_dist < 1.0){
@@ -1183,7 +1497,7 @@ int update_trains(void){
             }
           }
 /*
- *  Pantographs
+ *  Engine Pantographs
  */
           if(w->has_pantographs){
             if(w->pantographs_up && w->pantographs_dist < 1.0){
@@ -1195,12 +1509,16 @@ int update_trains(void){
             }
           }
         }
+/*
+ *  End loop over trains
+ */
       }
-
+      time_last = time ;
       if(ip)printf("  Exit %s\n",my_name) ;
       return 0 ;
 }
 
+#if 0
 /*
  *   Routine to check whether a train is due to hit the end of the
  *   line or to enter a junction from the closed branch.
@@ -1247,6 +1565,7 @@ int check_train_movement(TrainNode *t){
 
       return iret ;
 }
+#endif
 
 int print_train_data(void){
   int       ip = 0 ;

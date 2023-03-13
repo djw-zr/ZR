@@ -1,4 +1,4 @@
- /*
+/*
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
@@ -19,6 +19,18 @@ uint search_for_track_item2(TravellerNode *t1, TravellerNode *t2, LevelXSNode *l
 uint update_level_crossing_flag(WorldItem *wi, int f) ;
 uint update_level_crossing_position(WorldItem *wi) ;
 
+static int iip = 0 ;
+
+/*
+ *  Routine 'update_level_crossing()' is called by routine display() before
+ *  redrawing the main display screen.  Once every second it checks the
+ *  position of trains near each crossing and calls the routine
+ *  'update_level_crossing_flag()' to set the level crossing flag to 'open'
+ *  if a train is approaching, otherwise to 'close'.
+ *  On every display call it also calls 'update_level_crossing_position()'
+ *  to update the angle of the level crossing.
+ */
+
 int update_level_crossings(void){
 
   int     ip = 0 ;
@@ -33,7 +45,7 @@ int update_level_crossings(void){
   WorldNode   *wnode   ;                      // world.h
   LevelXSNode *lxsnode ;                      // world.h
   WorldItem   *witem   ;                      // world.h
-  TrkItemNode *ti_node ;                      // struct.h
+  TrkItem *ti_node ;                      // struct.h
   TrainNode   *train   ;                      // train.h
   WagonNode     *wagon1, *wagon2 ;            // train.h
   TravellerNode *trav1,  *trav2  ;            // train.h
@@ -47,6 +59,7 @@ int update_level_crossings(void){
                wx, wy, wz             ;        //  Position of wagon (m)
   int          itrack, ivector, idirect     ;
   char *my_name = "update_level_crossing" ;
+
 
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
@@ -82,6 +95,8 @@ int update_level_crossings(void){
  *  global2local() is defined in graphics.c
  */
           ti_node = &(track_db.trk_items_array[lxsnode->rail_track_item[0]]) ;
+//          ip = (ti_node->uid == 369  || ti_node->uid == 370) ; // LX 1
+          if(ip)printf("\n  Routine %s\n",my_name) ;
           ti_tile_east  = ti_node->tile_east_x ;
           ti_tile_north = ti_node->tile_north_z ;
 
@@ -92,6 +107,7 @@ int update_level_crossings(void){
 /*
  *  Loop over trains
  */
+          found = 0 ;
           for(train=trainlist_beg; train != NULL; train=train->next){
             wagon1 = train->first ;
             wagon2 = train->last  ;
@@ -116,10 +132,12 @@ int update_level_crossings(void){
             traveller2local(trav1, &wx, &wy, &wz) ;
             dist = sqrt((tx-wx)*(tx-wx) + (tz-wz)*(tz-wz) + (tz-wz)*(tz-wz) ) ;
             found = dist < max_dist + 100.0 ;
+            if(ip && found)printf("  Train found near trav1 %f  :: %f\n",dist, max_dist + 100.0) ;
             if(!found && wagon1 != wagon2){
               traveller2local(trav2, &wx, &wy, &wz) ;
               dist = sqrt((tx-wx)*(tx-wx) + (tz-wz)*(tz-wz) + (tz-wz)*(tz-wz) ) ;
               found = dist < max_dist + 100.0 ;
+              if(ip && found)printf("  Train found near trav2 %f  :: %f\n",dist, max_dist + 100.0) ;
             }
             if(!found)continue ;
 /*
@@ -129,37 +147,50 @@ int update_level_crossings(void){
               printf("   Train: %s near World Item: %s.  Track item: %i."
                      "  Node type = %i %s. "
                      "   Search distance = %f, distance = %f\n",
-                            train->name, witem->filename, ti_node->index_of_node,
+                            train->name, witem->filename, ti_node->uid,
                             ti_node->type_of_node, token_trackdb[ti_node->type_of_node],
                             max_dist+100.0, dist) ;
-              printf("     Traveller at  :  %f %f %f\n",wx, wy, wz) ;
-              printf("     Track Item  at:  %f %f %f\n",tx, ty, tz) ;
+              traveller2local(trav1, &wx, &wy, &wz) ;
+              printf("     Traveller 1 at  :  %f %f %f\n",wx, wy, wz) ;
+              traveller2local(trav2, &wx, &wy, &wz) ;
+              printf("     Traveller 2 at  :  %f %f %f\n",wx, wy, wz) ;
+              printf("     Track Item  at:  %f %f %f :: %i %i :: %f %f %f\n",
+                           tx, ty, tz, ti_node->tile_east_x, ti_node->tile_north_z,
+                            ti_node->east_x, ti_node->north_z, ti_node->height_y) ;
               printf("  NEW TRAIN %p\n",(void *) train) ;
             }
-            dist = 0.5*wagon1->raw_wagon->length + 10.0 ;
+            dist_forward = dist_back = 0.5*wagon1->raw_wagon->length + 10.0 ;
             if(train->speed > 0.0){
-               dist_forward = dist + max_dist ;
-               dist_back    = dist ;
-            }else{
-               dist_forward = dist  ;
-               dist_back    = dist + max_dist ;
+               dist_forward += max_dist ;
+            }else if(train->speed <0.0){
+               dist_back    += max_dist ;
             }
+/*
+ *  Search forward from front traveller
+ */
             if(ip)printf("  SEARCH Forward  %f\n",dist_forward) ;
             found = search_for_track_item(trav1, lxsnode, dist_forward,1) ;
             if(ip && found)printf("  Found level crossing  AA %i\n",i) ;
+/*
+ *  Search backwards from end traveller
+ */
             if(!found){
               if(ip)printf("  SEARCH Back  %f\n",dist_back) ;
               found = search_for_track_item(trav2, lxsnode, dist_back,0) ;
               if(ip && found)printf("  Found level crossing  BB %i\n",i) ;
             }
+/*
+ *  Search between front and end traveller
+ */
             if(!found){
               if(ip)printf("  SEARCH Between\n") ;
               found = search_for_track_item2(trav1, trav2, lxsnode) ;
               if(ip && found)printf("  Found level crossing  CC %i\n",i) ;
             }
-            update_level_crossing_flag(witem,found) ;
-            update_level_crossing_position(witem) ;
+            if(found) break ;
           }
+          update_level_crossing_flag(witem,found) ;
+          update_level_crossing_position(witem) ;
         }
       }
       return 0 ;
@@ -169,49 +200,48 @@ int update_level_crossings(void){
  *  Routine to search forward from TravellerNode t for a distance d
  *  to look for the Track Item specified in LevelXSNode lc.
  *     s_dirn  :: (1/0) 1 if Search Direction matches Train Direction
+ *
+ *  This vesion searches a section at a time (the original was a vector at a time)
  */
 
-
-uint search_for_track_item(TravellerNode *t, LevelXSNode *lc, double d, uint s_dirn){
+uint search_for_track_item(TravellerNode *t, LevelXSNode *lc, double distance, uint s_dirn){
 
   uint     i, ip = 0   ;
   int      iret        ;
   uint     tr_index    ;    //  Current track index
-  uint     tr_vect     ;    //  Current vector index
+//  uint     tr_vect     ;    //  Current vector index
   uint     tr_dirn     ;    //  1/0, 1 if Vector Direction equals Train Direction
   double   dd_remain   ;    //  Distance remaining
   double   dd_move     ;    //  Distance to move
   double   tr_posn     ;    //  Position of traveller along current vector
-  double   tr_length   ;    //  Length of current track vector
-  double   ti_posn     ;    //  Position of current track item along vector
+  double   tr_length   ;    //  Length of current track section
+  double   ti_posn     ;    //  Position of current track item along section
   TravellerNode  tr    ;    //  Pseudo traveller node
   char     *my_name = "search_for_track_item" ;
 
-      if(ip)printf("    Enter routine %s\n",my_name) ;
-      if(ip)printf("    distance = %f,  direction = %i\n",d,s_dirn) ;
+      if(ip){
+        printf("    Enter routine %s\n",my_name) ;
+        printf("    witem = %s, distance = %f,  direction = %i, n_rail = %i\n",
+             lc->world_item[0]->snode->name, distance,s_dirn,lc->n_rail) ;
+      }
+
       tr        = *t ;
       tr.wagon  = NULL ;     //   A pseudo traveller with no wagon
-      dd_remain =  d ;
+      dd_remain =  distance ;
+
 
       for(;;){
         tr_index  = tr.itrack     ;
-        tr_vect   = tr.ivector    ;
-        tr_posn   = tr.position   ;
-        tr_length = tr.vn->length ;
+        tr_posn   = tr.sect_distance   ;
+        tr_length = tr.tn->length ;
         tr_dirn   = tr.idirect    ;
 
 /*
  *  Return 1 if current track/vector/position match any of the search values?
  */
         for(i=0;i<lc->n_rail;i++){
-          if(ip)printf("   tr  %i ::  index = %i, vector = %i, position = %f\n",
-                 i, tr.itrack, tr.ivector, tr.position) ;
-          if(ip)printf("   lc  %i ::  index = %i, vector = %i, position = %f\n",
-                 i, lc->rail_index[i], lc->rail_i_vec[i], lc->rail_dist[i]) ;
-
-
-          if(tr_index == lc->rail_index[i] && tr_vect == lc->rail_i_vec[i]){
-            ti_posn = lc->rail_dist[i] ;
+          if(tr_index == lc->rail_uid[i]){
+            ti_posn = lc->rail_s_dist[i] ;
             if(ip)printf("       %i %i ::  %f %f :: %f %f\n",
                     s_dirn, tr_dirn, ti_posn, tr_posn, tr_length, dd_remain) ;
             if(s_dirn == tr_dirn){
@@ -226,12 +256,12 @@ uint search_for_track_item(TravellerNode *t, LevelXSNode *lc, double d, uint s_d
         dd_remain = dd_remain - tr_length ;
         if(dd_remain <= 0.0)  break ;
 /*
- *  Move pseudo traveller to next track vector
+ *  Move pseudo traveller to next track section
  */
         if(s_dirn == tr_dirn){
-          iret = trv_next(&tr) ;
+          iret = trk_next(&tr,1) ;
         }else{
-          iret = trv_prev(&tr) ;
+          iret = trk_next(&tr,-1) ;
         }
         if(iret) return 0 ;        // End of track
       }
@@ -241,6 +271,9 @@ uint search_for_track_item(TravellerNode *t, LevelXSNode *lc, double d, uint s_d
 /*
  *  Routine used to search for track item forwards
  *         from traveller node t2 to traveler node t1
+ *
+ *  This is used to search between the first and last traveller
+ *         of a train
  */
 
 uint search_for_track_item2(TravellerNode *t1, TravellerNode *t2, LevelXSNode *lc){
@@ -254,70 +287,85 @@ uint search_for_track_item2(TravellerNode *t1, TravellerNode *t2, LevelXSNode *l
   uint     tr1_index   ;    //  Track index of traveller t1
   uint     tr1_vect    ;    //  Vector index of traveller t1
   double   tr1_posn    ;    //  Position of traveller t1
+  uint     tr2_index   ;    //  Track index of traveller t2
+  uint     tr2_vect    ;    //  Vector index of traveller t2
+  double   tr2_posn    ;    //  Position of traveller t2
   double   ti_posn     ;    //  Position of current track item along vector
   TravellerNode  tr    ;    //  Pseudo traveller node
   char     *my_name = "search_for_track_item2" ;
 
+      ip = iip ;
       if(ip)printf("      Enter routine %s\n",my_name) ;
       tr        = *t2 ;
       tr1_index = t1->itrack   ;
-      tr1_vect  = t1->ivector  ;
-      tr1_posn  = t1->position ;
+      tr1_posn  = t1->sect_distance ;
+      tr2_index = t2->itrack   ;
+      tr2_posn  = t2->sect_distance ;
       if(ip){
-        printf("   t1  ::  index = %i, vector = %i, position = %f\n",
-                  t1->itrack, t1->ivector, t1->position) ;
-        printf("   t2  ::  index = %i, vector = %i, position = %f\n",
-                  t2->itrack, t2->ivector, t2->position) ;
-        printf("   lc  ::  index = %i, vector = %i, position = %f,"
-              "  rail_track_item = %i,  index = %i\n",
-                  lc->rail_index[0], lc->rail_i_vec[0], lc->rail_dist[0],
+        printf("   t1  ::  index = %i, position = %f\n",
+                  t1->itrack, t1->sect_distance) ;
+        printf("   t2  ::  index = %i, position = %f\n",
+                  t2->itrack, t2->sect_distance) ;
+        printf("   lc  ::  index = %i, position = %f,"
+              "  rail_track_item = %i,  index = %i, name = %s\n",
+                  lc->rail_uid[0], lc->rail_s_dist[0],
                   lc->rail_track_item[0],
-                  track_db.trk_items_array[lc->rail_track_item[0]].index_of_node) ;
+                  track_db.trk_items_array[lc->rail_track_item[0]].uid,
+                  lc->world_item[0]->snode->name) ;
         if(lc->n_rail>1)
-        printf("   lc2 ::  index = %i, vector = %i, position = %f"
+        printf("   lc2 ::  index = %i, position = %f"
               "  rail_track_item = %i,  index = %i\n",
-                  lc->rail_index[1], lc->rail_i_vec[1], lc->rail_dist[1],
+                  lc->rail_uid[1], lc->rail_s_dist[1],
                   lc->rail_track_item[1],
-                  track_db.trk_items_array[lc->rail_track_item[1]].index_of_node) ;
+                  track_db.trk_items_array[lc->rail_track_item[1]].uid) ;
       }
 
       for(;;ic++){
         tr_index  = tr.itrack     ;
-        tr_vect   = tr.ivector    ;
         tr_dirn   = tr.idirect    ;
 
 /*
- *  Return 1 if current track/vector/position match any of the search values?
+ *  Return 1 if current track/position match any of the search values?
  */
         for(i=0;i<lc->n_rail;i++){
-          if(ip)printf("  TEST   %i  :: %i %i :: %i %i\n",
-                 i,tr_index, lc->rail_index[i], tr_vect, lc->rail_i_vec[i]) ;
-          if(tr_index == lc->rail_index[i] && tr_vect == lc->rail_i_vec[i]){
-            if(tr_index != tr1_index || tr_vect != tr1_vect) return 1;
-            ti_posn = lc->rail_dist[i] ;
+          if(tr_index == lc->rail_uid[i] ){
+            if((tr_index != tr1_index ) && (tr_index != tr2_index ) )return 1;
+            ti_posn = lc->rail_s_dist[i] ;
 
-            if(ip)printf("  TEST2  %i :: %f %f\n",tr_dirn,ti_posn, tr1_posn) ;
-            if(tr_dirn){
-              if(ti_posn <= tr1_posn)  return 1 ;
-            }else{
-              if(ti_posn >= tr1_posn)  return 1 ;
+            if((tr_index == tr1_index) && (tr_index == tr2_index) ){
+              if(tr_dirn){
+                if((ti_posn <= tr1_posn) && (ti_posn >= tr2_posn))  return 1 ;
+              }else{
+                if((ti_posn >= tr1_posn) && (ti_posn <= tr2_posn))  return 1 ;
+              }
+            }else if(tr_index == tr1_index ){
+              if(tr_dirn){
+                if(ti_posn <= tr1_posn)  return 1 ;
+              }else{
+                if(ti_posn >= tr1_posn)  return 1 ;
+              }
+            }else {
+              if(tr_dirn){
+                if(ti_posn >= tr2_posn)  return 1 ;
+              }else{
+                if(ti_posn <= tr2_posn)  return 1 ;
+              }
             }
             if(ip)printf("  FAIL\n") ;
             return 0 ;  //  Track section found but no track item
           }
         }
-        if(ip)printf("  TEST3  %i %i :: %i %i\n",tr_index, tr1_index, tr_vect, tr1_vect) ;
 
-        if(tr_index == tr1_index && tr_vect == tr1_vect) return 0 ;
+        if(tr_index == tr1_index ) return 0 ;
 /*
  *  Move pseudo traveller to next track vector
  */
         if(tr_dirn){
-          iret = trv_next(&tr) ;
+          iret = trk_next(&tr,1) ;
         }else{
-          iret = trv_prev(&tr) ;
+          iret = trk_next(&tr,-1) ;
         }
-        if(ip)printf(" NEW ::  %i %i %f\n",tr.itrack, tr.ivector, tr.position) ;
+        if(ip)printf(" NEW ::  %i %f\n",tr.itrack, tr.sect_distance) ;
         if(iret){
           printf("  Routine %s error\n",my_name) ;
           printf("  End of track section found 'within train'!\n") ;
@@ -333,13 +381,18 @@ uint search_for_track_item2(TravellerNode *t1, TravellerNode *t2, LevelXSNode *l
       return 0 ;
 }
 
+/*
+ *  If a level crossing is found in the path of a train the flag
+ *  'should_be_open' is set to zero (close) otherwise it is set
+ *  to one (open).
+ */
 
 uint  update_level_crossing_flag(WorldItem *wi, int found){
 
-  int  ip = 0 ;
-  int  i ;
+  int        ip = 0 ;
+  int        i ;
   LevelCrObj *lc    ;
-  char     *my_name = "update_level_crossing_variables" ;
+  char       *my_name = "update_level_crossing_variables" ;
 
       if(ip)printf("      Enter routine %s\n",my_name) ;
       lc = &(wi->u.levelcr_obj) ;
@@ -352,31 +405,38 @@ uint  update_level_crossing_flag(WorldItem *wi, int found){
       return 0 ;
 }
 
+/*
+ *  When called the routine checks if a crossing gate is in the correct
+ *  position, fully open or fully closed.  If not it changes open or
+ *  the gate, as appropiate, at a constant rate.  For this it uses
+ *  'delta_seconds', a global variable giving the time lapse since the
+ *  display routine was last called.
+ *
+ *  The MSTS convention requires the gate position to be 0.0 for a
+ *  fully open gate and 0.5 for a fully closed gate.
+ */
+
 uint  update_level_crossing_position(WorldItem *wi){
 
-  int  ip = 0 ;
-  int  i ;
+  int        ip = 0 ;
+  int        i ;
   LevelCrObj *lc    ;
-  char     *my_name = "update_level_crossing_variables" ;
+  char       *my_name = "update_level_crossing_variables" ;
 
       if(ip)printf("      Enter routine %s\n",my_name) ;
 
       lc = &(wi->u.levelcr_obj) ;
-
-      if(ip)printf("        AA should_be_open = %i, gate_position = %f, delta_seconds = %f\n",
-                    lc->should_be_open, lc->gate_position, delta_seconds  ) ;
-
-
-      if(lc->should_be_open && lc->gate_position != 0.0){
-        lc->gate_position -= 0.1*delta_seconds ;
-        lc->gate_position = (lc->gate_position > 0.0) ? lc->gate_position : 0.0 ;
-      }else if(lc->gate_position != 0.5){
-        lc->gate_position += 0.1*delta_seconds ;
-        lc->gate_position = (lc->gate_position < 0.5) ? lc->gate_position : 0.5 ;
+      if(lc->should_be_open){
+        if(lc->gate_position != 0.0){
+          lc->gate_position -= 0.1*delta_seconds ;
+          if(lc->gate_position < 0.0) lc->gate_position = 0.0 ;
+        }
+      }else{
+        if(lc->gate_position != 0.5){
+          lc->gate_position += 0.1*delta_seconds ;
+          if(lc->gate_position > 0.5) lc->gate_position = 0.5 ;
+        }
       }
       wi->anim_value = lc->gate_position ;
-
-    if(ip)printf("        BB should_be_open = %i, gate_position = %f, delta_seconds = %f\n",
-                    lc->should_be_open, lc->gate_position, delta_seconds  ) ;
-        return 0 ;
+      return 0 ;
 }

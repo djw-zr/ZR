@@ -32,7 +32,7 @@ char        my_name[] = "display_dynamic_tracks" ;
 
 static int ifirst = 1 ;       //  Only print when routine is first entered
 
-      if(ip)printf("  Enter routine %s\n",my_name) ;
+//      if(ip)printf("  Enter routine %s\n",my_name) ;
       glEnable(GL_LIGHTING);
       glEnable(GL_TEXTURE_2D) ;
       glEnable(GL_BLEND) ;
@@ -53,16 +53,19 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
         if(!wnode->in_use) continue ;
         tx = wnode->tile_x ;
         ty = wnode->tile_y ;
+//        id = (-12584 == tx) && ( (14767 == ty || 14768 == ty) ) ;
+        ip = id && (1 == ifirst) ;
         if(ip)printf("  World tile %i  %i\n",tx,ty) ;
+        if(ip && (1 == ifirst))printf("  World tile %i %i %i :: %i  %i\n",
+                                       id, ip, ifirst, tx,ty) ;
 
 //  Cycle over world items
         for(witem = wnode->world_item ; witem != NULL; witem = witem->next){
 
-//          id = (1449 == tx) && (10331 == ty) &&  (225 == witem->uid) ;
-          ip = id && (1 == ifirst) ;
-          if(ip)printf("  World item %i %i\n",witem->worldtype,DYNTRACK ) ;
+          if(ip)printf("  World item %i %i %i\n",witem->worldtype,DYNTRACK,306);
 
           if(witem->worldtype != DYNTRACK && witem->worldtype != 306)continue ;
+//          if(witem->uid == 4505) continue ;
 
           global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                        wnode->tile_x,wnode->tile_y,

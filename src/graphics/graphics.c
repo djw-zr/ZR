@@ -198,10 +198,72 @@ void *font ;
           printf("  Program stopping ...\n") ;
           exit(1) ;
       }
-      glutPrintString(string,font);
+      glutBitmapString(font, (const unsigned char *)string) ;
+//      glutPrintString(string,font);
 #endif
       return 0 ;
 }
+
+int  width_string_in_window(char *string, int font_size){
+
+char my_name[] = "width_string_in_window_z" ;
+
+#ifdef USE_FREETYPE
+      return strlen(string)*font_size*0.75 ;
+#elif defined USE_SDLTTF
+      return strlen(string)*font_size*0.75 ;
+#else
+void *font ;
+      switch(font_size) {
+        case 10:
+          font = GLUT_BITMAP_HELVETICA_10 ;
+          break ;
+        case 12:
+          font = GLUT_BITMAP_HELVETICA_12 ;
+          break ;
+        case 18:
+          font = GLUT_BITMAP_HELVETICA_18 ;
+          break ;
+        default:
+          printf("  ERROR in routine %s\n",my_name) ;
+          printf("    Font size %i is not supported. \n",font_size) ;
+          printf("  Program stopping ...\n") ;
+          exit(1) ;
+      }
+      return glutBitmapLength(font, (const unsigned char *)string) ;
+#endif
+}
+int  height_font_in_window(int font_size){
+
+char my_name[] = "width_string_in_window_z" ;
+
+#ifdef USE_FREETYPE
+      return font_size*0.75 ;
+#elif defined USE_SDLTTF
+      return font_size*0.75 ;
+#else
+void *font ;
+      switch(font_size) {
+        case 10:
+          font = GLUT_BITMAP_HELVETICA_10 ;
+          break ;
+        case 12:
+          font = GLUT_BITMAP_HELVETICA_12 ;
+          break ;
+        case 18:
+          font = GLUT_BITMAP_HELVETICA_18 ;
+          break ;
+        default:
+          printf("  ERROR in routine %s\n",my_name) ;
+          printf("    Font size %i is not supported. \n",font_size) ;
+          printf("  Program stopping ...\n") ;
+          exit(1) ;
+      }
+      return glutBitmapHeight(font) ;
+#endif
+}
+
+
 
 #ifdef USE_SDLTTF
 int  sdl2PrintString(char *string){
@@ -355,7 +417,7 @@ char      my_name[]="initialise_eye_vectors";
 
       if(ip)printf("\n  Enter %s\n",my_name) ;
       if(ip)printf("  Lookat_Centre = %f %f %f\n",lookat_center_x,lookat_center_y,lookat_center_z) ;
-      if(ip)printf("  Lookat_Eye    = %f %f %f\n",lookat_eye_x,lookat_eye_y,lookat_eye_z) ;
+      if(ip)printf("  Lookat_Eye    = %f %f %f\n", lookat_eye_x, lookat_eye_y, lookat_eye_z) ;
       x = lookat_center_x - lookat_eye_x ;
       y = lookat_center_y - lookat_eye_y ;
       z = lookat_center_z - lookat_eye_z ;

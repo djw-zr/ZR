@@ -325,6 +325,7 @@ int ii, jj, kk ;
  */
       terrain->nbx = nbx ;
       terrain->nby = nby ;
+      if(terrain->va_node)free(terrain->va_node) ;
       terrain->va_node = (VANode *)malloc(nbx*nby*sizeof(VANode)) ;
       for(jb=0;jb<nby;jb++){
         for(ib=0;ib<nbx;ib++){

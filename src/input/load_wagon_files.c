@@ -410,15 +410,18 @@ int process_wagon_file(const char *fpath,
  *  Routine to initialise raw wagon structure to NULLs etc
  */
 
-int init_raw_wagon_node(RawWagonNode *w){
+int init_raw_wagon_node(RawWagonNode *rw){
 
-      w->is_engine  = 0  ;
-      w->name       = NULL ;
-      w->file       = NULL ;
-      w->s_file     = NULL ;
-      w->sd_file    = NULL ;
-      w->image      = NULL ;
-      w->tender     = NULL ;
+      rw->is_engine  = 0  ;
+      rw->name       = NULL ;
+      rw->file       = NULL ;
+      rw->s_file     = NULL ;
+      rw->sd_file    = NULL ;
+      rw->image      = NULL ;
+      rw->tender     = NULL ;
+      rw->has_wipers      = 0 ;
+      rw->has_mirrors     = 0 ;
+      rw->has_pantographs = 0 ;
       return 0;
 }
 
@@ -485,7 +488,7 @@ int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode){
         free(name) ;
         name = zr_basename(snode->texture_name[i]) ;
         l = strlen(name) ;
-        if(strcmp(&name[l-4],".ace")){
+        if(strcmp_ic(&name[l-4],".ace")){
           printf("  Image filename does not end with '.ace'\n");
           printf("  Filename = %s\n",name) ;
           printf(" Program stopping ... \n") ;

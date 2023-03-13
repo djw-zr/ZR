@@ -17,7 +17,6 @@
 
 #define ROUTE_MSTS
 
-
 #if defined ROUTE_USA1
 
 char msts_route[] = "USA1" ;
@@ -71,5 +70,12 @@ char msts_rdb_file[] = "Tutorial Route.rdb" ;
 char msts_route[] = "MSTS_ROUTE_ERROR" ;
 
 #endif
+
+#elif defined ROUTE_AU_NSW_SW_SS
+
+char msts_route[] = "AU_NSW_SW_SS" ;
+char msts_pdb_file[] = "AU_NSW_SW_SS.trk" ;
+char msts_tdb_file[] = "AU_NSW_SW_SS.tdb" ;
+char msts_rdb_file[] = "AU_NSW_SW_SS.rdb" ;
 
 #endif

@@ -45,11 +45,15 @@ static double tile_time_used, shape_time_used, track_time_used,
 char          *my_name = "display" ;
 
 #ifdef _Display_Normal
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
 clock_t       tile_t_beg,  tile_t_end  ;
 clock_t       shape_t_beg, shape_t_end ;
 clock_t       track_t_beg, track_t_end ;
 clock_t       dtrack_t_beg, dtrack_t_end ;
 int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
+#pragma GCC diagnostic pop
 
         tile_t_beg  = 0.0 ;
         tile_t_end  = 0.0 ;
@@ -64,7 +68,8 @@ int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
         n_tracks_plotted = 1 ;
 #endif
 
-        l_time_1s = l_time_5s = l_time_30s = 0 ;
+        i_display++ ;
+        l_time_p2s = l_time_1s = l_time_5s = l_time_30s = 0 ;
         last_seconds = run_seconds ;
 #if 1
         clock_gettime(CLOCK_MONOTONIC, &run_clock1) ;
@@ -75,6 +80,10 @@ int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
 #endif
         delta_seconds = run_seconds - last_seconds ;
         run_seconds = fmod(run_seconds,1000000.0) ;  // Allow for repeat on 32 bit computers
+        if(run_seconds - last_p2s > 0.2){
+          l_time_p2s = 1 ;
+          last_p2s = run_seconds ;
+        }
         if(run_seconds - last_1s > 1.0){
           l_time_1s = 1 ;
           last_1s = run_seconds ;
@@ -89,6 +98,7 @@ int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
         }
         check_glerror2("My routine 'display', AA AA\n") ;
 
+//      if(l_time_1s) printf(" ABC idirect = %i\n", trainlist_beg->first->traveller->idirect) ;
 
 //  Note light0_ values can be modified by the keyboard (see keyboard.c).
 
@@ -110,6 +120,9 @@ GLfloat  v4[4] ;
 #ifdef _Display_Normal
       update_trains() ;  // Update using monotonic time
       update_level_crossings() ;
+      update_turntable(current_turntable) ;
+      update_signals() ;
+      update_transfer() ;
 #endif
 /*
  *  If position has changed - update viewpoint
@@ -197,7 +210,7 @@ GLfloat  v4[4] ;
 
 /*
  *==============================================================================
- *   Call the topography Display List for each of the tiles
+ *   Display tiles
  *==============================================================================
  */
 #if 1
@@ -209,7 +222,8 @@ GLfloat  v4[4] ;
       glEnable(GL_LIGHTING);
 
       glCullFace(GL_BACK) ;
-      glEnable(GL_CULL_FACE) ;
+      glDisable(GL_CULL_FACE) ;  //  Needed for some AU_NSW Routes !!
+//      glEnable(GL_CULL_FACE) ;
 
       glEnable(GL_TEXTURE_2D) ;
 //      glEnable(GL_BLEND) ;
@@ -239,15 +253,20 @@ GLfloat  v4[4] ;
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
         if(0==tl_node->needed) continue ;
         if(0==check_topog_in_scene(tl_node)) continue ;  //  Use clip planes
+        if(ip)printf("  tl_node = %p, X = %i, Y = %i, found = %i, loaded = %i, needed = %i,  data = %p\n",
+               (void *)tl_node,
+               tl_node->tilex, tl_node->tiley, tl_node->t_found, tl_node->loaded,
+               tl_node->needed,(void *) tl_node->terrain_data.elevations ) ;
+        display_topog_water(tl_node) ;
 #ifdef use_vertex_arrays
-       display_tile_vertex_array(tl_node) ;
+        display_tile_vertex_array(tl_node) ;
 #else
         glCallList((GLuint) tl_node->gl_display_list) ;
 #endif
         n_tiles_plotted++ ;
       }
 /*
- *   Disable Cleint States.  Reset Lights and Material Properties
+ *   Disable Client States.  Reset Lights and Material Properties
  */
 #ifdef use_vertex_arrays
       glDisableClientState(GL_VERTEX_ARRAY) ;
@@ -332,14 +351,20 @@ double      x, y, z    ;
 double      a, b, c, d ;
 
       shape_t_beg = clock() ;
+/*
+ *  Loop over tiles
+ */
       for(wnode=worldlist_beg; wnode != NULL; wnode=wnode->next){
         if(0 == wnode->in_use) continue ;
         if(0 && l_pp)printf(" New tile tile_x, tile_y, in_use = %i %i %i\n",
                            wnode->tile_x, wnode->tile_y,  wnode->in_use ) ;
-        iwi = l_here && (wnode->tile_x == -12583) && (wnode->tile_y == 14768) ;
+        iwi = l_here && (wnode->tile_x == 1449) && (wnode->tile_y == 10331) ;
+/*
+ *  Loop over items within this tile
+ */
         for(witem=wnode->world_item; witem != NULL; witem=witem->next){
           snode = witem->snode ;
-          idi = iwi && (witem->uid == 4485)  ;
+          idi = iwi && (witem->uid == 181) && i_display<2  ;
           if(idi){
             printf("  routine display - tile :: %i %i  :: item = %i\n",
                     wnode->tile_x, wnode->tile_y, witem->uid );
@@ -357,6 +382,11 @@ double      a, b, c, d ;
           if(306 == witem->worldtype)continue ;
 /*
  *  PolygonOffset code
+ *  The indes iz_off is 1 for all track items and 2 for switch/junctions to raise
+ *  the item above the land.
+ *     glPolygonOffset(a,b)
+ *      a used for a*DZ where DZ is related (how?) to the scrren area of teh polygon
+ *      b used for b*r where r is the smallest value guaranteed to produce a resolvable offset.
  */
           if(witem->iz_off){
             glEnable(GL_POLYGON_OFFSET_FILL) ;  //  Apply when filling
@@ -401,15 +431,15 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
 
             if(a != 0.0 && (sz != 0.0 ||sx != 0.0 ||sy != 0.0) ){
               if(ip)printf("  Rotate\n") ;
-              zrRotateAxyz(a, b, c, d, sx, sy, sz, &ttz, &tty, &ttz) ;
+              zrRotateAxyz(a, b, c, d, sx, sy, sz, &ttx, &tty, &ttz) ;
               ssx = x + ttx ;
               ssy = y + tty ;
               ssz = z + ttz ;
             }else{
               if(ip)printf("  No Rotation\n") ;
-              ssx = x ;  ttx = 0.0 ;
-              ssy = y ;  tty = 0.0 ;
-              ssz = z ;  ttz = 0.0 ;
+              ssx = x + sx ;  ttx = 0.0 ;
+              ssy = y + sy ;  tty = 0.0 ;
+              ssz = z + sz ;  ttz = 0.0 ;
             }
             if(ip){
               printf("  Check in scene \n") ;
@@ -480,6 +510,7 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
             for(i=0; i<snode->n_lod_controls; i++){
               lod_control = &(snode->lod_control[i]) ;
               if(ip)printf(" lod_control index = %i\n",i) ;
+              dist_level = NULL ;
               for(j=0; j<lod_control->n_dist_levels; j++){
                 if(ip)printf("    distance level index = %i\n",j) ;
                 dist_level = &(lod_control->dist_level[j])  ;
@@ -504,7 +535,21 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
 //              printf("  Display: shape = %s, lod = %i, dist = %i\n",snode->name,i,j);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
+              if(ip && i_display<2){
+                l_pd = ip ;
+                printf("  Display: shape = %s, lod = %i, dist = %i\n",snode->name,i,j);
+              }
+#if 0
+              if(2643==witem->uid && l_time_1s){
+                printf("  Witem = %i, %p, %p, %p %f %f %f\n",witem->uid, (void *)witem,
+                       (void *)snode, (void *)dist_level, x, y, z) ;
+              }
+#endif
+//  Fix for USA1 signals
+              if(snode->no_culling) glDisable(GL_CULL_FACE) ;
               display_shape(witem, snode, dist_level) ;
+              if(snode->no_culling) glEnable(GL_CULL_FACE) ;
+              l_pd = 0 ;
 #pragma GCC diagnostic pop
 #endif
               if(ip && i_display<2)printf("  Display: shape displayed\n");
@@ -632,9 +677,13 @@ int i_train,
     i_wagon ;
       i_train = 0 ;
       for(train = trainlist_beg; train != NULL ; train=train->next){
+//        if(l_time_1s)printf("  Train  %p %p :: name = %s\n",
+//                        (void *)train->first, (void *)train->last, train->name) ;
         i_train++ ;
         i_wagon = 0 ;
         for(wagon = train->first; wagon != NULL; wagon = wagon->next){
+//          if(l_time_1s)printf("    Wagon  %p %p :: name = %s\n",
+//                  (void *)wagon->prev, (void *)wagon->next, wagon->name) ;
           i_wagon++ ;
           if(!strcmp(wagon->name,"Default")) continue ;
           tv = wagon->traveller ;
@@ -691,41 +740,35 @@ int i_train,
  */
           iret = check_in_scene( (GLdouble) xr,  (GLdouble) yr, (GLdouble) zr,
                                 (GLdouble) 0.05) ;
-//          printf("  Train %i, Wagon %i, In scene = %i  :: x, y, z = %f %f %f",
-//                 i_train,i_wagon,iret, xr, yr, zr) ;
-
-          if(0==iret){
-//            printf("\n") ;
-            continue ;
-          }
+          if(0==iret) continue ;
 
           dist = sqrt((xr-lookat_eye_x)*(xr-lookat_eye_x)
                     + (yr-lookat_eye_y)*(yr-lookat_eye_y)
                     + (zr-lookat_eye_z)*(zr-lookat_eye_z) )*plot_scale ;
-//          printf(", dist = %f\n",dist) ;
 
           glMatrixMode(GL_MODELVIEW) ;
           glPushMatrix() ;
-            glTranslated(x, y, z) ;                    //  Move vector origin to final position
-            glRotated( 90.0, 1.0, 0.0, 0.0 ) ;         //  Change from MSTS coordinates of shapes to
-            glScaled(scalei,scalei,-scalei) ;          //    normal right-hand coordinates used by ZR
-            glRotated(b, 0.0, 1.0, 0.0) ;              //  Rotate track vector about its origin
-            glRotated(a, 1.0, 0.0, 0.0) ;              //  The order (roll, pitch, yaw) is unexpected
-            glRotated(c, 0.0, 0.0, 1.0) ;              //    but it is the only one that works
-            glTranslated(tv->x,tv->y,tv->z) ;          //  and move wagon origin to lie on track vector
+            glTranslated(x, y, z) ;            //  Move vector origin to final position
+            glRotated( 90.0, 1.0, 0.0, 0.0 ) ; //  Change from MSTS coordinates of shapes to
+            glScaled(scalei,scalei,-scalei) ;  //    normal right-hand coordinates used by ZR
+            glRotated(b, 0.0, 1.0, 0.0) ;      //  Rotate track vector about its origin
+            glRotated(a, 1.0, 0.0, 0.0) ;      //  The order (roll, pitch, yaw) is unexpected
+            glRotated(c, 0.0, 0.0, 1.0) ;      //   but it is the only one that works
+            glTranslated(tv->x,tv->y,tv->z) ;  //   and move wagon origin to lie on track vector
 
-#if 0
-            if(0==strcmp(wagon->name,"4W-HG-Brake-Van")){
-              printf("  Display :: Wagon %s, w->train_dir = %i, tv->ang_deg = %f\n",
-                        wagon->name, wagon->train_dir,tv->ang_deg) ;
-            }
-#endif
-            if(wagon->train_dir){
+//            if(wagon->train_dir){
               glRotated(-tv->ang_deg,0.0, 1.0, 0.0) ;  //  Start by rotating wagon
-            }else{
-              glRotated(180.0-tv->ang_deg,0.0, 1.0, 0.0) ;
-            }
+//            }else{
+//              glRotated(180.0-tv->ang_deg,0.0, 1.0, 0.0) ;
+//            }
 
+            if(0 && l_time_1s){
+              printf("\n Disp : TrkVect(x, y, z) = %5.3f %5.3f %5.3f,   Trk_ang = %6.1f\n",
+                       x, y, z, b) ;
+              printf("      : Wagon(x, y, z)   = %5.1f %5.1f %5.1f,   Wag_ang = %5.1f, train_dir = %i, wagon_dir = %i\n",
+                       tv->x, tv->y, tv->z, tv->ang_deg,
+                       wagon->train_dir, tv->idirect) ;
+            }
 /*
  *  Draw location lines
  */
@@ -822,6 +865,8 @@ int i_train,
  *   Plot default rail tracks.  Used when no track shapes available
  *   Assume LOD method is component additive (flag: COMPONENTADDITIVE).
  *   For the moment this does not check distance
+ *
+ *   NOTE:  "if 1" now causes a striped landscape!!
  */
 #if 0
 //    printf("\n  Plot track bed\n") ;
@@ -834,7 +879,7 @@ int i_train,
 
 {
 int            gl_display_list ;
-TrkSectNode *trk_sec_node   ;
+TrkSector *trk_sec_node   ;
 
       for(i=0;i<track_db.trk_sections_array_size;i++){
         trk_sec_node = &(track_db.trk_sections_array[i])       ;
@@ -856,9 +901,9 @@ TrkSectNode *trk_sec_node   ;
           if(2 == j)glColor3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)0.7) ;
 #endif
           gl_display_list = trk_sec_node->opengl_display_list[j] ;
-          if(i_display<2 && (trk_sec_node->index_of_node == 123)){
+          if(i_display<2 && (trk_sec_node->uid == 123)){
              printf("  Call default track display list %i %i :: d list = %i \n",
-                      trk_sec_node->index_of_node, j, gl_display_list) ;
+                      trk_sec_node->uid, j, gl_display_list) ;
 
           }
           glCallList(gl_display_list) ;
@@ -908,6 +953,7 @@ TrkSectNode *trk_sec_node   ;
  *==============================================================================
  */
 #ifdef _Display_Normal
+#if 1
 {
 GLfloat w = viewport_width ;
 GLfloat h = viewport_height ;
@@ -931,6 +977,7 @@ GLfloat h = viewport_height ;
       if(display_track_info_on) display_track_info(player_train->first->traveller) ;
       if(display_help_on)       display_help() ;
       if(display_switches_on)   display_switches(player_train) ;
+      if(display_train_operations_on) display_train_operations(player_train) ;
 //  Restore defaults
 
       glPopMatrix() ;  //  Pop GL_MODELVIEW
@@ -944,21 +991,20 @@ GLfloat h = viewport_height ;
  */
       if(display_track_info_on){
         if(display_track_info_on & 1)sketch_track_routes(0) ;
-        if(display_track_info_on & 2)sketch_track_items(0)  ;    // TO ADD!!!!
+        if(display_track_info_on & 2)sketch_track_items(0)  ;
       }else{
         if(show_platforms_and_sidings)display_platforms_and_sidings() ;
       }
 #endif
-
-
-
 }
+#endif
 /*
  *   Code to print frames per second in bottom left of window
  *   Switch on/off with shift-z.
  *   It averages over five seconds but takes the first five
  *   seconds to initialise.
  */
+#if 1
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
 
@@ -974,9 +1020,6 @@ GLfloat h = viewport_height ;
                        1000.0*((double)(track_t_end-track_t_beg))/CLOCKS_PER_SEC ;
         dtrack_time_used = 0.95*dtrack_time_used +  0.05*
                      1000.0*((double)(dtrack_t_end-dtrack_t_beg))/CLOCKS_PER_SEC ;
-//        sprintf(string,"Frames per second = %i.  Tiles %i, time %7.3f  "
-//                                               " Shapes %i, time %7.3f  "
-//                                               " Dy Track %i, time %7.3 ms.",
         sprintf(string,"Frames per second = %i.  Tiles %i time %7.3f "
                                                 "Shapes %i time %7.3f "
                                                 "Tracks %i %7.3f %7.3f",
@@ -1007,6 +1050,7 @@ double  t[4] ;
       }
 
 //      printf("  End display of frames per second\n") ;
+#endif
 //      printf("  End display of special panels\n") ;
 #endif
 
@@ -1015,7 +1059,7 @@ double  t[4] ;
  *  Routine to print current status of glError flag
  *==============================================================================
  */
-#if 0
+#if 1
       display_error() ;
 #endif
 /*
@@ -1109,7 +1153,7 @@ int      i, j, k, ip = 0  ;
 double  scale = 1.0/plot_scale ;
 double  x = 0., y=0.0 , z=0.0, dist ;
 TrkVectorNode   *vec, *v ;
-TrkSectNode      *trk_sec_node  ;
+TrkSector      *trk_sec_node  ;
 WorldItem       *w ;
 DynTrackSect    *d ;
 char     string[256] ;
@@ -1136,13 +1180,16 @@ char     *my_name = "sketch_track_routes" ;
  */
             dist = pow(x-lookat_eye_x,2) + pow(y-lookat_eye_y,2) ;
             if(plot_all_tracks == 0 && dist > 0.04)continue ;
-
+/*
+ *  Plot lines for each of the vectors.  Note: then last 'vector' of each
+ *  series is not plotted.
+ */
             ortho_col++ ;
             if(!k++){
               glBegin(GL_LINE_STRIP) ;
               glColor3f(1.0,1.0,1.0) ;
               ortho_col = 0 ;
-            }else if(1 == ortho_col)glColor3f(0.5,0.5,0.5) ;
+            }else if(1 == ortho_col)glColor3f(0.8,0.8,0.8) ;
             else if(2 == ortho_col)glColor3f(0.0,0.0,1.0) ;
             else if(3 == ortho_col)glColor3f(0.0,1.0,0.0) ;
             else if(4 == ortho_col)glColor3f(1.0,0.0,0.0) ;
@@ -1189,10 +1236,17 @@ char     *my_name = "sketch_track_routes" ;
  *    on exit  enables  GL_LIGHTING, GL_TEXTURE_2D and GL_BLEND
  *
  */
-          sprintf(string," TRACK SECT NODE - %i  %i  %i  %i ::F %i %i  ::W  %i  %i\n",
-                  trk_sec_node->index_of_node,trk_sec_node->type_of_node,
+          if(v->world_item){
+            sprintf(string," TRACK SECT NODE - %i  %i  %i  %i ::F %i %i  ::W  %i  %i\n",
+                  trk_sec_node->uid,trk_sec_node->type_of_node,
                   trk_sec_node->length_of_vector,j,v->flag1, v->flag2,
                   v->world_item->uid,v->world_item->iz_off) ;
+          }else{
+            sprintf(string," TRACK SECT NODE - %i  %i  %i  %i ::F %i %i\n",
+                  trk_sec_node->uid,trk_sec_node->type_of_node,
+                  trk_sec_node->length_of_vector,j,v->flag1, v->flag2) ;
+          }
+
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string) ;
 
           sprintf(string," - TILE %i %i ::XYZ %10.3f  %10.3f  %10.3f\n",
@@ -1201,22 +1255,24 @@ char     *my_name = "sketch_track_routes" ;
           z = z - 1.0*scale ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
 
-          if(w->worldtype==306){
-            for(k=0;k<5;k++){
-              d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
-              if(d->uid==-1)continue ;
-              sprintf(string," - %i %i  (%i %.2f %.1f)",v->flag1,v->flag2,d->is_curved, d->param_1,d->param_2);
-              z = z - 1.0*scale ;
-              glColor3f((GLfloat)v->flag1,0.0,(GLfloat)v->flag2) ;
-              print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
-              glColor3f(1.0,1.0,1.0) ;
+          if(w){
+            if(w->worldtype==306){
+              for(k=0;k<5;k++){
+                d = &w->u.dyn_track_obj.dyn_trk_sect[k] ;
+                if(d->uid==-1)continue ;
+                sprintf(string," - %i %i  (%i %.2f %.1f)",v->flag1,v->flag2,d->is_curved, d->param_1,d->param_2);
+                z = z - 1.0*scale ;
+                glColor3f((GLfloat)v->flag1,0.0,(GLfloat)v->flag2) ;
+                print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+                glColor3f(1.0,1.0,1.0) ;
+              }
+            }else{
+                glColor3f(1.0,1.0,1.0) ;
+                sprintf(string," - World Type = %i %s",w->worldtype,token_idc[w->worldtype]);
+                z = z - 1.0*scale ;
+                print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+                glColor3f(1.0,1.0,1.0) ;
             }
-          }else{
-              glColor3f(1.0,1.0,1.0) ;
-              sprintf(string," - World Type = %i %s",w->worldtype,token_idc[w->worldtype]);
-              z = z - 1.0*scale ;
-              print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
-              glColor3f(1.0,1.0,1.0) ;
           }
           glDisable(GL_LIGHTING)   ;  //Correct for print_string_in_window
           glDisable(GL_TEXTURE_2D) ;
@@ -1248,7 +1304,7 @@ int    i, j ;
 double   scale = 1.0/plot_scale ;
 double   x, y, z ;
 TrkVectorNode   *vec ;
-TrkSectNode *road_sec_node ;
+TrkSector *road_sec_node ;
 
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
@@ -1297,7 +1353,7 @@ TrkSectNode *road_sec_node ;
  */
 #if 0
   char *string[128] ;
-        sprintf(string," - ROAD %i\n",road_sec_node->index_of_node);
+        sprintf(string," - ROAD %i\n",road_sec_node->uid);
         glColor3f(0.6,0.6,1.0) ;
 //          print_string_in_window((GLfloat) x, (GLfloat) y, string);
         glBegin(GL_LINES) ;
@@ -1810,5 +1866,3 @@ int     k, l ;
       glDeleteTextures(4, texName) ;
       return 0 ;
 }
-
-

@@ -26,7 +26,7 @@ int init_levelxs_node(void){
 
   int  wtype ;
   int  i, n, m, n_rail, n_road, i_rail, i_road ;
-  int  ip = 1 ;
+  int  ip = 0 ;
   char *my_name = "init_levelxs_node" ;
 
 
@@ -51,6 +51,7 @@ int init_levelxs_node(void){
  */
         snode =  (LevelXSNode *)malloc(n*sizeof(LevelXSNode))   ;
         wnode->level_XS = snode ;
+        n_levelcrossings++ ;   //  Total number (zr.h)
 /*
  *  Loop over level crossings again
  *  - this time save the data in the LevelXSNode structure
@@ -85,33 +86,38 @@ int init_levelxs_node(void){
 /* Generate arrays for track and road item indices,
                                      section indices and section distances */
           snode->rail_track_item = (uint *)malloc(n_rail*sizeof(uint)) ;
-          snode->rail_index      = (uint *)malloc(n_rail*sizeof(uint)) ;
+          snode->rail_uid        = (uint *)malloc(n_rail*sizeof(uint)) ;
           snode->rail_i_vec      = (uint *)malloc(n_rail*sizeof(uint)) ;
           snode->rail_dist       = (double *)malloc(n_rail*sizeof(double)) ;
+          snode->rail_s_dist     = (double *)malloc(n_rail*sizeof(double)) ;
           snode->road_track_item = (uint *)malloc(n_road*sizeof(uint)) ;
           snode->road_index      = (uint *)malloc(n_road*sizeof(uint)) ;
           snode->road_i_vec      = (uint *)malloc(n_road*sizeof(uint)) ;
           snode->road_dist       = (double *)malloc(n_road*sizeof(double)) ;
+          snode->road_s_dist     = (double *)malloc(n_road*sizeof(double)) ;
           if(ip){
             printf("  Tile = %i %i\n",wnode->tile_x,wnode->tile_y) ;
             printf("  witem = %i %i %s :: %s\n",witem->uid, witem->worldtype,
             token_idc[witem->worldtype],witem->filename) ;
             printf(" snode->rail_track_item = %p\n",(void *)snode->rail_track_item) ;
-            printf(" snode->rail_index      = %p\n",(void *)snode->rail_index) ;
+            printf(" snode->rail_uid        = %p\n",(void *)snode->rail_uid)   ;
             printf(" snode->rail_i_vec      = %p\n",(void *)snode->rail_i_vec) ;
-            printf(" snode->rail_distt      = %p\n",(void *)snode->rail_dist) ;
+            printf(" snode->rail_dist       = %p\n",(void *)snode->rail_dist) ;
+            printf(" snode->rail_s_dist     = %p\n",(void *)snode->rail_s_dist) ;
             printf(" snode->road_track_item = %p\n",(void *)snode->road_track_item) ;
             printf(" snode->road_index      = %p\n",(void *)snode->road_index)  ;
             printf(" snode->road_i_vec      = %p\n",(void *)snode->road_i_vec) ;
             printf(" snode->road_dist       = %p\n",(void *)snode->road_dist) ;
+            printf(" snode->road_s_dist     = %p\n",(void *)snode->road_s_dist) ;
           }
 /* Add track item indices to lists */
           i_rail = i_road = 0 ;
           for(i=0;i<witem->n_tr_item;i++){
             if(0 == witem->tr_item_db[i]){
                snode->rail_track_item[i_rail] = witem->tr_item_db_id[i] ;
-               if(ip)printf(" i = %i, i_rail = %i, snode->rail_track_item[] = %i\n",
-                      i,i_rail,snode->rail_track_item[i_rail] ) ;
+               if(ip)printf(" i = %i, i_rail = %i, snode->rail_track_item[] = %i : index = %i\n",
+                      i,i_rail,snode->rail_track_item[i_rail],
+                      track_db.trk_items_array[snode->rail_track_item[i_rail]].uid ) ;
                i_rail++ ;
             }else if(1 == witem->tr_item_db[i]){
                snode->road_track_item[i_road] = witem->tr_item_db_id[i] ;
@@ -132,7 +138,7 @@ int init_levelxs_node(void){
 /*
  *  Routine find_track_item_posn
  *
- *  Given a road or rail track database and index of a track item it finds the
+ *  Given a road or rail track database and index of a track item, it finds the
  *  track vector passing closest to the track item and the position of the
  *  closest point along the section.
  *
@@ -140,8 +146,8 @@ int init_levelxs_node(void){
  *       a piece of curved track with constant curvature.
  */
 
-int find_track_item_posn(TrkDataBase *database, int id,
-          uint *section_index, uint *vector_index, double *distance){
+int find_track_item_posn(TrkDataBase *database, int item_uid,
+          uint *section_uid, uint *vector_index, double *distance){
 
   uint  i, j ;
   int   ip = 0 ;
@@ -149,8 +155,8 @@ int find_track_item_posn(TrkDataBase *database, int id,
   int   trk_item_vector_index ;
   uint  length_of_vector ;
 
-  TrkItemNode   *item ;
-  TrkSectNode   *sect ;
+  TrkItem   *item ;
+  TrkSector   *sect ;
   TrkVectorNode *vect ;
 
   double ti_x, ti_y, ti_z ;    //  Track item position
@@ -177,19 +183,19 @@ int find_track_item_posn(TrkDataBase *database, int id,
   char   *my_name = "find_track_item_posn" ;
 
       if(ip)printf("   Enter routine: %s\n",my_name) ;
-      if(ip)printf("   id = %i\n",id) ;
+      if(ip)printf("   item_uid = %i\n",item_uid) ;
 /*
  *  Search for track section and section vector
- *                           containing track item 'id'
+ *                           containing track item 'item_uid'
  */
-      *section_index = 0 ;
+      *section_uid = 0 ;
       *vector_index  = 0 ;
       for(i=0; i<database->trk_sections_array_size; i++){
         sect = &(database->trk_sections_array[i]) ;
         if(VECTOR_SECTION != sect->type_of_node)continue ;
         for(j=0;j<sect->trk_item_number;j++){
-          if(sect->trk_item_vec[j] == (uint)id){
-            *section_index = sect->index_of_node ;   // = i + 1 !!
+          if(sect->trk_item_list[j] == (uint)item_uid){
+            *section_uid = sect->uid ;
             trk_item_vector_index = j ;
             found = 1 ;
             break ;              // Exit inner loop
@@ -198,16 +204,17 @@ int find_track_item_posn(TrkDataBase *database, int id,
         if(found)break ;         // Exit outer loop
       }
       if(!found){
-        printf("   No track section found containing track item :: %i\n",id);
+        printf("   No track section found containing track item :: %i\n",item_uid);
         return 1 ;
       }
+//      ip = (trk_item_vector_index == 376) || (trk_item_vector_index == 376) ;
       if(ip)printf("   Track section found containing track item %i :: %i %i\n",
-                           id,*section_index,trk_item_vector_index);
+                           item_uid,*section_uid ,trk_item_vector_index);
 /*
  *  Find distance along vector *i_vec of track section *index
- *                        to the point closest to the track item 'id'
+ *                        to the point closest to the track item 'item_uid'
  */
-      item = &(database->trk_items_array[id]) ;
+      item = &(database->trk_items_array[item_uid]) ;
 /*
  *  Calculate location of track item - metres relative to tile origin
  */
@@ -220,12 +227,12 @@ int find_track_item_posn(TrkDataBase *database, int id,
         printf("   Track Item at:  %f %f %f\n",ti_x, ti_y, ti_z) ;
       }
 /*
- *  Loop over sections
+ *  Loop over section
  *  NOTE:  Track section with index "n" is specified in
  *         trk_sections_array[n-1];
  */
 
-      sect = &(database->trk_sections_array[*section_index-1]) ;
+      sect = &(database->trk_sections_array[*section_uid-1]) ;
       length_of_vector = sect->length_of_vector ;
       vect = sect->vector ;
       found = 0 ;
@@ -271,10 +278,13 @@ int find_track_item_posn(TrkDataBase *database, int id,
               e_y = ty*track_length + tv_y ;
               e_z = tz*track_length + tv_z ;
 
-              printf("    Straight track\n") ;
+              printf("=+==Straight track\n") ;
               printf("    Length, Rotate  :  %f %f\n", track_length, vect->ang) ;
               printf("    Normal          :  %f %f %f\n",nx, ny, nz) ;
               printf("    Tangent         :  %f %f %f\n",tx, ty, tz) ;
+              printf("    Track Item      :  %f %f %f\n",ti_x, ti_y, ti_z) ;
+              printf("    Track Vector    :  %f %f %f\n",tv_x, tv_y, tv_z) ;
+              printf("    (ti-tv)*t       :  %f %f %f\n",(ti_x-tv_x)*tx, (ti_y-tv_y)*ty, (ti_z-tv_z)*tz) ;
               printf("    Closest at      :  %f %f %f :: %f %f\n",
                                                 c_x, c_y, c_z, alpha, error);
               printf("    Vector end at   :  %f %f %f :: %f\n",
@@ -299,10 +309,10 @@ int find_track_item_posn(TrkDataBase *database, int id,
           o_y = tv_y + sa*ry*track_radius ;
           o_z = tv_z + sa*rz*track_radius ;
 
-          temp = nx*ti_x + ny*ti_y + nz*ti_z ;
-          vx = ti_x - temp*nx - o_x ;
-          vy = ti_y - temp*ny - o_y ;
-          vz = ti_z - temp*nz - o_z ;
+          vx = ti_x - o_x ;
+          vy = ti_y - o_y ;
+          vz = ti_z - o_z ;
+
           temp = 1.0/sqrt(vx*vx + vy*vy + vz*vz) ;
           vx = vx*temp ;             //  Unit vector from centre to track item
           vy = vy*temp ;
@@ -313,7 +323,7 @@ int find_track_item_posn(TrkDataBase *database, int id,
 
           alpha = atan2(dott,dotr)    ;  //  Angle (radian) between vx and rx
           if(alpha > 0.5*pi)alpha = pi - alpha ;
-          alpha = alpha*sa ;
+//          alpha = -alpha*sa ;
           alpha = track_radius*alpha  ;  //  Distance along track
           if((alpha>=0.0 && alpha<=track_length) || ip){
 
@@ -368,7 +378,7 @@ int find_track_item_posn(TrkDataBase *database, int id,
         printf("  Unable to find vector containing track item\n") ;
       }
       if(ip)printf("   Track Item %i found at section %i, vector %i\n",
-                           id,*section_index,*vector_index);
+                           item_uid,*section_uid,*vector_index);
 
       return 0 ;
 }
@@ -382,6 +392,7 @@ int setup_level_crossings(void){
 
   WorldNode   *wnode ;
   LevelXSNode *snode ;
+  TrkItem *titem ;
   int          i, j ;
   int          rail_track_item ;
 
@@ -394,6 +405,7 @@ int setup_level_crossings(void){
       if(ip)printf("   Routine: %s :: Loop over level crossings\n",my_name) ;
 
 /*  Loop over world tiles and level crossings */
+
       for(wnode=worldlist_beg ; wnode != NULL; wnode = wnode->next){
         if(wnode->n_level_XS>0)
         if(ip)printf("  New tile :: %i %i :: n_level_XS = %i\n",
@@ -408,10 +420,20 @@ int setup_level_crossings(void){
 /*  Loop over rail track items */
           for(j=0;j<(int)snode->n_rail;j++){
             rail_track_item = snode->rail_track_item[j] ;
+            titem = &(track_db.trk_items_array[rail_track_item]) ;
+            if(!titem){
+              printf("  Routine %s error.  Track item %i undefined\n",my_name,rail_track_item) ;
+              exit(0) ;
+            }
+            snode->rail_s_dist[j] = titem->sect_distance ;
 //      find_track_item_posn()
             find_track_item_posn(&track_db,rail_track_item,
-               &(snode->rail_index[j]),&(snode->rail_i_vec[j]),
+               &(snode->rail_uid[j]),&(snode->rail_i_vec[j]),
                                        &(snode->rail_dist[j] ) ) ;
+            if(ip && snode->rail_uid[j] == 396){
+              printf("  Routine %s, rail track item = %i, rail track uid = %i\n",
+              my_name,rail_track_item, snode->rail_uid[j] ) ;
+            }
           }
 /*  Loop over road track items */
 

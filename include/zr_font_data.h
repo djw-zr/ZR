@@ -1,4 +1,22 @@
 /*
+ *==============================================================================
+ *345678901234567890123456789012345678901234567890123456789012345678901234567890
+ *
+ *   File:  font_data.c
+ *
+ *   This file is part of ZR. Released under licence GPL-3.0-or-later.
+ *   You should have received a copy of the GNU General Public License
+ *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *   The file is provided for use in systems where the data is needed by ZR
+ *   and neither the original file or suitable alternatives are available.
+ *   The file is a copy of the openglut file 'og_font_data.c', the only
+ *   known change being the addition of this section of c-style comments.
+ *
+ *   The copyright position of the original file is described below.
+ */
+
+/*
     \file  og_font_data.c
     \brief Bitmapped font data for OpenGLUT fonts.
 */

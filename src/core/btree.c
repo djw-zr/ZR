@@ -21,7 +21,6 @@
  *   Each node of the tree contains its name and a (void) pointer to
  *   a data structure.  The user routines are:
  *
- *
  *   Btree insert_node(BTree *root_node, char *index, void *data)
  *           Returns : new root node
  *   Btree find_btree(BTree *root_node, char *string)
@@ -36,8 +35,9 @@
  *           top to bottom or bottom to top, applying
  *           function f(*node) to each node.
  *
- *  To test:
+ *  To compile and test:
  *    gcc -o btree btree.c
+ *    ./btree
  *==============================================================================
  */
 
@@ -92,7 +92,7 @@ BTree *b ;
 int   n  ;
 //      printf("  Enter insert_node.            INDEX = %s,             data = %s\n",index,data) ;
 //      printf("  Node = %p\n",(void *)node) ;
-      fflush(NULL) ;
+//      fflush(NULL) ;
 
       if(node == NULL){
         b = malloc(sizeof(BTree)) ;
@@ -326,3 +326,20 @@ BTree  *bp ;
       return 0 ;
 }
 #endif
+
+/*
+ *   End of year thoughts ...
+ *
+ *   Uncle George and Auntie Mabel,
+ *     Fainted at the breakfast table.
+ *   Let this be an awful warning
+ *     Not to do it in the morning.
+ *   But Ovaltine has put them right,
+ *     Now they do it morn and night.
+ *   Uncle George is hoping soon,
+ *     To do it in the afternoon.
+ *   Hark! The Herald Angels sing,
+ *     Ovaltine's a damn good thing.
+ *
+ *   (London Times, p28.  31/12/2022)
+ */

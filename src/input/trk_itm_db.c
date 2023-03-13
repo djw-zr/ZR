@@ -12,12 +12,20 @@
  *==============================================================================
  */
 
-int read_track_item(TrkItemNode *trk_item, MSfile *msfile)
+int init_track_item(TrkItem *trk_item) ;
+
+int read_track_item(TrkItem *trk_item, MSfile *msfile)
 {
 int  j, k   ;
 int  ip = 0 ;                                    // Debug printing
 char my_name[] = "read_track_item" ;
 char *token = NULL ;
+/*
+ * ***********************************************************************
+ *  Initialise Item Type
+ * ***********************************************************************
+ */
+      init_track_item(trk_item) ;
 
 /*
  * ***********************************************************************
@@ -69,19 +77,19 @@ char *token = NULL ;
         SWITCH(token)
           CASE("TrItemId")
             skip_lbr(msfile) ;
-            trk_item->index_of_node = itoken(msfile) ;
+            trk_item->uid = itoken(msfile) ;
             skip_rbr(msfile) ;
             if(ip)printf("  Routine %s,   index of node = %i\n",
-                                      my_name,trk_item->index_of_node) ;
+                                      my_name,trk_item->uid) ;
             break;
 
           CASE("TrItemRData")
             skip_lbr(msfile) ;
-            trk_item->east_x        = dtoken(msfile) ;
-            trk_item->height_y      = dtoken(msfile) ;
-            trk_item->north_z       = dtoken(msfile) ;
-            trk_item->tile_east_x   = itoken(msfile) ;
-            trk_item->tile_north_z  = itoken(msfile) ;
+            trk_item->east_x        = dtoken(msfile) ;  // location in world tile
+            trk_item->height_y      = dtoken(msfile) ;  // location in world tile
+            trk_item->north_z       = dtoken(msfile) ;  // location in world tile
+            trk_item->tile_east_x   = itoken(msfile) ;  // x value world tile (tracknode tile)
+            trk_item->tile_north_z  = itoken(msfile) ;  // z value world tile
             skip_rbr(msfile) ;
             break;
 
@@ -96,7 +104,7 @@ char *token = NULL ;
 
           CASE("TrItemSData")
             skip_lbr(msfile) ;
-            trk_item->s_data1         = itoken(msfile) ;
+            trk_item->s_data1         = dtoken(msfile) ;  // Extra data
             trk_item->s_data2         = ctoken(msfile) ;
             skip_rbr(msfile) ;
             break;
@@ -124,16 +132,16 @@ char *token = NULL ;
 
           CASE("TrSignalType")
             skip_lbr(msfile) ;
-            trk_item->signal_data1    = ctoken(msfile) ;
-            trk_item->signal_data2    = itoken(msfile) ;
-            trk_item->signal_data3    = dtoken(msfile) ;
-            trk_item->signal_name     = ctoken(msfile) ;
+            trk_item->signal_data1     = ctoken(msfile) ;   // Flags1  00000001 if junction link set
+            trk_item->signal_direction = itoken(msfile) ;   // Direction 0/1
+            trk_item->signal_data3     = dtoken(msfile) ;   // Float ??
+            trk_item->signal_type_name = ctoken(msfile) ;   // SignalType
             skip_rbr(msfile) ;
             break;
 
           CASE("TrSignalDirs")
             skip_lbr(msfile) ;
-            trk_item->signal_num_dirs = itoken(msfile) ;
+            trk_item->signal_num_dirs = itoken(msfile) ;   //NoSigDirs
             if(trk_item->signal_num_dirs>4){
               printf(" Signal : signal_num_dirs>4\n");
               printf("  Program stopping ... \n");
@@ -143,7 +151,10 @@ char *token = NULL ;
               new_tmp_token(msfile) ;                   // TrSignalDirs
               skip_lbr(msfile);                   // '('
               for(k=0;k<4;k++){
-                trk_item->signal_dirs[j][k] = itoken(msfile) ;
+                trk_item->signal_dirs[j][k] = itoken(msfile) ;  // uint 0 = TrackNode  Junction track node
+                                                                // uint 1 = Sd1        0/1 Used with junction
+                                                                // uint 2 = LinkLRPath 0/1 Used with junction
+                                                                // uint 3 = Sd3        0/1 Used with junction
               }
               skip_rbr(msfile);                   // ')'
             }
@@ -202,8 +213,8 @@ char *token = NULL ;
 
           CASE("CrossoverTrItemData")
             skip_lbr(msfile) ;
-            trk_item->crossover_data1  = itoken(msfile) ;
-            trk_item->crossover_data2  = itoken(msfile) ;
+            trk_item->crossover_data1  = itoken(msfile) ;  // TrackNode
+            trk_item->crossover_data2  = itoken(msfile) ;  // ShapeID
             skip_rbr(msfile) ;
             break;
 
@@ -258,4 +269,44 @@ char *token = NULL ;
       }
       if(ip)printf("  Exit routine %s\n\n",my_name) ;
       return 0;
+}
+
+
+int init_track_item(TrkItem *trk_item){
+
+      trk_item->uid    = UINT_MAX ;
+      trk_item->type_of_node     = 0    ;
+      trk_item->track_section    = 0    ;
+
+      trk_item->trk_item_index   = 0    ;
+      trk_item->sect_distance    = 0.0 ;
+      trk_item->tile_east_x      = 0    ;
+      trk_item->tile_north_z     = 0    ;
+      trk_item->p_tile_east_x    = 0    ;
+      trk_item->p_tile_north_z   = 0    ;
+      trk_item->east_x           = 0.0  ;
+      trk_item->height_y         = 0.0  ;
+      trk_item->north_z          = 0.0  ;
+      trk_item->p_east_x         = 0.0  ;
+      trk_item->p_north_z        = 0.0  ;
+
+      trk_item->s_data1          = 0.0  ;
+      trk_item->s_data2          = NULL ;
+
+      trk_item->sr_data1          = 0    ;
+      trk_item->sr_data2          = 0    ;
+      trk_item->sr_data3          = 0.0  ;
+
+      trk_item->siding_data1      = NULL ;
+      trk_item->siding_data1      = 0    ;
+      trk_item->siding_name       = NULL ;
+
+      trk_item->signal_data1      = 0    ;
+      trk_item->signal_direction  = 0    ;
+      trk_item->signal_data3      = 0.0  ;
+      trk_item->signal_type_name  = NULL ;
+      trk_item->signal            = NULL ;
+      trk_item->signal_num_dirs   = 0    ;
+
+      return 0 ;
 }

@@ -11,6 +11,9 @@
  *   Subroutines to split a file into tokens and to convert them to
  *   int, double and char types.
  *
+ *   See:  STFReader.cs
+ *         SBR.cs
+ *
  * *****************************************************************************
  */
 
@@ -127,10 +130,13 @@ int i ;
 
 char *new_token(MSfile *msfile){
 
-int   l, c, lastc;
-int   unicode, compress, text, binary ;
-FILE  *fp ;
-char  my_name[] = "new_token" ;
+  int   ip = 0 ;
+  int   l, c, lastc;
+  int   unicode, compress, text, binary ;
+  FILE  *fp ;
+  char  my_name[] = "new_token" ;
+
+      ip = l_ip ;                  //  Debug printing only when l_ip is set
 
       fp       = msfile->fp        ;
       unicode  = msfile->unicode   ;
@@ -153,6 +159,7 @@ char  my_name[] = "new_token" ;
         free(msfile->token_unused) ;
         msfile->token_unused = NULL ;
         rbr_buffered = 0;
+        if(ip)printf("    new_token return OLD TOKEN   :  %s\n",token) ;
         return token ;
       }
 
@@ -160,6 +167,7 @@ char  my_name[] = "new_token" ;
         rbr_buffered = 0;
         token[0] = ')'  ;
         token[1] = '\0' ;
+        if(ip)printf("    new_token return RBR_BUFFERED:  %s\n",token) ;
         return token ;
       }
 /*
@@ -177,6 +185,7 @@ char  my_name[] = "new_token" ;
         if(c != '_')break  ;            //  Normal token
         l = skip_underscore_token(msfile) ; //  Special treatment routine
         if(1 == l ){
+          if(ip)printf("    new_token return EOF_MARK    :  %s\n",eof_mark) ;
           return strcpy(token,eof_mark) ;
         }
       }
@@ -187,6 +196,7 @@ char  my_name[] = "new_token" ;
  */
       if(c == '(' || c == ')'){
         token[1] = '\0' ;
+        if(ip)printf("    new_token return BRACKET      :  %s\n",token) ;
         return token ;
       }
 /*
@@ -201,6 +211,7 @@ char  my_name[] = "new_token" ;
         ungetc(c,fp) ;                         // Put back last character
 //
 //  Tokens that are a stream of text.
+//  For continuation lines should end "+ but, of course, sometimes this is typed as +".
 //
       }else{
         lastc = ' ';
@@ -238,6 +249,7 @@ char  my_name[] = "new_token" ;
         exit(1) ;
       }
       token[l] = '\0';
+      if(ip)printf("    new_token return NORMAL_TOKEN:  %s\n",token) ;
 
       return token ;
 }
@@ -312,7 +324,38 @@ long long lltoken_16(MSfile *msfile){
 double dtoken(MSfile *msfile){
        return atof(new_token(msfile)) ;
 }
-
+#if 0
+/*
+ * *****************************************************************************
+ *  Return multi-line text with errors
+ *
+ *  Normal text should be enclodes with quotes '"' and if there are
+ *  continuaiton lines the final quite on a line should be followed by a '+'.
+ *  Unfortunately this is sometimes written as +" instead of "+.  To allow
+ *  for this txt_token checks the token following text.  If it starts with a
+ *  '"' the code assumes that it is a continuation line an adds it to the
+ *  original text.  If not it returns the last token and exits
+ * *****************************************************************************
+ */
+char *txt_token(MSfile *msfile){
+  char *token1 ;
+  char *token2 ;
+  char *token3 ;
+       token1 = strdup(new_token(msfile)) ;
+       for(;;){
+         token2 = new_token(msfile) ;
+         if(token2[0] != '"'){
+           return_token(token2,msfile) ;
+           return token1 ;
+         }
+         token3 = (char *)malloc(strlen(token1)+strlen(token2)+1) ;
+         strcpy(token3,token1) ;
+         strcat(token3,token2) ;
+         free(token1) ;
+         token1 = token3 ;
+       }
+}
+#endif
 /*
  * *****************************************************************************
  * Search for left bracket and skip
@@ -448,7 +491,8 @@ char  my_name[] = "skip_underscore_token" ;
       }
 //  Return if opening bracket is not present
       if(c!='('){
-        printf("  Routine %s : Token has no opening bracket\n",my_name) ;
+//        printf("  Routine %s : Token has no opening bracket.  Character = %c\n",
+//               my_name,c) ;
         ungetc(c,fp) ;
         return 0 ;
       }

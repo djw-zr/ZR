@@ -20,24 +20,25 @@
 
 
 /*
- *  Routine to generate a new shape for each section of dynamic track -
- *  and to link it to the world item.
+ *  Routine to generate a new track sector node for each section of
+ *  dynamic track and to link it to the world item.  The routine
+ *  is called by "read_track_path()" (trk_sec_db.c).
  */
 int create_dynamic_track_node(WorldItem *witem){
 
 int          i      ;
-TrkSectNode  *pnode ;
+TrkSector  *pnode ;
 
 /*
  *  Generate initialise track section node
  */
-      pnode = (TrkSectNode *)malloc(sizeof(TrkSectNode));
+      pnode = (TrkSector *)malloc(sizeof(TrkSector));
       witem->u.dyn_track_obj.tsnode = pnode ;
       for(i=0;i<3;i++){
        witem->u.dyn_track_obj.gl_display_list[i] =   0 ;
        witem->u.dyn_track_obj.dist_level[i]      = 0.0 ;
       }
-      init_track_path(pnode) ;
+      init_track_path(pnode) ;              //  trk_sec_db.c  : set zero etc.
 
       pnode->type_of_node     = VECTOR_SECTION ;
       pnode->length_of_vector = 6              ;

@@ -155,6 +155,7 @@ GLdouble viewport_far           ;
  */
 int display_help_on     = 0 ;  // Help display
 int display_switches_on = 0 ;  // Switch/point display
+int display_train_operations_on = 0 ;  // Train operations screen
 
 
 #if defined _Display_Wagons || defined _Display_Shapes
@@ -165,7 +166,7 @@ GLdouble offset_center_x =   0.01  ;     //  Initial losition looked at
 GLdouble offset_center_y =   0.06  ;
 GLdouble offset_center_z =   0.00  ;
 #elif defined _Display_Textures
-#if 0
+#if 1
 GLdouble offset_eye_x    =   1.0 ;
 GLdouble offset_eye_y    =   0.6 ;
 GLdouble offset_eye_z    =   3.0 ;
@@ -189,12 +190,28 @@ GLdouble offset_center_x =   11.929563 ;     //  Initial losition looked at
 GLdouble offset_center_y =   23.438227 ;
 GLdouble offset_center_z =    0.112526 ;
 #elif defined ROUTE_USA2
+# if 0
 GLdouble offset_eye_x    =   96.969761 ;      //  Initial position of eye
 GLdouble offset_eye_y    =   17.013034 ;
 GLdouble offset_eye_z    =    0.104136 ;
 GLdouble offset_center_x =   96.962818 ;     //  Initial losition looked at
 GLdouble offset_center_y =   17.022474 ;
 GLdouble offset_center_z =    0.104134 ;
+# elif 0
+GLdouble offset_eye_x    =    3.428108 ;      //  Initial position of eye
+GLdouble offset_eye_y    =   12.033694 ;
+GLdouble offset_eye_z    =    0.056888 ;
+GLdouble offset_center_x =    3.416407 ;     //  Initial losition looked at
+GLdouble offset_center_y =   12.034306 ;
+GLdouble offset_center_z =    0.056708 ;
+# else                                       //  Missing track
+GLdouble offset_eye_x    =    2.772063 ;     //  Initial position of eye
+GLdouble offset_eye_y    =   11.971261 ;
+GLdouble offset_eye_z    =    0.072513 ;
+GLdouble offset_center_x =    2.456401 ;     //  Initial losition looked at
+GLdouble offset_center_y =   12.496611 ;
+GLdouble offset_center_z =   -0.126627 ;
+# endif
 #elif defined ROUTE_EUROPE1
 GLdouble offset_eye_x    =    1.170625 ;      //  Initial position of eye
 GLdouble offset_eye_y    =   41.379704 ;
@@ -297,8 +314,16 @@ GLdouble offset_eye_z    =   0.002629 ;
 GLdouble offset_center_x =   3.004872 ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.595374 ;
 GLdouble offset_center_z =   0.002629 ;
+#elif 0
+//  Third position near Bowenfels Level Crossing
+GLdouble offset_eye_x    =   3.023550 ;     //  Initial position of eye
+GLdouble offset_eye_y    =  12.680695 ;
+GLdouble offset_eye_z    =   0.007024 ;
+GLdouble offset_center_x =   3.094493 ;     //  Initial losition looked at
+GLdouble offset_center_y =  12.632843 ;
+GLdouble offset_center_z =   0.007024 ;
 #elif 1
-//  Position near start of Bowenfels Sideing
+//  Position near start of Bowenfels Siding
 GLdouble offset_eye_x    =   3.077779 ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.655553 ;
 GLdouble offset_eye_z    =   0.005559 ;
@@ -345,7 +370,7 @@ GLdouble offset_eye_z    =   0.0191 ;
 GLdouble offset_center_x =   4.9669 ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.3976 ;
 GLdouble offset_center_z =   0.0191 ;
-#elif 1
+#elif 0
 //  Position at Lithgow turntable
 GLdouble offset_eye_x    =   4.740  ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.500  ;
@@ -353,7 +378,7 @@ GLdouble offset_eye_z    =   0.021  ;
 GLdouble offset_center_x =   4.740  ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.550  ;
 GLdouble offset_center_z =   0.021  ;
-#elif 1
+#elif 0
 //  Position at zig-zag
 GLdouble offset_eye_x    =   5.771  ;     //  Initial position of eye
 GLdouble offset_eye_y    =  12.904  ;
@@ -362,13 +387,21 @@ GLdouble offset_center_x =   5.780  ;     //  Initial losition looked at
 GLdouble offset_center_y =  12.901  ;
 GLdouble offset_center_z =   0.068  ;
 //  Position at Mount Victoria
-#else
+#elif 0
 GLdouble offset_eye_x    =   8.076494  ;
 GLdouble offset_eye_y    =   6.484393  ;
 GLdouble offset_eye_z    =   0.073429  ;
 GLdouble offset_center_x =   8.069136  ;
 GLdouble offset_center_y =   6.569811  ;
 GLdouble offset_center_z =   0.073429  ;
+//  Turntable at Mt Victoria
+#else
+GLdouble offset_eye_x    =   8.099402  ;
+GLdouble offset_eye_y    =   6.549618  ;
+GLdouble offset_eye_z    =   0.077335  ;
+GLdouble offset_center_x =   8.137168  ;
+GLdouble offset_center_y =   6.623739  ;
+GLdouble offset_center_z =   0.056594  ;
 #endif
 
 /*
@@ -488,7 +521,11 @@ float view_rotate[16] = { 1,0,0,0,   0, 0.866025404,-0.5,0,
                           0,0.5, 0.866025404,0,   0,0,0,1 };
 
 
-void  keyboard(unsigned char key, int x, int y);
+void  keyboard(unsigned char key, int x, int y)    ;
+void  keyboard_up(unsigned char key, int x, int y) ;
+void  mouse(int button, int state, int x, int y)   ;
+void  motion(int x, int y) ;
+
 void  display(void) ;
 void  reinit_vars(void) ;
 void  specialkey(int key, int ixm, int iym) ;
@@ -497,8 +534,12 @@ int   print_string_in_window2(GLfloat rx, GLfloat ry, GLfloat rz, char *string);
 int   print_string_in_window3(GLfloat wx, GLfloat wy, char *string, int font_size);
 int   print_string_in_window_z(char *string, int font_size);
 int   glutPrintString(char *string, void *font) ;
+
 #if defined GLUT || defined USE_ZRGLUT
-void   glutBitmapCharacter( void* fontID, int character ) ;
+void  glutBitmapCharacter( void *fontID, int character) ;
+void  glutBitmapString(void *fontID, const unsigned char *string) ;
+int   glutBitmapLength(void *fontID, const unsigned char *string) ;
+int   glutBitmapHeight(void *fontID) ;
 #endif
 
 void  myLookAt(void)           ;
@@ -525,6 +566,11 @@ int   display_extra_data(void) ;
 int   display_track_info(TravellerNode *t) ;
 int   display_help()           ;
 int   display_switches(TrainNode *t)   ;
+
+int   display_train_operations(TrainNode *train);
+int   init_train_operations_window(int first_time);
+void  move_train_operations_window(int x, int y) ;
+void  change_train_operations_view(int x, int y) ;
 
 int   make_tile_topog_display_lists(void) ;
 int   make_tile_topog_display_list(TileListNode *tnode, GLuint klist) ;

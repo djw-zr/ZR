@@ -30,7 +30,7 @@
  *   alt keys.
  *   However the list of SDLK values indicate that
  *   (a) depressing modifier keys also generates a keypress event
- *   (b) the upper case characters corresponding to non-alphabet chahracters are
+ *   (b) the upper case characters corresponding to non-alphabet characters are
  *       represented correctly - but this is not the case.
  *   (c) it looks as if holding doen a key generates repeats - maybe a small delay
  *       and then 10 per second - however there is a way (I think) to prevent this.
@@ -81,11 +81,14 @@
  */
 
 int  SDL2_KBD_change_view(SDL_Event *event) ;
+int  SDL2_keyboard_up(SDL_Event *event) ;
+static double key_release_seconds = 0.0 ;
+
 
 
 int keyboard_sdl(SDL_Event *event){
 
-int  ip = 0                       ;  // 0 = no printing
+int  ip = 1                      ;  // 0 = no printing
 int  isign = 1                    ;
 int  imod, l_shift, l_ctrl, l_alt ;
 int  i, n  ;
@@ -93,7 +96,7 @@ int  new_camera = 0 ;
 double scalei = 1.0/plot_scale     ;
 double del_d, del_a, cn, sn        ;
 TravellerNode *tr_node  ;
-TrkSectNode   *tn1, *tn ;
+TrkSector   *tn1, *tn ;
 GLfloat       v4[4]     ;
 
 SDL_Keycode sym ;  //  Part of SDL_Keysym
@@ -105,6 +108,15 @@ char        my_name[] = "keyboard_sdl" ;
  *==============================================================================
  */
       if(ip)printf(" Enter routine %s\n",my_name) ;
+      if(ip){
+        printf("   Routine %s.  type = %i %i\n",my_name,event->type, SDL_KEYUP) ;
+        printf("                sym  = %i\n", event->key.keysym.sym) ;
+        printf("                mod  = %i\n", event->key.keysym.mod) ;
+
+      }
+      if(SDL_KEYUP == event->type){
+        return SDL2_keyboard_up(event) ;
+      }
       if(SDL_KEYDOWN != event->type)  return 0 ;
       sym = event->key.keysym.sym ;
       mod = event->key.keysym.mod ;
@@ -172,7 +184,7 @@ char        my_name[] = "keyboard_sdl" ;
             glLightfv(GL_LIGHT0,GL_POSITION,v4) ;
             break ;
 /*
- *  Display world items
+ *  Display world items (alt_left + ..)
  */
           case 'o':
             display_info_radius = display_info_radius/1.3 ;
@@ -206,19 +218,35 @@ char        my_name[] = "keyboard_sdl" ;
             }
             break ;
 /*
+ *  Turntable
+ */
+          case 'c':
+            if(key_release_seconds == 0.0){
+              key_release_seconds=run_seconds;
+            }else if(run_seconds-key_release_seconds < 0.2){
+              break ;
+            }
+            if(!turntable_rotating)
+                turntable_rotating = l_shift ? rotate_tt_clockwise()
+                                             : rotate_tt_anticlockwise() ;
+            break ;
+/*
  *   Track Info
  */
           case 't':
-            display_track_info_on = !display_track_info_on ;
+            if(++display_track_info_on >3) display_track_info_on = 0;
             break ;
 #endif
           case SDLK_F7:
             if(ip)printf("  Skip to next train\n") ;
-            if(NULL == player_train->next){
-              player_train = trainlist_beg ;
-            }else{
-              player_train = player_train->next ;
-            }
+            do{
+              if(NULL == player_train->next){
+                player_train = trainlist_beg ;
+              }else{
+                player_train = player_train->next ;
+              }
+            }while(!player_train->motor) ; //  Skip 'trains' without engines
+
             current_camera = 1    ;
             camera_changed = 1    ;
             camera_new_position() ;
@@ -265,21 +293,39 @@ char        my_name[] = "keyboard_sdl" ;
             display_help_on     = !display_help_on ;
             if(ip)printf("  Case F1\n") ;
             break ;
+          case SDLK_F6:
+            if(l_shift){
+              if(++show_platforms_or_sidings == 3)
+                show_platforms_or_sidings = 0 ;
+            }else{
+              show_platforms_and_sidings = !show_platforms_and_sidings ;
+              show_platforms_or_sidings = 0 ;
+            }
+            break ;
           case SDLK_F8:
             if(ip)printf("  Case F8\n") ;
             display_switches_on = !display_switches_on ;
             break ;
-//  Increase speed backwards
+          case SDLK_F9:
+            display_train_operations_on = !display_train_operations_on ;
+            break ;
+//  Break or Increase speed backwards
           case SDLK_a:
             if(ip)printf("  Case a\n") ;
-            player_train->speed -= 2.0 ;
+            if(player_train->motor){
+              if(player_train->speed< 0.2){ player_train->speed -= 0.1 ; }
+              else                        { player_train->speed -= 0.2 ; }
+              if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
+            }
             break ;
-//  Increase speed
+//  Break or Increase speed
           case SDLK_d:
             if(ip)printf("  Case d\n") ;
-            player_train->speed += 2.0 ;
+              if(player_train->speed>-0.2){ player_train->speed += 0.1 ; }
+              else                        { player_train->speed += 0.2 ; }
+              if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
             break ;
-//  Stop
+//  Emergency Stop
           case SDLK_s:
             if(ip)printf("  Case s\n") ;
             player_train->speed = 0.0 ;
@@ -299,108 +345,25 @@ char        my_name[] = "keyboard_sdl" ;
           case SDLK_g:
             if(l_shift){
               if(ip)printf("  Key G  Switch front\n") ;
-#if 1
-              if(player_train){
-TravellerNode *tbf = NULL,
-              tb          ;
-TrkSectNode   *tn2 = NULL,
-              *tbn = NULL ;
-double        df          ;
-
-                tbf = player_train->last->traveller ;
-                if(tbf){
-                  tb = *tbf ;
-                  df = tb.wagon->raw_wagon->length ;
-                  if(df>0.0) trv_move(&tb, -0.5*df) ;
-                  tbn = tb.tn ;
-                  n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
-                  tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                  if(tn2->branch != 0){
-                    witem = tn2->vector->world_item ;
-                    if(tn2->branch == 1){
-                      tn2->branch =2 ;
-                      witem->anim_value = 0.5 ;
-                    }else{
-                      tn2->branch =1 ;
-                      witem->anim_value = 0.0 ;
-                    }
-                  }
-                }
-              }
-#else
-              tr_node = player_train->last->traveller ;
-              tn = tr_node->tn ;
-              n = tn->pin_to_section[tr_node->idirect ? 0 : 1] ;
-              tn1 = &track_db.trk_sections_array[n-1]   ;  // Section behind
-                if(tn2->branch != 0){
-                  witem = tn2->vector->world_item ;
-                  if(tn2->branch == 1){
-                    tn2->branch =2 ;
-                    witem->anim_value = 0.5 ;
-                  }else{
-                    tn2->branch =1 ;
-                    witem->anim_value = 0.0 ;
-                  }
-                }
-#endif
+              change_forward_switch_for_player_train() ;
+              clear_track_beyond_next_switch() ;
             }else{
-#if 1
-              if(player_train){
-TravellerNode *tff = NULL,
-              tf          ;
-TrkSectNode   *tn1 = NULL,
-              *tfn = NULL ;
-double        df          ;
-
-                tff = player_train->first->traveller ;
-                if(tff){
-                  tf = *tff ;
-                  df = tf.wagon->raw_wagon->length ;
-                  if(df>0.0) trv_move(&tf, 0.5*df) ;
-                  tfn = tf.tn ;
-                  n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
-                  tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-                  if(tn1->branch != 0){
-                    witem = tn1->vector->world_item ;
-                    if(tn1->branch == 1){
-                      tn1->branch =2 ;
-                      witem->anim_value = 0.5 ;
-                    }else{
-                      tn1->branch =1 ;
-                      witem->anim_value = 0.0 ;
-                    }
-                  }
-                }
-              }
-#else
-              if(ip)printf("  Key g  Switch front\n") ;
-              tr_node = player_train->first->traveller ;
-              tn = tr_node->tn ;
-              n = tn->pin_to_section[tr_node->idirect ? 1 : 0] ;
-              tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
-              if(tn1->branch != 0){
-                witem = tn1->vector->world_item ;
-                if(tn1->branch == 1){
-                  tn1->branch =2 ;
-                  witem->anim_value = 0.5 ;
-                }else{
-                  tn1->branch =1 ;
-                  witem->anim_value = 0.0 ;
-                }
-              }
-#endif
+              change_rearward_switch_for_player_train() ;
+              clear_track_beyond_previous_switch() ;
             }
             break ;
 /*
  *  Control Wipers, Panographs amd Mirrors
  */
           case SDLK_p:
+//  Toggle mirrors out or in
             if(l_shift){
               if(player_train && player_train->motor
                               && player_train->motor->has_pantographs){
                 player_train->motor->pantographs_up =
                         !player_train->motor->pantographs_up ;
               }
+//  Toggle pantographs up or down
             }else{
               if(player_train && player_train->motor
                               && player_train->motor->has_mirrors){
@@ -409,6 +372,7 @@ double        df          ;
               }
             }
             break ;
+//  Toggle wipers on or off
           case SDLK_v:
             if(l_shift){       //  V :: Wipers
               if(player_train && player_train->motor
@@ -419,6 +383,19 @@ double        df          ;
                   player_train->motor->wipers_on  = 1 ;
                 }
               }
+            }
+            break ;
+//  Trigger Water Column for Steam Trains
+//  Note SDLK_t == 't'. 'T' = 't' + l_shift.
+          case SDLK_t:
+            if(l_shift){
+              if(key_release_seconds == 0.0){
+                key_release_seconds=run_seconds;
+              }else if(run_seconds-key_release_seconds < 0.2){
+                break ;
+              }
+              if(!current_transfer)start_transfer() ;
+              break ;
             }
             break ;
 //  Switch frame rate on/off
@@ -487,6 +464,58 @@ double        df          ;
       return 0 ;
 }
 
+int  SDL2_keyboard_up(SDL_Event *event){
+
+int         ip = 2 ;
+SDL_Keycode sym ;  //  Part of SDL_Keysym
+Uint16      mod ;  //  Ditto
+char        my_name[] = "SGL2_keyboard_up" ;
+int  imod, l_shift, l_ctrl, l_alt ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+
+      sym = event->key.keysym.sym ;
+//      mod = event->key.keysym.mod ;
+//      l_shift = mod & KMOD_SHIFT ;
+//      l_ctrl  = mod & KMOD_CTRL  ;
+//      l_alt   = mod & KMOD_ALT   ;
+      if(ip>1){
+        printf("    Routine %s.  Key : 0x%x  :  %c\n",
+               my_name,sym,sym);
+        printf("    turntable_rotating = %i\n",turntable_rotating) ;
+        printf("    current_transfer   = %i\n",(current_transfer ? 1 : 0) ) ;
+      }
+/*
+ *  Detect 'c' key release when turntable is rotating.
+ *  Detecting release of <Alt>+C does not work if <Alt> released first.
+ */
+      if(turntable_rotating){
+        switch (sym) {
+          case 'c':
+          case 'C':
+            end_tt_rotation() ;
+            turntable_rotating = 0 ;
+            key_release_seconds = run_seconds ;
+            break ;
+          default :
+            break ;
+        }
+/*
+ *   Similar logic for transfers:  water tower, coal stage etc.
+ */
+      }else if(current_transfer && current_transfer->on){
+        switch (sym) {
+          case SDLK_t:
+            printf("  Stop transfer\n") ;
+            stop_transfer() ;
+            key_release_seconds = run_seconds ;
+           break ;
+          default:
+            break ;
+        }
+      }
+      return 0 ;
+}
 
 
 

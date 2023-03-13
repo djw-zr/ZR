@@ -596,6 +596,7 @@ int   w = width, nb, h, nwords ;
           h  = (mipmaps ? w : height) ;
 //          nwords = (w*h <4) ? 4 : w*h ;         // 1x1 mipmaps need 2x2 memory
           nwords = (w*h <8) ? 8 : w*h ;         // Ensure on 8 byte boundary
+//  Possible problem calloc
           tnode->texture[i] = (GLubyte *)calloc(nb*nwords,sizeof(GLubyte));
           if(ip)printf("  Memory for image %i, nb = %i, w = %i, h = %i,"
                   " nwords = %i, size = %i, texture[i] = %p\n",

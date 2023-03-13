@@ -48,7 +48,8 @@ float d_rotate  = 90.0      ;  // Deug : default rotation angle (0, 90)
 float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 
 //char test_shape[] = "A1tPnt6dLft" ;
-char test_shape[] = "BBS-SL" ;
+//char test_shape[] = "Ashphaltplat20m250r" ;
+//char test_shape[] = "BBS-SL" ;
 //char test_shape[] = "JP1SigGant4" ;
 //char test_shape[] = "policePHIL" ;
 //char test_shape[] = "JP2grntent" ;
@@ -65,6 +66,8 @@ char test_shape[] = "BBS-SL" ;
 //char test_shape[] = "AU_GumClump2" ;  //  Used to track processing of shape
 //char test_shape[] = "NSW_SemLQJct-M-L" ;  //  Used to track error in prim_state
 //char test_shape[] = "a1t100mStrt" ;  //  Used to track error in track orientation
+//char test_shape[] = "OESignal01" ;
+char test_shape[] = "BBS-NSWGR-60ft-TT-open2_animate" ;
 //char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;
@@ -137,10 +140,10 @@ int  iret ;
  *   Open window
  */
       WindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE ;
-#ifdef _MultiSample
+# ifdef _MultiSample
       SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
       SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
-#endif
+# endif
       Window = SDL_CreateWindow("OpenGL Test", 100, 100, main_window_width, main_window_height, WindowFlags);
       assert(Window);
 
@@ -155,22 +158,22 @@ const char title[] = "ZR" ;
 /*
  *  Initialise TTF_Font and size
  */
-#ifdef USE_SDLTTF
+# ifdef USE_SDLTTF
       TTF_Init() ;
-#if 1
+#  if 1
       printf("  Use verdana font\n") ;
       ttf_font_f12 = TTF_OpenFont("/home/djw/.zr/fonts/verdana.ttf",12) ;
       ttf_font_f14 = TTF_OpenFont("/home/djw/.zr/fonts/verdana.ttf",14) ;
       ttf_font_f16 = TTF_OpenFont("/home/djw/.zr/fonts/verdana.ttf",16) ;
       ttf_font_f18 = TTF_OpenFont("/home/djw/.zr/fonts/verdana.ttf",18) ;
-#else
+#  else
       printf("  Use tahoma font\n") ;
       ttf_font_f12 = TTF_OpenFont("/home/djw/.zr/fonts/tahoma.ttf",12) ;
       ttf_font_f14 = TTF_OpenFont("/home/djw/.zr/fonts/tahoma.ttf",14) ;
       ttf_font_f16 = TTF_OpenFont("/home/djw/.zr/fonts/tahoma.ttf",16) ;
       ttf_font_f18 = TTF_OpenFont("/home/djw/.zr/fonts/tahoma.ttf",18) ;
-#endif
-#endif
+#  endif
+# endif
       printf("  GL_VENDOR     = %s\n",glGetString(GL_VENDOR));
       printf("  GL_RENDERER   = %s\n",glGetString(GL_RENDERER));
       printf("  GL_VERSION    = %s\n",glGetString(GL_VERSION));
@@ -249,12 +252,15 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
         SDL_Event Event;
         while (SDL_PollEvent(&Event)){
           if(ip)printf(" SDL_PollEvent :: Event.type = %i :: %i %i %i\n",Event.type,SDL_QUIT,SDL_KEYDOWN, SDL_WINDOWEVENT) ;
-          if (Event.type == SDL_KEYDOWN){
-            if(ip)PrintKeyInfo( &Event.key );
-            if(ip)printf(" Call keyboard_sdl\n") ;
-            keyboard_sdl(&Event) ;
-            if(ip)printf(" Return from keyboard_sdl\n") ;
-            break ;
+          switch(Event.type){
+            case SDL_KEYDOWN:
+            case SDL_KEYUP:
+//          if (Event.type == SDL_KEYDOWN || ){
+              if(ip)PrintKeyInfo( &Event.key );
+              if(ip)printf(" Call keyboard_sdl\n") ;
+              keyboard_sdl(&Event) ;
+              if(ip)printf(" Return from keyboard_sdl\n") ;
+              break ;
 /*
  *  Window flags are defined in SDL2 "sdl_video.h".
  *  Window events are defined in SDL2 "sdl_video.h".
@@ -280,17 +286,18 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
     SDL_WINDOWEVENT_TAKE_FOCUS,     Window is being offered a focus (should SetWindowInputFocus() on itself or a subwindow, or ignore)
     SDL_WINDOWEVENT_HIT_TEST        Window had a hit test that wasn't SDL_HITTEST_NORMAL.
  */
-          }else if(Event.type == SDL_WINDOWEVENT){
-             if(ip)printf(" SDL_PollEvent :: Event.window.event = %i\n",Event.window.event) ;
-            switch (Event.window.event){
-              case SDL_WINDOWEVENT_CLOSE:
-                 quit_program(3) ;
-                 break ;
-              case SDL_WINDOWEVENT_RESIZED:
-              case SDL_WINDOWEVENT_SIZE_CHANGED:
-                 reshape2(0,0) ;
-                 break ;
-            }
+//          }else if(Event.type == SDL_WINDOWEVENT){
+            case SDL_WINDOWEVENT:
+              if(ip)printf(" SDL_PollEvent :: Event.window.event = %i\n",Event.window.event) ;
+              switch (Event.window.event){
+                case SDL_WINDOWEVENT_CLOSE:
+                  quit_program(3) ;
+                  break ;
+                case SDL_WINDOWEVENT_RESIZED:
+                case SDL_WINDOWEVENT_SIZE_CHANGED:
+                  reshape2(0,0) ;
+                  break ;
+              }
           }
         }     //  PollEvent
 
@@ -316,9 +323,11 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
       glutDisplayFunc(display)    ;
       glutIdleFunc(glut_idle)     ;
       glutKeyboardFunc(keyboard)  ;
+      glutKeyboardUpFunc(keyboard_up) ;
       glutReshapeFunc(reshape)    ;
       glutSpecialFunc(specialkey) ;
-      glutMouseFunc(NULL)         ;
+      glutMouseFunc(mouse)        ;
+      glutMotionFunc(motion)      ;
 
       printf("  GL_VENDOR      = %s\n",glGetString(GL_VENDOR));
       printf("  GL_RENDERER    = %s\n",glGetString(GL_RENDERER));
@@ -436,6 +445,7 @@ int  ip = 0 ;
 #include "glfont.c"
 
 #include "data.c"
+#include "enum.c"
 #include "transform.c"
 #include "tsection_db.c"
 #include "road_itm_db.c"
@@ -455,8 +465,13 @@ int  ip = 0 ;
 #include "display.c"
 #include "display_shapes.c"
 #include "display_wshape.c"
+#include "display_water.c"
 #include "shape.c"
 #include "shape_d.c"
+#include "signal_file.c"
+#include "setup_signals.c"
+#include "signal.c"
+#include "switch.c"
 #include "topog_dlist.c"
 #include "topog_cva.c"
 #include "topog_dva.c"
@@ -471,23 +486,34 @@ int  ip = 0 ;
 #include "terrain.c"
 #include "tiles.c"
 #include "update_level_crossings.c"
+#include "update_signals.c"
 #include "world.c"
 #include "load_wagon_file.c"
 #include "load_wagon_files.c"
+#include "load_turntable.c"
+#include "setup_turntables.c"
+#include "update_turntables.c"
+#include "setup_transfers.c"
+#include "update_transfers.c"
+#include "signal_scripts.c"
 #include "test_sphere.c"
 #include "token.c"
 #include "token_b.c"
 #include "token_tb.c"
+#include "train_operations_window.c"
 
 #include "train.c"
 #include "traveller.c"
 #include "traveller2.c"
+#include "traveller3.c"
+#include "train_events.c"
 
 #ifdef SDL2
 #  include "keyboard_SDL.c"
 #else
 #  include "graphics_idle.c"
 #  include "keyboard.c"
+#  include "mouse.c"
 #endif
 
 #ifdef USE_FREETYPE

@@ -13,13 +13,22 @@
  *
  *==============================================================================
  */
-#if 0
+
+typedef struct wagonintake WagonIntake ;
+
 typedef struct rawenginenode {
-int          has_wipers      ;
-int          has_mirrors     ;
-int          has_pantographs ;
+char         *type           ;
+char         *name           ;
+char         *long_name      ;
+char         *description    ;
+double       wheel_radius    ;
+int          num_wheels      ;
+double       head_out[3]     ;
+char         *sound          ;
 } RawEngineNode ;
-#endif
+
+
+
 typedef struct lightstate {
 double          duration  ;
 uint            colour    ;
@@ -44,6 +53,15 @@ int             cycle     ;
 int             n_states  ;
 LightState      *states   ;
 } WagonLight ;
+
+
+struct wagonintake {
+WagonIntake      *next    ;
+double          position  ;
+double          radius    ;
+char            *name     ;
+int             type      ;
+} ;
 
 
 typedef struct rawwagonnode {
@@ -74,6 +92,8 @@ double           driverwheelradius     ;  //  For efficiency:
 double           inv_wheelradius       ;  //   Multiplying by inverse
 double           inv_driverwheelradius ;  //   faster than division
 int              numwheels   ;
+//  Water, Coal, Fuel
+WagonIntake       *intake     ;
 // Freight data
 double           f_max_level ;
 double           f_min_level ;
@@ -143,7 +163,7 @@ char             *sound_file         ;
 char             *full_name          ;
 int              has_doors           ;
 
-//RawEngineNode    *raw_engine         ;
+RawEngineNode    *raw_engine         ;
 struct rawwagonnode *tender  ;      //  Engines only: pointer to tender
 } RawWagonNode  ;
 

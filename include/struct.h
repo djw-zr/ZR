@@ -120,6 +120,12 @@ typedef struct pdbnode {
  * *****************************************************************************
  *  Track Database
  *  Database input file is usually track_db defined in zr.h
+ *
+ *  Each track section node has one or more track vector nodes.  For end nodes
+ *  and junction nodes, there is just one 'vector' giving the location of the
+ *  correspondng world shape item (the moving parts of a junction or some track
+ *  for end nodes).  For 'vector nodes' there is an array describing a section
+ *  of track, each section being a straight line or a curve of fixed radius.
  * *****************************************************************************
  */
 typedef struct trkvectornode
@@ -152,10 +158,21 @@ double                  north_z              ;    //  North (MSTS Z) location wi
 double                  a_east_x             ;    //  Angle around east describing the initial direction of the node
 double                  a_height_y           ;    //  Angle around vertical axis describing the initial direction of the node
 double                  a_north_z            ;    //  Angle around north axis describing the initial direction of the node
-
+/*
+ *  Unfortunately Track Section has a number of meanings in OpenRails and ZR.  The following variables are copied
+ *  from the TrackSections database which specifies the each 'vector' either as a straight line of a given length
+ *  or as a curve of fixed radius and fixed subtended angle.
+ *  Maybe Track Shapes database might be better - except that 'shape' is used to refer to the 3-D shape
+ */
 double                  length               ;    //  Length of vector section
 double                  radius               ;    //  Radius of curve
 double                  angle                ;    //  Arc seen from centre of curvature  (radians)
+
+/*
+ *  The distance of the vector origin from the section origin is added to simplify the calculation of positions
+ *  relative to the section origin.
+ */
+double                  distance0            ;    //  Distance of vector origin from section origin
 
 /*
  *   Sub modes are added to better represent curved tracks.  The first sub-node corresponds to the current node
@@ -172,35 +189,76 @@ Vector3                 *left_vector         ;    //  Unit vector to the left ac
 Vector3                 *tangent_vector      ;    //  Unit vector along the track  (including any gradient)
 } TrkVectorNode ;
 
+/*
+ *  TrkSector contains data on each track or road section.
+ *  The nodes are either end nodes, junction nodes or vector nodes.  Vector nodes
+ *  connect, at each ned to junction or end nodes.  End nodes connect to a single
+ *  vector node.  Junction nodes to three vector nodes.
+ *
+ *  The vector node structures contain a series of connected 'vectors', wach of
+ *  which describes a section of track that is either straight or has fixed
+ *  curvature.
+ *
+ *  NOTE:  Usually the track section 'uid' is one more than the array
+ *  index in the array 'trk_sections_array' in the track database (TrkDataBase).
+ *
+ *   See Openrails TrackdatabaseFile.cs :: uid, trjunctionnode, InPins etc.
+ *
+ *   At junctions: branch = 0 :  Route in to base of fork (i,e,'Y')
+ *                        = 1 :  Left hand path
+ *                        = 2 :  Right hand path
+ */
 
-typedef struct trksectnode
+typedef struct trksectnode TrkSector ;
+
+struct trksectnode
 {
   struct trksectnode     *next ;
-  uint                   index_of_node       ;  //  This is used to link sections so must be unique
+  uint                   uid                 ;  //  Track section UID : Must be unique [= array index+1]
   enum trackdb           type_of_node        ;  //  [ NONE, VECTOR_SECTION, END_SECTION, JUNCTION ]]
   uint                   jn[3]               ;  //  Data for Junction Node.  jn[1] may refer to tsection.dat
   uint                   en                  ;  //  Data for End Node
-  uint                   length_of_vector    ;  //  Number of vector nodes)
-  TrkVectorNode          *vector             ;  //  Pointer to vector node array
+  uint                   length_of_vector    ;  //  Number of vector nodes
+  TrkVectorNode          *vector             ;  //  Pointer to array of track vector nodes
   uint                   trk_item_number     ;  //  Number of track items
-  uint                   *trk_item_vec       ;  //  Pointer to item index array
+  uint                   *trk_item_list      ;  //  Pointer to ordered array of track item UIDs
   uint                   type_of_pin[2]      ;  //  Number of: [0] InPins. [1] OutPins
   uint                   pin_to_section[3]   ;  //  Index of connected (pinned) Track Section.
-  uint                   pin_info[3]         ;  //  Extra pin data (??)
+  uint                   pin_info[3]         ;  //  Index of pin in connected section connected to this section
+  TrkSector              *trk_sector[3]      ;  //  Pointer to connected track section
   uint                   straight            ;  //  Index (1 or 2) of straight branch in junction
   uint                   branch              ;  //  Index (1 or 2) of current switched branch
   DynProfile             *profile            ;  //  Profile used for this track
   uint                   n_dist_levels       ;  //  Number of distance levels
   float                  distance[3]         ;  //  Distances (Copied from profile)
   int                    opengl_display_list[3] ;  //  Corresponding display list
-  enum LODMethod         lod_method          ;  // Scheme for combining LOD data (Copied from profile)
-} TrkSectNode;
+  enum LODMethod         lod_method          ;  //  Scheme for combining LOD data (Copied from profile)
+/*
+ *  The length of the section is added to speed up searches along the track
+ */
+  double                 length              ;  //  Length of section.  Non-zero for VECTOR_SCTION nodes.
+} ;
 
+/*
+ *  NOTE:  The 'uid' is a UID.  Usually the uid is the same as the array
+ *  index in the array 'trk_items_array' in the track database (TrkDataBase).
+
+ *  See TrackDatabaseFile.cs Line 717 and following
+ */
 
 typedef struct trkitemnode
 {
-  uint                   index_of_node       ;
+  uint                   uid       ;  //  Track item UID : Must be unique
   enum trackdb           type_of_node        ;
+/*
+ *  Additional data to simplify searching
+ */
+  uint                   track_section       ;  //  Array index of section containing item. Not uid.
+  uint                   trk_item_index      ;  //  Index in containing track_section ordered list.
+  double                 sect_distance       ;  //  Distance of item from origin of track section
+/*
+ *  Position data
+ */
   uint                   tile_east_x         ;  //  East  (MSTS X) value of the location-tile
   uint                   tile_north_z        ;  //  North (MSTS Z)value of the location-tile
   uint                   p_tile_east_x       ;  //  East  (MSTS X) value of the location-tile
@@ -210,6 +268,9 @@ typedef struct trkitemnode
   double                 north_z             ;  //  north (MSTS Z) location within the tile where the node is located
   double                 p_east_x            ;  //
   double                 p_north_z           ;  //
+/*
+ *  Other track item data
+ */
   double                 s_data1             ;
   char                  *s_data2             ;
 
@@ -221,12 +282,19 @@ typedef struct trkitemnode
   uint                   siding_data2        ;
   char                  *siding_name         ;
 
-  char                  *signal_data1        ;  //  Signal data
-  uint                   signal_data2        ;  //
-  double                 signal_data3        ;  //
-  char                  *signal_name         ;  //  signal_type is a reserved word in C
-
-  uint                   signal_num_dirs     ;
+  char                  *signal_data1        ;  // Flags1  00000001 if junction link set
+  uint                   signal_direction    ;  // Direction 0/1 relative to track vectors
+                                                // 0 = Signal points to lower track vector indices
+  double                 signal_data3        ;  // Float ??  (Height??)
+  char                  *signal_type_name    ;  // Signal_type is possibly a reserved word in C
+  SignalDB              *signal              ;  // Summary node used for signals
+//
+  uint                   signal_num_dirs     ;  //  Number of junction links?
+//  4 integers per path
+//    1 = junction link
+//    2 = switch position is important (or link is a junction - not a vector node)
+//    3 = index of path
+//        See Signals.cs. AddHead function. Line ~10202
   uint                   signal_dirs[4][4]   ;
 
   uint                   speedpost_flags     ;  //  Speedpost data
@@ -256,15 +324,15 @@ typedef struct trkitemnode
   uint                   platform_wait_time  ;
   uint                   platform_passengers ;
 
-} TrkItemNode ;
+} TrkItem ;
 
 typedef struct trkdatabase
 {
   uint                  serial_number ;
   uint                  trk_sections_array_size ;
-  uint                  trk_items_array_size   ;
-  TrkSectNode           *trk_sections_array     ;
-  TrkItemNode           *trk_items_array       ;
+  uint                  trk_items_array_size    ;
+  TrkSector             *trk_sections_array     ;
+  TrkItem               *trk_items_array        ;
 } TrkDataBase ;
 
 /*
@@ -277,7 +345,7 @@ typedef struct trkdatabase
 typedef struct roadsectionnode
 {
   struct roadsectionnode *next ;
-  uint                   index_of_node       ;  //  This is used to link sections so must be unique
+  uint                   uid       ;  //  This is used to link sections so must be unique
   enum trackdb           type_of_node        ;  //  [ NoType, TrVectorNode, TrEnd Node]
   uint                   en                  ;  //  Data for End Node
   uint                   length_of_vector    ;  //  Number of vector nodes
@@ -291,7 +359,7 @@ typedef struct roadsectionnode
 
 typedef struct roaditemnode
 {
-  uint                   index_of_node       ;
+  uint                   uid       ;
   enum trackdb           type_of_node        ;
   uint                   tile_east_x         ;  //  East  (MSTS X) value of the location-tile
   uint                   tile_north_z        ;  //  North (MSTS Z)value of the location-tile
@@ -574,16 +642,16 @@ typedef struct terraindata{
 #ifdef use_vertex_arrays
 //  Vertex array pointers
   GLfloat             *va_vertex                   ;
-#ifdef normal_byte
+ #ifdef normal_byte
   GLbyte              *va_normal                   ;
-#else
+ #else
   GLfloat             *va_normal                   ;
-#endif
-#ifdef texture_short
+ #endif
+ #ifdef texture_short
   GLshort             *va_texture                  ;
-#else
+ #else
   GLfloat             *va_texture                  ;
-#endif
+ #endif
   GLuint              nva_index1                   ;
   GLuint              *va_index1                   ;
   GLuint              nva_index2                   ;
@@ -640,7 +708,8 @@ typedef struct rgba {
 
 typedef struct matrix4x3 {
   char            *name ;
-  int              type ;  // 0 = unit, 1 = translate, 2+ = rotate
+  enum MatrixType  type ;
+  enum MatrixAnim  anim ;
   float              AX ;
   float              AY ;
   float              AZ ;
@@ -848,6 +917,7 @@ typedef struct subobject {
 }  SubObject ;
 
 typedef struct distance_level {
+  uint               index             ;  // Distance level index
   float              dlevel_selection  ;  //  Maximum distance(m) for this level of detail.
   uint               n_hierarchy       ;  //  Size of hierarchy array
   int                *hierarchy        ;  //  If hierarchy[i] = j, then the matrix[j]
@@ -903,7 +973,6 @@ typedef struct shapenode {
   RGBA               *color    ;
   uint               nmatrices ;
   Matrix4x3          *matrix   ;          //  MSTS 4x3 matrices
-  uint               *matrix_role     ;   //  1:2 = wheels, 3:4 bogies
   uint               n_textures       ;   //  Number of textures used (OR: nimages)
   char               **texture_name   ;   //  (OR: image)
   TextureNode        **texture        ;   //  Array of pointers to the Textures
@@ -948,6 +1017,8 @@ typedef struct shapenode {
   float              esd_bounding_box_zmax     ;
   uint               n_esd_complex_box         ;
   float              *esd_complex_box          ;  //  Array n*3
+//  ZR extras
+  int                no_culling                ;  //  Some/all surfaces are double sided
 } ShapeNode  ;
 
 

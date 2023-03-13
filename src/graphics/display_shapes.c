@@ -15,10 +15,10 @@
 int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 
   uint        ip  = 0         ;   //  0 = no printing
-  static int  ipp = 0         ;   //  1 = Print first pass only
+  static int  ipp = 1         ;   //  1 = Print first pass only
   int         ic = 0, icc = -1     ;   //  Control
   uint        i, j, k, l, m, n ;
-  uint        im              ;
+  uint        im, iskip       ;
   uint        a_lin, a_tcb    ;   // Flags for linear_key and tcb_key
   int         ima[10]         ;   // Stack for matrices
   SubObject   *sub_object     ;
@@ -57,6 +57,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         return 0 ;
       }
 
+//       ip = !strcmp(snode->name,"ashphaltplat20m500r") ;
+//       ip = !strcmp(snode->name,"NSW_SemLQHome") ;
 //       ip = !strcmp(snode->name,"A1tPnt6dLft")
 //          || !strcmp(snode->name,"UKCrossGate_fix");
 //     ip = !strcmp(snode->name,"A1tPnt6dLft");
@@ -74,22 +76,28 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 //       ic = 1 ;
 //       printf(" New dlist for %s\n",snode->name) ;
 //      }
+//      ip = l_time_1s && witem && (340 == witem->uid) ;
       if(!ipp)ip = 0 ;
       if(ip) ipp = 0 ;
 
-      if(witem && (witem->anim_value != 0.0) && ip){
+//      ip = l_pd ;
+
+#ifdef _Display_Normal
+      if((witem && (witem->anim_value != 0.0) && ip)){
+        printf("\n\n*******************************************************************\n");
         printf("  Routine %s entered for shape %s\n",
                   my_name,snode->name) ;
         printf("    World Item  uid = %i, worldtype = %i, filename = %s, anim_value = %f\n",
                   witem->uid,witem->worldtype,
                   witem->filename,witem->anim_value) ;
+        printf(" ip = %i, ipp = %i\n",ip,ipp) ;
       }
 
       if(ip){
         printf("\n\n =================================================\n") ;
         printf(" Generate display for : %s\n",snode->name) ;
       }
-
+#endif
       if(0 == strcmp(snode->name,"underground_marker")) return 0;
       if(0 == strcmp(snode->name,"ctn_point_indication")) return 0;
       if(0 == strncmp(snode->name,"marker",6)) return 0;
@@ -108,10 +116,10 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         printf("  Primitive states:  nprim_states = %i\n",n);
         for(i=0;i<n;i++){
           prim_state = &snode->prim_state[i] ;
-          printf("    prim_state : %2i : pointer = %p",i,(void *)prim_state) ;
+          printf("  prim_state : %2i : pointer = %p",i,(void *)prim_state) ;
           name = prim_state->name ;
-          printf("    name   = %p    %-24s",(void *)name,name);
-          printf("      n_tex_idxs = %i ",prim_state->n_tex_idxs);
+          printf("  name   = %p    %-24s",(void *)name,name);
+          printf("  n_tex_idxs = %i ",prim_state->n_tex_idxs);
           for(j=0;j<prim_state->n_tex_idxs;j++){
             printf(":: %i", prim_state->tex_idx[j]);
           }
@@ -150,37 +158,55 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
       }
 /*
  *==============================================================================
- *   Each shape has a series of 'lod_controls', (usually just 1?)
- *     each of which has a series of distance levels  (usually 1, 2 or 3)
- *       each distance level has a range (metres) and a number of sub-objects
- *          each sub-object then has a series of triangle lists
- *            each triangle list has pointers to textures and the sets of
- *                   triangles to plot
- *
- *   In the current version of this routine the decision on which lod_control
- *   and dist_level to use is left to the calling program.  The loops here
- *   thus start with the sub-objects
+ *  Check for animation
  *==============================================================================
  */
-      animation = snode->animation ;
+      if(ip){
+        printf("  snode         = %p\n", (void *)snode) ;
+        printf("  dist_level    = %p\n", (void *)dist_level) ;
+        printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
+        n = snode->n_animations ;
+        printf("  n_animations  = %i\n", n) ;
+        for(i=0;i<n;i++){
+          animation = &(snode->animation[i]) ;
+          if(animation){
+            n_anim_nodes = animation->n_anim_nodes ;
+          }else{
+          n_anim_nodes = 0 ;
+          }
+          printf("    animation    %i = %p\n", i, (void *)animation) ;
+          printf("    n_anim_nodes %i = %i\n", i, n_anim_nodes) ;
+        }
+        printf("\n") ;
+      }
+      animation = &(snode->animation[0]) ;
       if(animation){
         n_anim_nodes = animation->n_anim_nodes ;
       }else{
         n_anim_nodes = 0 ;
       }
-      if(ip)printf("  snode         = %p\n", (void *)snode) ;
-      if(ip)printf("  animation     = %p\n", (void *)animation) ;
-      if(ip)printf("  n_anim_nodes  = %i\n", n_anim_nodes) ;
+
 /*
  *==============================================================================
- *  Loop over sub-objects
+ *   Each shape has a series of 'lod_controls', (usually just 1?)
+ *     each of which has a series of distance levels  (usually 1, 2 or 3)
+ *       each distance level has a range (metres) and a number of sub-objects
+ *          each sub-object then has a series of triangle lists
+ *            each triangle list has a primary state
+ *              each primary state has pointers to textures, transformation
+ *                matrices, animations, and a list of the triangles to plot
+ *
+ *   In the current version of this routine the decision on which lod_control
+ *   and dist_level to use is left to the calling routine.  The loops here
+ *   thus start with the sub-objects
  *==============================================================================
  */
-      if(ip)printf("  dist_level    = %p\n", (void *)dist_level) ;
-      if(ip)printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
-
       for(k=0;k<dist_level->n_sub_objects;k++){
-        if(ip)printf("  Start loop for sub-object %i\n",k) ;
+        if(ip){
+          printf("\n") ;
+          printf("  SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS\n");
+          printf("  Start loop for sub-object %i\n\n",k) ;
+        }
         sub_object = &(dist_level->sub_object[k]) ;
         vtx_list   = sub_object->vertex         ;
         if(ip)printf("    Sub_object:  k = %2i,  sub_object = %p,  vtx_list = %p,"
@@ -204,13 +230,12 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 //              if(ic && i_control1[icc]==0)continue ;   // Only plot when == 1
 #endif
           if(ip){
-            printf(" ===================================================\n") ;
+            printf("   ===================================================\n") ;
             printf("    Tri_list:  l = %i,  tri_list = %p,  n_vertex_idxs = %i\n",
                     l, (void *)tri_list, tri_list->n_vertex_idxs) ;
             printf("               ip = %i, ic = %i, icc = %i\n",ip,ic,icc) ;
           }
           if(0 == tri_list->n_vertex_idxs) continue ;
-//        ip = 0 ;
 /*
  *==============================================================================
  *  Each tri(angle)_list has a prim(ary)_state
@@ -218,12 +243,15 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  */
           prim_state_idx = tri_list->prim_state_trilist     ;
           prim_state = &(snode->prim_state[prim_state_idx]) ;
+//          if(!strcmp(prim_state->name,"TRANS"))continue ;
+//          if(340 == witem->uid && 3 != prim_state_idx)continue ;
 /*
  *==============================================================================
  *  Each prim state has a texture if n_tex_idxs > 0
  *==============================================================================
  */
           texture = NULL ;
+          n_controllers = 0 ;
           if(0 != prim_state->n_tex_idxs){
             tex_idx = prim_state->tex_idx[0]       ;
             texlevel_low = &snode->texlevel_low[tex_idx] ;
@@ -231,7 +259,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 
             gl_tex_ref_no = (texture == NULL ? 0 : texture->gl_tex_ref_no) ;
             if(ip){
-              printf(" ...................................................\n") ;
+              printf("      PPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPPP\n") ;
               printf("      Prim_state_idx = %2.2i, prim_state = %p, prim_state->name = %-25s, tex_idx = %2.2i, texture = %p,  gl_tex_ref_no = %i\n",
                                 prim_state_idx, (void *)prim_state, prim_state->name,tex_idx,
                                 (void *)texture,gl_tex_ref_no) ;
@@ -284,10 +312,9 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  *==============================================================================
  */
           if(ip){
-            printf("   Prim_state->ivtx_state = %i\n",prim_state->ivtx_state) ;
-            printf("                vtx_state = %p\n",
+            printf("     Prim_state->ivtx_state = %i\n",prim_state->ivtx_state) ;
+            printf("                  vtx_state = %p\n",
                           (void *)&(snode->vtx_state[prim_state->ivtx_state]) );
-            fflush(NULL) ;
           }
           ivtx_state = prim_state->ivtx_state       ;
           vtx_state  = &(snode->vtx_state[ivtx_state]) ;
@@ -299,14 +326,15 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
           if(ip){
             if(ima[im]>=0){
               matrix4x3 = &(snode->matrix[ima[im]])  ;
-              printf("  im = %i, ima[im] = %i,  name = %s\n", im, ima[im], matrix4x3->name) ;
+              printf("     im = %i, ima[im] = %i,  name = %s\n", im, ima[im], matrix4x3->name) ;
             }else{
-              printf("  im = %i, ima[im] = %i\n", im, ima[im]) ;
+              printf("     im = %i, ima[im] = %i\n", im, ima[im]) ;
             }
           }
 /*
  *   Loop over Matrices
  */
+          if(ip)printf("     Hierarchy List\n") ;
           while(ima[im] >= 0){
             if(im>=10 || ima[im]>(int)snode->nmatrices){
               printf(" Routine %s, matrix out of bounds for shape %s\n", my_name,snode->name);
@@ -316,14 +344,35 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             im++ ;
             ima[im] = dist_level->hierarchy[ima[im-1]] ;
             if(ip){
-              printf("  Hierarchy List\n") ;
               if(ima[im]>=0){
                 matrix4x3 = &(snode->matrix[ima[im]])  ;
-                printf("    im = %i, ima[im] = %i,  name = %s\n", im, ima[im], matrix4x3->name) ;
+                printf("      im = %i, ima[im] = %i,  name = %s\n", im, ima[im], matrix4x3->name) ;
               }else{
-                printf("    im = %i, ima[im] = %i\n", im, ima[im]) ;
+                printf("      im = %i, ima[im] = %i\n", im, ima[im]) ;
               }
             }
+          }
+/*
+ *  If shape is a signal - check hierarchy list for skipped items
+ */
+          iskip = 0 ;
+          if(witem && SIGNAL_ALT == witem->worldtype){
+            if(ip){
+              printf("  SKI  witem = %i\n", witem->uid) ;
+              for(i=0;i<snode->nmatrices;i++){
+                printf("  SKIPPING AA %i :: %i\n", i,witem->u.signal_obj.skip[i]) ;
+              }
+            }
+            for(i=0;i<im;i++){
+              if(ip)printf("  SKIPPING %i :: %i :: %i\n",
+                                       i, ima[i],witem->u.signal_obj.skip[ima[i]]) ;
+              if(witem->u.signal_obj.skip[ima[i]]){
+                iskip = 1;
+                break ;
+              }
+            }
+            if(ip)printf("  SKIPPING :: iskip = %i\n", iskip) ;
+            if(iskip) continue ;  //  skip this primary state
           }
           glMatrixMode(GL_MODELVIEW) ;
           glPushMatrix() ;
@@ -336,11 +385,13 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  *     2 = Rotation and/or scaling, no translation
  *     3 = Rotation and/or scaling, translation
  */
-          if(ip)printf("      Hierarchy  im = %i\n",im) ;
+          if(ip)printf("       Process hierarchy :: im = %i\n",im) ;
           while(im--){
             matrix4x3   = &(snode->matrix[ima[im]])      ;
             a_lin = a_tcb = 0 ;                  // use matrix flag
-            if(animation){
+            if(animation && prim_state->name &&
+                            strcmp(prim_state->name,"TRANS")){
+//            if(animation){
               anim_node = &(animation->anim_node[ima[im]])  ;
               n_controllers = anim_node->n_controllers      ;
               for(i=0;i<n_controllers;i++){
@@ -356,18 +407,28 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
               n_controllers = 0 ;
             }
             if(ip){
-              printf("---------------------------------------------------------\n") ;
-              printf("  Hierarchy  im = %i, ima[im] = %i,  Name = %s\n",
+              printf("       ---------------------------------------------------------\n") ;
+              printf("       Hierarchy  im = %i, ima[im] = %i,  Name = %s\n",
                         im,ima[im],matrix4x3->name) ;
-                printf("    shape = %s, sub_object = %i, tri_list = %i\n"
+#if 1
+              printf("         shape = %s, sub_object = %i, tri_list = %i\n"
                        "                prim_state = %i, prim_state->name = %s,\n"
-                       "                vertex_state = %i, hierarchy[vs] = %i,"
-                                      " matrix_type = %i\n",
-                          snode->name, k, l, prim_state_idx, prim_state->name, ivtx_state,
-                          dist_level->hierarchy[ivtx_state],matrix4x3->type) ;
-                printf("    Matrix    name = %s\n",matrix4x3->name) ;
-                printf("    PrimState name = %s\n",prim_state->name) ;
-              printf("  Animation  n_controllers = %i\n",
+                       "                vertex_state = %i, matrix_type = %i\n",
+                          snode->name, k, l, prim_state_idx, prim_state->name,
+                                        ivtx_state, matrix4x3->type) ;
+#else
+              printf("         shape = %s, sub_object = %i, tri_list = %i\n",
+                          snode->name, k, l ) ;
+              printf("                prim_state = %i, prim_state->name = %s,\n",
+                                      prim_state_idx, prim_state->name) ;
+              printf("                vertex_state = %i,\n", ivtx_state) ;
+              printf("                hierarchy[vs] = %i\n",
+                         dist_level->hierarchy[ivtx_state]) ;
+              printf("                matrix_type   = %i\n", matrix4x3->type) ;
+#endif
+                printf("         Matrix    name = %s\n",matrix4x3->name) ;
+                printf("         PrimState name = %s\n",prim_state->name) ;
+                printf("         Animation  n_controllers = %i\n",
                      n_controllers) ;
             }
 /*
@@ -377,25 +438,25 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 /*
  *  Use Translation only if a_lin is zero (no linear_key animation)
  */
-              if(matrix4x3->type == 1 && !a_lin){
+              if(matrix4x3->type == MAT_TRANSLATE && !a_lin){
                 glTranslatef((GLfloat) matrix4x3->DX,
                              (GLfloat) matrix4x3->DY,
                              (GLfloat) matrix4x3->DZ) ;
-                if(ip)printf("      Matrix Translate :: %f %f %f\n",matrix4x3->DX, matrix4x3->DY, matrix4x3->DZ) ;
+                if(ip)printf("        Matrix Translate :: %f %f %f\n",matrix4x3->DX, matrix4x3->DY, matrix4x3->DZ) ;
 /*
  *  Use Rotation only if a_tcb is zero (no tcb_key animation)
  */
-              }else if(matrix4x3->type == 2 && !a_tcb){
+              }else if(matrix4x3->type == MAT_ROTATE && !a_tcb){
                 msts4x3_to_opengl4x4(m16,matrix4x3) ;
                 glMultMatrixf(m16) ;
-                if(ip)printf("      Matrix Rotate\n") ;
+                if(ip)printf("        Matrix Rotate\n") ;
 /*
  *  Matrix with rotation and translation
  */
               }else if(!(a_lin || a_tcb )){           //  No special action needed
                 msts4x3_to_opengl4x4(m16,matrix4x3) ;
                 glMultMatrixf(m16) ;
-                if(ip)printf("      General matrix operation\n") ;
+                if(ip)printf("        General matrix operation\n") ;
               }else if(!(a_lin && a_tcb )){
                 msts4x3_to_opengl4x4(m16,matrix4x3) ;
                 if(a_lin){                            //  Rotate only
@@ -404,8 +465,31 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
                 }else{                                // Translate only
                   glTranslatef((GLfloat) m16[12], (GLfloat) m16[13], (GLfloat) m16[14]) ;
                 }
-                if(ip)printf("      Modified general matrix operation\n") ;
+                if(ip)printf("        Modified general matrix operation\n") ;
               }
+          }
+/*
+ *  DEBUG
+ */
+          if(ip && witem && witem->worldtype == SIGNAL_ALT
+//            && (witem->uid == 415 )
+            && (!strncmp_ic(witem->snode->matrix[ima[0]].name,"Head",4) ) ) {
+            printf("  World item uid  = %i\n",witem->uid) ;
+            printf("  n_controllers   = %i\n",n_controllers) ;
+            n = witem->u.signal_obj.n_matrices ;
+            printf("  witem uid  = %i\n",witem->uid) ;
+            printf("  shape      = %s\n",witem->snode->name) ;
+            printf("  n_matrices = %i\n",n) ;
+            printf("  ima[0]     = %i\n",ima[0]) ;
+            printf("  signal     = %p\n",(void *)witem->u.signal_obj.signal) ;
+            for(m=0;m<n;m++){
+              printf("  matrix %i, signal[i] = %p\n",
+                        m,(void *)witem->u.signal_obj.signal[m]) ;
+            }
+            for(m=0;m<n;m++){
+              printf("  matrix %i, animation[i] = %p\n",
+                        m,(void *)witem->animations[m]) ;
+            }
           }
 /*
  *  Then animate controllers
@@ -451,6 +535,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             }
 /*
  *  Loop over controllers
+ *  With signals the animation variable is that of the ancestor matrix with name HEAD*
  */
             for(i=0;i<n_controllers;i++){
               if(i==0){cc = c0 ;}
@@ -459,15 +544,39 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
               n_anim_keys = cc->n_anim_keys    ;
 
               if(witem){
-                wa = witem->anim_value*(n_anim_keys-1)  ;
+                if(witem->n_animations && witem->animations){
+                  if(witem->animations[ima[im]]){
+                    wa = *witem->animations[ima[im]] ;
+                    if(ip)printf("  AAZ  Using animations array im :: wa = %f\n",wa) ;
+                  }else if(ima[im]< witem->n_animations
+                                       && witem->animations[ima[im+1]]){
+                    wa = *witem->animations[ima[im+1]] ;
+                    if(ip)printf("  AAZ  Using animations array im+1 :: wa = %f\n",wa) ;
+                  }else{
+                    wa = witem->anim_value  ;
+                  if(ip)printf("  AAZ A Using anim value = %f\n",wa) ;
+                  }                                      ;
+                }else{
+                  wa = witem->anim_value  ;
+                  if(ip)printf("  AAZ B Using anim value = %f\n",wa) ;
+                }
+                if(ip){
+                  printf("  Anim: shape = %s, im = %i, n_amin = %i, %p, im = %i,"
+                         " ima[im] = %i, wa = %f\n",
+                         snode->name, im, witem->n_animations,
+                         (void *) witem->animations, im, ima[im], wa) ;
+                }
+                wa = wa*(n_anim_keys-1) ;
                 dw = 1.0/(n_anim_keys - 1) ;
-                if(ip || ipp){
-                  printf("  Routine %s entered for shape %s\n", my_name,snode->name) ;
-                  printf("    World Item  uid = %i, worldtype = %i, filename = %s,"
-                          " anim_value = %f\n", witem->uid,witem->worldtype,
-                                                witem->filename,witem->anim_value) ;
-                  printf("   anim_value = %f, wa = %f, n_anim_keys = %i, dw = %f\n",
-                                                witem->anim_value,wa,n_anim_keys,dw) ;
+                if(ip){
+                  printf("  Animation : Controller %i\n",i) ;
+                  printf("              Shape  = %s\n", snode->name) ;
+                  printf("              World Item  uid = %i, worldtype = %i,"
+                         " filename = %s, anim_value = %f\n",
+                         witem->uid,witem->worldtype, witem->filename,witem->anim_value) ;
+                  printf("              anim_value = %f, wa = %f, n_anim_keys = %i,"
+                         "  dw = %f\n", witem->anim_value,wa,n_anim_keys,dw) ;
+                  printf("              ip = %i, ipp = %i\n",ip,ipp) ;
                 }
                 i0 = (wa>=0) ? wa : 0 ;
                 if(i0>(n_anim_keys-2))i0 = n_anim_keys-2;
@@ -649,8 +758,215 @@ double qx, qy, qz, qw ;
             glEnable(GL_TEXTURE_2D) ;
           }
           }      //  LOCAL BLOCK END
+/*
+ *  At this stage apply any lights
+ */
+          if(witem && witem->worldtype == SIGNAL_ALT  && 1  && 0 == n_controllers
+//            && (!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head1")
+//            || !strcmp_ic(witem->snode->matrix[ima[0]].name,"Head2") ) ) {
+            && (!strncmp_ic(witem->snode->matrix[ima[0]].name,"Head",4) ) ) {
+
+  int      k, n, m, it, il ;
+  double   radius ;
+  TrkItem *trk_item ;
+  SignalDB  *signal ;
+  SigType   *sig_type ;
+  SigDraw   *sig_draw ;
+  SigLight  *sig_light ;
+  LightTab  *light_tab ;
+  TextureNode *texture ;
+  char      string[2048] ;
+
+//            ip = 0;
+#if 1
+//            ip = ip && l_time_1s && (witem->uid == 87) ;
+//            ip = l_time_1s && (witem->uid == 340) ;
+            if(ip){
+              printf(" ++++++++  Display ++++++++++\n") ;
+              printf(" World item uid = %i, type = %i  %s\n",
+                        witem->uid, witem->worldtype, token_idc[witem->worldtype]) ;
+              printf(" Sub-object = %i, Matrix = %i, name = %s\n",
+                                      l,ima[0], witem->snode->matrix[ima[0]].name) ;
+            }
+            if(ip){
+              n = witem->u.signal_obj.n_signal_units ;
+              for(m=0;m<n;m++){
+                printf("    signal object %i : sub_object = %i, u_data = %i, track_item = %i\n",m,
+                    witem->u.signal_obj.sub_object[m],
+                    witem->u.signal_obj.u_data1[m],
+                    witem->u.signal_obj.tr_item[m])  ;
+              }
+            }
+            if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head1")) m = 0 ;
+            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head2")) m = 1 ;
+            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head3")) m = 2 ;
+            else{
+              printf("  Head name 1/2/3 not found.  Name = %s\n",
+                                          witem->snode->matrix[ima[0]].name) ;
+              m = 0 ;
+            }
+//            it = witem->u.signal_obj.tr_item[m] ;
+//            trk_item = &(track_db.trk_items_array[it]) ;
+#endif
+            n = witem->u.signal_obj.n_matrices ;
+            if(ip && witem->uid == 50038){
+              printf("  witem uid  = %i\n",witem->uid) ;
+              printf("  shape      = %s\n",witem->snode->name) ;
+              printf("  n_matrices = %i\n",n) ;
+              printf("  ima[0]     = %i\n",ima[0]) ;
+              printf("  signal     = %p\n",(void *)witem->u.signal_obj.signal) ;
+              for(m=0;m<n;m++){
+                printf("  matrix %i, signal[i] = %p\n",
+                          m,(void *)witem->u.signal_obj.signal[m]) ;
+              }
+            }
+
+#if 0
+            k = 0 ;
+            for(m=0;m<n;m++){
+              if(witem->u.signal_obj.signal[m]){
+                k = m;
+                break ;
+              }
+            }
+            if(!k){
+              printf("  Routine %s.  Unable to find signal name\n",my_name) ;
+              exit(0) ;
+            }
+#endif
+            signal   = witem->u.signal_obj.signal[ima[0]] ;
+            if(ip){
+              printf("  Routine %s.  Signal uid = %i, :: names :  shape %s, type %s, world %s\n",
+                      my_name, signal->uid,signal->shape_name,signal->type_name,signal->world_name) ;
+              printf("               Signal type       = %p\n",(void *)signal->sig_type) ;
+              printf("               Signal draw       = %p\n",(void *)signal->sig_type->sig_draw) ;
+              printf("               Signal draw_state = %i\n",signal->draw_state) ;
+            }
+            sig_type = signal->sig_type ;
+            sig_draw = &sig_type->sig_draw[signal->draw_state] ;
+            texture  = raw_signal_db->light_tex[0].tnode;
+
+//            ip = 0 ;
+
+            if(ip){
+              printf("   Signal %i  :: names :  shape %s, type %s, world %s\n",
+                    signal->uid,signal->shape_name,signal->type_name,signal->world_name) ;
+            }
+            if(ip){
+              printf("  Draw state = %i\n",signal->draw_state) ;
+              printf("    index    = %i\n",sig_draw->index) ;
+              printf("    name     = %s\n",sig_draw->name) ;
+              printf("    n_draw_lights = %i\n",sig_draw->n_draw_lights) ;
+            }
+            if(texture){
+              gl_tex_ref_no = texture->gl_tex_ref_no ;
+              glBindTexture(GL_TEXTURE_2D, gl_tex_ref_no) ;
+              if(ip){
+                printf("  Texture    = %s\n",texture->name) ;
+                printf("    basic = %i, needed = %i, loaded = %i, ref no. = %i\n",
+                            texture->basic, texture->needed,
+                            texture->loaded, texture->gl_tex_ref_no) ;
+              }
+            }
+/*
+ *  Draw only if n_draw_lights > 0
+ */
+            for(m=0;m<sig_draw->n_draw_lights;m++){
+              n = sig_draw->draw_light_i[m] ;
+              sig_light = &sig_type->sig_light[n] ;
+              light_tab = sig_light->light_tab ;
+              radius = sig_light->radius ;
+//DEBUG
+//              radius *= 4.0 ;
+
+              if(ip){
+                printf("  Signal light = %i :: %i\n",m,n) ;
+                printf("    Index %i \n",sig_light->index ) ;
+                printf("    Name  %s \n",sig_light->name ) ;
+                printf("    Light name = %s\n",light_tab->name ) ;
+                printf("    Radius = %f\n",radius ) ;
+                printf("    Position = %f %f %f\n",
+                      sig_light->posn[0],sig_light->posn[1],sig_light->posn[2] ) ;
+                printf("    Colour   = %f %f %f : %f\n",
+                      light_tab->colour[0],light_tab->colour[1],
+                      light_tab->colour[2], light_tab->colour[3] ) ;
+              }
+/*
+ * Draw the light
+ */
+              glPushMatrix() ;
+              glTranslatef((GLfloat) -sig_light->posn[0],
+                          (GLfloat) sig_light->posn[1],
+//                          (GLfloat) -sig_light->posn[2]-0.003);
+                          (GLfloat) -sig_light->posn[2]-0.005);
+
+//              glDisable(GL_BLEND) ;
+//              glDisable(GL_ALPHA_TEST);
+//              glDisable(GL_TEXTURE_2D) ;
+              glDisable(GL_LIGHTING) ;
+//  GL_DECAL    - outer decal region is colourde green - rest as texture
+//  GL_REPLACE  - white texture
+//  GL_MODULATE - normal ??
+//  GL_BLEND    - Odd
+//  GL_ADD      - Black region of decal is green - rest white
+//  GL_COMBINE  - Lines are black - rest is green - Correct??
+              glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_COMBINE) ;
+              glColor4fv(light_tab->colour) ;   //  Red, Green, Blue, Alpha
+#if 0
+              glBegin(GL_TRIANGLE_FAN) ;
+                glVertex3f(0.0,0.0,0.0) ;
+                glVertex3f(0.0,radius,0.0) ;
+                glVertex3f(radius,0.0,0.0) ;
+                glVertex3f(0.0,-radius,0.0) ;
+                glVertex3f(-radius,0.0,0.0) ;
+                glVertex3f(0.0,radius,0.0) ;
+              glEnd() ;
+#else
+              glBegin(GL_QUADS) ;
+                glTexCoord2f(0.0,0.0) ;
+                glVertex3f(-radius,-radius,0.0) ;
+                glTexCoord2f(0.0,1.0) ;
+                glVertex3f(-radius, radius,0.0) ;
+                glTexCoord2f(1.0,1.0) ;
+                glVertex3f( radius, radius,0.0) ;
+                glTexCoord2f(1.0,0.0) ;
+                glVertex3f( radius,-radius,0.0) ;
+              glEnd() ;
+
+#endif
+/*
+ *  Code to identify active signal lights
+ */
+#if 0
+              glDisable(GL_TEXTURE_2D) ;
+              glBegin(GL_LINES)  ;
+                glColor3f(1.0,0.0,0.0)  ;
+                glVertex3f(0.0,0.0,0.0) ;
+                glVertex3f(1.0,0.0,0.0) ;
+                glColor3f(0.0,1.0,0.0)  ;
+                glVertex3f(0.0,0.0,0.0) ;
+                glVertex3f(0.0,1.0,0.0) ;
+                glColor3f(0.0,0.0,1.0)  ;
+                glVertex3f(0.0,0.0,0.0) ;
+                glVertex3f(0.0,0.0,1.0) ;
+              glEnd() ;
+
+              glColor3f((GLfloat) 1.0, (GLfloat) 1.0, (GLfloat) 1.0) ;
+              sprintf(string,"  Signal : %i :: World : %i :: Tile : %i %i",
+                      signal->uid,witem->uid,
+                      witem->world_node->tile_x,witem->world_node->tile_y) ;
+              print_string_in_window2((GLfloat) 1.0, (GLfloat) 1.0,
+                                      (GLfloat) -1.0, string);
+#endif
+              glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE) ;
+              glEnable(GL_BLEND) ;
+              glEnable(GL_ALPHA_TEST) ;
+              glEnable(GL_TEXTURE_2D) ;
+              glEnable(GL_LIGHTING) ;
+              glPopMatrix() ;
+            }
+          }
           glPopMatrix() ;
-//          ip = 0 ;   //  DEBUG
         }
       }
 

@@ -36,8 +36,11 @@ char     my_name[] = "read_raw_wagon_file" ;
 char     *string = NULL,
          *token = NULL ,
          *cdir  = NULL ,             //  Current wagon directory
+         *cext  = NULL ,             //  File extension
          *no_type        = "No Type",
-         *no_description = "\"No Description\"" ;
+         *no_description = "No Description" ;
+RawEngineNode *e ;
+WagonIntake   *intake ;
 char     ffname[] = "__FILE__"  ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
@@ -59,6 +62,7 @@ char     ffname[] = "__FILE__"  ;
       cdir = zr_full_parentdir(w->file) ;
       cdir_len = strlen(cdir) ;
       if(ip)printf(" DD cdir_len = %i, cdir = %s\n",cdir_len,cdir) ;
+      cext = zr_extension(w->file) ;
 /*
  * Check for 'Wagon' token
  */
@@ -98,6 +102,8 @@ char     ffname[] = "__FILE__"  ;
       w->s_file    = NULL     ;
       w->fs_file   = NULL     ;   //  Freight shape file
       w->f_shape   = NULL     ;
+      w->intake    = NULL     ;
+      w->raw_engine = NULL    ;
       w->f_max_level = 0.0    ;
       w->f_min_level = 0.0    ;
       w->f_anim_flag = 0      ;
@@ -604,7 +610,31 @@ char     ffname[] = "__FILE__"  ;
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
             break ;
-
+          CASE("IntakePoint")
+            intake = (WagonIntake *)malloc(sizeof(WagonIntake)) ;
+            intake->next = w->intake ;
+            w->intake = intake ;
+            skip_lbr(msfile) ;
+            intake->position = dtoken(msfile) ;
+            intake->radius   = dtoken(msfile) ;
+            intake->name     = ctoken(msfile) ;
+            intake->type     = 0 ;;
+            if(!strcmp(intake->name,"FreightGrain"))    intake->type = 1 ;
+            if(!strcmp(intake->name,"FreightCoal"))     intake->type = 2 ;
+            if(!strcmp(intake->name,"FreightGravel"))   intake->type = 3 ;
+            if(!strcmp(intake->name,"FreightSand"))     intake->type = 4 ;
+            if(!strcmp(intake->name,"FuelWater"))       intake->type = 5 ;
+            if(!strcmp(intake->name,"FuelCoal"))        intake->type = 6 ;
+            if(!strcmp(intake->name,"FuelDiesel"))      intake->type = 7 ;
+            if(!strcmp(intake->name,"FuelWood"))        intake->type = 8 ;
+            if(!strcmp(intake->name,"FuelSand"))        intake->type = 9 ;
+            if(!strcmp(intake->name,"FreightGeneral"))  intake->type = 10 ;
+            if(!strcmp(intake->name,"FreightLivestock"))intake->type = 11 ;
+            if(!strcmp(intake->name,"FreightFuel"))     intake->type = 12 ;
+            if(!strcmp(intake->name,"FreightMilk"))     intake->type = 13 ;
+            if(!strcmp(intake->name,"SpecialMail"))     intake->type = 14 ;
+            skip_rbr(msfile) ;
+            break ;
           CASE("Wheelset")
           CASE("Relaxation")
           CASE("Friction")
@@ -619,7 +649,6 @@ char     ffname[] = "__FILE__"  ;
           CASE("DerailBufferForce")
           CASE("AntiSlip")
           CASE("EmergencyBrakeResMaxPressure")
-          CASE("IntakePoint")
           CASE("Lights")
           CASE("NumberOfHandbrakeLeverSteps")
           CASE("InertiaTensor")
@@ -661,7 +690,326 @@ char     ffname[] = "__FILE__"  ;
         if(ip)printf(" ZZZZ\n") ;
 
       }
+/*
+ *  If eng file read engine section
+ */
+      if(!strcmp(cext,"eng")){
+/*
+ * Check for 'Engine' token
+ */
+        for(;;){
+          token = new_tmp_token(msfile) ;  // Temporaty token !!
+          if(!strcmp(token,"Comment")){
+            skip_lbr(msfile)   ;
+            skippast_rbr(msfile) ;
+          }else if(!strcmp(token,"Engine")) {
+            skip_lbr(msfile) ;           // skip left bracket
+            break ;
+          }else{
+            printf("     Routine %s. Wagon %s. Token '%s' not recognised while "
+                   " searching for Engine section.  \n",my_name,w->name,token) ;
+            skip_lbr(msfile)   ;
+            skippast_rbr(msfile) ;
+          }
+        }
+/*
+ *  Generate new RawWagonNode structure
+ */
+        w->raw_engine = e = (RawEngineNode *)malloc(sizeof(RawEngineNode)) ;
+        e->type        = NULL ;
+        e->name        = NULL ;
+        e->description = NULL ;
+        e->sound       = NULL ;
+        e->num_wheels = 0     ;
+        for(i=0;i<3;i++)e->head_out[i] = 0.0 ;
+/*
+ *  Read engine name
+ */
+        e->name = ctoken(msfile) ;
+        if(ip)printf("  Engine Name = %s\n",e->name) ;
+/*
+ * Sometimes the engine name is missing.  The wagon name should be the same.
+ */
+        if(!strcmp(e->name,"Comment")){
+          return_token(e->name,msfile) ;
+          free(e->name) ;
+          e->name = strdup(w->name) ;
+        }
+/*
+ * ***********************************************************************
+ *  Loop over tokens
+ * ***********************************************************************
+ */
+        for(;;){
+          if(ip)printf(" EEEE\n") ;
+          token = new_tmp_token(msfile);
+          if(ip)printf(" EE Token = :%s:\n",token) ;
+          if(is_rbr(token)) break ;  // End of Engine data
+          SWITCH(token)
+            CASE("Comment")
+            CASE("comment")
+              skip_lbr(msfile) ;
+              skippast_rbr(msfile) ;
+              break ;
+            CASE("Type")
+              skip_lbr(msfile) ;
+              e->type = ctoken(msfile) ;
+              if(ip)printf("    Type = :%s:\n",e->type) ;
+              skip_rbr(msfile) ;
+              break ;
+            CASE("Name")
+              skip_lbr(msfile) ;
+              e->long_name = ctoken(msfile) ;
+              if(ip)printf("    Long name = :%s:\n",e->name) ;
+              skip_rbr(msfile) ;
+              break ;
+            CASE("Description")
+              skip_lbr(msfile) ;
+              e->description = ctoken(msfile) ;
+              if(ip)printf("    Description = :%s:\n",e->description) ;
+              skippast_rbr(msfile) ;
+              if(ip)printf("    End of Description\n") ;
+              break ;
+            CASE("WheelRadius")
+              skip_lbr(msfile) ;
+              token = new_tmp_token(msfile) ;
+              e->wheel_radius  = convert_unit(token,"m") ;
+              if(e->wheel_radius < 0.25)e->wheel_radius = 0.5 ; // Error?
+              w->driverwheelradius = e->wheel_radius ;
+              w->inv_driverwheelradius = 1.0/e->wheel_radius ;
+              if(ip)printf("  Engine %s has wheel of radius %f\n",
+                                                e->name,e->wheel_radius) ;
+              skip_rbr(msfile) ;
+              break ;
+            CASE("Sound")
+              skip_lbr(msfile) ;
+              e->sound = ctoken(msfile) ;
+              if(ip)printf("    Sound = :%s:\n",e->sound) ;
+              skip_rbr(msfile) ;
+              break ;
+            CASE("HeadOut")
+              skip_lbr(msfile) ;
+              for(i=0;i<3;i++)e->head_out[i] = dtoken(msfile) ;
+              if(ip)printf("    Head Out = :%f %f %f:\n",
+                              e->head_out[0],e->head_out[1],e->head_out[2]) ;
+              skip_rbr(msfile) ;
+              break ;
+            CASE("Effects")
+            CASE("Wagon")
+            CASE("MaxPower")
+            CASE("MaxForce")
+            CASE("RunUpTimeToMaxForce")
+            CASE("MaxContinuousForce")
+            CASE("MaxVelocity")
+            CASE("MaxCurrent")
+            CASE("MaxTemperature")
+            CASE("MaxOilPressure")
+            CASE("MaxSandingTime")
+
+            CASE("ORTSSteamLocomotiveType")
+            CASE("ORTSSteamBoilerType")
+            CASE("ORTSDriveWheelWeight")
+
+            CASE("Sanding")
+            CASE("NumWheels")
+            CASE("IsTenderRequired")
+            CASE("CabView")
+
+            CASE("BoilerLength")
+            CASE("BoilerEffectivity")
+            CASE("DraftingEffect")
+            CASE("BoilerResponsiveness")
+            CASE("CoalBurnage")
+            CASE("MaxBoilerOutput")
+            CASE("CylinderVolume")
+            CASE("CylinderEffectivity")
+            CASE("InjectorSizes")
+            CASE("ExhaustLimit")
+            CASE("PrimingFactor")
+            CASE("BlastExponent")
+            CASE("MaxFireMass")
+            CASE("IdealFireMass")
+            CASE("MaxWaterMass")
+            CASE("SafetyValvesSteamUsage")
+            CASE("SmokeCombustion")
+            CASE("InjectorTypes")
+            CASE("SuperHeater")
+            CASE("BasicSteamUsage")
+            CASE("BasicCoalUsage")
+            CASE("InjectorLimits1")
+            CASE("InjectorLimits2")
+            CASE("CylinderCocksPowerEfficiency")
+            CASE("SteamSmallestCutoff")
+            CASE("NumberOfDamperSteps")
+            CASE("RegulatorValveType")
+            CASE("RegulatorSecondValveStartPosition")
+            CASE("RegulatorPilotValveExponent")
+            CASE("RegulatorSecondValveExponent")
+            CASE("RegulatorPilotValveFullOpenning")
+            CASE("RegulatorMainValveInitialOpenning")
+            CASE("SteamBlowerEffectExponent")
+            CASE("SteamBlowerEfficiencyExponent")
+            CASE("SteamBlowerMaxSteamUsageRate")
+            CASE("SteamBlowerMaxProportionOfBlastEffect")
+
+            CASE("AirBrakesAirCompressorPowerRating")
+            CASE("AirBrakesMainMinResAirPressure")
+            CASE("AirBrakesAirCompressorWattage")
+            CASE("AirBrakesAirUsedPerPoundsOfBrakePipePressure")
+            CASE("AirBrakesHasLowPressureTest")
+            CASE("AirBrakesIsCompressorElectricOrMechanical")
+            CASE("AirBrakesMainMaxAirPressure")
+            CASE("AirBrakesCompressorRestartPressure")
+            CASE("AirBrakesMainResVolume")
+            CASE("AirBrakesSteamUsageRate")
+
+            CASE("EngineBrakesControllerDirectControlExponent")
+            CASE("EngineBrakesControllerHasProportionalBrake")
+            CASE("EngineBrakesProportionalBrakeLag")
+            CASE("EngineBrakesControllerMinSystemPressure")
+            CASE("TrainBrakesControllerMinSystemPressure")
+            CASE("EngineBrakesControllerEmergencyBrakeTimePenalty")
+            CASE("TrainBrakesControllerEmergencyBrakeTimePenalty")
+            CASE("TrainBrakesControllerMaxPressureDropInNormalApplication")
+
+            CASE("DynamicBrakesMinUsableSpeed")
+            CASE("DynamicBrakesMaximumEffectiveSpeed")
+            CASE("DynamicBrakesMaximumForce")
+            CASE("DynamicBrakesResistorCurrentLimit")
+            CASE("DynamicBrakesCutInSpeed")
+            CASE("DynamicBrakesMaxAirBrakePressure")
+            CASE("DynamicBrakesFadingSpeed")
+            CASE("DynamicBrakesDelayTimeBeforeEngaging")
+            CASE("DynamicBrakesMaximumSpeedForFadeOut")
+            CASE("DynamicBrakesEffectAtMaximumFadeOut")
+            CASE("DynamicBrakesHigherSpeedCurveExponent")
+            CASE("DynamicBrakesLowerSpeedCurveExponent")
+            CASE("DynamicBrakesNumberOfControllerNotches")
+            CASE("DynamicBrakeHasAutoBailOff")
+
+            CASE("VacuumBrakesSmallEjectorPowerRating")
+            CASE("VacuumBrakesMinBoilerPressureMaxVacuum")
+            CASE("VacuumBrakesSmallEjectorUsageRate")
+            CASE("VacuumBrakesLargeEjectorUsageRate")
+            CASE("VacuumBrakesHasVacuumPump")
+
+
+            CASE("BrakesEngineBrakeType")
+            CASE("BrakesTrainBrakeType")
+            CASE("BrakesEngineControllers")
+
+            CASE("CutoffMaxReverse")
+            CASE("CutoffMaxForward")
+
+            CASE("DoesBrakeCutPower")
+            CASE("DoesHornTriggerBell")
+            CASE("BrakeCutsPowerAtBrakeCylinderPressure")
+
+            CASE("EmergencyStopMonitor")
+
+            CASE("DieselEngineType")
+
+            CASE("MaxDieselLevel")
+            CASE("DieselUsedPerHourAtMaxPower")
+            CASE("DieselUsedPerHourAtIdle")
+            CASE("DieselSmokeEffectInitialMagnitude")
+            CASE("DieselSmokeEffectMaxMagnitude")
+            CASE("DieselSmokeEffectInitialSmokeRate")
+            CASE("DieselSmokeEffectMaxSmokeRate")
+            CASE("DieselEngineIdleRPM")
+            CASE("DieselEngineStallRPM")
+            CASE("DieselEngineMaxRPM")
+            CASE("DieselEngineSpeedOfMaxTractiveEffort")
+            CASE("DieselEngineMaxRPMChangeRate")
+            CASE("AWSMonitor")
+            CASE("VigilanceMonitor")
+            CASE("OverspeedMonitor")
+            CASE("EngineOperatingProcedures")
+
+            CASE("GearBoxNumberOfGears")
+            CASE("GearBoxDirectDriveGear")
+            CASE("GearBoxMaxSpeedForGears")
+            CASE("GearBoxMaxTractiveForceForGears")
+            CASE("GearBoxOverspeedPercentageForFailure")
+            CASE("GearBoxBackLoadForce")
+            CASE("GearBoxCoastingForce")
+            CASE("GearBoxUpGearProportion")
+            CASE("GearBoxDownGearProportion")
+            CASE("GearBoxOperation")
+            CASE("GearBoxEngineBraking")
+
+            CASE("MaxBoilerPressure")
+            CASE("BoilerVolume")
+            CASE("ORTSEvaporationArea")
+            CASE("ORTSBoilerEfficiency")
+            CASE("ORTSBoilerEvaporationRate")
+            CASE("ORTSMaxIndicatedHorsepower")
+            CASE("NumCylinders")
+            CASE("CylinderStroke")
+            CASE("CylinderDiameter")
+            CASE("ORTSCylinderPortOpening")
+            CASE("ORTSCylinderInitialPressureDrop")
+            CASE("ORTSCylinderEfficiencyRate")
+            CASE("ORTSGrateArea")
+            CASE("ORTSFuelCalorific")
+            CASE("SteamFiremanMaxPossibleFiringRate")
+            CASE("ShovelCoalMass")
+            CASE("ORTSBurnRate")
+            CASE("MaxTenderCoalMass")
+            CASE("MaxTenderWaterMass")
+            CASE("ORTSMainResChargingRate")
+            CASE("ORTSBrakePipeChargingRate")
+            CASE("TrainPipeLeakRate")
+            CASE("TrainBrakesControllerMaxSystemPressure")
+            CASE("TrainBrakesControllerMaxReleaseRate")
+            CASE("TrainBrakesControllerMaxQuickReleaseRate")
+            CASE("TrainBrakesControllerMaxApplicationRate")
+            CASE("TrainBrakesControllerEmergencyApplicationRate")
+            CASE("TrainBrakesControllerFullServicePressureDrop")
+            CASE("TrainBrakesControllerMinPressureReduction")
+            CASE("EngineBrakesControllerMaxSystemPressure")
+            CASE("EngineBrakesControllerMaxReleaseRate")
+            CASE("EngineBrakesControllerMaxQuickReleaseRate")
+            CASE("EngineBrakesControllerMaxApplicationRate")
+            CASE("EngineBrakesControllerEmergencyApplicationRate")
+            CASE("EngineBrakesControllerFullServicePressureDrop")
+            CASE("EngineBrakesControllerMinPressureReduction")
+            CASE("EngineControllers")
+            CASE("EngineVariables")
+
+            CASE("SteamWaterScoopMinPickupSpeed")
+            CASE("SteamWaterScoopMaxPickupSpeed")
+            CASE("SteamWaterScoopResistance")
+            CASE("SteamWaterScoopMaxPickupRate")
+
+            CASE("SteamSmokeUnitsPerPoundOfFuel")
+            CASE("SteamMaxSmokeUnitsReleaseRate")
+            CASE("MaxSteamHeatingPressure")
+            CASE("SafetyValvePressureDifference")
+            CASE("SteamGaugeGlassHeight")
+            CASE("SteamCylinderCocksOperation")
+              skip_lbr(msfile) ;
+              skippast_rbr(msfile) ;
+              break ;
+            CASE("(")
+//              printf("  Skip past (\n");
+              skippast_rbr(msfile) ;
+//              printf("  Skipped past (\n");
+              break ;
+            DEFAULT
+              printf("     Routine %s. Engine %s. Token not recognised.  Token = %s\n",
+                    my_name,w->name,token);
+              skip_lbr(msfile)   ;
+              skippast_rbr(msfile) ;
+          END
+          if(ip)printf(" EEEE ZZZZ\n") ;
+        }
+      }
+/*
+ *  Close directory and file
+ */
       free(cdir) ;
+      free(cext) ;
       if(ip)printf(" WWWWWWWWWWWWWWWWWWWWW\n") ;
       fflush(NULL) ;
 //      check_wheel_radii(w) ;
@@ -737,9 +1085,6 @@ int        *hierarchy   ;   ///  Can be -1
 
 uint        nmatrices    ;
 uint        n_hierarchy ;
-//ShapeNode  *shape ;
-//Matrix4x3  *matrix ;
-//int        nmatrices ;
 char       *name ;
 char       *myname = "check_wheel_radii" ;
 

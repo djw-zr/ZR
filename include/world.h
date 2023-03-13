@@ -14,6 +14,8 @@
  * =============================================================================
  */
 
+typedef struct worldnode    WorldNode ;
+
 /*
  *  World files 'Static Flag' constants defined in OpenRails as enums.
  */
@@ -56,7 +58,7 @@ typedef struct dyntrackobj {
   float           dist_level[3]      ;
   float           elevation          ;
   DynTrackSect    dyn_trk_sect[5]    ;
-  TrkSectNode     *tsnode            ;  // Generated node used to hold
+  TrkSector     *tsnode            ;  // Generated node used to hold
                                         //   display list for dynamic track
 } DynTrackObj ;
 
@@ -106,6 +108,9 @@ typedef struct signalobj {
   int              *sub_object       ;
   uint             *u_data1          ;
   uint             *tr_item          ;
+  uint             n_matrices        ;  //  Number of matrices defined in shape.
+  uint             *skip             ;  //  True for HEAD matrices with missing signal.
+  SignalDB         **signal          ;  //  Signal corresponding to HEAD
 } SignalObj ;
 
 typedef struct staticobj {
@@ -138,7 +143,7 @@ typedef struct pickupobj {
   uint             collide_flags     ;
   float            min_mps           ;   //  Minimum train speed for pickup
   float            max_mps           ;   //  Maximum train speed for pickup
-  uint             pickuptype        ; // pickup_type causes compiler conflict
+  uint             pickuptype        ;   // pickup_type causes compiler conflict
   uint             pickuptype_2      ;
   float            pickup_options    ;      // Should this be uint
   float            animation_speed   ;
@@ -151,8 +156,14 @@ typedef struct platformobj {
 } PlatformObj ;
 
 /*
+ *  WorldItem nodes contain information on how to display each item
+ *  in the landscape.  Some of the data required differs between
+ *  different types of object - for example the lights of a signal
+ *  or the density of trees in a forest.
+ *
  *  Instead of using a separate structure for each type of world item,
- *  a single 'worlditem' is used which contains common information.
+ *  a single 'worlditem' structure is used.
+ *
  *  Data specific to a particular object type is held in a union
  *  structure.  This means that every object requies the same memory
  *  space as the largest.  If space is ever a problem the union
@@ -165,9 +176,10 @@ typedef struct worlditem {
   struct worlditem *next  ;
   int              uid             ;   //  World file UID
                                        //  Used by track database
-  int              worldtype       ;   //  Forest, Speedpost etc
-  char             *filename       ;   //  Shape file name from world file
+  WorldNode        *world_node     ;   //  Pointer to world node for tile
   ShapeNode        *snode          ;   //  Pointer to shape node
+  char             *filename       ;   //  Shape file name from world file
+  int              worldtype       ;   //  Forest, Speedpost etc
   uint             static_flags    ;   //  See SD constants (at start of file)
   uint             collide_flags   ;   //  As it says
 // Vector and Quaternon defining objects position and orientation in tile
@@ -188,12 +200,24 @@ typedef struct worlditem {
   double           max_vis_distance ;
   double           anim_value      ;   //  Variable used for animation
 
-  int              vdb_id          ;
   int              iz_off          ;   //  PolygonOffset flag (0,1,2)
   uint             static_detail_level ;
+  long             vdb_id          ;
+/*
+ *  Animation matrix variables.  It a world item is animated, the number of
+ *  animation pointers equals the hierarch array size in the item's ShapeNode
+ *  structure - but only pointers to animation variables will be non-NULL.
+ */
+  int              n_animations    ;   // Number of hierarchy animation variables
+  double           **animations    ;
+/*
+ *  The number of associated track items is usually zero.  This is true for signals.
+ *  Exceptions are SPEEDPOSTS (1, 2, 3, 4),LEVELCR (2, 4) SIDINGS (2), PLATFORMS (2)
+ *                 CARSPAWNER (2)
+ */
   int              n_tr_item       ;   //  Number of associated track items (<9)
-  int              tr_item_db[8]   ;   //  0 = Track, 1 = Road ??
-  int              tr_item_db_id[8];   //  ID of track items
+  int              tr_item_db[8]   ;   //  0 = Rail Item, 1 = Road Item
+  int              tr_item_db_id[8];   //  UID of track items (Rail or Road)
   union {                                 //  Item specific data
     TrackObj       track_obj       ;
     DynTrackObj    dyn_track_obj   ;
@@ -233,12 +257,14 @@ typedef struct levelxsnode {
   WorldItem       **world_item       ;  // Array of n_world pointers to world items
   uint            *rail_track_item   ;  // Array of n_rail indices of rail track items
   uint            *road_track_item   ;  // Array of n_road indices of road track items
-  uint            *rail_index        ;  // Array of n_rail track section indices
+  uint            *rail_uid          ;  // Array of n_rail track section UIDs
   uint            *rail_i_vec        ;  // Array of n_rail track vector indices
-  double          *rail_dist         ;  // Array of n_rail distance along track sections
+  double          *rail_dist         ;  // Array of n_rail distance along track vector
+  double          *rail_s_dist       ;  // Array of n_rail distance along track section
   uint            *road_index        ;  // Array of n_road track section indices
   uint            *road_i_vec        ;  // Array of n_road track vector indices
-  double          *road_dist         ;  // Array of n_road distance along track sections
+  double          *road_dist         ;  // Array of n_road distance along track vector
+  double          *road_s_dist       ;  // Array of n_road distance along track section
 } LevelXSNode ;
 
 /*
@@ -257,7 +283,7 @@ typedef struct sigsnode {
   uint            n_world            ;  // Number of linked world items
   uint            n_rail             ;  // Number of linked rail items
   WorldItem       **world_item       ;  // Array of pointers to world items
-  TrkItemNode     **rail_track_item  ;  // Array of pointers to rail track items
+  TrkItem     **rail_track_item  ;  // Array of pointers to rail track items
 } SigSNode ;
 
 
@@ -270,7 +296,7 @@ typedef struct sigsnode {
  */
 
 typedef struct vdbsphere {
-  int              vdb_id ;
+  uint             vdb_id ;
   float            X      ;          //  Centre of 'sphere'
   float            Y      ;
   float            Z      ;
@@ -303,7 +329,7 @@ typedef struct worldnode {
   WorldItem        *world_item ;     //  Linked List of fixed structures
   BTree            *shape_tree ;     //  Btree containing shapes
   uint             n_level_XS  ;     //  Number of level crossing sumary nodes
-  uint             n_sig_S     ;     //  Number of level crossing sumary nodes
+  uint             n_sig_S     ;     //  Number of signal sumary nodes
   LevelXSNode      *level_XS   ;     //  Array of level crossing summary nodes
   SigSNode         *signal_S   ;     //  Array of signal summary nodes
 } WorldNode ;

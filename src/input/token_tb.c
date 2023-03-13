@@ -39,12 +39,13 @@ void  init_levels(MSfile *msfile)
 
 int  open_block(MSfile *msfile, int i_level){
   long     tell ;
-  int      i     ;
-  unsigned int k ;
+  int      i    ;
+  unsigned int k, n ;
   int      ip = 0 ;   //  1 for printing
   FILE     *fp = msfile->fp ;
   MSblock  *block ;
-  char     *token = NULL;
+  char     *token  = NULL;
+  char     *string = NULL ;
   char     my_name[] = "open_block" ;
 
       if(current_block_level != i_level-1){
@@ -70,22 +71,77 @@ int  open_block(MSfile *msfile, int i_level){
         block->byte_end   = 0 ;
         block->l_label    = 0 ;
 /*
+ *  End of block
+ */
+       if(ip) printf("    block->token_name = %s\n",block->token_name) ;
+        if(block->token_name[0] == ')'){
+          return_token(")",msfile) ;
+          if(ip)printf("  open_block return token ')'\n") ;
+          return -2 ;
+        }
+        if(!strcmp(block->token_name,"******Z")) return -1 ;
+/*
  *  Search for index corresponding to token
  *    First convert name to upper case
  *    Then compare with list of token names
  */
         token = strdup(block->token_name) ;
-        for(k=0;k<strlen(token);k++)token[k] = toupper(token[k]) ;
-        for(k=0;k<1552;k++){
-          if(strcmp(token,token_idc[k])==0)break ;
+        n  = strlen(token) ;
+        for(k=0;k<n;k++)token[k] = toupper(token[k]) ;
+/*
+ *  Search enum tokens
+ */
+#if 1
+{
+  BTree *btree ;
+  long  l ;
+         btree = find_btree(enum_master, token) ;
+         if(NULL == btree){
+          printf(" Routine %s : BTree : Unable to determine token name\n",my_name);
+          printf("    Data file = %s\n",msfile->filename);
+          printf("    Token     = %s\n",token);
+          printf("    Program stopping ... \n\n") ;
+          dump_btree(enum_master,0,"A") ;
+          exit(1) ;
         }
-        if(1552 == k){
+        l = (long) btree->data ;
+        k = (int) l  ;
+}
+
+#else
+  int   token_found = 0 ;
+
+        for(k=0;k<1552;k++){
+          if(!strcmp(token,token_idc[k])){
+            token_found = 1 ;
+            break ;
+          }
+        }
+/*
+ *  If not found try adding "_ALT"
+ *  In some cases this was added to enum names to prevent conflict
+ */
+        if(!token_found){
+          string = (char *)malloc(n+5) ;
+          strcpy(string,token) ;
+          strcat(string,"_ALT") ;
+          for(k=0;k<1552;k++){
+            if(strcmp(string,token_idc[k])==0){
+              token_found = 1 ;
+              break ;
+            }
+          }
+          free(string) ;
+        }
+
+        if(!token_found){
           printf(" Routine %s.  Unable to determine token name\n",my_name);
           printf("    Data file = %s\n",msfile->filename);
           printf("    Token     = %s\n",token);
           printf("    Program stopping ... \n\n") ;
           exit(1) ;
         }
+#endif
         block->itoken = k ;
         free(token) ;
 /*
@@ -144,7 +200,7 @@ int  open_block(MSfile *msfile, int i_level){
       printf("   itoken        = %5i  %6x  %s\n",block->itoken, block->itoken,
                                                      token_idc[block->itoken]) ;
       printf("   flags         = %5i  %6x\n",block->flags,   block->flags) ;
-      printf("   block_length  = %5i  %6x\n",block_length,   block_length) ;
+      printf("   block_length  = %5i  %6x\n",block->length,  block->length) ;
       printf("   byte_end      = %5i  %6x\n",block->byte_end,block->byte_end) ;
 #endif
       return block->itoken ;
@@ -347,6 +403,32 @@ union u_tag {
       }
 }
 
+ long  read_lint32_a(MSfile *msfile){
+
+int   i, ip = 0 ;
+long  l ;
+FILE  *fp = msfile->fp ;
+int   fbin = msfile->binary ;
+union u_tag {
+  uint m ;
+  char ca[4] ;
+}  u ;
+char  my_name[] = "read_lint32";
+
+      if(fbin){
+        u.m = 0 ;
+        for(i=0;i<4;i++){
+        u.ca[i] = getc(fp) ;
+        }
+        if(ip)printf("  Routine %s.  value = %i\n", my_name, u.m) ;
+        return u.m ;
+      }else{
+        l = ltoken(msfile) ;
+        if(ip)printf("  Routine %s.  value = %li\n", my_name, l) ;
+        return l ;
+      }
+}
+
 int  read_int64_a(MSfile *msfile){
 
 int  i ;
@@ -416,3 +498,26 @@ int   fbin = msfile->binary ;
       }
       return ctoken(msfile) ;
 }
+
+/*
+ *  Routine to skip to the end of a block
+ *  for both ascii and binary  MSTS files
+ */
+
+
+void skip_to_bblock_end_a(MSfile *msfile, MSblock *block){
+
+int i ;
+int is_binary = msfile->binary ;
+
+      if(is_binary){
+        for(i=ftell(msfile->fp);i<block->byte_end;i++){
+          fgetc(msfile->fp) ;
+        }
+      }else{
+        skippast_rbr(msfile) ;
+        return_token(")",msfile) ;  // Leave ')' for endblock routine
+      }
+      return ;
+}
+
