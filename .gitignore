@@ -1,3 +1,52 @@
-.gitignore
+######################
+# Generic
+######################
+# Directories #
+bin/
+workfiles/
+
+# Temps and Backups #
+tmp/
+*.tmp
+*.bak
+*.log
+*.swp
+
+# Package Files #
+*.db
+*.rar
+*.tar.gz
+*.zip
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# OSX
+.DS_Store
+
+######################
+# Build
+######################
+# exclude build artifacts
+*.a
+*.o
+
+######################
+# Eclipse CDT
+######################
+/.metadata/
+/.settings/
+/.project
+# CDT-specific
+/Debug/
+/Release/
+/rc/
+.cproject
+
+######################
+# Project-specific
+######################
+# ignore the executable created in the top-level directory
 zr
 
