@@ -89,7 +89,7 @@ int    print_sigscr_node(nodeType *p)   ;
 int    yyparse(nodeType **sTree) ;
 void   yyset_in(FILE *sfile)     ;
 
-FILE   *yyin, *yyout ;
+extern FILE   *yyin, *yyout ;
 int    itree_depth   ;
 
 /*
