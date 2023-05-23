@@ -23,7 +23,7 @@
 char *read_scaled_token(MSfile *msfile) ;
 int  init_rawenginenode(RawWagonNode *w)   ;
 //int  check_wheel_radii(RawWagonNode *w) ;
-char string[4096] ;
+static char string[4096] ;
 
 int read_raw_wagon_file(RawWagonNode *w){
 
