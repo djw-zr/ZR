@@ -191,13 +191,13 @@ int update_transfer(void){
       anim_value = witem->anim_value ;
       if(on){
         if(anim_value != 0.5){
-          anim_value = anim_value + 0.05 ;
+          anim_value = anim_value + 0.008 ;
           if(anim_value > 0.5)anim_value = 0.5 ;
           witem->anim_value = anim_value ;
         }
       }else{
         if(anim_value != 0.0){
-          anim_value = anim_value - 0.05 ;
+          anim_value = anim_value - 0.008 ;
           if(anim_value < 0.0)anim_value = 0.0 ;
           witem->anim_value = anim_value ;
         }

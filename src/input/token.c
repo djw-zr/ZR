@@ -17,6 +17,7 @@
  * *****************************************************************************
  */
 
+#include <errno.h>
 #include <assert.h>                      // For zlib
 #include "zlib.h"                        //  For zlib
 #define CHUNK 16384                      //  For zlib
@@ -24,6 +25,8 @@
 static char token[4096] ;
 static int  rbr_buffered  ;
 static int  skip_underscore_token(MSfile *msfile) ;
+static int32_t utf_char_temp,       //  Temporary location for utf character
+               utf_flag_temp = 0 ;  //  Set to 1 if utf_char_temp is set.
 
 
 /*
@@ -121,22 +124,106 @@ int i ;
 
 /*
  * *****************************************************************************
+ * Test if string endicates end of file
+ * Returns 1 if end of file
+ * *****************************************************************************
+ */
+int is_eof(char *token){
+      return !strcmp(token,eof_mark);
+}
+
+/*
+ * *****************************************************************************
+ *  Routine to read a character from a file coded using UTF-16LE format
+ *  and return the UTF integer representing the character
+ *  Note 'getc' is a macro, faster than the function 'fgetc'
+ * *****************************************************************************
+ */
+
+
+int32_t fgetu(MSfile *msfile){
+
+  int32_t c1, c2 ;
+  FILE  *fp = msfile->fp ;
+
+      if(utf_flag_temp){
+        utf_flag_temp = 0 ;
+        return utf_char_temp ;
+      }
+/*
+ *  Some MSTS 'binary' files have no unicode header but still
+ *  need filenames processed as UTF16LE
+ */
+      if(msfile->ascii  && !msfile->binary){
+        return fgetc(fp) ;
+      }
+/*
+ *  Assume udf-16le
+ */
+      c1 = getc(fp) ;
+      if(c1 == EOF) return EOF ;
+      c1 = c1 & 0xFF ;
+      c2 = getc(fp) ;
+      if(c2 == EOF) return EOF ;
+      if(c2 != 0){ c2 = c2 & 0xFF ; c1 = (c2 << 8) | c1 ; }
+      return c1 ;
+}
+
+void put_utf8(int32_t c, int *l){
+
+  int32_t  c1, c2, c3, c4 ;
+
+//      printf("  put_utf6 : l = %i, c = %x %c\n",*l,c,c) ;
+      if(c < 0x7F){                          //  One character code
+        token[(*l)++] = c ;
+      }else if(c<0x7FF){                     //  Two character code
+        c1 = 0x80 | (c & 0x3F) ;
+        c2 = 0xC0 | ((c >> 6) & 0x1F) ;
+        token[(*l)++] = c2 ;
+        token[(*l)++] = c1 ;
+      }else if(c<0xFFFF){                     //  Three character code
+        c1 = 0x80 | (c & 0x3F) ;
+        c2 = 0x80 | ((c >> 6) & 0x3F) ;
+        c3 = 0xE0 | ((c >> 12) & 0xF) ;
+        token[(*l)++] = c3 ;
+        token[(*l)++] = c2 ;
+        token[(*l)++] = c1 ;
+      }else if(c<0x10FFFF){                   //  Four character code
+        c1 = 0x80 | (c & 0x3F) ;
+        c2 = 0x80 | ((c >> 6) & 0x3F) ;
+        c3 = 0x80 | ((c >> 12) & 0x3F) ;
+        c4 = 0xF0 | ((c >> 18) & 0x7) ;
+        token[(*l)++] = c4 ;
+        token[(*l)++] = c3 ;
+        token[(*l)++] = c2 ;
+        token[(*l)++] = c1 ;
+      }
+      return ;
+}
+
+/*
+ * *****************************************************************************
  *  new_token parses a new token from the input file
  *  It returns a pointer to its own storage array 'token'.
  *  The token must be copied or used before the next call to
  *  new_token.
+ *
+ *  NOTE:  This routine now reads characters using routine fgetu which
+ *         converts any UTF16LE characters to UTF8, the system used by
+ *         most software including linux.
+ *
  * *****************************************************************************
  */
 
 char *new_token(MSfile *msfile){
 
   int   ip = 0 ;
-  int   l, c, lastc;
+  int32_t   l, c, lastc;
   int   unicode, compress, text, binary ;
   FILE  *fp ;
   char  my_name[] = "new_token" ;
 
-      ip = l_ip ;                  //  Debug printing only when l_ip is set
+//      ip = l_ip ;                  //  Debug printing only when l_ip is set
 
       fp       = msfile->fp        ;
       unicode  = msfile->unicode   ;
@@ -174,14 +261,14 @@ char *new_token(MSfile *msfile){
  *  Skip white space, check for EOF and non-standard tokens
  */
       for(;;){
-        while((c=fgetc(fp)) != EOF && (c == ' '  || c == '\t' ||
-                                      c == '\n' || c == '\r') ){
-          if(unicode) getc(fp);
+        while( (c=fgetu(msfile)) != EOF && (c == ' '  || c == '\t'
+                                   || ( (c & 0XFF) == 0XA0)
+                                   || c == '\n' || c == '\r' ) ) {
         }
         if(c == EOF){
           return strcpy(token,eof_mark) ;
         }
-        if(unicode) fgetc(fp);
+
         if(c != '_')break  ;            //  Normal token
         l = skip_underscore_token(msfile) ; //  Special treatment routine
         if(1 == l ){
@@ -190,7 +277,8 @@ char *new_token(MSfile *msfile){
         }
       }
       l = 0 ;
-      token[l++] = c ;
+//      token[l++] = c ;
+      put_utf8(c, &l) ;
 /*
  *  Open and closing brackets
  */
@@ -203,12 +291,13 @@ char *new_token(MSfile *msfile){
  *  Normal tokens
  */
       if(c !='"'){
-        while((c=fgetc(fp)) != EOF && c != ' ' && c != '\t' && c != '\n' && c!= '\r'
+        while((c=fgetu(msfile)) != EOF && c != ' ' && c != '\t' && c != '\n' && c!= '\r'
                           && c != '(' && c != ')' && l <4095 ){
-          token[l++] = c ;
-          if(unicode)c = fgetc(fp);
+//          token[l++] = c ;
+          put_utf8(c, &l) ;
         }
-        ungetc(c,fp) ;                         // Put back last character
+        utf_flag_temp = 1 ;                         // Put back last character
+        utf_char_temp = c ;
 //
 //  Tokens that are a stream of text.
 //  For continuation lines should end "+ but, of course, sometimes this is typed as +".
@@ -217,30 +306,30 @@ char *new_token(MSfile *msfile){
         lastc = ' ';
         for(;;){
 // 1.  Search for matching '"'
-          while(((c=getc(fp)) != '"' || lastc == '\\' ) && l <4094 ){
+          while(((c=fgetu(msfile)) != '"' || lastc == '\\' ) && l <4094 ){
             if(c != '\r')token[l++] = c ;       // Skip line feed
             lastc = c ;
-            if(unicode)getc(fp);
           }
           if(l>= 4094) break ;                  // Leave 'for' loop
-          token[l++] = c ;
-          if(unicode)getc(fp);
-          c = getc(fp) ;
+//          token[l++] = c ;
+          put_utf8(c, &l) ;
+
+          c = fgetu(msfile) ;
 //  2.  Test for following '+'
           if(c != '+'){
-            ungetc(c,fp);
+            utf_flag_temp = 1 ;                 // Put back last character
+            utf_char_temp = c ;
             break ;                             // Leave 'for' loop
           }
           token[l++] = c ;
 //  3.  Search for second starting '"'
-          if(unicode)getc(fp);
-          while((c=getc(fp)) != '"' && l <4094 ){
-            if(c != '\r')token[l++] = c ;
-            if(unicode)getc(fp);
+          while((c=fgetu(msfile)) != '"' && l <4094 ){
+//            if(c != '\r')token[l++] = c ;
+            if(c != '\r')put_utf8(c, &l) ;
           }
           if(l>= 4094) break ;                 // Leave 'for' loop
-          token[l++] = c ;
-          if(unicode)getc(fp);
+//          token[l++] = c ;
+          put_utf8(c, &l) ;
         }
       }
       if(l>=4094){
@@ -314,6 +403,31 @@ long ltoken(MSfile *msfile){
  */
 long long lltoken_16(MSfile *msfile){
       return strtol(new_token(msfile), NULL, 16);
+}
+
+/*
+ *  Routine to read a token and return an integer containing 1-bit flags
+ */
+uint flagtoken(MSfile *msfile){
+  uint  ui = 0 ;
+  uint  i, n   ;
+  char *token ;
+  char *my_name = "flagtoken" ;
+
+      token = new_tmp_token(msfile) ;
+      n = strlen(token) ;
+      for(i=0; i<n; i++){
+        ui = ui << 1 ;
+        if(token[i] == '1'){
+          ui = ui + 1 ;
+        }else if(token[i] != '0'){
+          printf("  Routine '%s' error\n",my_name) ;
+          printf("  Badly formed token\n") ;
+          printf("  Token = %s\n",token);
+          return ui ;
+        }
+      }
+      return ui ;
 }
 
 /*
@@ -465,15 +579,12 @@ int  is_rbr(char *token){
 int  skip_underscore_token(MSfile *msfile){
 
 int   n  ;
-int   c  ;
-int   unicode = msfile->unicode ;
-FILE  *fp     = msfile->fp      ;
+int32_t   c  ;
 char  my_name[] = "skip_underscore_token" ;
 
 // Skip rest of name
-      while((c=fgetc(fp)) != EOF &&  c != ' '  && c != '\t'
+      while((c=fgetu(msfile)) != EOF &&  c != ' '  && c != '\t'
                                  &&  c != '\n' && c != '\r' && c != '('){
-        if(unicode) getc(fp);
       }
 //  Check for EOF
       if(c == EOF){
@@ -483,28 +594,25 @@ char  my_name[] = "skip_underscore_token" ;
       }
 //  Skip white space
       if('(' != c) {
-        if(unicode) getc(fp);
-        while((c=fgetc(fp)) != EOF &&  c == ' '  && c == '\t'
+        while((c=fgetu(msfile)) != EOF &&  c == ' '  && c == '\t'
                                   &&  c == '\n' && c == '\r' ){
-          if(unicode) getc(fp);
         }
       }
 //  Return if opening bracket is not present
       if(c!='('){
 //        printf("  Routine %s : Token has no opening bracket.  Character = %c\n",
 //               my_name,c) ;
-        ungetc(c,fp) ;
+        utf_char_temp = c ;
+        utf_flag_temp = 1 ;
         return 0 ;
       }
-      if(unicode) getc(fp);
       n = 1 ;
       while(n != 0){
-        if((c = fgetc(fp)) == EOF){
+        if((c = fgetu(msfile)) == EOF){
           printf("\n  ERROR?? : Routine %s : EOF found\n",my_name);
           printf("    c = %x,  EOF = %x\n",c,EOF);
           return 1 ;
         }  ;
-        if(unicode) getc(fp) ;
         if(c == '(')n++ ;
         if(c == ')')n-- ;
       }
@@ -551,30 +659,39 @@ float  value = 1.0e9 ;        //  Something really large
 
       if(!strlen(unit) || !strlen(string) || !strcmp(string,unit)){
         return (double)value ;
-      }else if(0==strcmp(unit,"kg") && 0==strcmp(string,"t-uk")){
+      }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"t-uk")){
         value = value * 1016.047  ;  // Convert long ton to kg
-      }else if(0==strcmp(unit,"kg") && 0==strcmp(string,"t")){
+      }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"t")){
         value = value * 907.18474  ;  // Convert short ton to kg
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft")){
+      }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"lb")){
+        value = value * 0.45359237  ;  // Convert lb to kg
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"ft")){
         value = value * 12.0 * 0.0254  ;  // Convert feet to metres
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft+1m")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"ft+1m")){
         value = value*12.0*0.0254 + 1.0 ;
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"ft+10in")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"ft+10in")){
         value = (value*12.0 + 10.0)*0.0254 ;
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"in")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"in")){
         value = value * 0.0254  ;  // Convert inches to metres
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"in/2")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"\"")){
+        value = value * 0.0254  ;  // Convert inches to metres
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"in/2")){
         value = value * 0.0254 * 0.5  ;  // Convert inches/2 to metres
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"cm")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"cm")){
         value = value * 0.01  ;  // Convert cm to metres
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"mm")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"mm")){
         value = value*0.01 ;       // mm to m
-      }else if(0==strcmp(unit,"N") && 0==strcmp(string,"kN")){
+      }else if(0==strcmp(unit,"N") && 0==strcmp_ic(string,"kN")){
         value = value * 1000.0  ;  // Convert kN to N
-      }else if(0==strcmp(unit,"N/m/s") && 0==strcmp(string,"N/m")){
+      }else if(0==strcmp(unit,"N/m/s") && (   (0==strcmp_ic(string,"N/m/S")) ||
+              (0==strcmp_ic(string,"N/m")) || (0==strcmp_ic(string,"N/m.S")) ) ){
         value = value ;            // Coding error ?
-      }else if(0==strcmp(unit,"m") && 0==strcmp(string,"mm")){
+      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"mm")){
         value = value*0.01 ;       // mm to m
+      }else if(0==strcmp(unit,"psi") && 0==strcmp_ic(string,"inHg")){
+        value = value*0.489771 ;   // inHg to psi (Wikipedia)
+      }else if(0==strcmp(unit,"psi/s") && 0==strcmp_ic(string,"inHg/s")){
+        value = value*0.489771 ;   // inHg to psi (Wikipedia)
 
       }else{
         printf(" Conversion failed\n")    ;
@@ -799,9 +916,10 @@ void init_msfile(MSfile *msfile){
  *   Open MSTS format file
  *
  *   MSTS files start with a MSTS header.
- *   * If it is a text file using unicode the file starts with the characters
- *       0xff and 0xfe, the order showing whether the file is big-endian or
- *       littel-endian.  If it is not unicode these characters are missing.
+ *   * If it is a text file using UTF-16 unicode (the Microsoft standard) the
+ *      file starts with the characters 0xff and 0xfe, the order showing
+ *      whether the file is big-endian or littel-endian.  If it is not unicode
+ *      these characters are missing.
  *   * The file then has an 16 byte header (16 * 2 bytes if unicode)
  *   * The header should start  "SIMISA@".  If the file is compressed the
  *     next (last) character is 'F', otherwise it is '@'.
@@ -834,13 +952,14 @@ void init_msfile(MSfile *msfile){
 
 int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 
-  int ip = 0 ;
-  int i, iret ;
-  uint m, n ;
+  int  ip = 0 ;
+  int  i, m, iret ;
+  uint n ;
   int  unicode ;
   char buffer[32] ;
   char string[33] ;
   FILE *fp ;
+  char *my_name = "open_msfile" ;
 /*
  *  Initialise tokens
  */
@@ -858,9 +977,22 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
       fp = gopen(filename,"r");
 #endif
       if(fp==NULL){
-        printf(" File not found.  File = %s\n",filename);
-        return 1 ;
+#if 0
+        printf("  Routine %s.  Initial file not found.  File = %s\n",
+                                                     my_name, filename);
+#endif
+#ifdef MinGW
+        fp = gcaseopen(filename,"rb");
+#else
+        fp = gcaseopen(filename,"r");
+#endif
+        if(fp==NULL){
+          printf(" File not found.  File = %s\n",filename);
+          n = strlen(filename) ;
+          for(i=0;i<(int)n;i++) printf("  Char %i  :%c:  :%x:\n",i,filename[i],filename[i]) ;
+        }
       }
+      if(fp==NULL) return 1 ;
       init_msfile(msfile) ;           // Initialise the data structure
 
       msfile->filename = (char *)malloc((strlen(filename)+1)*sizeof(char)) ;
@@ -1043,8 +1175,60 @@ int close_msfile(MSfile *msfile)
         if(NULL != msfile->level[i].label)
                                  free(msfile->level[i].label) ;
       }
-      free(msfile->token_unused) ;
-      free(msfile->filename) ;
+      if(msfile->token_unused)free(msfile->token_unused) ;
+      if(msfile->filename)free(msfile->filename) ;
       gclose(msfile->fp) ;
       return 0;
+}
+
+
+#if 0
+
+int32_t fgetu2(MSfile *msfile){
+
+  int32_t c1, c2 ;
+  FILE  *fp = msfile->fp ;
+
+      if(utf_flag_temp){
+        utf_flag_temp = 0 ;
+        return utf_char_temp ;
+      }
+
+      if(msfile->ascii  && !msfile->binary){
+        return fgetc(fp) ;
+      }
+/*
+ *  Assume udf-16le
+ */
+      c1 = getc(fp) ;
+      if(c1 == EOF) return EOF ;
+      c1 = c1 & 0xFF ;
+      c2 = getc(fp) ;
+      if(c2 == EOF) return EOF ;
+      if(c2 != 0){ c2 = c2 & 0xFF ; c1 = (c2 << 8) | c1 ; }
+      return c1 ;
+}
+
+#endif
+
+char * read_ucharz_a(MSfile *msfile){
+
+int     i, n, l ;
+int32_t c ;
+FILE    *fp  = msfile->fp     ;
+int     fbin = msfile->binary ;
+
+      if(fbin){
+        utf_char_temp = 0 ;
+        utf_flag_temp = 0 ;
+        l = 0 ;
+        n = (int)read_uint16(fp) ;
+        for(i=0;i<n;i++){
+          c = fgetu(msfile) ;
+          put_utf8( c, &l) ;
+        }
+        token[l] = '\0' ;
+        return strdup(token) ;
+      }
+      return ctoken(msfile) ;
 }

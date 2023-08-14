@@ -15,7 +15,10 @@
 typedef struct travellernode  TravellerNode  ;
 typedef struct wagonnode      WagonNode      ;
 typedef struct trainnode      TrainNode      ;
+typedef struct consistnode    ConsistNode    ;
 
 typedef struct signaldb   SignalDB  ;
 
 typedef struct turntable  TurnTable ;
+
+typedef struct soundnode  SoundNode ;

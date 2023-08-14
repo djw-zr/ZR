@@ -166,7 +166,7 @@ char     *my_name = "sketch_track_items" ;
                                                       trk_item->signal_direction,
                                                       trk_item->signal_data3,
                                                       trk_item->siding_name) ;
-          z = z - 1.0*scale ;
+          z = z + (4.0 + 3*(trk_item->signal->uid%3))*scale ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
           sprintf(string," SIGNALS - %i :: %i %i %i %i :: %i %i %i %i :: %i %i %i %i :: %i %i %i %i\n",
                  trk_item->signal_num_dirs,
@@ -178,8 +178,15 @@ char     *my_name = "sketch_track_items" ;
                  trk_item->signal_dirs[2][2],trk_item->signal_dirs[2][3],
                  trk_item->signal_dirs[3][0],trk_item->signal_dirs[3][1],
                  trk_item->signal_dirs[3][2],trk_item->signal_dirs[3][3]) ;
-          z = z - 1.0*scale ;
+          z = z - 0.5*scale ;
           print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+          sprintf(string," SIGNALS - s = %i, w = %i :: %s %s %s\n",
+                 trk_item->signal->uid, trk_item->signal->witem->uid,
+                 trk_item->signal->shape_name, trk_item->signal->type_name,
+                 trk_item->signal->world_name) ;
+          z = z - 0.5*scale ;
+          print_string_in_window2((GLfloat) x, (GLfloat) y, (GLfloat) z, string);
+
         }
 #if 0
           sprintf(string," - TILE %i %i ::XYZ %10.3f  %10.3f  %10.3f\n",

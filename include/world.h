@@ -44,19 +44,19 @@ typedef struct carspawnobj {
 typedef struct dyntracksect {
   uint            is_curved          ;  // SubBlock 1 = curved, 0 = straight
   int             uid                ;  // Id  (maybe -1??)
-  float           param_1            ;  // Length (m) for straight,
+  double          param_1            ;  // Length (m) for straight,
                                         // Arc (radians) for curved
-  float           param_2            ;  // 0 for straight,
+  double          param_2            ;  // 0 for straight,
                                         // Radius (m) for curved
-  float           delta_y            ;  // Elevation change for this subsection
+  double          delta_y            ;  // Elevation change for this subsection
 } DynTrackSect ;
 
 typedef struct dyntrackobj {
   uint            section_idx        ;
   uint            collide_flags      ;
   uint            gl_display_list[3] ;
-  float           dist_level[3]      ;
-  float           elevation          ;
+  double          dist_level[3]      ;
+  double          elevation          ;
   DynTrackSect    dyn_trk_sect[5]    ;
   TrkSector     *tsnode            ;  // Generated node used to hold
                                         //   display list for dynamic track
@@ -66,6 +66,7 @@ typedef struct trackobj {
   uint           section_idx         ;  //  Index of track section
   float          elevation           ;
   uint           collide_flags       ;
+  uint           collide_function    ;
   int            tile_x              ;  // Position of Junction Node
   int            tile_y              ;  //        "
   float          X                   ;  //        "
@@ -103,14 +104,17 @@ typedef struct transferobj {
 } TransferObj ;
 
 typedef struct signalobj {
-  uint             signal_sub_object ;
-  int              n_signal_units    ;
-  int              *sub_object       ;
+  uint             signal_sub_object ;  // 32 flags : 1 -> Head is active
+  int              n_signal_units    ;  // Number of active heads
+  int              *sub_object       ;  // Index of each active head
   uint             *u_data1          ;
-  uint             *tr_item          ;
-  uint             n_matrices        ;  //  Number of matrices defined in shape.
-  uint             *skip             ;  //  True for HEAD matrices with missing signal.
+  uint             *tr_item          ;  //  Track items corresponding to active ehads
   SignalDB         **signal          ;  //  Signal corresponding to HEAD
+//  Data used when processing shape matrices
+  uint             n_matrices        ;  //  Number of matrices defined in shape.
+  uint             *sm_skip          ;  //  True for matrices for unused head shapes.
+  SignalDB         **sm_signal       ;  //  Signal corresponding to active HEAD
+  uint             *skip             ;  //  No longer used.
 } SignalObj ;
 
 typedef struct staticobj {
@@ -170,6 +174,9 @@ typedef struct platformobj {
  *  could be replaced by a set of pointers or a separate structure
  *  used for each type of world item with the union containing the
  *  pointers moved to the 'world node'.
+ *
+ *  Note:  With (all/some?) TRANSFER objects, the filename is the name of
+ *         a texture file.
  */
 
 typedef struct worlditem {
@@ -179,6 +186,7 @@ typedef struct worlditem {
   WorldNode        *world_node     ;   //  Pointer to world node for tile
   ShapeNode        *snode          ;   //  Pointer to shape node
   char             *filename       ;   //  Shape file name from world file
+  char             *filename2      ;   //  Hazard file etc.
   int              worldtype       ;   //  Forest, Speedpost etc
   uint             static_flags    ;   //  See SD constants (at start of file)
   uint             collide_flags   ;   //  As it says
@@ -214,10 +222,11 @@ typedef struct worlditem {
  *  The number of associated track items is usually zero.  This is true for signals.
  *  Exceptions are SPEEDPOSTS (1, 2, 3, 4),LEVELCR (2, 4) SIDINGS (2), PLATFORMS (2)
  *                 CARSPAWNER (2)
+ *  However the New Forest route needs more (10)  Why?
  */
   int              n_tr_item       ;   //  Number of associated track items (<9)
-  int              tr_item_db[8]   ;   //  0 = Rail Item, 1 = Road Item
-  int              tr_item_db_id[8];   //  UID of track items (Rail or Road)
+  int              tr_item_db[16]   ;   //  0 = Rail Item, 1 = Road Item
+  int              tr_item_db_id[16];   //  UID of track items (Rail or Road)
   union {                                 //  Item specific data
     TrackObj       track_obj       ;
     DynTrackObj    dyn_track_obj   ;
@@ -233,6 +242,51 @@ typedef struct worlditem {
     TransferObj    transfer_obj    ;
   } u ;
 } WorldItem ;
+
+/*
+ *  Sound Source Node
+ *
+ *  Some world tiles have connected sound sources.  These may be the sound
+ *  of a town or birds in a wood.  The sound source is generally placed
+ *  a few hundred metres from the track.
+ *
+ *  Depending on the system used.  This structure will probably also
+ *  contain a link to the sound in memory (if and when loaded).
+ */
+typedef struct soundsourcenode {
+  struct soundsourcenode *next ;
+  double          X ;  //  Position relative to tile origin
+  double          Y ;
+  double          Z ;
+  char            *filename ;  //  Filename of sound
+} SoundSourceNode ;
+
+/*
+ *  Sound Region Node
+ *
+ *  There are also sound regions connected to track objects.  Each sound
+ *  region is usually (always) one of a pair - the sound region lying in
+ *  between.  Usually usually represent the sound of wheels clicking as
+ *  a wagon crosses a junctions.  Sound is discussed in README.SOUND.
+ */
+typedef struct soundregionnode {
+  struct soundregionnode *next ;
+  int            uid          ;
+  int            trk_item_id0 ;  // Track Item ID ?
+  int            trk_item_id  ;  // Track Item ID
+  int            snd_trk_type ;  // Soundregion track Type
+  int            flags      ;
+  uint32_t       vdbid      ;  // Usually FFFFFFFF
+  double          X ;  //  Position relative to tile origin
+  double          Y ;
+  double          Z ;
+  double         Q0 ;  //  Angle of sound cone
+  double         QX ;  //  Direction
+  double         QY ;
+  double         QZ ;
+  double         roty         ;  // Rotation about y (msts vertical) axis
+  char           *filename  ;  //  Filename of sound
+} SoundRegionNode ;
 
 /*
  *  Level Crossing Summary Node
@@ -327,6 +381,8 @@ typedef struct worldnode {
   uint             vdbid_count ;     //  Number of visibility spheres
   VDbSphere        *vdb_sphere ;     //  Info on visibiliaty from a distance
   WorldItem        *world_item ;     //  Linked List of fixed structures
+  SoundSourceNode  *sound_source ;   //  Linked list of sound sources
+  SoundRegionNode  *sound_region ;   //  Linked list of sound sources
   BTree            *shape_tree ;     //  Btree containing shapes
   uint             n_level_XS  ;     //  Number of level crossing sumary nodes
   uint             n_sig_S     ;     //  Number of signal sumary nodes

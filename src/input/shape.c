@@ -51,7 +51,7 @@ int file_is_shape( const struct dirent *p){
 
 int load_shape_filenames() {
 
-int    len1, len2, len3, idir, i, n, iret ;
+int    len1, len2, len3, idir, i, k, n, iret ;
 int    ip = 0 ;                    // 0 = no printing
 char   *name      = NULL ;
 char   *sdir_name = NULL ;
@@ -62,7 +62,10 @@ struct dirent *f_entry   = NULL ;
 struct dirent **namelist = NULL ;
 ShapeNode *shape     ;
 BTree  *btree_node   ;
-
+/*
+ *   Process shape files in directories
+ *      ROUTE/SHAPES and GLOBAL/SHAPES
+ */
       for(idir=0;idir<2;idir++){
         if(idir==0){
           len1 = strlen(ORroutedir) + strlen("SHAPES/") + 1 ;
@@ -104,11 +107,20 @@ BTree  *btree_node   ;
         }
         printf("     Shapes from directory %s\n",sdir_name );
 //        printf("  n = %i, namelist = %p :: %p\n",n,(void *)namelist,(void *)namelist[0]) ;
+#if 0
         if(ip){
           for(i=0;i<n;i++){
-            printf(" %s  name = %i,  %s\n",my_name,i,namelist[i]->d_name) ;
+            char *string = namelist[i]->d_name ;
+            printf(" %s  name = %i,  %s\n",my_name,i,string) ;
+            printf(" Ascii = ") ;
+            for(k=0;k<(int)strlen(string);k++){
+              unsigned char c = string[k] ;
+              printf(" %c %x ",c,c) ;
+            }
+            printf("\n") ;
           }
         }
+#endif
 /*
  *  Process shape files
  */
@@ -116,38 +128,66 @@ BTree  *btree_node   ;
 //  Determine core name and convert to lower case
           if(name){free(name); name = NULL;}
           name = zr_basename2(namelist[i]->d_name) ;
-          str2lc(name)        ;
+          str2lc(name) ;
 /*
  *  Skip unless shape is needed
  */
           btree_node = find_btree(shape_master,name) ;
-//          printf("  Shape %s,  btree_node = %p\n", name, (void *)btree_node);
-          if(!btree_node) continue ;
-/*
- * Initialise new shapenode
- */
-          shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
-          init_shape_node(shape) ;
-          btree_node->data = (void *)shape ;
-
-          if(shapelist_beg == NULL){
-            shapelist_beg = shape       ;
+//          if(0)printf("  Routine %s.  Btree node = %p.  Shape is %s\n",
+//                                                 my_name, (void *)btree_node, name) ;
+#if 0
+          if(btree_node){
+            if(btree_node->data){
+              shape = (ShapeNode *) btree_node->data ;
+              printf("  Dir contains shape file %s,  btree_node = %p, data = %p, name = %s, "
+                     "file = %s\n", name, (void *)btree_node,
+                     (void *)btree_node->data, shape->name, shape->s_file);
+            }else{
+              printf("  Dir contains shape file %s,  btree_node = %p, data = %p\n",
+                   name, (void *)btree_node, (void *)btree_node->data);
+            }
           }else{
-            shapelist_end->next = shape ;
+            printf("  Dir contains shape file %s,  btree_node = %p\n", name, (void *)btree_node);
           }
+#endif
+          if(!btree_node)continue ;  //  Shape  is not needed
+/*
+ *  Initialise new ShapeNode if not initialised
+ *  Otherwise process as normal
+ *  TODO This only initialises normal shapes
+ *       add code to initialise btree->shapes in world.c with filename
+ *       and to initialise to initialise btree->shapes not processed here.
+ *  NOTE:  Each Tile/World Node has its own btree!!
+ *
+ */
+          if(!(btree_node->data)){
+            shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
+            init_shape_node(shape) ;
+            btree_node->data = (void *)shape ;
+
+            if(shapelist_beg == NULL){
+              shapelist_beg = shape       ;
+            }else{
+              shapelist_end->next = shape ;
+            }
 //         printf(" CC i = %i\n",i) ;
-          shapelist_end = shape ;
-          shape->next   = NULL ;
+            shapelist_end = shape ;
+            shape->next   = NULL ;
+          }else{
+            shape = (ShapeNode *)btree_node->data ;
+          }
 /*
  *  Save name and filename
  */
 //         printf(" DD i = %i\n",i) ;
           len2 = strlen(namelist[i]->d_name) ;
           shape->name = (char *)malloc(len2-1) ;
-//         printf(" EE i = %i\n",i) ;
           strncpy(shape->name,namelist[i]->d_name,len2-2);
           shape->name[len2-2] = '\0' ;
           if(ip)printf(" Found shape file : %s\n",shape->name) ;
+//          if(!strncmp(shape->name,"ukfs_t",6)){
+//            printf("  FOUND shape = %s",shape->name) ;
+//          }
 /*
  *  Save full name of s file
  */
@@ -162,18 +202,46 @@ BTree  *btree_node   ;
           }else{
             if(ip)printf(" File not opened \n") ;
           }
-
 /*
  *  Save full name of sd file if present or NULL
  */
           len3 = len1 + len2 + 1 ;
           shape->sd_file = (char *)malloc(len3) ;
           strncpy(shape->sd_file, shape->s_file, len3) ;
-          shape->sd_file[len3-3] = 's' ;
-          shape->sd_file[len3-2] = 'd' ;
+//          shape->sd_file[len3-3] = 's' ;
+          if(shape->sd_file[len3-3]=='s'){
+            shape->sd_file[len3-2] = 'd' ;
+          }else{
+            shape->sd_file[len3-2] = 'D' ;
+          }
           shape->sd_file[len3-1] = '\0' ;
           if(ip)printf("  AA  Full name of sd file : %s\n",shape->sd_file) ;
+/*
+ *  Check that sd file exists
+ */
           if((f=gopen(shape->sd_file,"r"))==NULL ){
+/*
+ *  If sd file was not found, try using routine fcaseopen.
+ *  This searches for the filename - ignoring the case of each character.
+ */
+#if 1
+            if((f=gcaseopen(shape->sd_file,"r"))==NULL ){
+/*
+ *  If the file is still not found, skip MSTS track shapes as these do (may?) not
+ *  have shape description (*.sd) files.  Otherwise print an error message.
+ */
+              if((shape->name[0] != 'a' && shape->name[0] != 'A') ||
+                  (shape->name[1] != '1' && shape->name[1] != '2')){
+                printf("       Routine '%s'.  Unable to find sd file "
+                  "corresponding to shape : %s\n",my_name, shape->name)   ;
+              }
+//              printf("  shapefile *.s  = %s\n",shape->s_file) ;
+//              printf("  shapefile *.sd = %s\n",shape->sd_file) ;
+              free(shape->sd_file);
+              shape->sd_file = NULL ;
+            }
+#else
+
             shape->sd_file[len3-2] = 'D' ;
             if((f=gopen(shape->sd_file,"r"))==NULL ){
               shape->sd_file[len3-3] = 'S' ;
@@ -194,6 +262,7 @@ BTree  *btree_node   ;
                 }
               }
             }
+#endif
           }
           if(f != NULL)gclose(f) ;
           free(namelist[i]) ;
@@ -247,7 +316,7 @@ int  init_shape_node(ShapeNode *shape){
           shape->color             = NULL ;
           shape->matrix            = NULL ;
           shape->texture_name      = NULL ;
-          shape->texture         = NULL ;
+          shape->texture           = NULL ;
           shape->texlevel_low      = NULL ;
           shape->light_material    = NULL ;
           shape->light_model_cfg   = NULL ;
@@ -286,18 +355,19 @@ int  init_shape_node(ShapeNode *shape){
 
 int load_shape(ShapeNode *snode ) {
 
-  uint    ip = 0 ;                  //  Debug printing when ip == 1
+  uint    ip = 1 ;                  //  Debug printing when ip == 1
   uint    i, j, k, l, m, n, itoken;
   int     iret ;
   MSfile  msfile0 ;
   MSfile  *msfile = &msfile0 ;
   FILE    *fp ;
   char    *string ;
-  char    myname[] = "load_shape" ;
+  char    my_name[] = "load_shape" ;
 
-      ip = ip && !strcmp(snode->name,test_shape) ;
-      if(ip){
-        printf("\n  Enter routine : %s\n",myname);
+      ip = ip && !strcmp_ic(snode->name,test_shape) ;
+//      ip = !strncmp(snode->name,"mm_",3) || !strncmp(snode->name,"MM_",3) ;
+      if(ip || 0){
+        printf("\n  Enter routine : %s : %i\n",my_name, ip);
         printf("  Shape name = %s\n",snode->name);
         printf("  File = %s\n",snode->s_file);
       }
@@ -309,14 +379,16 @@ int load_shape(ShapeNode *snode ) {
  */
       if(ip)printf(" AA\n");
       zr_filename_MS2L(snode->s_file) ;          //  Convert '\' to '/'
-      if(ip)printf("  Routine %s, snode->s_file = %s\n",myname,snode->s_file) ;
+      if(ip)printf("  Routine %s, snode->s_file = %s\n",my_name,snode->s_file) ;
       iret = zr_find_msfile2(snode->s_file) ;
       if(iret){
-        printf("\n\n  ERROR : Routine zr_find_msfile failed to find file\n");
-        printf("      File = %s\n",snode->s_file) ;
+        printf("\n\n  ERROR in routine %s\n",my_name);
+        printf("      zr_find_msfile2 failed to find shape file\n");
+        printf("      Shape name = %s\n",snode->name);
+        printf("      Shape file = %s\n",snode->s_file) ;
         exit(1) ;
       }
-      if(ip)printf("  Routine %s,        File = %s\n",myname,snode->s_file) ;
+      if(ip)printf("  Routine %s,        File = %s\n",my_name,snode->s_file) ;
       l = open_msfile(snode->s_file, msfile, 0, ip) ;
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
@@ -428,7 +500,7 @@ int load_shape(ShapeNode *snode ) {
           n = msfile->level[1].length - 13 ;
           m = n/21 ;
           if(m!=snode->npoints){
-            printf("     Routine %s error.\n",myname) ;
+            printf("     Routine %s error.\n",my_name) ;
             printf("       Shape name = %s\n",snode->name) ;
             printf("       Number of points reported = %i\n", snode->npoints) ;
             printf("       Number of points present  = %i\n", m) ;
@@ -1430,7 +1502,7 @@ float  X, Y, Z, R ;
  */
       if(ip){
         printf(" *****************************************************************\n") ;
-        printf(" *   EXIT  ROUTINE  %s\n",myname) ;
+        printf(" *   EXIT  ROUTINE  %s\n",my_name) ;
         printf(" *****************************************************************\n") ;
       }
       return 0 ;
@@ -1444,10 +1516,10 @@ int  print_shape_file_data(ShapeNode *snode){
 
   uint  i, j, k, l, m, ll, nn;
   uint  ip = 0 ; // 1 = Printing of trilists
-  char *myname = "print_shape_file_data" ;
+  char *my_name = "print_shape_file_data" ;
 
       printf("\n *****************************************************************\n") ;
-      printf(" *   ENTER  ROUTINE  %s\n",myname) ;
+      printf(" *   ENTER  ROUTINE  %s\n",my_name) ;
       printf(" *****************************************************************\n") ;
       printf( "  shape   = %s\n",snode->name ) ;
       printf( "  s_file  = %s\n",snode->s_file ) ;

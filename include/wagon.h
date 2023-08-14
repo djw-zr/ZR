@@ -131,9 +131,10 @@ double           maxauxilarychargingrate ;
 double           emergencyreschargingrate ;
 double           emergencyrescapacity     ;
 double           brakecylinderpressureformaxbrakebrakeforce ;  // !!
-double           brakepipevolume          ;
-double           ortsbrakefriction1[15]   ;
-double           ortsbrakefriction2[15]   ;
+double           brakepipevolume     ;
+int              n_ortsbrakefriction ;
+double           *ortsbrakefriction1 ;
+double           *ortsbrakefriction2 ;
 //  Friction
 char             *ortsbearingtype    ;
 double           ortsdavis_a         ;

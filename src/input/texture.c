@@ -48,14 +48,14 @@ int load_texture_filenames() {
   struct dirent *f_entry   = NULL ;
   struct dirent **namelist = NULL ;
   TextureNode *texture     = NULL ;
-  char        myname[] = "load_texture_filenames" ;
+  char        my_name[] = "load_texture_filenames" ;
 
 /*
  *  1.  Search for world directory (world, WORLD)
  */
       if(ip){
         printf(" *******************************************************\n");
-        printf(" Enter %s\n",myname);
+        printf(" Enter %s\n",my_name);
         printf(" *******************************************************\n");
       }
 #if 1
@@ -78,7 +78,7 @@ int load_texture_filenames() {
         iret = zr_find_msfile2(tdir_name) ;
         if(iret){
           printf(" Routine %s : ERROR : Unable to open TEXTURES directory\n",
-                                                                myname) ;
+                                                                my_name) ;
           printf("    Directory name = %s\n", tdir_name) ;
           printf("    Program stopping ...\n") ;
           exit(1) ;
@@ -86,7 +86,7 @@ int load_texture_filenames() {
         if(ip)printf(" Trying textures directory = %s\n",tdir_name) ;
         tdir = opendir(tdir_name) ;
         if(tdir == NULL){
-          printf(" Program %s,\n",myname) ;
+          printf(" Program %s,\n",my_name) ;
           printf("   Unable to find TEXTURES directory\n") ;
           printf("   Program stopping ... \n") ;
           exit(1) ;
@@ -194,8 +194,8 @@ int  init_texture_node(TextureNode *texture){
  */
 int load_texture(TextureNode *tnode){
 
-  int     i, j, k, l, m, n ;
-  int     ip = 0   ;  // 0 = no printing
+  int   i, j, k, l, m, n ;
+  int   ip = 0    ;  // 0 = no printing
   int   width     ;
   int   height    ;
   int   mipmaps   ;
@@ -206,20 +206,22 @@ int load_texture(TextureNode *tnode){
   int   image_count    ;
   char  signature[5]   ;
   int   icol           ;
-  char  c ;
+  int   is_alpha = 0 ;
+  int   is_mask  = 0 ;
+  int   nz_alpha     ;
+  int   nz_mask      ;
+  unsigned char  c, d  ;
+  GLubyte *maskp = NULL ;   //  Pointer to mask arrays
 
   MSfile  msfile ;
   FILE   *fp ;
-  char    myname[] = "load_texture" ;
-
-//      ip = !strncmp(tnode->name,"brake3",6) ;
-
+  char    my_name[] = "load_texture" ;
 /*
  *  open_msfile reads and checks the first 16 bytes of the texture file
  *  and sets the compress flag.
  */
       if(ip){
-        printf("\n  Read texture  : %s\n",tnode->name) ;
+        printf("\n  Read texture:\n") ;
         printf(  "    == filename : %s\n",tnode->filename) ;
       }
 /*
@@ -234,18 +236,13 @@ int load_texture(TextureNode *tnode){
       if(ip)printf(" msfileptr  = %p\n",(void *)msfile.fp);
       fp = msfile.fp ;
 
-//      if(1 != msfile.compress){
-//        printf("  Routine %s expects files to be compress.\n",myname);
-//        printf("    Program stopping ... \n");
-//        exit(1) ;
-//      }
 /*
  *  Check file signature
  */
       for(i=0;i<4;i++) signature[i]  = (char)getc(fp);
       signature[4] = (char)'\0' ;
       if(0 != strcmp("\x01\x00\x00\x00",signature)){
-        printf("  Routine %s. Wrong signature.\n", myname);
+        printf("  Routine %s. Wrong signature.\n", my_name);
         printf("    Signature is %x %x %x %x \n",
                         signature[0],signature[1],signature[2],signature[3]);
         printf("    Program stopping ... \n");
@@ -257,11 +254,11 @@ int load_texture(TextureNode *tnode){
  *  Read basic data
  */
 
-      options = read_int32(fp) ;
-      tnode->width  = read_int32(fp) ;
-      tnode->height = read_int32(fp) ;
+      options        = read_int32(fp) ;
+      tnode->width   = read_int32(fp) ;
+      tnode->height  = read_int32(fp) ;
       tnode->surface_format = read_int32(fp) ;
-      channel_count = read_int32(fp) ;
+      channel_count  = read_int32(fp) ;
       width          = tnode->width  ;
       height         = tnode->height ;
       surface_format = tnode->surface_format ;
@@ -290,7 +287,7 @@ int load_texture(TextureNode *tnode){
           printf("  Texture file : tnode->name\n");
           printf("    contains mipmaps but the height and with do not match.\n") ;
           printf("    width = %i,  height = %i.\n", width, height) ;
-          printf("  Routine %s exiting without loading texture.\n",myname) ;
+          printf("  Routine %s exiting without loading texture.\n",my_name) ;
           close_msfile(&msfile) ;
           free(tnode->name)  ;
           tnode->name = NULL ;
@@ -300,7 +297,7 @@ int load_texture(TextureNode *tnode){
           printf("  Texture file : %s\n",tnode->name);
           printf("    contains mipmaps but the width is not a power of 2.\n") ;
           printf("    width = %i,  height = %i\n", width, height) ;
-          printf("  Routine %s exiting without loading texture\n",myname) ;
+          printf("  Routine %s exiting without loading texture\n",my_name) ;
           close_msfile(&msfile) ;
           free(tnode->name)  ;
           tnode->name = NULL ;
@@ -312,7 +309,6 @@ int load_texture(TextureNode *tnode){
 /*
  *  Check for raw data file
  */
-
       raw_data = (0x10 & options) != 0  ;
       if(raw_data && ip){
         printf("  File contains raw data\n");
@@ -343,14 +339,12 @@ int load_texture(TextureNode *tnode){
 int  size[10] ;
 enum colour_type type[10] ;      //  Allow for maximum of 10
       if(channel_count>10){
-        printf("  Routine %s, Channel_count (= %i) exceeds limit of 10\n",myname, (int)channel_count);
+        printf("  Routine %s, Channel_count (= %i) exceeds limit of 10\n",my_name, (int)channel_count);
         return 1 ;
       }
 /*
  *  Read channel data
  */
-int   is_alpha = 0;
-int   is_mask  = 0;
       for(i=0;i<channel_count;i++){
         size[i] = read_int64(fp) ;
         type[i] = read_int64(fp) ;
@@ -362,9 +356,9 @@ int   is_mask  = 0;
       }
       tnode->is_alpha = is_alpha ;
       tnode->is_mask  = is_mask  ;
-      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  alpha = %i  mask = %i  s_format = %2x  channels = %i,  image_count = %i, compress = %i, name = %s\n",
+      if(ip)printf(" Flags  raw_data = %i  mipmap = %i  alpha = %i  mask = %i  s_format = %2x  channels = %i,  image_count = %i, compress = %i, filename = %s\n",
            raw_data, mipmaps, is_alpha, is_mask, surface_format,channel_count,
-           image_count, msfile.compress, tnode->name);
+           image_count, msfile.compress, tnode->filename);
 /*
  *  Create texture pointer array
  *  This is of length one - unless mipmaps is set.
@@ -383,16 +377,23 @@ int   is_mask  = 0;
  *==============================================================================
  *   Read Raw data
  *
- *   Used in MSTS to  store 0x12 (Compressed Dxt1) images
+ *   'Raw Data' is used by MSTS to store 0x12 (Compressed Dxt1) images
  *   Dxt1 compuression uses 64 bits to store colours in a 4x4 block of pixels
  *   First 32 bits contains 2 colours stored as RGB in 5, 6 and 5 bits.
+ *
  *   All cells white = 0xFF 0xFF 0xFF 0xFF 0x00 0x00 0x00 0x00
  *   All cells black = 0x00 0x00 0x00 0x00 0x00 0x00 0x00 0x00
  *   All cells grey  = 0x84 0x10 0x84 0x10 0x00 0x00 0x00 0x00
  *   All cells red   = 0xF8 0x00 0xF8 0x00 0x00 0x00 0x00 0x00
+ *
+ *   Note:  Although Ox12 uses the above scheme, the file header usually
+ *          indicates that colour data is stored as 8 bytes and mask data
+ *          as 1 byte.
+ *
  *==============================================================================
+ *
  *     Raw data starts with a table of 32-bit integers, each giving the offset
- *       inbytes from the start of the table to the start of the corresponding
+ *       in bytes from the start of the table to the start of the corresponding
  *       mipmap.
  *     If the mipmap width is 4 or larger, the data is stored as raw
  *       data following an initial 32-bit integer giving the number of raw
@@ -414,35 +415,26 @@ int   is_mask  = 0;
 /*
  *  Check raw_data supported
  */
-      if(surface_format != 0x12){
-        printf("    options = %8.8x \n",options);
-        printf("  Texture file : '%s.ace',      surface format option = %x,  Option not supported for raw data files.\n",
-                         tnode->name, surface_format);
-        printf("    width   = %i \n",tnode->width);
-        printf("    height  = %i \n",tnode->height);
-        printf("    surface_format = %i %x\n",tnode->surface_format,
-                                              tnode->surface_format);
-        printf("    channel_count  = %i \n",channel_count);
-        printf("    raw_data       = %i \n",raw_data);
-        printf("    image_count    = %i \n",image_count);
-//        return 1;
-      }
-      if(ip)printf("  Reading raw data\n");
+        if(surface_format != 0x12){
+          printf("    options = %8.8x \n",options);
+          printf("  Texture file : '%s.ace',      surface format option = %x,  Option not supported for raw data files.\n",
+                          tnode->name, surface_format);
+          printf("    width   = %i \n",tnode->width);
+          printf("    height  = %i \n",tnode->height);
+          printf("    surface_format = %i %x\n",tnode->surface_format,
+                                                tnode->surface_format);
+          printf("    channel_count  = %i \n",channel_count);
+          printf("    raw_data       = %i \n",raw_data);
+          printf("    image_count    = %i \n",image_count);
+  //        return 1;
+        }
+        if(ip)printf("  Reading raw data\n");
 
-int  *tex_size = (int *)malloc(image_count*sizeof(int)) ;
+int  *tex_offset = (int *)malloc(image_count*sizeof(int)) ;
+int  tex_size ;
 
         for(i=0;i<image_count;i++){
-          tex_size[i] = read_int32(fp) ;
-          if(i>0)tex_size[i-1] = tex_size[i]-tex_size[i-1] - 4 ;
-        }
-        if(ip){
-          for(i=0;i<image_count;i++)
-            printf(" AA mipmap %i, size = %i bytes\n",i, tex_size[i]) ;
-        }
-        if(mipmaps && (tex_size[image_count-2] == 4))tex_size[image_count-1] = 4 ;
-        if(ip){
-          for(i=0;i<image_count;i++)
-            printf(" BB mipmap %i, size = %i bytes\n",i, tex_size[i]) ;
+          tex_offset[i] = read_int32(fp) ;
         }
 /*
  * read mipmaps
@@ -453,30 +445,13 @@ int     w = width ;
  *  Allocate memory
  */
           if(w>2){
-            tnode->texture[i] = (GLubyte *)malloc(tex_size[i]*sizeof(GLubyte));
-            l = read_uint32(fp);
+            tex_size = read_uint32(fp);
+            tnode->texture[i] = (GLubyte *)malloc(tex_size*sizeof(GLubyte));
             if(ip)printf("  Mipmap image %2i, width = %3i, size = %5i,"
-                         " bytes %5i, texture[i] = %p\n",
-                         i, w, l, tex_size[i], (void *)tnode->texture[i] ) ;
-            if(l != tex_size[i]){
-              printf("  Error while processing texture file %s.ace \n",tnode->name) ;
-              printf("    l != tex_size[i] \n");
-              printf("    i = %i,  l = %i, tex_size[i] = %i\n",i,l,tex_size[i]) ;
-              printf("    Surface format option = %x\n", surface_format);
-#if 0
-              printf(" Next 100 bytes:\n");
-              for(i=0;i<100;i++){
-                 c = fgetc(fp);
-                 if(feof(fp))break ;
-                 printf(" I = %i,  byte = %2x\n",i,(uint)(c&0xff));
-              }
-#endif
-              close_msfile(&msfile) ;
-              free(tnode->name)  ;
-              tnode->name = NULL ;
-              return 1 ;
-            }
-            for(j=0;j<tex_size[i];j++){
+                         " texture[i] = %p\n",
+                         i, w,  tex_size, (void *)tnode->texture[i] ) ;
+
+            for(j=0;j<tex_size;j++){
               c = fgetc(fp) ;
               if(feof(fp)){
                 printf(" EOF while reading texture data\n");
@@ -493,7 +468,7 @@ int     w = width ;
           }else{
             if(ip)printf("  Mipmap image %2i, width = %i. Set to eight zero bytes\n",i,w);
             tnode->texture[i] = (GLubyte *)malloc(8*sizeof(GLubyte));
-#if 0
+#if 1
             tnode->texture[i][0] = 0x84 ;  // Grey
             tnode->texture[i][1] = 0x10 ;
             tnode->texture[i][2] = 0x84 ;
@@ -502,8 +477,7 @@ int     w = width ;
             tnode->texture[i][5] = 0x00 ;
             tnode->texture[i][6] = 0x00 ;
             tnode->texture[i][7] = 0x00 ;
-#endif
-#if 1
+#else
             tnode->texture[i][0] = 0xF8 ;  // Red
             tnode->texture[i][1] = 0x00 ;
             tnode->texture[i][2] = 0xF8 ;
@@ -513,46 +487,57 @@ int     w = width ;
             tnode->texture[i][6] = 0x00 ;
             tnode->texture[i][7] = 0x00 ;
 #endif
-#if 0
-//            for(j=0;j<8;j++,k++) tnode->texture[i][j] = 0 ;
-            for(j=0;j<8;j++) tnode->texture[i][j] = 0 ;
-//            for(j=0;j<8;j++,k++) tnode->texture[i][j] = 0xFF ;
-#endif
           }
         }
-        free(tex_size) ;
+        free(tex_offset) ;
+      }else{
 /*
  *==============================================================================
  *  Read structured data
- *  These have RGB or RGBA pixel data backed into two bytes:
+ *
+ *  Although the files on disk are usually compressed, once the file is
+ *  uncompressed  structured data (types 0x0E, 0x10 and 0x11) has as one
+ *  byte per colour or alpha channel and (usually) one bit per mask channel.
+ *
+ *  Type 0x11 files often have both alpha and mask channels, with the mask set
+ *  to all zeroes or both channels set to all zeroes (implying a pure
+ *  transparency).  In the first case, the alpha channel is used.  In the
+ *  second case, alpha is set to 0XFF everywhere (solid colour).
+ *
+ *  Although the file format uses full bytes for each variable, the definitions
+ *  of the three channels imply that for transfer to graphics, structured data
+ *  is designed to be packed into two bytes, the number of bits used for
+ *  each channel being:
+ *
  *     0x0E :  R5  G5  B5
  *     0x10 :  R5  G5  B5  A1
  *     0x11 :  R4  G4  B4  A4
+ *
  *==============================================================================
  *
- *  This starts with a table of 32 bit offsets to each scan line for each image
- *  So skip over the table
+ *  Structured data starts with a table of 32 bit offsets to each scan line
+ *  for each image
+ *
  *==============================================================================
  */
-      }else{
 /*
- *  Check structured data supported
+ *  First check that the structured data supported
  */
-      if(ip)printf("  Reading structured data\n");
-      if(surface_format != 0x0e && surface_format != 0x10 && surface_format != 0x11){
-        printf("  Texture file : '%s.ace',      surface format = %x,  Raw data texture not supported for structured files.\n",
-                         tnode->name, surface_format);
-        printf("    options = %8.8x \n",options);
-        printf("    width   = %i \n",tnode->width);
-        printf("    height  = %i \n",tnode->height);
-        printf("    surface_format = %i %x\n",tnode->surface_format,
-                                              tnode->surface_format);
-        printf("    channel_count  = %i \n",channel_count);
-        printf("    raw_data       = %i \n",raw_data);
-        printf("    image_count    = %i \n",image_count);
-        for(n=0;n<channel_count;n++)printf("  channel  %i  size = %i, type = %i\n",
-                                       n,size[n],type[n]);
-      }
+        if(ip)printf("  Reading structured data\n");
+        if(surface_format != 0x0e && surface_format != 0x10 && surface_format != 0x11){
+          printf("  Texture file : '%s.ace',      surface format = %x,  Raw data texture not supported for structured files.\n",
+                          tnode->name, surface_format);
+          printf("    options = %8.8x \n",options);
+          printf("    width   = %i \n",tnode->width);
+          printf("    height  = %i \n",tnode->height);
+          printf("    surface_format = %i %x\n",tnode->surface_format,
+                                                tnode->surface_format);
+          printf("    channel_count  = %i \n",channel_count);
+          printf("    raw_data       = %i \n",raw_data);
+          printf("    image_count    = %i \n",image_count);
+          for(n=0;n<channel_count;n++)printf("  channel  %i  size = %i, type = %i\n",
+                                        n,size[n],type[n]);
+        }
 /*
  *==============================================================================
  *  Loop over 'image_count' images
@@ -573,16 +558,18 @@ int ioff ;
         tnode->gl_mem_format   = GL_RGBA          ;
         tnode->gl_mem_packing  = GL_UNSIGNED_BYTE ;
 /*
- *  Data is stored as RGB if no mask or alpha field is present
- *  otherwise it is stored as RGBA, using the alpha field if present
- *  or by converting mask to transparent black if alpha is not present.
+ *  Data can arrive as RGB, RGBA or RGB and mask, where teh colours are
+ *  8-bit bytes and the mask is a 1-bit field.
+ *
+ *  Data is thenstored internally as RGBA, using the alpha field if present
+ *  or by converting mask to transparent/solid if alpha is not present
+ *  or by setting alpha to solid colour (0xFF).
  */
 int   w = width, nb, h, nwords ;
         nb = 3 ;
         for(n=0;n<channel_count;n++){
           if(type[n] == 2 || type[n] == 6) nb = 4 ;  // Mask or alpha present
         }
-//        if(surface_format == 0x0e) return 0 ;
 /*
  *==============================================================================
  *  Loop over mipmaps
@@ -594,10 +581,12 @@ int   w = width, nb, h, nwords ;
  *  If no mipmaps allow width and height to differ.
  */
           h  = (mipmaps ? w : height) ;
-//          nwords = (w*h <4) ? 4 : w*h ;         // 1x1 mipmaps need 2x2 memory
           nwords = (w*h <8) ? 8 : w*h ;         // Ensure on 8 byte boundary
-//  Possible problem calloc
+          nz_alpha = nz_mask = 0 ;
+          if(maskp)free(maskp) ;
+//  calloc = malloc with memory set to zero.
           tnode->texture[i] = (GLubyte *)calloc(nb*nwords,sizeof(GLubyte));
+          maskp             = (GLubyte *)calloc(nwords,sizeof(GLubyte));
           if(ip)printf("  Memory for image %i, nb = %i, w = %i, h = %i,"
                   " nwords = %i, size = %i, texture[i] = %p\n",
                   i,nb,w,h,nwords, nb*nwords,tnode->texture[i]);
@@ -606,6 +595,12 @@ int   w = width, nb, h, nwords ;
  */
           for(j=0;j<h;j++){
             if(ip)printf("  Read image %i, row %i, channel ",i,j);
+/*
+ *  Initialise alpha channel (for 0x0e ony??)
+ */
+            for(l=0;l<w;l++){
+              tnode->texture[i][(j*w+l)*nb + 3] = 0xFF ;
+            }
 /*
  * Loop over channels
  */
@@ -619,16 +614,25 @@ int   w = width, nb, h, nwords ;
               }else{
                 icol = 3 ;
               }
-              if(ip)printf(" %i, %i :: ",type[k], size[k]) ;
 /*
  *   8-bit data
  *   NOTE:  getc should check for EOF.
  *   EOF has the value -1 so cannot be represented in a 'char' variable.
  *   Instead either read into an 'int' or call 'feof(fp)' after every read.
+ *   Assumes that if an alpha channel is present then any mask channel can be
+ *   skipped.
  */
               if(8 == size[k]){
-                  if((type[k] == MASK) && is_alpha){
-                    for(l=0;l<w;l++) getc(fp); // Skip if MASK and is_alpha
+                  if(type[k] == MASK){
+                    for(l=0;l<w;l++){
+                      maskp[(j*w+l)*nb + icol] = c = getc(fp);
+                      nz_mask = nz_mask | c ;
+                    }
+                  }else if(type[k] == ALPHA){
+                    for(l=0;l<w;l++){
+                      tnode->texture[i][(j*w+l)*nb + icol] = c = getc(fp);
+                      nz_alpha = nz_alpha | c ;
+                    }
                   }else{
                     for(l=0;l<w;l++){
                       tnode->texture[i][(j*w+l)*nb + icol] = getc(fp);
@@ -639,46 +643,98 @@ int   w = width, nb, h, nwords ;
  *   The data is packed 8-bits to a character, starting at the most significant bit
  */
               }else{
-                if((type[k] == MASK) && is_alpha){
-                  for(l=0;l<1+(w-1)/8;l++) getc(fp);   // Skip ...
-                }else{
+                if((type[k] == MASK)){
                   for(l=0;l<1+(w-1)/8;l++){
                     c = getc(fp);
                     for(m=0;m<8;m++){
                       if( m >= w - l*8 - 1) break ;
-#if 0
-                      if(((j*w + l*8 + m)*4 + 3)>nb*w*h-1){
-                        printf(" ERROR nb = %i, w = %i, h = %i nb*w*h = %i\n",
-                                         nb, w, h, nb*w*h);
-                        printf(" ERROR j= %i, k = %i, l = %i, m = %i, "
-                               "(j*w + l*8 + m)*4 + 3 = %i\n",
-                                         j,k,l,m,(j*w + l*8 + m)*4 + 3);
-                      }
-#endif
-                      if(surface_format == 0x10 && 0){
-                        tnode->texture[i][(j*w + l*8 + m)*4 + 3]
-//                                              = 0xff ;
-                                              = ((c>>(7-m)) & 1) ? 0 : 0xff ;
-                      }else{
-                        tnode->texture[i][(j*w + l*8 + m)*4 + 3]
-                                              = ((c>>(7-m)) & 1) ? 0xff : 0 ;
-                      }
+                      maskp[j*w + l*8 + m] = d = ((c>>(7-m)) & 1) ? 0xff : 0 ;
+                      nz_mask = nz_mask | d ;
                     }
                   }
+                }else{
+                  for(l=0;l<1+(w-1)/8;l++) c = getc(fp);
                 }
               }    // 8-bit or 1-bit
             }      // Loop over channels
-            if(ip)printf("\n");
           }        // Loop over rows
-        }          // Loop over images
 /*
- *  For structure file test level 1 for use of alpha as a mask
- *    False if alpha is missing
- *    True if more than one alpha equal to 0 and no alphas between 0 and 1
+ *   alpha/mask logic
+ *   if nz_alpha :: do nothing more
+ *     if nz_mask  :: set alpha from mask
+ *     else        :: set alpha to 255
  */
-      }
+#if 0
+          if(is_alpha && !nz_alpha && is_mask && !nz_mask){
+              printf("  Routine %s.  Texture %s, type %x, has alpha and mask "
+                     "channels with all values set to zero (fully transparent).\n",
+                             my_name, tnode->name, tnode->surface_format) ;
+          }else{
+            if(is_alpha && !nz_alpha){
+                printf("  Routine %s.    Texture %s, type %x, has an alpha "
+                       "channel with all values set to zero (fully transparent).\n",
+                             my_name, tnode->name, tnode->surface_format) ;
+            }
+            if(is_mask && !nz_mask){
+                printf("  Routine %s.    Texture %s, type %x, has a mask "
+                       "channel with all values set to zero (fully transparent).\n",
+                             my_name, tnode->name, tnode->surface_format) ;
+            }
+          }
+#endif
+          if(!nz_alpha && 4 == nb){
+            if(nz_mask){
+              for(j=0;j<h;j++){
+                for(l=0;l<w;l++){
+                  tnode->texture[i][(j*w+l)*nb + 3] = maskp[j*w + l] ;
+                }
+              }
+            }else{
+              for(j=0;j<h;j++){
+                for(l=0;l<w;l++){
+                  tnode->texture[i][(j*w+l)*nb + 3] = 0xFF ;
+                }
+              }
+            }
+          }
+          free(maskp) ;
+          maskp = NULL ;
+        }          // Loop over images
+      }          // End processing of "structured data" style file
       close_msfile(&msfile) ;
+      if(maskp)free(maskp) ;
+      return 0 ;
+}
 
+/*
+ *  DEBUG
+ *  Routine used to print a summary of a texture
+ */
+int  texture_print(char *name){
+  TextureNode *tnode   ;
+  int         l_found  ;
+  int         width, height, i, j, k   ;
+
+      l_found = 0 ;
+      for(tnode = texturelist_beg; tnode != NULL; tnode = tnode->next){
+        if(!strcmp(tnode->name, name)){
+          l_found = 1 ;
+          break ;
+        }
+      }
+      if(!l_found) return 0 ;
+      width  = tnode->width  ;
+      height = tnode->height ;
+      for(j=0;j<height; j += 50){
+        printf(" row = %i : ",j) ;
+        for(k=0;k<4;k++){
+          printf("%i : ",k) ;
+          for(i=0;i<width && i<30; i++){
+            printf("%3i ",tnode->texture[0][(j*width+i)*4+k]) ;
+          }
+          printf("\n") ;
+        }
+      }
       return 0 ;
 }
 
@@ -719,6 +775,10 @@ char *my_name="sort_textures" ;
       tx = *texturelist_beg;
 //      printf(" BB \n") ; fflush(NULL) ;
 //      printf("  tx = %p\n", (void *)tx) ; fflush(NULL) ;
+      if(tx==NULL) return 0 ;
+/*
+ *  Count textures
+ */
 
       n_textures = 0 ;
       for(tx = *texturelist_beg; tx != NULL; tx = tx->next){
@@ -730,9 +790,9 @@ char *my_name="sort_textures" ;
       ta = (TextureNode **)malloc(n_textures*sizeof(TextureNode *)) ;
       for(tx = *texturelist_beg, i=0; tx != NULL; tx = tx->next, i++) ta[i] = tx ;
 
-//      if(ip)for(i=0;i<n_textures;i++){
-//        printf(" CC %p ta = %p,  name = %s\n",(void *)ta,(void *)ta[i], ta[i]->name) ;
-//      }
+      if(ip)for(i=0;i<n_textures;i++){
+        printf(" CC %p ta = %p,  name = %s\n",(void *)ta,(void *)ta[i], ta[i]->name) ;
+      }
 
       qsort(ta, n_textures, sizeof(TextureNode *), compare_tx_names) ;
 

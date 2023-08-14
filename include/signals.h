@@ -194,25 +194,35 @@ struct sigshape {
 
 /*
  *  A sub-object belonging to a signal shape
+ *  For details see: How_to_make_Signal_config_and_Script_files.doc
  */
 struct sigsubobj {
   int  index           ;  // Index of the sub-object 0, 1, 2, ...
   char *name           ;  // Name of the head  HEAD1 or HEAD2 etc
   char *full_name      ;  // "lower dwarf arm" or "upper dwarf arm etc"
   char *sig_script_type ;  // Type in signal script
-//  Flags specifying optional properties, 1/0 => absent/present
-  int  sig_signal_head ;
+/*
+ *  SIGSUB flags.  These relate to a sub-object on a signal shape
+ *      Value 1 if present, 0 is absent
+ *      Denoted as OPTIONAL, etc. in script, extra SIGSUB_ etc. elsewhere
+ */
+  int  sig_optional    ;  // SIGSUB_OPTIONAL in config file, OPTIONAL in script
+  int  sig_default     ;
+  int  sig_back_facing ;
+  int  sig_jn_link     ;
+/*
+ *  SIGSUBT values.  These relate to a sub-object on a signal shape
+ *      See: How_to_make_Signal_config_and_Script_files.doc
+ *      Denoted as SIGFEAT_USER1, etc. in script, extra SIGSUBT_USER1 etc. elsewhere
+ */
+  int  sig_decor          ;
+  int  sig_signal_head    ;
   int  sig_gradient_plate ;
   int  sig_number_plate   ;
   int  sig_user1          ;  // Used by AU_NSW_SW_SS route
   int  sig_user2          ;
   int  sig_user3          ;
   int  sig_user4          ;
-
-  int  sig_default     ;
-  int  sig_jn_link     ;
-  int  sig_back_facing ;
-  int  sig_optional    ;
 
 //  The junction link will be different for each junction the signal
 //  is used for, so the following should both be zero.

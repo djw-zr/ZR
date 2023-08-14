@@ -86,9 +86,6 @@ char    *my_name="keyboard" ;
             break ;
           case 's':
           case 'S':
-            i_zra = 0 ;
-            break ;
-
             light0_spec = zr_fclip(light0_spec +isign * 0.1, 0.0, 1.0) ;
             printf("  Light_0 specular intensity = %f\n",(double)light0_spec) ;
             zr_setv4(v4,light0_spec,light0_spec,light0_spec,1.0) ;
@@ -190,26 +187,32 @@ char    *my_name="keyboard" ;
 /*
  *  Switches under keyboard control
  *  For the moment may be used to debug code
+ *  Alt-'0' : read lookat position from file ~/.zr/lookat.txt
  */
           case '0':
             i_zra = 0 ;
-            if(ip)printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" Switch i_zra = %i\n",i_zra) ;
+            read_lookat_file() ;
             break ;
           case '1':
             i_zra = 1 ;
-            if(ip)printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" Switch i_zra = %i\n",i_zra) ;
             break ;
           case '2':
             i_zra = 2 ;
-            if(ip)printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" Switch i_zra = %i\n",i_zra) ;
             break ;
           case '3':
             i_zra = 3 ;
-            if(ip)printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" Switch i_zra = %i\n",i_zra) ;
             break ;
           case '4':
             i_zra = 4 ;
-            if(ip)printf(" i_zra = %i\n",i_zra) ;
+            if(ip)printf(" Switch i_zra = %i\n",i_zra) ;
+            break ;
+          case '9':
+            i_zrt = !i_zrt ;
+            if(ip || 1)printf(" Toggle i_zrt = %i\n",i_zrt) ;
             break ;
 #endif
         }
@@ -327,7 +330,7 @@ char    *my_name="keyboard" ;
 //  Switch  d_rotate
           case '=':
 //#ifdef D_Display_Shapes
-            d_rotate = (d_rotate>0.0)? 0.0 : 90.0 ;
+            d_rotate = (d_rotate>=269.0)? 0.0 : d_rotate + 90.0 ;
             printf("  d_rotate = %f\n",d_rotate) ;
 //#endif
             break ;
@@ -335,7 +338,7 @@ char    *my_name="keyboard" ;
   *   'Esc' ends program
   */
           case 27:
-            exit(0);
+            close_system() ;
           default:
             break;
         }
@@ -356,7 +359,7 @@ char    *my_name="keyboard" ;
 
 /*
  * With key repeat on - the normal keyboard software option
- * the program thought tha they were released every 1/10 second approx
+ * the program thinks that they are released every 1/10 second approx
  * and pressed down again.
  */
 
@@ -580,11 +583,11 @@ void  specialkey(int key, int ixm, int iym)
 #endif
         }
       }else if(key == GLUT_KEY_PAGE_UP){
-        offset_eye_z    = offset_eye_z    + del_d ;
-        offset_center_z = offset_center_z + del_d ;
+        offset_eye_z    = offset_eye_z    + del_d*0.25 ;
+        offset_center_z = offset_center_z + del_d*0.25 ;
       }else if(key == GLUT_KEY_PAGE_DOWN){
-        offset_eye_z    = offset_eye_z    - del_d ;
-        offset_center_z = offset_center_z - del_d ;
+        offset_eye_z    = offset_eye_z    - del_d*0.25 ;
+        offset_center_z = offset_center_z - del_d*0.25 ;
 #ifndef kb_dev
 // Stop the viewpoint dropping too far
 //   This should be just above the local land surface level
@@ -690,6 +693,11 @@ void  specialkey(int key, int ixm, int iym)
                   offset_eye_x, offset_eye_y, offset_eye_z,
                   offset_center_x,offset_center_y,offset_center_z,
                   tile_e, tile_n, e, n, h, angle_to_north, angle_to_up) ;
+          printf("              : eye = %f %f %f : centre = %f %f %f\n",
+                  (tile_e-tile_west)  + offset_eye_x,
+                  (tile_n-tile_south) + offset_eye_y, offset_eye_z,
+                  (tile_e-tile_west)  + offset_center_x,
+                  (tile_n-tile_south) + offset_center_y, offset_center_z) ;
           l_pp = 1 ;     //  Flag new position for debug statements
        }
 #endif
@@ -730,5 +738,10 @@ void  specialkey(int key, int ixm, int iym)
 #endif
 //  Trigger graphics_cull checks (myGlutIdle in graphics.c)
       new_viewpoint = 1 ;
+#if 1
+      sprintf(string," - Lookat Point :: %f %f %f :: %f %f %f ",
+                         lookat_eye_x, lookat_eye_y, lookat_eye_z,
+                         lookat_center_x, lookat_center_y, lookat_center_z);
+#endif
       glutPostRedisplay() ;
 }

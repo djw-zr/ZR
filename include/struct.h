@@ -18,6 +18,19 @@ typedef struct dynprofile        DynProfile     ;
 typedef struct trackdistacelevel TrackDistLevel ;
 typedef struct tracksubobject    TrackSubObject ;
 typedef struct railprofile       RailProfile    ;
+typedef struct dlpointernode     DLPointerNode  ;
+
+/*
+ *  Pointer node for use in doubly-linked lists.
+ *  Can be used for lists of strings
+ *  or pointers to anything.
+ */
+
+struct dlpointernode {
+  struct dlpointernode *next    ;
+  struct dlpointernode *prev    ;
+  void                 *pointer ;
+} ;
 
 /**
  *  MSblock structure.  MSTS files are structured as a series of
@@ -111,6 +124,7 @@ typedef struct pdbnode {
   double DerailScale           ;
   double TimetableTollerance   ;
   double GravityScale          ;
+  double ForestClearDistance   ;
 
   struct envnode  Environment[12] ;
 
@@ -126,6 +140,9 @@ typedef struct pdbnode {
  *  correspondng world shape item (the moving parts of a junction or some track
  *  for end nodes).  For 'vector nodes' there is an array describing a section
  *  of track, each section being a straight line or a curve of fixed radius.
+ *
+ *  Notes based on those in Openrails TrackDatabaseFile.cs
+ *
  * *****************************************************************************
  */
 typedef struct trkvectornode
@@ -147,6 +164,7 @@ double                  ang                  ;    //  Angle of rotation (degrees
 
 uint                    flag1                ;    //  Usually 0 may point to conecting pin in junction, sometimes 2
 uint                    flag2                ;    //  Usually 1, set to 0 when track is flipped around, sometimes 2 or 3
+                                                  //  In Zig-Zag route: flag2 = 1/0, flag1 is opposite
 uint                    is_curved            ;    //  0 = straight,  1 = Curved with radius and angle as well as length
 uint                    is_dynamic           ;    //  0 = normal track, 1 = dynamic track
 char                    string[2]            ;    //  Usually 00
@@ -160,7 +178,7 @@ double                  a_height_y           ;    //  Angle around vertical axis
 double                  a_north_z            ;    //  Angle around north axis describing the initial direction of the node
 /*
  *  Unfortunately Track Section has a number of meanings in OpenRails and ZR.  The following variables are copied
- *  from the TrackSections database which specifies the each 'vector' either as a straight line of a given length
+ *  from the TrackSections database which describes each 'vector' either as a straight line of a given length
  *  or as a curve of fixed radius and fixed subtended angle.
  *  Maybe Track Shapes database might be better - except that 'shape' is used to refer to the 3-D shape
  */
@@ -228,6 +246,7 @@ struct trksectnode
   TrkSector              *trk_sector[3]      ;  //  Pointer to connected track section
   uint                   straight            ;  //  Index (1 or 2) of straight branch in junction
   uint                   branch              ;  //  Index (1 or 2) of current switched branch
+  uint                   mainline            ;  //  Junction branch (1 or 2) that was Pin[1] in track database
   DynProfile             *profile            ;  //  Profile used for this track
   uint                   n_dist_levels       ;  //  Number of distance levels
   float                  distance[3]         ;  //  Distances (Copied from profile)
@@ -277,10 +296,10 @@ typedef struct trkitemnode
   uint                   sr_data1            ;  //  Sound region data
   uint                   sr_data2            ;
   double                 sr_data3            ;
-
-  char                  *siding_data1        ;  // Siding data
-  uint                   siding_data2        ;
-  char                  *siding_name         ;
+// Siding data
+  char                  *siding_data1        ;  // "00000000" or "ffff0000""
+  uint                   siding_data2        ;  //  Index of 'other' end
+  char                  *siding_name         ;  //  "Sheep Yards""
 
   char                  *signal_data1        ;  // Flags1  00000001 if junction link set
   uint                   signal_direction    ;  // Direction 0/1 relative to track vectors
@@ -316,11 +335,11 @@ typedef struct trkitemnode
 
   uint                   pickup_data1        ;  //  Pickup data
   char                  *pickup_data2        ;  //
-
-  char                  *platform_data1      ;
-  uint                   platform_data2      ;
-  char                  *platform_name       ;
-  char                  *station             ;
+                                                //  End 0         End 1
+  char                  *platform_data1      ;  // "00000000" or "ffff0000"
+  uint                   platform_data2      ;  // Index of 'other' platform item
+  char                  *platform_name       ;  // i.e. "Bowenfels - No 1"
+  char                  *station             ;  // i.e. "Bowenfels"
   uint                   platform_wait_time  ;
   uint                   platform_passengers ;
 
@@ -510,7 +529,7 @@ typedef struct hazzarditem {
 /*
  *==============================================================================
  *  TextureNode  Structure
- *  This stores information on the textue image
+ *  This stores information on the texture image
  *
  *  NOTE:  The MSTS ACE file surface format often differs from the normal
  *         Microsoft convention

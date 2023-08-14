@@ -19,15 +19,38 @@
  *   starts with the line "SIMISA@@@@@@@@@@JINX0F0t______"
  *   which is also the start line of 'forest.dat' in the Route directories.
  *
- *   The file describes the token format of its contents, including the
- *   format fillowing the tokens "Tracksection ( SectionCurve ( ".
+ *   Global tsection.dat
  *
- *   Other tsection.dat files are also found at the top level of the route
- *   directories.  They start with "SIMISA@@@@@@@@@@JINX0T0t______" (note the
- *   'T') and contain Tracksection and SectionCurve tokens, but with a
- *   new format for the tokens following SectionCurve.  In fact the format
+ *   The file describes the token format of its contents, including the
+ *   format fillowing the tokens: Tracksection, TrackSection, SectionSize
+ *   and SectionCurve.
+ *
+ *   The file also contains a list of TrackShapes.  Each of these includes
+ *   the file name of a track shape (one of the displayed shapes) and the
+ *   number of TrackSections used to represent the shape.  This the NumPaths
+ *   is usually 1 but may be 2 at a junction or crossing.  There is then
+ *   a series of SectionIdx tokens in order leftmost to rightmost.  This
+ *   gives the number of sections used for this path, the offset of the start
+ *   start section from the shape origin, the angle of section start from the
+ *   shape origin and then a list of TrackShapes.
+ *
+ *   Route tsection.dat
+ *
+ *   In the MSTS directory structure other tsection.dat files are also found
+ *   at the top level of the route directories.  They start with
+ *    "SIMISA@@@@@@@@@@JINX0T0t______" (note the 'T').
+ *
+ *   They contain Tracksection and SectionCurve tokens, but with a new format
+ *   for the tokens following SectionCurve.  In fact the format
  *   is that same as the TRACKSECTION section of the world files - indicating
- *   that the file should be read as a world file or a world file include.
+ *   that the file might be read as a world file or a world file include.
+ *
+ *   The files also include a top level SectionIdx token, followed by a set
+ *   of TrackPath Tokens.  These have the form
+ *      TrackPath (263 1 376)
+ *      TrackPath (267 2 384 386)
+ *   where the last two numbers refer to TrackSections at the start of the file.
+ *   What I do not understand is what the first number refers to.
  *
  *   The great_zig_zag files are similar, but with an additional tsection.dat
  *   file in the route directory OpenRails.  This is an ascii text file
@@ -35,13 +58,21 @@
  *   " include ( "../../../Global/tsection.dat" )"
  *   followed by tokens using the top level format.
  *
- *   For simplicity this routine first reads the top level file, if it exists.
- *   It then reads the OpenRails file, if it exists, ignoring any include
- *   statements.
+ *   For simplicity this routine first reads the global/tsection.dat file, if
+ *   it exists.   It then reads the route/OpenRails/tsection.dat file, if it
+ *   exists, ignoring any include statements.
+ *
+ *   It does not read the route/tsection.dat.  So far this has not caused a
+ *   problem.
+ *
+ *   I wonder whether the SectionIdx data is really needed.  As I remember it,
+ *   ZR gets all the information it needs to move the trains along each section
+ *   of track from the track database file.
  *
  * *****************************************************************************
  */
 
+int read_route_tsection_dat(MSfile *msfile) ;
 
 TrackSection *new_track_section(){
 TrackSection *track_section ;
@@ -136,7 +167,7 @@ int          *section       = NULL ;
  *  or GLOBAL directory.  There may be extra definitions in
  *  directory Openrails within the Route directory
  */
-      for(idir=0;idir<2;idir++){
+      for(idir=0;idir<3;idir++){
         printf("  idir = %i\n",idir) ;
         printf("  ORroutedir = %s\n",ORroutedir) ;
         printf("  ORdir      = %s\n",ORdir) ;
@@ -149,7 +180,7 @@ int          *section       = NULL ;
           strcpy(string,ORdir) ;
           if(ip)printf(" string = %s\n",string);
           strcat(string,"Global/") ;
-        }else{
+        }else if(1==idir){
           l = strlen(ORroutedir) + strlen("OpenRails/")
                                  + strlen(base_name) + 1 ;
           if(ip)printf(" l = %i, %i\n",l,idir);
@@ -157,6 +188,12 @@ int          *section       = NULL ;
           strcpy(string,ORroutedir) ;
           if(ip)printf(" string = %s\n",string);
           strcat(string,"OpenRails/") ;
+        }else{
+          l = strlen(ORroutedir) + strlen(base_name) + 1 ;
+          if(ip)printf(" l = %i, %i\n",l,idir);
+          string = (char *)malloc(l) ;
+          strcpy(string,ORroutedir) ;
+          if(ip)printf(" string = %s\n",string);
         }
         if(ip)printf(" string = %s\n",string);
         strcat(string,base_name) ;
@@ -165,12 +202,15 @@ int          *section       = NULL ;
         iret = zr_find_msfile2(string) ;
         if(iret){
           if(idir == 0){
-            printf("    Routine %s.  Top level tsection.dat  file does not exist\n",
+            printf("    Routine %s.  Top level 'tsection.dat' file not found\n",
                     my_name) ;
             printf("    Filename = %s\n",string)  ;
             continue ;
           }
-          return 0 ;
+          printf("    Routine %s.  'tsection.dat' file not found\n",
+                    my_name) ;
+          printf("    Filename = %s\n",string)  ;
+          continue ;
         }
         if(ip)printf("  Routine %s.  Opening file %s\n",my_name,string) ;
         fp = gopen(string,"r") ;
@@ -192,12 +232,23 @@ int          *section       = NULL ;
         }
         if(ip)printf(" File found: %s\n", string) ;
 /*
+ *  Call a separate routine to read the tsection.dat file in the
+ *  route directory
+ */
+        if(2==idir){
+          read_route_tsection_dat(msfile) ;
+          close_msfile(msfile) ;
+          free(string) ;
+          continue ;
+        }
+/*
  *  valgrind --leak-check=full   --show-leak-kinds=all  --track-origins=yes ./zr -p
  *   Cycle through file
  */
         for(;;){
           if(token1 != NULL){free(token1) ; token1 = NULL ;}
           token1 = ctoken(msfile) ;
+          if(ip)printf("  Token 1 = %s\n",token1) ;
           if(is_rbr(token1)) break ;
           if(!strcmp(token1,eof_mark)) break ;
 
@@ -213,11 +264,12 @@ int          *section       = NULL ;
               break ;
             CASE ("TrackSections")
               n = itoken(msfile) ;     //  maximum index used in this file
-              if(ip)printf(" Enter TrackSections\n") ;
+              if(ip)printf(" Routine %s.  Enter TrackSections\n",my_name) ;
 
               for(;;){
                 if(token2 != NULL){free(token2) ; token2 = NULL ;}
                 token2 = ctoken(msfile) ;
+                if(ip)printf("  Token 2 = %s\n",token2) ;
                 if(is_rbr(token2)) break ;
                 SWITCH(token2)
                   CASE ("TrackSection")
@@ -228,6 +280,7 @@ int          *section       = NULL ;
                     for(;;){
                       if(token3 != NULL){free(token3) ; token3 = NULL ;}
                       token3 = ctoken(msfile) ;
+                      if(ip)printf("  Token 3 = %s\n",token3) ;
                       if(is_rbr(token3)) break ;
                       SWITCH(token3)
                         CASE("SectionSize")
@@ -273,6 +326,7 @@ int          *section       = NULL ;
               for(;;){
                 if(token2 != NULL){free(token2) ; token2 = NULL ;}
                 token2 = ctoken(msfile) ;
+                if(ip)printf("  Token 2 = %s\n",token2) ;
                 if(is_rbr(token2)) break ;
                 SWITCH(token2)
                   CASE ("TrackShape")
@@ -283,6 +337,7 @@ int          *section       = NULL ;
                     for(;;){
                       if(token3 != NULL){free(token3) ; token3 = NULL ;}
                       token3 = ctoken(msfile) ;
+                      if(ip)printf("  Token 3 = %s\n",token3) ;
                       if(is_rbr(token3)) break ;
                       SWITCH(token3)
                         CASE("FileName")
@@ -385,8 +440,122 @@ int          *section       = NULL ;
         if(token3 != NULL){free(token3) ; token3 = NULL ;}
         close_msfile(msfile) ;
         free(string) ;
+        printf("  Routine %s.  End of main loop. idir = %i\n",my_name,idir) ;
       }
       return 0 ;
+}
+
+int read_route_tsection_dat(MSfile *msfile){
+
+int     ip = 0              ;     // Debug printing
+int     idir, i, l, n, iret ;
+char    *token1 = NULL,
+        *token2 = NULL,
+        *token3 = NULL,
+        *string = NULL      ;
+TrackSection *track_section = NULL ;
+TrackShape   *track_shape   = NULL ;
+SectionIdx   *section_idx   = NULL ;
+Vector3      *xover         = NULL ;
+int          *section       = NULL ;
+char    my_name[]   = "init_tsec_db" ;
+
+      if(ip)printf(" Enter routine %s\n",my_name) ;
+/*
+ *  valgrind --leak-check=full   --show-leak-kinds=all  --track-origins=yes ./zr -p
+ *   Cycle through file
+ */
+      for(;;){
+        if(token1 != NULL){free(token1) ; token1 = NULL ;}
+        token1 = ctoken(msfile) ;
+        if(ip)printf("  Token 1 = %s\n",token1) ;
+        if(is_rbr(token1)) break ;
+        if(!strcmp(token1,eof_mark)) break ;
+
+        skip_lbr(msfile) ;
+        SWITCH(token1)
+          CASE ("TrackSections")
+            if(ip)printf(" Routine %s. Enter TrackSections\n",my_name) ;
+            n = itoken(msfile) ;     //  maximum index used in this file
+            for(;;){
+              if(token2 != NULL){free(token2) ; token2 = NULL ;}
+              token2 = ctoken(msfile) ;
+              if(ip)printf("  Token 2 = %s\n",token2) ;
+              if(is_rbr(token2)) break ;
+              SWITCH(token2)
+                CASE ("TrackSection")
+                CASE ("Tracksection")
+                  track_section = new_track_section() ;
+                  skip_lbr(msfile) ;
+/*
+ * Read section curve
+ */
+                  if(token3 != NULL){free(token3) ; token3 = NULL ;}
+                  token3 = ctoken(msfile) ;
+                  if(ip)printf("  Token 3 = %s\n",token3) ;
+                  if(strcmp(token3,"SectionCurve")){
+                    printf(" Routine %s error\n",my_name) ;
+                    printf(" Token 'SectionCurve' missing in file "
+                            " route_directory/tsection.dat\n") ;
+                    printf("  Program stopping ...\n") ;
+                    exit(0) ;
+                  }
+                  skip_lbr(msfile) ;
+                  i = itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  track_section->index = itoken(msfile) ;
+                  if(0==i){
+                    track_section->length = dtoken(msfile) ;
+                    dtoken(msfile) ;
+                  }else{
+                    track_section->angle  = dtoken(msfile) ;
+                    track_section->radius = dtoken(msfile) ;
+                  }
+                  skip_rbr(msfile) ;
+                  break ;
+                DEFAULT
+                    printf("  Routine %s error\n",my_name) ;
+                    printf("    Token 2 not recognised\n") ;
+                    printf("    Token 2 is %s\n",token2) ;
+                    printf("  Program stopping ...\n") ;
+                    exit(0) ;
+              END
+            }
+            break ;
+          CASE ("SectionIdx")
+            if(ip)printf(" Routine %s.  Enter SectionIdx\n",my_name) ;
+            n = itoken(msfile) ;     //  maximum index used in this file
+            for(;;){
+              if(token2 != NULL){free(token2) ; token2 = NULL ;}
+              token2 = ctoken(msfile) ;
+              if(ip)printf("  Token 2 = %s\n",token2) ;
+              if(is_rbr(token2)) break ;
+              SWITCH(token2)
+                CASE ("TrackPath")
+                  skip_lbr(msfile) ;
+                  i = itoken(msfile) ;
+                  n = itoken(msfile) ;
+                  for(i=0;i<n;i++)itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                DEFAULT
+                    printf("  Routine %s error\n",my_name) ;
+                    printf("    Token 2 not recognised\n") ;
+                    printf("    Token 2 is %s\n",token2) ;
+                    printf("  Program stopping ...\n") ;
+                    exit(0) ;
+              END
+            }
+            break ;
+          DEFAULT
+            printf("  Routine %s error\n",my_name) ;
+            printf("    Token 1 not recognised\n") ;
+            printf("    Token 1 is %s\n",token1) ;
+            printf("  Program stopping ...\n") ;
+            exit(0) ;
+        END
+      }
+      return 0;
 }
 
 int print_tsec_section(int section_index){

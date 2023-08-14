@@ -19,7 +19,8 @@
 double branch_curve(TrkSector *tn, int pin_1);
 
 /*
- *  Routine to simplify storage of two-way switches (UK points).
+ *  Routine to simplify storage of two-way switches (UK points).  It modifies
+ *  the junction track item values so that:
  *    The first, denoted by 'pin' zero is always the common track.
  *    The next two (1 and 2) correspond to the left and right branches
  *    The integer straight indicates which of 1 or 2 is the straightest
@@ -33,12 +34,19 @@ int   set_junction_path(TrkSector *tn){
 uint   ip = 0 ,          // DEBUG
        n_in_pins,
        n_ot_pins,
-       n, i0, i1          ;
-double c1, c2, c0 ;
+       n, n1, i0, i1 ;
+double c1, c2, c0  ;
+TrkSector     *tn1 ;
+TrkVectorNode *vn1 ;
 char  my_name[] = "set_junction_path" ;
 
 
-//      ip = ((int)tn->uid == 196) ;
+//      ip = ( (int)tn->uid == 481 ) || ( (int)tn->uid == 540 )  ;
+      if(ip){
+        printf("\n******************************\n") ;
+        printf("  Enter routine %s.  Track Sector = %i\n",
+                                                             my_name,tn->uid) ;
+      }
 
       n_in_pins = tn->type_of_pin[0] ;
       n_ot_pins = tn->type_of_pin[1] ;
@@ -58,39 +66,79 @@ char  my_name[] = "set_junction_path" ;
  *  If necessary reorganise so that number of 'in' pins equals 1
  */
       if(n_in_pins>1){
+        if(ip){
+          printf("  Routine %s.  Junction at Track Section uid = %i\n",my_name, tn->uid) ;
+          printf("               Number of in pins = %i\n",n_in_pins ) ;
+          printf("               Swapping pin 0 (Track uid %i) with pin 2 (Track uid %i).\n",
+                tn->pin_to_section[0], tn->pin_to_section[2] ) ;
+        }
         i1                    = tn->pin_to_section[2] ;
         tn->pin_to_section[2] = tn->pin_to_section[0] ;
         tn->pin_to_section[0] = i1 ;
-        tn->type_of_pin[0] = tn->type_of_pin[1] ;
-        tn->type_of_pin[1] = n_in_pins ;
+        tn1                   = tn->trk_sector[2] ;
+        tn->trk_sector[2]     = tn->trk_sector[0] ;
+        tn->trk_sector[0]     = tn1 ;
+        i1                    = tn->pin_info[2] ;
+        tn->pin_info[2]       = tn->pin_info[0] ;
+        tn->pin_info[0]       = i1 ;
+        tn->type_of_pin[0]    = n_ot_pins ;
+        tn->type_of_pin[1]    = n_in_pins ;
       }
 /*
  *  Calculate curvature of 'out' tracks
  */
       c1 = branch_curve(tn, 1) ;
       c2 = branch_curve(tn, 2) ;
+      if(ip)printf("  AA   c1, c2 = %f %f\n",c1,c2 ) ;
       if((c1 == c2) && (tn->pin_to_section[1] != tn->pin_to_section[2]) ){
         printf("  Routine %s.  Routine branch_curve returns equal curvatures.\n",my_name) ;
         printf("  Junction %i, Pins %i %i %i, Curvature %f %f\n",
           tn->uid,     tn->pin_to_section[0],
           tn->pin_to_section[1], tn->pin_to_section[2],
           c1, c2) ;
+#if 0
+        for(i1=0; i1<3; i1++){
+          n1 = tn->pin_to_section[i1] ;
+          tn1 = &track_db.trk_sections_array[n1-1] ;
+          printf("  Pin = %i,  Track Section = %i\n",i1,n1) ;
+          list_track_section(tn1) ;
+        }
+#endif
       }else if(ip){
         printf("  Junction %i, Pins %i %i %i, Curvature %f %f\n",
           tn->uid,     tn->pin_to_section[0],
           tn->pin_to_section[1], tn->pin_to_section[2],
           c1, c2) ;
       }
+      if(ip)printf("  BB   c1, c2 = %f %f\n",c1,c2 ) ;
 /*
- *  Order 'out' tracks so left comes first
+ *  Order 'out' tracks so highest positive curvature (left) comes first
  */
 
-      if(c1>c2){
+      if(c1<c2){
+        if(ip){
+          printf("  Routine %s.  Junction at Track Section uid = %i\n",my_name, tn->uid) ;
+          printf("               Curvatures for routes 1 and 2 = %f :: %f\n",c1,c2) ;
+          printf("               Pin_info   for routes 1 and 2 = %i :: %i\n",
+                                                        tn->pin_info[1],tn->pin_info[2]) ;
+          printf("               Swapping pins for track sections %i :: %i\n",
+                                tn->pin_to_section[1], tn->pin_to_section[2]) ;
+        }
         i1                    = tn->pin_to_section[2] ;
         tn->pin_to_section[2] = tn->pin_to_section[1] ;
         tn->pin_to_section[1] = i1 ;
+        tn1                   = tn->trk_sector[2] ;
+        tn->trk_sector[2]     = tn->trk_sector[1] ;
+        tn->trk_sector[1]     = tn1 ;
+        i1                    = tn->pin_info[2] ;
+        tn->pin_info[2]       = tn->pin_info[1] ;
+        tn->pin_info[1]       = i1 ;
         c0 = c1 ; c1 = c2; c2 = c0 ;
+        tn->mainline          = 2  ;
+      }else{
+        tn->mainline          = 1  ;
       }
+      if(ip)printf("  CC   c1, c2 = %f %f\n",c1,c2 ) ;
 /*
  *  Specify which 'out' strait is straightest
  */
@@ -108,10 +156,12 @@ char  my_name[] = "set_junction_path" ;
         c1, c2,
         tn->straight,
         tn->branch) ;
+        printf("******************************\n\n") ;
       }
 /*
  *  Set iz_off in world item corresponding to first vector of
- *  straight to 2
+ *  straight to 2.  This is done to reduce interference between
+ *  the graphical representation of the two branches.
  */
       i0 = tn->uid ;
       i1 = tn->pin_to_section[tn->straight] ;  // index of TrkSecNode
@@ -127,7 +177,7 @@ double        length = 0.0 ;
           if(!wit)break ;
           wit->iz_off = 2       ;
           length += vec->length ;
-          if(391==i0)printf(" Junction : %i %f %i %i\n",n,length, wit->uid, wit->iz_off);
+//          if(391==i0)printf(" Junction : %i %f %i %i\n",n,length, wit->uid, wit->iz_off);
           if(length>100.0)break ;
         }
       }else if (i0 == tsn->pin_to_section[1]){
@@ -137,7 +187,7 @@ double        length = 0.0 ;
           if(!wit) break ;
           wit->iz_off = 2       ;
           length += vec->length ;
-          if(391==i0)printf(" Junction : %i %f %i %i\n",n,length, wit->uid, wit->iz_off);
+//          if(391==i0)printf(" Junction : %i %f %i %i\n",n,length, wit->uid, wit->iz_off);
           if(length>100.0)break  ;
         }
       }else{
@@ -159,12 +209,12 @@ double branch_curve(TrkSector *tn, int pin_1){
 
 int           ip = 0 ;
 uint          n0, n1 ;
-TrkSector   *tn1 ;
+TrkSector     *tn1 ;
 TrkVectorNode *vn1 ;
 double        c1 ;
 char  my_name[] = "branch_curve" ;
 
-//      ip = ((int)tn->uid == 492) ;
+//      ip = ( (int)tn->uid == 481 ) || ( (int)tn->uid == 540 )  ;
       if(ip)printf("    Routine %s :: Node index = %i\n",my_name,(int)tn->uid) ;
 
       if(tn->type_of_node != JUNCTION){
@@ -185,44 +235,50 @@ char  my_name[] = "branch_curve" ;
         vn1 = &tn1->vector[0] ;
         if(ip){
           printf("      Pin matches start of track section %i\n",tn1->uid) ;
-          printf("      First vector : angle = %f, radius = %f\n",vn1->angle, vn1->radius) ;
+          printf("      First vector : angle = %f, radius = %f, pin_info = %i\n",
+                                    vn1->angle, vn1->radius, tn->pin_info[pin_1]) ;
+        }
+        if(vn1->angle == 0.0){
+          c1 = 0.0 ;
+        }else{
+          c1 = 1.0/vn1->radius ;
+          if(vn1->angle > 0.0)c1 = -c1 ;
+//          if(1 == tn->pin_info[pin_1])c1 = -c1 ;
+        }
+        if(ip)printf("      Curvature =  %f  : length = %f %i\n",c1,vn1->length,tn1->length_of_vector) ;
+        if(c1 == 0.0 && vn1->length < 10.0 && tn1->length_of_vector>1){
+          vn1 = &tn1->vector[1] ;
+          if(vn1->angle == 0.0){
+            c1 = 0.0 ;
+          }else{
+            c1 = 1.0/vn1->radius ;
+            if(vn1->angle > 0.0)c1 = -c1 ;
+//            if(1 == tn->pin_info[pin_1])c1 = -c1 ;
+          }
+        }
+      }else if(tn1->pin_to_section[1] == n0){
+        vn1 = &tn1->vector[tn1->length_of_vector-1] ;
+        if(ip){
+          printf("      Pin matches end of track section %i\n",tn1->uid) ;
+          printf("      Last  vector : angle = %f, radius = %f, pin_info = %i\n",
+                                    vn1->angle, vn1->radius, tn->pin_info[pin_1]) ;
         }
         if(vn1->angle == 0.0){
           c1 = 0.0 ;
         }else{
           c1 = 1.0/vn1->radius ;
           if(vn1->angle < 0.0)c1 = -c1 ;
+//          if(1 == tn->pin_info[pin_1])c1 = -c1 ;
         }
         if(ip)printf("      Curvature =  %f  : length = %f %i\n",c1,vn1->length,tn1->length_of_vector) ;
-        if(c1 == 0.0 && vn1->length < 3.0 && tn1->length_of_vector>1){
-          vn1 = &tn1->vector[1] ;
+        if(c1 == 0.0 && vn1->length < 10.0 && tn1->length_of_vector>1){
+          vn1 = &tn1->vector[tn1->length_of_vector-2] ;
           if(vn1->angle == 0.0){
             c1 = 0.0 ;
           }else{
             c1 = 1.0/vn1->radius ;
             if(vn1->angle < 0.0)c1 = -c1 ;
-          }
-        }
-      }else if(tn1->pin_to_section[1] == n0){
-        vn1 = &tn1->vector[tn1->length_of_vector-1] ;
-        if(ip){
-          printf("     Pin matches end   of track section %i\n",tn1->uid) ;
-          printf("     Last  vector : angle = %f, radius = %f\n",vn1->angle, vn1->radius) ;
-        }
-        if(vn1->angle == 0.0){
-          c1 = 0.0 ;
-        }else{
-          c1 = -1.0/vn1->radius ;
-          if(vn1->angle < 0.0)c1 = -c1 ;
-        }
-        if(ip)printf("      Curvature =  %f  : length = %f %i\n",c1,vn1->length,tn1->length_of_vector) ;
-        if(c1 == 0.0 && vn1->length < 3.0 && tn1->length_of_vector>1){
-          vn1 = &tn1->vector[tn1->length_of_vector-2] ;
-          if(vn1->angle == 0.0){
-            c1 = 0.0 ;
-          }else{
-            c1 = -1.0/vn1->radius ;
-            if(vn1->angle < 0.0)c1 = -c1 ;
+//            if(1 == tn->pin_info[pin_1])c1 = -c1 ;
           }
         }
       }else{

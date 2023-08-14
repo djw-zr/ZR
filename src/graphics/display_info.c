@@ -39,14 +39,30 @@ char        string[2048] ;
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
 
-      glColor3f((GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0) ;
+      glColor3f((GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0) ; //RED
+#if 0
       glBegin(GL_LINES) ;
         glVertex3d(xc, yc, (GLfloat) 0.0) ;
         glVertex3d(xc, yc, (GLfloat) 1.0) ;
       glEnd() ;
-
+#else
+      tx = tile_x0 + xc ;
+      ty = tile_y0 + yc ;
+      xx = (xc - ((int)xc) - 0.5)*tile_size ;
+      yy = (yc - ((int)yc) - 0.5)*tile_size ;
+      zz = tile_h0 + zc*tile_size ;
+      glBegin(GL_LINES) ;
+        glVertex3d(xc-1.0*m2d, yc, zc) ;
+        glVertex3d(xc+1.0*m2d, yc, zc) ;
+        glVertex3d(xc, yc-1.0*m2d, zc) ;
+        glVertex3d(xc, yc+1.0*m2d, zc) ;
+        glVertex3d(xc, yc, zc-1.0*m2d) ;
+        glVertex3d(xc, yc, zc+1.0*m2d) ;
+      glEnd() ;
+#endif
       glColor3f((GLfloat)1.0,(GLfloat)1.0,(GLfloat)1.0) ;
-      sprintf(string," - Lookat Point  :: %f %f %f ", xc,yc,zc);
+      sprintf(string," - Lookat Point :: %f %f %f :: %i %i : %f %f %f\n",
+                            xc,yc,zc,tx,ty,xx,yy,zz);
       print_string_in_window2((GLfloat) xc, (GLfloat) yc, (GLfloat) zc, string);
       glColor3f((GLfloat)1.0,(GLfloat)1.0,(GLfloat)1.0) ;
 
@@ -54,6 +70,7 @@ char        string[2048] ;
         if(0 == wnode->in_use) continue ;
         tx = wnode->tile_x - tile_x0 ;
         ty = wnode->tile_y - tile_y0 ;
+//        ip = wnode->tile_x == -6131 && wnode->tile_y == 14888 ;
         for(witem = wnode->world_item ; witem != NULL; witem = witem->next){
           xx = (tx+0.5)*tile_size +  witem->X ;
           yy = (ty+0.5)*tile_size +  witem->Y ;
@@ -75,15 +92,19 @@ char        string[2048] ;
           }else{
             glColor3d(1.0,1.0,1.0) ;
           }
+          zz = zz + (witem->uid%3)*0.2*m2d ;  //  Reduce chance of overlapping world items
 #if 0
           sprintf(string," - WORLD   :: uid = %i, type =  %i"
                          " :: item at :: %f %f %f ",
                          witem->uid,witem->worldtype,xx,yy,zz);
 #else
-    sprintf(string," - WORLD   :: uid = %i, type =  %i"
+          sprintf(string," - WORLD   :: uid = %i, type =  %i"
                          " :: item at :: %f %f %f :: %i %i :: %s",
                          witem->uid,witem->worldtype,witem->X,witem->Y,witem->Z,
                          wnode->tile_x, wnode->tile_y, witem->filename);
+//          if(ip)printf("  World item :: %i %i :: %i :: %s :: %s\n",
+//                       wnode->tile_x, wnode->tile_y, witem->uid,
+//                       witem->filename, witem->filename2) ;
 #endif
           print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
 
@@ -143,14 +164,17 @@ int  display_help(){
 
       sprintf(s1," Switches : 'F8' - toggle switch display, 'g' - toggle switch in front, 'G' - toggle switch behind, 'F6' - toggle platforms and sidings");
       print_string_in_window3(10.0,h-190.0,s1,12) ;
-      sprintf(s1,"               : 'V' - toggle wipers, 'P' - toggle pantographs, 'p' - toggle mirrors,  'F9' - toggle track operations window.");
+      sprintf(s1,"               : 'F9' - toggle train operations, 'V' - toggle wipers, 'P' - toggle pantographs, 'p' -  mirrors,  'T' - water column"
+      );
       print_string_in_window3(10.0,h-210.0,s1,12) ;
 
       sprintf(s1," Special Keys - with 'alt'");
       print_string_in_window3(10.0,h-240.0,s1,12) ;
       sprintf(s1," World items : 'n' - toggle, 'm'/'b' increase/decrease distance to marker, 'o'/'p'  radius around marker, 'k'/'l' height of items ");
       print_string_in_window3(10.0,h-260.0,s1,12) ;
-      sprintf(s1,"  Trains         : 'F7' - cycle                 Track info.   : 't' - toggle");
+      sprintf(s1,"  Trains      : 'F7' - cycle     Track info: 't' - toggle"
+                 "     Turntable: 'c'/'C' - rotate"
+      );
       print_string_in_window3(10.0,h-280.0,s1,12) ;
 
       return 0 ;

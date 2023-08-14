@@ -31,15 +31,17 @@
 #endif
 
 #include <stdio.h>
-#include <ctype.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+
+#include <ctype.h>
 #include <libgen.h>
 #include <math.h>
 #include <limits.h>
-#include <stdlib.h>
 //#include <assert.h>
 #include <time.h>
-#include <errno.h>
+#include <ftw.h>
 
 #include <dirent.h>
 #include <fcntl.h>
@@ -80,11 +82,14 @@
 //  #include <SDL2/SDL_ttf.h>
 //#endif
 
+#include "sound.h"
+
 #ifdef PORTAUDIO
   #include <stdint.h>
   #include "portaudio.h"
 #endif
 
+#include "fcaseopen.h"
 #include "btree.h"
 typedef u_int uint ;
 
@@ -156,6 +161,7 @@ int  __switch_next2__ ;
 char    *MSTSdir    ;        // Top directory for MSTS files (if any)
 char    *ORdir      ;        // Top directory for OR routes (if any)
 char    *ORroutedir ;        // Top directory of current route (if any)
+char    *ZRdotdir   ;        // Location of users .zr file
 char    *ZRconfig   ;        // Location of user config file ($Home/.zr/config)
 char    *ZRfonts    ;        // Location of user font file ($Home/.zr/fonts)
 char    eof_mark[] = "******Z" ;   // Use to flag end-of-file in text files.
@@ -193,6 +199,7 @@ int     i_control1_old[200],
 int     l_disp0 = 1,            //  True for printing during display()
         l_disp1 = 0 ;           //  True if new position
 int     i_zra   = 0 ;           //  Switch under keyboard control
+int     i_zrt   = 0 ;           //  Toggle under keyboard control
 int     l_ip    = 0 ;           //  Used to control some debug printing
 
 // Top level pointers to structures
@@ -233,6 +240,8 @@ TrainNode    *player_train   = NULL ;
 
 RawWagonNode *rawwagonlist_beg  = NULL ;  // Pointer to first node in list of basic wagon structures
 RawWagonNode *rawwagonlist_end  = NULL ;  // Pointer to last node
+ConsistNode  *consistlist_beg   = NULL ;  // Pointer to first node in list of consists
+ConsistNode  *consistlist_end   = NULL ;  // Pointer to last node
 ShapeNode    *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
 ShapeNode    *wshapelist_end = NULL    ;  // Pointer to last node
 TextureNode  *wtexturelist_beg = NULL ;
@@ -240,14 +249,22 @@ TextureNode  *wtexturelist_end = NULL ;
 
 //World
 
-WorldNode  *worldlist_beg = NULL    ;  // Pointer to first node in list of world items
+WorldNode  *worldlist_beg = NULL    ;  // Pointer to first node in list
 WorldNode  *worldlist_end = NULL    ;  // Pointer to last node in list
+int        world_token_offset = 300 ;
+
 int        load_world_filenames()   ;
 int        load_world(WorldNode *w) ;
-int        world_token_offset = 300 ;
+int        load_world_soundfile(WorldNode *w) ;
 int        list_wfile_item(WorldItem *wi) ;
 
+//Sound
+
+SoundNode  *soundlist_beg = NULL ;
+SoundNode  *soundlist_end = NULL ;
+
 // Textures
+
 TextureNode *texturelist_beg = NULL ;
 TextureNode *texturelist_end = NULL ;
 int         load_texture_filenames();

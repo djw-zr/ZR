@@ -475,9 +475,13 @@ union u_tag {
  *   read_ucarz
  *   This is a byte reading routine designed to read the special unicode text
  *   in the *.t files and possibly others.  The string consists of int16 giving
- *   n, the number of characrters, followed by n unicode characters.
+ *   n, the number of characrters, followed by n unicode UTF16LE characters.
+ *   These are read and converted to UTF8 for linux
+ *
+ *   NOTE the corrected form of this routine has been moved to token.c
+ *        where it can use array 'token' and the routines fgetu and ut_utf8
  */
-
+#if 0
 char * read_ucharz_a(MSfile *msfile){
 
 int  i, n  ;
@@ -490,7 +494,6 @@ int   fbin = msfile->binary ;
         string = (char *)malloc(n+1);  //  generate a new string
         for(i=0;i<n;i++){
           string[i] = getc(fp) ;
-
           getc(fp) ;
         }
         string[n] = '\0' ;
@@ -498,7 +501,7 @@ int   fbin = msfile->binary ;
       }
       return ctoken(msfile) ;
 }
-
+#endif
 /*
  *  Routine to skip to the end of a block
  *  for both ascii and binary  MSTS files

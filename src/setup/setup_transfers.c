@@ -39,7 +39,7 @@ int setup_transfers(void){
         for(witem= wnode->world_item; witem != NULL ; witem = witem->next){
           if(witem->worldtype != PICKUP_ALT)continue ;
 //          if(!witem->n_tr_item)continue ;
-          printf("  World item = %4i,  World type = %4i, %s, name = %s"
+            if(ip)printf("  World item = %4i,  World type = %4i, %s, name = %s"
                  "  n_tr_items = %i,    %i, %i :: Transfer Type = %i\n",
                    witem->uid, witem->worldtype,  token_idc[witem->worldtype],
                    witem->filename,
@@ -49,7 +49,7 @@ int setup_transfers(void){
 //  Ignore road items (for now?)
           if(!witem->n_tr_item || witem->tr_item_db[0]) continue ;
           pp = &(witem->u.pickup_obj) ;
-          if(0)printf("    Pickup speed %f to %f.  Type = %i, %i.  Options = %f."
+          if(ip)printf("    Pickup speed %f to %f.  Type = %i, %i.  Options = %f."
                  " Speed = %f, Available = %f.  Feed rate = %f.\n",
                  pp->min_mps, pp->max_mps, pp->pickuptype, pp->pickuptype_2,
                  pp->pickup_options,

@@ -14,12 +14,20 @@
  */
 
 double sc_pop_stack(void) {
-  double  z ;
+  double  z  ;
+  int     ip ;
+
+      ip = (n_sig1 == signal0->uid) ;
+
       z = sc_stack[i_stack] ;
       if(i_stack > 0) i_stack-- ;
+      if(ip)printf("  sc_pop_stack :: i_stack = %i\n",i_stack) ;
       return z ;
 }
 int sc_push_stack(double x){
+  int     ip ;
+
+      ip = (n_sig1 == signal0->uid) ;
 
       if(i_stack < n_stack-1){
         i_stack++;
@@ -29,6 +37,7 @@ int sc_push_stack(double x){
         printf("  Program stopping ...\n") ;
         exit(0) ;
       }
+      if(ip)printf("  sc_push_stack :: i_stack = %i\n",i_stack) ;
       return 0 ;
 }
 
@@ -44,7 +53,7 @@ int sc_push_stack(double x){
  */
 double block_state(SignalDB *signal){
 
-  int    ip  = 0  ;
+  int    ip       ;
   int    i, j, k, jn, iret ;
   int    l_start  ;
   int    l_found  ;
@@ -70,7 +79,7 @@ double block_state(SignalDB *signal){
 //      ip = (67 == signal->uid) ;
 //      ip = (90 == signal->uid) || (91 == signal->uid) ;
 //      ip = (69 == signal->uid) || (74 == signal->uid) ;
-
+      ip = (n_sig1 == signal0->uid) ;
 //      if(!ip) return 0.0 ;
       trk_item = signal->trk_item           ;
       sig_subobj = signal->sig_subobj ;
@@ -92,10 +101,9 @@ double block_state(SignalDB *signal){
         printf("  track item uid   =  %i\n", track_item_uid) ;
         printf("  track item index =  %i\n", track_item_index) ;
         printf("\n") ;
-        printf("  track section    =  %i\n", trk_item->signal_direction) ;
+        printf("  track section    =  %i\n", track_section) ;
 
       }
-
 
       trk_sect   = &(track_db.trk_sections_array[track_section]) ;
       if(!(trk_sect->trk_item_list)) exit(0) ;
@@ -116,6 +124,11 @@ double block_state(SignalDB *signal){
       t.sect_distance = trk_item->sect_distance ;
       t.idirect       = trk_item->signal_direction ;  // 0 facing lower values
       t.itrack        = trk_item->track_section + 1 ;
+
+      if(ip){
+        printf("  Traveller starting on track %i, direction %i, distance %f, length %f\n",
+                   t.itrack, t.idirect, t.sect_distance, t.tn->length) ;
+      }
 
       if(sig_subobj->sig_back_facing)t.idirect = !t.idirect ;
 /*
@@ -195,8 +208,8 @@ double block_state(SignalDB *signal){
             tt = &train->front ;
             for(i=0;i<2;i++){
               if(i)tt = &train->back ;
-              if(ip)printf("  Test train %s  :: track sections = %i, %i,"
-                     "  distances = %f  : %f  %f\n",train->name,
+              if(ip)printf("  Test train %s  :: %i :: track sections = %i, %i,"
+                     "  distances = %f  : %f  %f\n",train->name, i,
                      tt->itrack, t.itrack,
                      tt->sect_distance, d1, d2) ;
               if(tt->itrack != t.itrack)continue ;
@@ -263,14 +276,13 @@ int route_set(SignalDB *signal){
   uint          new_sect_index  ;
   uint          old_pin   ;
 
-
-
   char          *my_name  = "route_set" ;
 /*
  *  If there is no junction link - return TRUE
  */
 //      ip = (90 == signal->uid) || (91 == signal->uid) ;
 //      ip = (69 == signal->uid) || (74 == signal->uid) ;
+      ip = (n_sig1 == signal0->uid) ;
 /*
  *  Track items store the track section index - not the uid
  */
@@ -305,7 +317,7 @@ int route_set(SignalDB *signal){
       if(!signal->sig_subobj->sig_jn_link) return (double) 1.0 ;
 /*
  **************************************************************************
- *  Loop until junctio or end of line found
+ *  Loop until junction or end of line found
  **************************************************************************
  */
       new_sect_index = trk_sect->uid ; ;
@@ -415,20 +427,35 @@ int route_set(SignalDB *signal){
           printf("                jn_branch = %i\n",jn_branch) ;
         }
         if(jn_sect_index == jn_link){
-          if(!jn_chk) return (double) 1.0 ;        //  Junction found - no checks
-          if(old_pin == 0){                        //  Track splits at junction
-            if(trk_branch == jn_branch+1) return (double) 1.0 ;  // Junction found, branch set
-            else                            return (double) 0.0 ;  // Branch test failed
-          }else{                                   //  Tracks join at junction
-            if(trk_branch == jn_branch+1)return (double) 1.0 ;  // Junction found, branch set
-            else                         return (double) 0.0 ;  // Branch test failed
+          if(ip){
+            printf("  Routine %s.  Junction %i found\n",my_name,jn_link) ;
+            printf("               Junction check flag = %i (1 == check path)\n",jn_chk) ;
           }
+          if(!jn_chk) return (double) 1.0 ;        //  Junction found - no checks
+          if(ip){
+            printf("               old_pin = %i\n",old_pin) ;
+            printf("               trk_branch = %i\n",trk_branch) ;
+            printf("               jn_branch  = %i\n",jn_branch) ;
+          }
+#if 0
+          if((1 == trk_branch && 1 == jn_branch) || (2 == trk_branch && 0 == jn_branch))
+                                      return (double) 1.0 ;  // Junction found, branch set
+          else                        return (double) 0.0 ;  // Branch test failed
+#else
+          if(1 == trk_sect->mainline){
+            if(trk_branch == jn_branch+1) return (double) 1.0 ;  // Junction found, branch set
+            else                          return (double) 0.0 ;  // Branch test failed
+          }else{
+            if((1 == trk_branch && 1 == jn_branch) || (2 == trk_branch && 0 == jn_branch))
+                                        return (double) 1.0 ;  // Junction found, branch set
+            else                        return (double) 0.0 ;  // Branch test failed
+          }
+#endif
         }
 /*
  *  Move to next section
  *  Check that switch is set
  */
-
         if(old_pin>0){
           if((uint)old_pin != trk_branch){
             return (double) 0.0 ;             //  Junction set against route
@@ -557,6 +584,16 @@ int sig_feature(int n){
         return sig_subobj->sig_number_plate ;
       }else if(n == SIG_GRADIENT_PLATE){
         return sig_subobj->sig_gradient_plate ;
+      }else if(n == SIG_DECOR){
+        return sig_subobj->sig_decor ;
+      }else if(n == SIG_USER1){
+        return sig_subobj->sig_user1 ;
+      }else if(n == SIG_USER2){
+        return sig_subobj->sig_user2 ;
+      }else if(n == SIG_USER3){
+        return sig_subobj->sig_user3 ;
+      }else if(n == SIG_USER4){
+        return sig_subobj->sig_user4 ;
       }else
         return 0 ;
 }
@@ -572,13 +609,14 @@ int sig_feature(int n){
 
 int def_draw_state(int k){
 
-  int     ip = 0 ;
-  int     i ;
+  int     ip ;
+  int     i  ;
   SigType *sig_type = signal0->sig_type ;
   char    *my_name  = "def_draw_state"  ;
 
 
-      ip = ip && (97 == signal0->uid) ;
+ //     ip = ip && (97 == signal0->uid) ;
+      ip = (n_sig1 == signal0->uid) ;
       if(k<0 || k>8){
         printf("  Routine %s called with state index out of range\n",my_name) ;
         printf("    Index       = %i\n",k) ;
@@ -611,8 +649,10 @@ int def_draw_state(int k){
             printf("%p ",(void *)sig_type->sig_draw_a[i]) ;
           }
         }
-        printf("\n") ;
-        printf("    Output draw_state = %i\n",sig_type->sig_draw_a[k]->index) ;
+        printf("\n**********************************************************\n") ;
+        printf("    Set draw_state to %i :: %s \n",sig_type->sig_draw_a[k]->index,
+               token_signal_aspect[sig_type->sig_draw_a[k]->index]) ;
+        printf("**********************************************************\n") ;
       }
       return sig_type->sig_draw_a[k]->index ;
 }
@@ -624,11 +664,23 @@ int dist_multi_sig_mr(int ix, int iy){
       return 0 ;
 }
 
+int train_has_call_on(){
+
+      return 0 ;
+}
+int train_has_call_on_restricted(){
+
+      return 0 ;
+}
+
 int sc_save(char* name){
 
-  int    ip = 0 ;
+  int   ip ;
   double x ;
   char   *my_name = "sc_save" ;
+
+      ip = (n_sig1 == signal0->uid)  ;
+
       if(!strcmp(name,"state")){
         signal0->state = nint(sc_pop_stack()) ;
         if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
@@ -660,9 +712,12 @@ int sc_save(char* name){
 
 int sc_func(char *name){
 
-  int    ip = 0 ;
+  int    ip ;
   double x,y ;
   char   *my_name = "sc_func" ;
+
+      ip = (n_sig1 == signal0->uid)  ;
+
       if(!strcmp(name,"block_state")){
         x = sc_pop_stack() ;
         if(ip)printf("  Call routine block_state, x = %f\n",x) ;
@@ -696,6 +751,16 @@ int sc_func(char *name){
         x = dist_multi_sig_mr(nint(x),nint(y));
         sc_push_stack(x) ;
         if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
+      }else if(!strcmp(name,"TrainHasCallOn")){
+        sc_pop_stack() ;
+        x = train_has_call_on();
+        sc_push_stack(x) ;
+        if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
+      }else if(!strcmp(name,"TrainHasCallOn_Restricted")){
+        sc_pop_stack() ;
+        x = train_has_call_on_restricted();
+        sc_push_stack(x) ;
+        if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
       }else{
         printf("###### Routine %s. Function name '%s' not recognised\n",my_name,name) ;
       }
@@ -710,6 +775,8 @@ int sc_var(char *name){
 
   int  ip = 0 ;
   char *my_name = "sc_var" ;
+
+      ip = (n_sig1 == signal0->uid)  ;
 
       if(!strcmp(name,"SIGFN_NORMAL")){
         sc_push_stack((double)SIG_NORMAL) ;
@@ -777,6 +844,18 @@ int sc_var(char *name){
       }else if(!strcmp(name,"SIGFEAT_GRADIENT_PLATE")){
         sc_push_stack((double)SIG_GRADIENT_PLATE) ;
         if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"SIGFEAT_USER1")){
+        sc_push_stack((double)SIG_USER1) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"SIGFEAT_USER2")){
+        sc_push_stack((double)SIG_USER2) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"SIGFEAT_USER3")){
+        sc_push_stack((double)SIG_USER3) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"SIGFEAT_USER4")){
+        sc_push_stack((double)SIG_USER4) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
       }else if(!strcmp(name,"has_number_plate")){
         sc_push_stack((double)has_number_plate) ;
         if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
@@ -786,8 +865,15 @@ int sc_var(char *name){
       }else if(!strcmp(name,"BLOCK_CLEAR")){
         sc_push_stack((double)SIG_CLEAR) ;
         if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"BLOCK_OCCUPIED")){
+        sc_push_stack((double)SIG_OCCUPIED) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"BLOCK_JN_OBSTRUCTED")){
+        sc_push_stack((double)SIG_JN_OBSTRUCTED) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
       }else{
         printf("###### Routine %s. Variable name '%s' not recognised\n",my_name,name) ;
+        printf("       Signal uid = %i, type = %s\n",signal0->uid, signal0->type_name) ; ;
       }
       return 0 ;
 }

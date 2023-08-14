@@ -32,6 +32,13 @@ int init_data_structures(){
   char *pdb_file = msts_pdb_file ;
   char *tdb_file = msts_tdb_file ;
   char *rdb_file = msts_rdb_file ;
+#elif defined ROUTE_NEW_FOREST
+// Project file : Name, Description, Route start
+  char pdb_file[] = "Watersnake.trk" ;
+// Track data base : nodes, crossings etc.
+  char tdb_file[] = "Watersnake.tdb" ;
+// Road data base  : nodes etc.
+  char rdb_file[] = "Watersnake.rdb" ;
 #else
 // Project file : Name, Description, Route start
   char pdb_file[] = "au_great_zig_zag.trk" ;
@@ -108,6 +115,7 @@ char           my_name[] = "init_data_structures" ;
 /*
  *  Open tsection.dat file
  */
+      printf("   Read track section database file\n");
       init_tsec_db() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -139,11 +147,14 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load tile files\n") ;
       for(tl_node = tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
+//        printf("  Tile : %i %i :: %i\n",tl_node->tilex, tl_node->tiley,
+//                                        tl_node->t_found) ;
         if(0 == tl_node->t_found) continue ;
         read_ms_terrain(tl_node)    ;
         read_elevations(tl_node)    ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+#if 1
 /*
  * *****************************************************************************
  *  Process the world files (sub-directory 'world')
@@ -168,6 +179,7 @@ char           my_name[] = "init_data_structures" ;
       for(wnode=worldlist_beg; wnode!=NULL; wnode=wnode->next){
         load_world(wnode) ;
         bt_walk_a2z(wnode->shape_tree, add_world_shapes_to_master) ;
+        load_world_soundfile(wnode) ;
       }
       if(ip)dump_btree(shape_master,0,"X") ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -178,8 +190,8 @@ char           my_name[] = "init_data_structures" ;
       printf("   Link world files to track vectors\n") ;
       for(i=0;i<track_db.trk_sections_array_size;i++){
         tnnode = &(track_db.trk_sections_array[i]) ;
-//        printf("/*  Routine %s, Track Section Node %i, Index %i, Type %i\n",
-//            my_name, i, tnnode->uid, tnnode->type_of_node) ;
+        if(ip)printf("  Routine %s, Track Section Node %i, Index %i, Type %i\n",
+            my_name, i, tnnode->uid, tnnode->type_of_node) ;
         add_world_item_pointers_to_track_vectors(tnnode) ;
       }
 /*
@@ -195,6 +207,7 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Set track item positions\n") ;
       set_track_items_posn(&track_db) ;
+#endif
 /*
  * *****************************************************************************
  *  Process the files describing engines and wagons.
@@ -222,6 +235,7 @@ char           my_name[] = "init_data_structures" ;
  *        Note:  Many wagons will also use other MSTS or route textures.
  * *****************************************************************************
  */
+#if 1
       printf("***********************************************************\n") ;
       printf(" PROCESS WAGONS\n") ;
       printf("***********************************************************\n") ;
@@ -234,7 +248,7 @@ char           my_name[] = "init_data_structures" ;
  *   2.  Load the Shape (*.s) and Additional data (*.sd) files
  */
       printf("   Read and load wagon shape files\n");
-      ip = 0 ;
+//      ip = 0 ;
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         if(ip){
           printf(" Call load_shape :: shape name = %s\n",snode->name) ;
@@ -249,9 +263,12 @@ char           my_name[] = "init_data_structures" ;
 //      if(!strcmp(snode->name,"4W-CV-load"))print_shape_file_data(snode) ;
 //      if(!strcmp(snode->name,"4W-CW2"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"1905-I103"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"1905-S654"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->nametexturelist_beg,"1905-S654"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"AU_NSW_Dtruck3"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"SMRcrew"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"AAC_DEE_MNR_35001"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"DR_BR_5MT_44839"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"33020"))print_shape_file_data(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -272,6 +289,7 @@ char           my_name[] = "init_data_structures" ;
  *    3a.  Sort list
  */
       printf("   Sort textures\n");
+      printf("   wtexturelist_beg = %p\n",(void *)&wtexturelist_beg) ;
       sort_textures(&wtexturelist_beg) ;
 /*
  *    4.  Add wagon texture pointers to wagon structures
@@ -281,6 +299,7 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Add links to textures needed by each wagon shape\n");
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
+//      printf("  Add textures to wagon %s\n",snode->name) ;
         add_texture_pointers_to_wagon_shapes(snode) ;
       }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -295,6 +314,11 @@ char           my_name[] = "init_data_structures" ;
         printf(" data :: BB\n") ;
       }
         printf(" data :: CC\n") ;
+#endif
+/*
+ *   6.  Read consist files
+ */
+      load_consist_files() ;
 #endif
 /*
  * *****************************************************************************
@@ -414,6 +438,7 @@ char           my_name[] = "init_data_structures" ;
         land_texture = tx_node ;
         if(ip || 1)printf("   land_texture = %p\n",(void *)land_texture) ;
       }
+      if(!land_texture)printf(" ERROR : Land texture not found\n") ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *      3.  In each ShapeNode add pointers to the required textures.
@@ -485,16 +510,42 @@ char           my_name[] = "init_data_structures" ;
  *    Read turntable file and generate a list of turntables
  * *****************************************************************************
  */
+      printf("***********************************************************\n") ;
+      printf("   Initialise turntables \n");
+      printf("***********************************************************\n") ;
       read_turntable_file() ;
+      printf("   Setup turntables \n");
       setup_turntables()    ;
+      printf("   Setup transfers \n");
       setup_transfers()     ;
 /*
  * *****************************************************************************
  *    For each world tile generate a list of level crossings
  * *****************************************************************************
  */
+      printf("***********************************************************\n") ;
       printf("   Initialise level crossings \n");
+      printf("***********************************************************\n") ;
       setup_level_crossings() ;
+/*
+ * *****************************************************************************
+ *    Process Environment Files
+ * *****************************************************************************
+ */
+//          NOT DONE YET
+//          SOME SHAPE TEXTURES DEPEND ON NIGHT, SEASON, SNOW ETC.
+/*
+ * *****************************************************************************
+ *    Process Sound Files
+ * *****************************************************************************
+ */
+      printf("***********************************************************\n") ;
+      printf(" INITIALSE SOUNDS\n") ;
+      printf("***********************************************************\n") ;
+      printf("   Collect and Initialise Sounds\n");
+//      collect_sounds() ;
+
+
 /*
  * *****************************************************************************
  *    Print summary data
@@ -679,6 +730,50 @@ DistLevel  *dist_level  ;
                tx_node->n_textures, tx_node->is_alpha, tx_node->is_mask, tx_node->alpha_is_mask,
                tx_node->width, tx_node->height,
                tx_node->gl_mem_format, tx_node->gl_mem_packing, tx_node->gl_tex_ref_no) ;
+      }
+#endif
+/*
+ *  List Platforms and Sidings
+ */
+#if 0
+      printf("***********************************************************\n") ;
+      printf("  List Platforms and Sidings\n");
+      printf("***********************************************************\n") ;
+      list_platforms_and_sidings() ;
+#endif
+/*
+ *  List consists
+ */
+#if 0
+      {
+ConsistNode *consist ;
+
+        printf("***********************************************************\n") ;
+        printf("  List Consists\n");
+        printf("***********************************************************\n") ;
+        for(consist = consistlist_beg; consist != NULL; consist = consist->next){
+          printf("    Consist = %s\n",consist->name) ;
+        }
+      }
+#endif
+/*
+ *  List sidings
+ */
+#if 0
+      {
+uint     i ;
+TrkItem *ti ;
+        printf("***********************************************************\n") ;
+        printf("  List Platforms and Sidings\n");
+        printf("***********************************************************\n") ;
+        for(i=0; i<track_db.trk_items_array_size; i++){
+          ti = &(track_db.trk_items_array[i]) ;
+          if(ti->type_of_node == PLATFORM  && ti->platform_data1[0]!='f'){
+            printf("    Platform name = '%s'\n",ti->platform_name) ;
+          }else if(ti->type_of_node == SIDING  && ti->siding_data1[0]!='f'){
+            printf("    Siding name   = '%s'\n",ti->siding_name) ;
+          }
+        }
       }
 #endif
 /*
@@ -921,6 +1016,9 @@ char      myname[] = "init_pdb, in file: data.c" ;
           CASE ("MilepostUnitsKilometers")
               pdb->MilepostUnitsKilometers = 1 ;
               break ;
+          CASE ("ORTSUserPreferenceForestClearDistance")
+              pdb->ForestClearDistance   = dtoken(&msfile) ;
+              break ;
 
           DEFAULT
               printf("  Routine %s\n",myname) ;
@@ -975,6 +1073,8 @@ int i;
       pdb->TempRestrictedSpeed  = 0.0 ;
       pdb->DerailScale          = 0.0 ;
       pdb->TimetableTollerance  = 0.0 ;
+      pdb->GravityScale         = 1.0 ;
+      pdb->ForestClearDistance  = 20.0 ;
 
       for(i=0;i<12;i++){
         pdb->Environment[i].weather = NULL ;

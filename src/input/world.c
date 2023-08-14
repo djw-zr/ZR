@@ -89,7 +89,7 @@ int load_world_filenames() {
   */
       while ((f_entry = readdir(wdir)) != NULL) {
         len2 = strlen(f_entry->d_name) ;
-        if(strcmp(".w",&(f_entry->d_name[len2-2]))!= 0) continue ;
+        if(len2 != 17 || strcmp(".w",&(f_entry->d_name[15]))!= 0) continue ;
         if(ip)printf("  Found world file = %s\n", f_entry->d_name);
 /*
  * Initialise new worldnode
@@ -138,6 +138,8 @@ int load_world_filenames() {
         world->vdbid_count  = 0 ;
         world->vdb_sphere   = NULL ;
         world->world_item   = NULL ;
+        world->sound_source = NULL ;
+        world->sound_region = NULL ;
         world->shape_tree   = NULL ;
       }
       closedir(wdir) ;
@@ -164,10 +166,14 @@ int  load_world(WorldNode *wnode){
   MSfile  *msfile = &msfile0 ;
   MSblock *msblock1, *msblock2, *msblock3, *msblock4 ;
   FILE    *fp ;
+  char    *ext ;
+  char    *tmp_name   ;
+  char    *parent_dir ;
+  char    *full_parent_dir ;
   char    my_name[] = "load_world" ;
 
 
-//      ip1 = wnode->tile_x == 1457 && wnode->tile_y == 10318 ;
+//      ip1 = wnode->tile_x == -6141 && wnode->tile_y == 14888 ;
 //      ip = ip1 ;
 
       if(ip)printf("\n  Enter routine : %s\n",my_name);
@@ -179,18 +185,21 @@ int  load_world(WorldNode *wnode){
  * =============================================================================
  */
       l = open_msfile(wnode->wfile, msfile, 0, 0) ;
-//      printf(" Routine %s, file %s, l = %i\n",my_name,wnode->wfile,l);
+      if(ip)printf(" Routine %s, file %s, l = %i\n",my_name,wnode->wfile,l);
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n");
         printf(    "  File  = %s\n", wnode->wfile);
         exit(1) ;
       }
+      parent_dir = zr_parentdir(wnode->wfile) ;  // Must be freed
+      full_parent_dir = zr_full_parentdir(wnode->wfile) ;  // Must be freed
+      if(ip)printf("  AAAA  wfile      = %s\n",wnode->wfile) ;
+      if(ip)printf("  AAAA  parent_dir = %s\n",parent_dir) ;
 /*
  *  Filename plus flags for unicode/ascii, binary/text and compressed
  *  This routine has to use the token_bc.c routines to process both
  *  binary and text files.
  */
-
 
       if(ip || ip1){
         printf("  File = %c%c%c %s\n",
@@ -212,7 +221,12 @@ int  load_world(WorldNode *wnode){
  *  Level 0 : TR_WORLDFILE
  */
       l = open_named_block(msfile, 0, TR_WORLDFILE) ;
-      if(0!=l)return 1;
+      if(0!=l){
+        close_msfile(msfile) ;
+        free(parent_dir) ;
+        free(full_parent_dir) ;
+        return 1;
+      }
       if(ip)printf(" Level 0 : token TR_WORLDFILE found \n");
 /*
  *   Level 1
@@ -222,6 +236,8 @@ int  load_world(WorldNode *wnode){
         if(-1==istoken){
           if(ip)printf(" Routine %s.  End of file found at level 1\n",my_name);
           close_msfile(msfile) ;
+          free(parent_dir) ;
+          free(full_parent_dir) ;
           return 1;
         }
         if(istoken == -2){
@@ -232,13 +248,15 @@ int  load_world(WorldNode *wnode){
         itoken  = istoken ;
 
 //        ip = (itoken == LEVELCR) ;
+//        ip1 = wnode->tile_x == -6158 && wnode->tile_y == 14886 ;
 
-        if(ip){
+        if(ip || ip1){
           printf("\n  Level 1 : token = %i  %s  : block data length = %i \n",
            itoken,token_idc[itoken], msblock1->length-msblock1->l_label-9) ;
           printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
           printf("  Tile_X = %i\n",wnode->tile_x);
           printf("  Tile_Z = %i\n",wnode->tile_y);
+          printf("      ip = %i\n",ip) ;
           printf(" +++++++++++++++++++++++++++++++++++++++\n") ;
       }
 
@@ -371,8 +389,10 @@ int  load_world(WorldNode *wnode){
              itoken == PICKUP2    || itoken == SIDING2){
             if(ip)printf(" ################ PICKUP_ALT or SIDING_ALT #### %i ###########\n",itoken);
           }
+          if(ip)printf("  Create a new world item\n") ;
           world_item = (WorldItem *)malloc(sizeof(WorldItem));
           world_item_init(world_item) ;
+          if(ip)printf("  World item created\n") ;
 
           if(NULL == wnode->world_item){
             wnode->world_item = world_item ;
@@ -425,13 +445,70 @@ int  load_world(WorldNode *wnode){
               itoken2,token_idc[itoken2], msblock2->length-msblock2->l_label-9) ;
             if(UID == itoken2){
               world_item->uid = read_uint32_a(msfile) ;
-//              ip = (5432 == world_item->uid) ;
+//              ip = ip1 & (6855 == world_item->uid) ;
               if(ip)printf("      world_item->uid         = %i\n",world_item->uid);
+/*
+ *  Process shape filename
+ *  This is often a filename relative to the current directory.
+ *  Call routine to (1) add shape name to tile/world btree
+ *                  (2) check for shape node
+ *                  (3) If necessary generate shape node, save full filename
+ *                         and add pointer to tile/world btree and full btree
+ */
             }else if(FILENAME == itoken2){
 // Strings are unicode, headed by two byte length
-              world_item->filename = read_ucharz_a(msfile) ;
-              add_shape_name_to_world_btree(wnode, world_item) ;
-              if(ip || ip1)printf("  filename = %s\n",world_item->filename) ;
+              tmp_name = read_ucharz_a(msfile) ;
+              if(ip || ip1)printf("  raw       filename = %s\n",tmp_name) ;
+              str2lc(tmp_name) ;                //  To lower case
+              zr_filename_MS2L(tmp_name) ;      //  Convert '\' and "\\" to '/''
+              if(ip || ip1)printf("  converted filename = %s\n",tmp_name) ;
+/*
+ *  If filename starts with a ./ or ../, add parent directory.
+ */
+              if(tmp_name[0]== '.'){
+  char *string ;
+#if 1
+                string = (char *)malloc(strlen(ORroutedir) + strlen(tmp_name)+ 2) ;
+                strcpy(string,ORroutedir) ;
+#else
+                string = (char *)malloc(strlen(full_parent_dir) + strlen(tmp_name)+ 2) ;
+                strcpy(string,full_parent_dir) ;
+#endif
+                if(ip || ip1)printf("  AA     string = %s\n",string) ;
+                strcat(string,"/") ;
+                if(ip || ip1)printf("  BB     string = %s\n",string) ;
+                strcat(string,tmp_name) ;
+                if(ip || ip1)printf("  CC     string = %s\n",string) ;
+                free(tmp_name) ;
+                tmp_name = strdup(string) ;
+                free(string) ;
+              }
+/*
+ *  Remove "/./" and "/../" from string
+ */
+              if(strstr(tmp_name,"./"))tmp_name = strip_dot_dirs(tmp_name) ;
+/*
+ *  Add shapes to B-tree
+ */
+              ext = zr_extension(tmp_name) ;
+              if(ip || ip1)printf("  filename = %s,  ext = %s\n",tmp_name,ext) ;
+              if(!strcmp(ext,"s")){
+                world_item->filename  = tmp_name ;
+                add_shape_name_to_world_btree(wnode, world_item) ;
+              }else{
+                world_item->filename2 = tmp_name ;
+#if 0
+                printf("+++  Routine %s.  World Item refers to non-shape file\n",
+                                                   my_name) ;
+                printf("       World Type = %i %s\n", world_item->worldtype,
+                                            token_idc[world_item->worldtype]) ;
+                printf("       Shape Node = %p\n", (void *)world_item->snode) ;
+                printf("       Filename   = %s\n", world_item->filename)      ;
+                printf("       Filename2  = %s\n", world_item->filename2)     ;
+#endif
+              }
+              tmp_name = NULL ;
+//              if(ip)dump_btree(wnode->shape_tree,0,"X") ;
             }else if(POSITION == itoken2){
               world_item->X = read_real32_a(msfile) ;  // MSTS X
               world_item->Z = read_real32_a(msfile) ;  // MSTS Y
@@ -470,10 +547,15 @@ int  load_world(WorldNode *wnode){
                 world_item->AY  = 0.0 ;
                 world_item->AZ  = 1.0 ;
               }
-              if(ip || ip1)printf("            QDIRECTION :: world_item->AX, AY, AZ, ANG = "
+              if(ip || ip1){
+                printf("            QDIRECTION :: world_item->A, B, C, D      = "
+                            "%f %f %f : %f\n",
+                   world_item->A, world_item->B,world_item->C, world_item->D) ;
+                printf("            QDIRECTION :: world_item->AX, AY, AZ, ANG = "
                             "%f %f %f : %f\n",
                    world_item->AX, world_item->AY,
                    world_item->AZ, world_item->ANG) ;
+              }
             }else if(VDBID == itoken2){
               world_item->vdb_id = read_lint32_a(msfile) ;
               if(ip)printf("      world_item->vdb_id      = %li\n",world_item->vdb_id);
@@ -488,7 +570,7 @@ int  load_world(WorldNode *wnode){
               world_item->static_flags = read_uint32_a(msfile) ;
               if(ip)printf("      world_item->static_flags = %i\n",world_item->static_flags);
             }else if(TRITEMID == itoken2){
-              if(world_item->n_tr_item<=8){
+              if(world_item->n_tr_item<=16){
                 world_item->tr_item_db[world_item->n_tr_item]      = read_int32_a(msfile) ;
                 if(ip)printf("      world_item->n_tr_item       = %i\n",world_item->n_tr_item );
                 if(ip)printf("      world_item->tr_item_db[]    = %i\n",world_item->tr_item_db[world_item->n_tr_item] );
@@ -497,7 +579,7 @@ int  load_world(WorldNode *wnode){
                 world_item->n_tr_item++ ;
               }else{
                 printf(" ERROR Routine %s.  World item: %i %s %s\n", my_name, world_item->uid, token_idc[world_item->worldtype], world_item->filename) ;
-                printf("       World item has more than 8 associated track items\n") ;
+                printf("       World item has more than 16 associated track items\n") ;
                 read_int32_a(msfile) ; read_int32_a(msfile) ; // Skip track item
               }
             }else if(MAXVISDISTANCE == itoken2){
@@ -520,17 +602,16 @@ int  load_world(WorldNode *wnode){
             }else if(TRACKOBJ == itoken && COLLIDEFLAGS == itoken2){
               world_item->u.track_obj.collide_flags     = read_uint32_a(msfile)  ;
             }else if(TRACKOBJ == itoken && COLLIDEFUNCTION == itoken2){
-//  Skip to end of block
-              for(i=ftell(fp);i<msblock2->byte_end;i++){
-                fgetc(fp) ;
-              }
+              world_item->u.track_obj.collide_function  = read_uint32_a(msfile)  ;
 #if 1
 //  CARSPAWNER OBJECT
             }else if(itoken == CARSPAWNER || itoken == 357){
                if(CARFREQUENCY == itoken2){
-                 world_item->u.car_spawn_obj.car_frequency = read_real32_a(msfile) ;
+                 world_item->u.car_spawn_obj.car_frequency= read_real32_a(msfile) ;
                }else if(CARAVSPEED == itoken2){
-                 world_item->u.car_spawn_obj.car_av_speed  = read_real32_a(msfile) ;
+                 world_item->u.car_spawn_obj.car_av_speed = read_real32_a(msfile) ;
+               }else if(ORTSLISTNAME == itoken2){
+                 world_item->u.car_spawn_obj.list_name    = read_ucharz_a(msfile) ;
                }
 #endif
 //  FOREST OBJECT
@@ -623,34 +704,41 @@ DynTrackSect *dyn_trk_sect ;
               world_item->u.transfer_obj.width             = read_real32_a(msfile) ;
             }else if((itoken == TRANSFER || itoken == 363) && HEIGHT == itoken2){
               world_item->u.transfer_obj.height            = read_real32_a(msfile) ;
-//  SIGNAL OBJECT
+//  SIGNAL
+//    SIGNALSUBOBJ is a set of flags.  A signal shape can have up to 32 heads.
+//      The set of flags show which heads are active.
             }else if(itoken == SIGNAL_ALT && SIGNALSUBOBJ == itoken2){
               world_item->u.signal_obj.signal_sub_object   = read_uint32_a(msfile) ;
+//    SIGNALUNITS starts with the numebr of active heads
             }else if(itoken == SIGNAL_ALT && SIGNALUNITS == itoken2){
               l                                          = read_uint32_a(msfile) ;
               world_item->u.signal_obj.n_signal_units    = l               ;
+//       Allocate storage to contain information about the active heads
               world_item->u.signal_obj.sub_object = (int *)malloc(l*sizeof(int)) ;
               world_item->u.signal_obj.u_data1    = (uint *)malloc(l*sizeof(uint)) ;
               world_item->u.signal_obj.tr_item    = (uint *)malloc(l*sizeof(uint)) ;
-
-              world_item->u.signal_obj.n_matrices = 0    ;
-              world_item->u.signal_obj.skip       = NULL ;
-              world_item->u.signal_obj.signal     = NULL ;
+//       Initialise storage used to speed shape processing
+              world_item->u.signal_obj.signal     = (SignalDB **)malloc(l*sizeof(SignalDB *)) ;
+              world_item->u.signal_obj.n_matrices = 0    ;  //  Number of matrices used by shape
+              world_item->u.signal_obj.skip       = NULL ;  //  Flags to indicate unused matrices
 
               if(ip){
                 printf("  WITEM :: SIGNAL_ALT \n") ;
                 printf("  WITEM ::  n_signal_units = %i\n",world_item->u.signal_obj.n_signal_units) ;
-
               }
+//  Loop to obtain information on active heads
               for(i=0;i<l;i++){
-// SUB BLOCK
                 iret    = open_named_block(msfile,3,SIGNALUNIT) ;
                 itoken3 = SIGNALUNIT ;
                 msblock3 = &(msfile->level[3])  ;
                 if(ip)printf("      Level 3 : token = %i  %s  : block data length = %i \n",
+//    Sub-Object.  This is the index of the active head in list given in sigcfg.dat
                 itoken3,token_idc[itoken3], msblock3->length-msblock3->l_label-9) ;
                 world_item->u.signal_obj.sub_object[i]    = read_int32_a(msfile) ;
-
+//    Id of track item corresponding to this active head
+//    Variable u_data.  In practice always set to zero.
+//                      This may be an index, included originally to allow each head to be connected to
+//                      more than one track item, but in practice not needed.
                 iret    = open_named_block(msfile,4,TRITEMID) ;
                 itoken4 = TRITEMID ;
                 msblock4 = &(msfile->level[4])  ;
@@ -666,8 +754,7 @@ DynTrackSect *dyn_trk_sect ;
                 }
                 end_block(msfile,4) ;
                 end_block(msfile,3) ;
-// END OF SUB BLOCK
-              }
+              }  // End of loop over  active heads
 
 //  LEVELCR OBJECT
             }else if(itoken == LEVELCR && LEVELCRPARAMETERS == itoken2){
@@ -718,7 +805,7 @@ DynTrackSect *dyn_trk_sect ;
               world_item->u.pickup_obj.feed_rate_kgps        = read_real32_a(msfile) ;
             }else if((PICKUP_ALT == itoken || 359 == itoken || PICKUP2 == itoken)
                                                          && COLLIDEFLAGS == itoken2){
-              world_item->u.pickup_obj.collide_flags         = read_uint32_a(msfile) ;
+              world_item->u.pickup_obj.collide_flags = read_uint32_a(msfile) ;
 //  PLATFORM
             }else if(PLATFORM_ALT == itoken && PLATFORMDATA == itoken2){
               world_item->u.platform_obj.platform_data       = read_uint32_a(msfile) ;
@@ -806,6 +893,8 @@ DynTrackSect *dyn_trk_sect ;
       }
       if(0 && iret){} ;                         //  Keep the compiler happy
       close_msfile(msfile) ;
+      free(parent_dir) ;
+      free(full_parent_dir) ;
       if(ip)printf(" Normal return\n");
       return 0 ;
 }
@@ -814,12 +903,13 @@ int world_item_init(WorldItem *world_item){
 
 int i ;
 
+      world_item->uid           = -1   ;
       world_item->next          = NULL ;
       world_item->world_node    = NULL ;
-      world_item->filename      = NULL ;
       world_item->snode         = NULL ;
+      world_item->filename      = NULL ;
+      world_item->filename2     = NULL ;
       world_item->worldtype     = 0    ;
-      world_item->uid           = 0    ;
       world_item->static_flags  = 0    ;
       world_item->collide_flags = 0    ;
       world_item->X             = 0.0  ;
@@ -845,23 +935,22 @@ int i ;
         world_item->tr_item_db[i]    = 0  ;
         world_item->tr_item_db_id[i] = 0  ;
       }
-
-
       return 0;
 }
 
 int add_shape_pointers_to_world_items(){
 
-  int  k, n   ;
-  int  ip = 0 ;   // 0 = no printing, -1 = error printing only
-  int  id = 0 ;
+  int  i, k, n ;
+  int  ip = 0  ;   // 0 = no printing, -1 = error printing only
+  int  id = 0  ;
   int  i_list = 0 ;
   int  n_errors = 0 ;
   WorldNode    *wnode ;
   WorldItem    *witem ;
   ShapeNode    *snode ;
   char         *wname,
-               *sname  ;
+               *sname,
+               *tname ;
   char         my_name[] = "add_shape_pointers_to_world_items" ;
 
         if(ip)printf(" Enter routine %s\n",my_name) ;
@@ -877,8 +966,12 @@ int add_shape_pointers_to_world_items(){
 #endif
           for(witem=wnode->world_item; witem != NULL; witem=witem->next){
             if(NULL != witem->filename){
-//              ip = id = (witem->uid == 184 && wnode->tile_x == 1449) ;
-              wname = strdup(witem->filename) ;
+//              ip = id = (witem->uid == 202
+//                   && wnode->tile_x == -6131 && wnode->tile_y == 14888) ;
+//              ip = id = (witem->uid == 413 ) ;
+              tname = strdup(witem->filename) ;
+              wname = zr_basename(tname) ;
+              free(tname) ;
               n = strlen(wname) ;
               for(k=0;k<n;k++)wname[k] = tolower(wname[k]) ;
 /*
@@ -898,14 +991,22 @@ int add_shape_pointers_to_world_items(){
                 printf("     shape name = %s\n",wname) ;
               }
 //  Gives errors !!!!
-#if 0
+// This may be because the btree only relates to one tile.
+#if 1
   BTree *btree = NULL ;
+//              printf("============================================\n") ;
+//              printf(" Calling find_btree\n") ;
+//              printf(" wname = %s\n",wname) ;
+//              printf("  shape master = %p\n",(void *)shape_master) ;
               btree = find_btree(shape_master,wname) ;
+//              printf("  btree = %p\n",(void *)btree) ;
               if(!btree){
                 printf("  Routine %s\n", my_name) ;
-                printf("    Unable to fine shape with name %s\n",wname) ;
+                printf("    Unable to find shape with name %s\n",wname) ;
               }else{
                 snode = (ShapeNode *) btree->data ;
+//                printf("  snode = %p\n",(void *)snode) ;
+//              printf("============================================\n") ;
                 witem->snode  = snode ;
                 snode->basic  = 0     ;
                 snode->needed = 0     ;
@@ -914,9 +1015,11 @@ int add_shape_pointers_to_world_items(){
                            (void *)wnode, (void *)witem, witem->snode->name) ;
               }
 #else
+              witem->snode = NULL ;
               for(snode = shapelist_beg; NULL != snode; snode=snode->next ){
                 sname = strdup(snode->name) ;
                 for(k=0;k<(int)strlen(sname);k++)sname[k] = tolower(sname[k]) ;
+                if(ip)printf("  sname = %s\n",sname) ;
                 if(0 == strcmp(wname,sname)){
                   witem->snode  = snode ;
                   snode->basic  = 0     ;
@@ -930,6 +1033,15 @@ int add_shape_pointers_to_world_items(){
               }
 #endif
 /*
+ *  TODO
+ *  If shape not found, look for shape file
+ *     If successful and to shapelist and load shape
+ */
+              if(witem->snode == NULL){
+                printf("  Routine %s error.  Unable to find shape %s\n",
+                       my_name,wname) ;
+              }
+/*
  *  Initialise variable n_animations and allocate memory for the animation pointers
  */
               snode = witem->snode ;
@@ -938,20 +1050,31 @@ int add_shape_pointers_to_world_items(){
                 witem->animations = (double **)malloc(witem->n_animations*sizeof(double **)) ;
                 for(k=0;k<witem->n_animations;k++)witem->animations[k] = NULL ;
               }else if(n_errors++<20){
+                printf(" Routine %s\n",my_name) ;
                 printf(" Unable to find shapefile corresponding to %s\n",wname);
-                printf("    witem->uid         = %i\n",witem->uid) ;
+                printf(" wname in ascii : ") ;
+                for(i=0;i<(int)strlen(wname);i++) printf(" %x ",wname[i]) ;
+                printf("\n") ;
+                printf("    witem = %p,  uid = %i,  tile_x = %i %i,  tile_y = %i %i\n",
+                               (void *)witem, witem->uid,
+                               wnode->tile_x, wnode->tile_x-tile_west,
+                               wnode->tile_y, wnode->tile_y-tile_south) ;
                 printf("    witem->worldtype   = %i, %s\n",witem->worldtype,
                                                        token_idc[witem->worldtype]) ;
                 printf("    witem->filename    = %s\n",witem->filename) ;
                 printf("    witem->shape       = %p\n",(void *)witem->snode) ;
                 if(witem->snode)
                 printf("    witem->shape->name = %s",witem->snode->name) ;
+
                 printf("\n") ;
+//#ifndef ROUTE_NEW_FOREST
                 if(i_list++ == 0){
                   for(snode = shapelist_beg; NULL != snode; snode=snode->next ){
-                    printf("  Shape name = %s :: %s\n",snode->name, snode->s_file);
+//                   if(!strncmp(wname,snode->name,7))
+                      printf("  Shape name = %s :: %s\n",snode->name, snode->s_file);
                   }
                 }
+//#endif
                 if(0){
                   printf("\n  Routine %s ... \n",my_name) ;
                   printf("  Program ending ...\n") ;
@@ -999,7 +1122,14 @@ int  list_wfile_item(WorldItem *wi){
 
 /*
  *  Each world node has a btree containing the names of shapes used
- *  within that world tile
+ *  within that world tile.  There is also a master btree.
+ *
+ *  Process shape filename
+ *  This is often a filename relative to the current directory.
+ *  Call routine to (1) add shape name to tile/world btree
+ *                  (2) check for shape node
+ *                  (3) If necessary generate shape node, save full filename
+ *                         and add pointer to tile/world btree and full btree
  */
 
 void  add_shape_name_to_world_btree(WorldNode *wnode, WorldItem *world_item){
@@ -1007,27 +1137,62 @@ void  add_shape_name_to_world_btree(WorldNode *wnode, WorldItem *world_item){
 uint   i ;
 char   *name = NULL ;
 BTree  *n =  wnode->shape_tree ;
+BTree  *btree_node   ;
+ShapeNode *shape     ;
 char   *my_name = "add_shape_name_to_world_btree" ;
 
-//  Make copy of filename without directories and extension
-//  and convert to lower case.
-
+/*  Generate shape name.  This is the filename without directories
+ *  and extension, converted to lower case.
+ */
       name = zr_basename2(world_item->filename) ;
       for(i=0;i<strlen(name);i++)name[i] = tolower(name[i]) ;
-
-//  Compare
-
+/*
+ *  Check world tile btree.
+ *  If it is already flagged, return from routine
+ */
       if(NULL != n){
         if(find_btree(n,name)){
-          free(name) ;
-          return     ;      // Name already exists
+          free(name) ;      //  Release memory
+          return     ;      //  Name already exists
         }
       }
-
-//  Add new item
-
-      wnode->shape_tree =
-           insert_node(wnode->shape_tree,name,NULL) ;
+/*
+ *  Check shape_master btree
+ */
+      btree_node = find_btree(shape_master,name) ;
+/*
+ *  If found insert node with name and data in current world tile btree
+ *  The data is a pointer to the ShapeNode
+ *
+ */
+      if(btree_node){
+        wnode->shape_tree =
+             insert_node(wnode->shape_tree,name,btree_node->data) ;
+        return ;
+      }
+/*
+ *  If not found, generate a new ShapeNode and add the name and filename
+ *  Then add a new node to the shape_master and world tile btrees.
+ */
+      shape = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
+      init_shape_node(shape) ;
+      if(shapelist_beg == NULL){
+        shapelist_beg = shape       ;
+      }else{
+        shapelist_end->next = shape ;
+      }
+      shapelist_end = shape ;
+      shape->next   = NULL ;
+/*
+ *  Add name and filename to shape
+ */
+      shape->name   = strdup(name) ;
+      shape->s_file = strdup(world_item->filename) ;
+/*
+ *  Add name and shape to shape_master and world tile btrees
+ */
+      shape_master      = insert_node(shape_master,     name,(void *)shape) ;
+      wnode->shape_tree = insert_node(wnode->shape_tree,name,(void *)shape) ;
       return ;
 }
 
@@ -1047,4 +1212,227 @@ BTree *bb = (BTree *)b ;
       return ;
 }
 
+/*
+ *   If tthe corresponding *.ws file is present, read the sound sources
+ *   in the file and add to a list held in the world node.
+ */
 
+int  load_world_soundfile(WorldNode *w){
+
+  int ip = 0 ;
+  int n, iret     ;
+  char *s_file ;
+  char *token1 = NULL ;
+  char *token2 = NULL ;
+  char *token3 = NULL ;
+  FILE    *fp ;
+  MSfile  msfile0 ;
+  MSfile  *msfile = &msfile0 ;
+  SoundSourceNode *ss_node ;
+  SoundRegionNode *sr_node ;
+
+  char *my_name = "load_world_soundfile" ;
+
+      if(ip)printf("  Enter routine '%s'\n",my_name) ;
+
+      n = strlen(w->wfile) ;
+      s_file = (char *)malloc(n+2) ;
+      strcpy(s_file,w->wfile) ;
+      s_file[n]   = 's'  ;
+      s_file[n+1] = '\0' ;
+
+      fp = fopen(s_file,"r") ;
+      if(fp == NULL){
+        s_file[n]   = 's'  ;
+        fp = fopen(s_file,"r") ;
+        if(fp == NULL) return 0 ;  // No *.ws file
+      }
+      printf("  World soundfile found: %s\n",s_file);
+
+      iret = open_msfile(s_file, msfile, 0, 0) ;
+      if(iret){
+        printf("\n   ERROR in routine %s: \n",my_name);
+        printf("     Routine open_msfile failed to open file\n");
+        printf("     File = %s\n",s_file) ;
+        close_system() ;
+      }
+      if(ip)printf("    Routine %s.  MSTS file opened\n",my_name) ;
+
+
+      token1 = ctoken(msfile) ;
+      if(strcmp(token1,"Tr_Worldsoundfile")!= 0){
+        printf("\n   ERROR in routine %s: \n",my_name);
+        printf("     File does not start with 'Tr_Worldsoundfile'.\n");
+        close_msfile(msfile) ;
+        return 1 ;
+      }
+
+      skip_lbr(msfile) ;
+      for(;;){
+        if(token2)free(token2) ;
+        token2 = ctoken(msfile);
+        if(is_rbr(token2)) break ;
+        SWITCH(token2)
+          CASE("Soundsource")
+            skip_lbr(msfile) ;
+            ss_node = (SoundSourceNode *)malloc(sizeof(SoundSourceNode)) ;
+            for(;;){
+              if(token3)free(token3) ;
+              token3 = ctoken(msfile) ;  // NOTE use before skip_lbr
+              if(is_rbr(token3)) break ;
+              SWITCH(token3)
+                CASE("Position")
+                  skip_lbr(msfile) ;
+                  ss_node->X = dtoken(msfile) ;
+                  ss_node->Y = dtoken(msfile) ;
+                  ss_node->Z = dtoken(msfile) ;
+                  skip_rbr(msfile);
+                  break ;
+                CASE("FileName")
+                  skip_lbr(msfile) ;
+                  ss_node->filename = ctoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("UiD")
+                  skip_lbr(msfile) ;
+                  new_tmp_token(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                DEFAULT
+                  printf("\n   ERROR in routine %s: \n",my_name);
+                  printf("     Unrecodnised level 3 token.\n");
+                  printf("     Token = '%s'\n",token3);
+                  free(ss_node) ;
+                  ss_node = NULL ;
+                  close_msfile(msfile) ;
+                  return 2 ;
+              END
+            }
+            free(token3) ; token3 = NULL ;
+/*
+ *  Add at front of list
+ */
+            if(ss_node != NULL){
+              ss_node->next = w->sound_source ;
+              w->sound_source = ss_node ;
+            }
+            break ;
+          CASE("Soundregion")
+            skip_lbr(msfile) ;
+            sr_node = (SoundRegionNode *)malloc(sizeof(SoundRegionNode)) ;
+            for(;;){
+              if(token3)free(token3)   ;
+              token3 = ctoken(msfile)  ;
+              if(is_rbr(token3)) break ;
+              SWITCH(token3)
+                CASE("UiD")
+                  skip_lbr(msfile) ;
+                  sr_node->uid = itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("TrItemId")
+                  skip_lbr(msfile) ;
+                  sr_node->trk_item_id0 = itoken(msfile) ;
+                  sr_node->trk_item_id  = itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("SoundregionTrackType")
+                  skip_lbr(msfile) ;
+                  sr_node->snd_trk_type = itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("StaticFlags")
+                  skip_lbr(msfile) ;
+                  sr_node->flags = flagtoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("VDbId")
+                  skip_lbr(msfile) ;
+                  sr_node->flags = atoll(new_tmp_token(msfile)) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("Position")
+                  skip_lbr(msfile) ;
+                  sr_node->X = dtoken(msfile) ;
+                  sr_node->Y = dtoken(msfile) ;
+                  sr_node->Z = dtoken(msfile) ;
+                  skip_rbr(msfile);
+                  break ;
+                CASE("QDirection")
+                  skip_lbr(msfile) ;
+                  sr_node->Q0 = dtoken(msfile) ;
+                  sr_node->QX = dtoken(msfile) ;
+                  sr_node->QY = dtoken(msfile) ;
+                  sr_node->QZ = dtoken(msfile) ;
+                  skip_rbr(msfile);
+                  break ;
+                CASE("SoundregionRoty")
+                  skip_lbr(msfile) ;
+                  sr_node->roty = dtoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                CASE("FileName")
+                  skip_lbr(msfile) ;
+                  sr_node->filename = ctoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
+                DEFAULT
+                  printf("\n   ERROR in routine %s: \n",my_name);
+                  printf("     Unrecodnised level 3 token.\n");
+                  printf("     Token = '%s'\n",token3);
+                  free(sr_node) ;
+                  sr_node = NULL ;
+                  close_msfile(msfile) ;
+                  return 2 ;
+              END
+            }
+            free(token3) ; token3 = NULL ;
+/*
+ *  Add at front of list
+ */
+            if(sr_node != NULL){
+              sr_node->next = w->sound_region ;
+              w->sound_region = sr_node ;
+            }
+            break ;
+          DEFAULT
+            printf("\n   ERROR in routine %s: \n",my_name);
+            printf("     Unrecodnised level 2 token.\n");
+            printf("     Token = '%s'\n",token2);
+            close_msfile(msfile) ;
+            return 2 ;
+        END
+      }
+      skip_rbr(msfile) ;
+      if(token3)free(token3) ;
+      if(token2)free(token2) ;
+      if(token1)free(token1) ;
+      close_msfile(msfile) ;
+      return 0 ;
+}
+#if 0
+/data1/djw/Hobbies/OR/Open_Rails_Train_Simulator_-_ZZ/Routes/au_great_zig_zag/world/w+001451+010331.ws
+	Soundregion (
+		SoundregionRoty ( 1.76021 )
+		SoundregionTrackType ( 0 )
+		TrItemId ( 0 571 )
+		UiD ( 100005 )
+		FileName ( IMRegionPoint.s )
+		StaticFlags ( 00100000 )
+		Position ( 841.457 1035.81 575.188 )
+		QDirection ( 0.00845778 -0.77076 -0.008369 0.637014 )
+		VDbId ( 4294967295 )
+	)
+	Soundregion (
+		SoundregionRoty ( -1.37112 )
+		SoundregionTrackType ( 12 )
+		TrItemId ( 0 572 )
+		UiD ( 100006 )
+		FileName ( IMRegionPoint.s )
+		StaticFlags ( 00100000 )
+		Position ( 836.461 1035.69 576.17 )
+		QDirection ( -0.00753009 0.633062 -0.00921261 0.77401 )
+		VDbId ( 4294967295 )
+	)
+
+#endif

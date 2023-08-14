@@ -57,7 +57,7 @@ int read_signals_db(void){
       *token4 = NULL,
       *token5 = NULL,
       *string = NULL, *string2;
-  char my_name[] ="read_signals_dat" ;
+  char my_name[] ="read_signals_db" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -103,7 +103,7 @@ int read_signals_db(void){
  *  Main Loop
  */
       for(;;){
-        if(token1){free(token1) ; token1 = NULL ;}
+        if(token1)free(token1) ;
         token1 = ctoken(msfile) ;
         if(is_rbr(token1)) break ;
         if(!strcmp(token1,eof_mark)) break ;
@@ -245,6 +245,7 @@ int read_signals_db(void){
                   sig_type->sig_draw      = NULL ;
                   sig_type->sig_aspect    = NULL ;
                   sig_type->sig_script    = NULL ;
+                  if(ip)printf(" == Signal Type Name = %s\n",sig_type->name) ;
 
 //  Loop collecting Properties of this Signal Type
 //  Signal enums defined in 'enum.h'.
@@ -646,6 +647,7 @@ int read_signals_db(void){
                     sig_subobj->index              = -1 ;
                     sig_subobj->name               = NULL ;
                     sig_subobj->full_name          = NULL ;
+                    sig_subobj->sig_decor          = 0 ;
                     sig_subobj->sig_signal_head    = 0 ;
                     sig_subobj->sig_gradient_plate = 0 ;
                     sig_subobj->sig_number_plate   = 0 ;
@@ -653,10 +655,10 @@ int read_signals_db(void){
                     sig_subobj->sig_user2          = 0 ;
                     sig_subobj->sig_user3          = 0 ;
                     sig_subobj->sig_user4          = 0 ;
-                    sig_subobj->sig_default        = 0 ;
-                    sig_subobj->sig_jn_link        = 0 ;
-                    sig_subobj->sig_back_facing    = 0 ;
                     sig_subobj->sig_optional       = 0 ;
+                    sig_subobj->sig_default        = 0 ;
+                    sig_subobj->sig_back_facing    = 0 ;
+                    sig_subobj->sig_jn_link        = 0 ;
                     sig_subobj->n_sig_jn_lnk       = 0 ;
                     sig_subobj->sig_script_type     = NULL ;
 
@@ -701,6 +703,8 @@ int read_signals_db(void){
                             sig_subobj->sig_user3 = 1 ;
                           }else if(!strcmp(string,"USER4")){
                             sig_subobj->sig_user4 = 1 ;
+                          }else if(!strcmp(string,"DECOR")){
+                            sig_subobj->sig_decor = 1 ;
                           }else {
                             printf("  Routine %s error\n",my_name) ;
                             printf("  Unrecognised sub-token of %s\n","SigSubType") ;

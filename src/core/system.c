@@ -11,6 +11,10 @@
  *   System utility functions used by ZR
  *
  *==============================================================================
+ *
+ * char *zr_parentdir(char *fname)      :: Parent directory
+ *
+ *==============================================================================
  */
 
 /*
@@ -47,6 +51,7 @@ int i ;
      return -i ;
 }
 
+
 /*
  *   Function to convert string to lower case
  */
@@ -55,7 +60,7 @@ void str2lc(char *string){
 unsigned int i ;
 
       if(!string) return ;
-      for(i=0;i<strlen(string);i++)string[i]=tolower(string[i]) ;
+      for(i=0;i<strlen(string);i++)string[i]=tolower((unsigned char)string[i]) ;
       return ;
 }
 
@@ -101,7 +106,36 @@ char         c1, c2 ;
 }
 
 /*
+ *  Routine to return a new string with '\\' replaced by '/',
+ *  i.e. convert from MSTS directory seperator to everyone else.
+ *  Note: this frees the input string
+ */
+
+char *convert_dir_markers(char *string1){
+
+unsigned int n, i, j ;
+int          c ;
+char         *string2 ;
+
+      n = strlen(string1) ;
+      string2 = (char *)malloc(n+1) ;
+      for(i=j=0; i<n; i++){
+        if(string1[i] != '\\' || i == n-1){
+          string2[j++] = string1[i] ;
+          continue ;
+        }
+        if(string1[i+1] == '\\'){
+          string2[j++] = '/' ;
+        }
+      }
+      string2[j] = '\0' ;
+      free(string1) ;
+      return string2 ;
+}
+
+/*
  *  Routine to return a new string with start and end quotes removed.
+ *  Note: this frees the input string
  */
 
 char *strip_quotes(char *string1){
@@ -242,6 +276,16 @@ char *pz ;
       if(pz == NULL) return strdup("") ;
       pz++ ;
       return strdup(pz) ;         // malloc
+}
+/*
+ *  Return lower case version of extension
+ */
+char *zr_extension_lc(char *fname){
+
+char *pz ;
+      pz = zr_extension(fname) ;
+      str2lc(pz) ;
+      return pz ;         // malloc
 }
 
 /**
@@ -444,13 +488,26 @@ char *my_name = "zr_find_msfile" ;
 #endif
 
 /*
- *   Second version of zr_find_msfile.  Given a filename it tries to find
- *   an existing file or directory with the same name.  If that does not
- *   exists it first checks that the parent directory exists and then
- *   looks for a matching name in the current directory.
+ *   Locate files and directories with matching Microsoft style
+ *   pathnames.
+ *
+ *   Given a full pathname, the routine it tries to find an existing
+ *   file or directory with the same pathname.  If that does not
+ *   exist, it call itself to repeat the chack on the parent directory.
+ *   If a matching parent is found it searches for a file in the current
+ *   directory whose name matches when the case of each character
+ *   is ignored.
+ *
+ *   When successful it replaces the initial pathname with the
+ *   matching pathname and returns zero.
  */
 
-int zr_find_msfile2(char *fname){
+int find_msstyle_file(char *pname) {
+
+         return zr_find_msfile2(pname) ;
+}
+
+int zr_find_msfile2(char *pname){
 
 unsigned int  i, n, ok, iret  ;
 unsigned int  ip = 0          ;  // Debug
@@ -465,17 +522,22 @@ char *my_name = "zr_find_msfile2" ;
 /*
  *  Check if file exists
  */
-      if(ip)printf("\n  Enter routine %s.     Search for = %s\n",my_name,fname) ;
+      if(ip)printf("\n  Enter routine %s.     Search for = %s\n",my_name,pname) ;
       fflush(NULL) ;
-      iret = stat(fname, &sb) ;
+      iret = stat(pname, &sb) ;
       if(!iret){
         if(ip)printf("     File/Directory  exists!\n") ;
         return 0      ;    //  File or directory exists
       }
 /*
- *  Check parent exists  [Use "stat(filename)" to check it exists]
+ *  If path not recognised:
+ *    1. Clean up pathname
  */
-      parent = zr_full_parentdir(fname) ;  // malloc parent
+//      zr_filename_MS2L(pname) ;
+/*
+ *    2. Check parent exists  [Use "stat(filename)" to check it exists]
+ */
+      parent = zr_full_parentdir(pname) ;  // malloc parent
       if(ip){
         printf("    File/Directory does not exist\n") ;
         printf("    Parent = %s\n",parent) ;
@@ -496,18 +558,18 @@ char *my_name = "zr_find_msfile2" ;
         fflush(NULL) ;
       }
 /*
- * Regenerate filename
+ *    3.  Regenerate filename
  */
-      base = zr_basename(fname)        ;  // malloc
+      base = zr_basename(pname)        ;  // malloc
       n = strlen(parent)   ;
-      strcpy(fname,parent) ;
-      if(parent[n-1]!='/')strcat(fname,"/")    ;
-      strcat(fname,base)   ;
-      if(ip)printf("    New fname = %s\n",fname) ;
+      strcpy(pname,parent) ;
+      if(parent[n-1]!='/')strcat(pname,"/")    ;
+      strcat(pname,base)   ;
+      if(ip)printf("    New pname = %s\n",pname) ;
 /*
- * Check again for file
+ *    4.  Check again for file
  */
-      iret = stat(fname,&sb) ;
+      iret = stat(pname,&sb) ;
       if(!iret){
         free(parent) ;
         free(base)   ;
@@ -516,7 +578,7 @@ char *my_name = "zr_find_msfile2" ;
         return 0     ;    //  File or directory exists
       }
 /*
- *  Search parent directory for matching file
+ *    5.  Search parent directory for matching file
  */
       if(ip){
         printf("     File/Directory  does not exist\n") ;
@@ -536,7 +598,7 @@ char *my_name = "zr_find_msfile2" ;
         if(ok)break ;
       }
 /*
- *  Failure ??
+ *    Failure ??
  */
       if(!ok){
         closedir(dp) ;
@@ -547,17 +609,17 @@ char *my_name = "zr_find_msfile2" ;
         return 1     ;  // File does not exist
       }
 /*
- *  Success
+ *    Success !!
  */
       free(base) ;
       base = strdup(di->d_name) ;
       closedir(dp) ;
       n = strlen(parent)   ;
-      strcpy(fname,parent) ;
-      if(parent[n-1]!='/')strcat(fname,"/")    ;
-      strcat(fname,base)   ;
+      strcpy(pname,parent) ;
+      if(parent[n-1]!='/')strcat(pname,"/")    ;
+      strcat(pname,base)   ;
       if(ip)printf("  Routine %s, DD File found.  File = %s\n",
-                                                     my_name,fname) ;
+                                                     my_name,pname) ;
       free(parent) ;
       free(base)   ;
       free(string) ;
@@ -570,8 +632,7 @@ char *my_name = "zr_find_msfile2" ;
 /**
  *  char *zr_filename_MS2L(char *fname)
  *
- *  Routine to replace '\' by '/' in filenames and to correct case of extension.
- *  This is because files referred to as name.s may be name.S etc.
+ *  Routine to replace '\' by '/' in filenames.
  */
 
 int zr_filename_MS2L(char *fname){
@@ -600,6 +661,134 @@ char *zr_to_upper(char *string){
      upper[n]='\0' ;
      return upper ;
 }
+
+/*
+ *  Routine to strip '.' and '..' directory references in a string.
+ *  Given a pointer to a string 'file_1' of the form
+ *  "/A/./B/../C" it frees 'file_1' and returns "A/C"
+ *  If the string contains no such directories it returns file_1.
+ */
+
+char *strip_dot_dirs(char* file_1){
+
+int   ip = 0 ;
+int   i, j,
+      n,                 // Length of string
+      m ;                // Number of sub strings
+int   top_dir ,
+      end_dir ;
+char *file_2 ;
+char *file_3 ;
+char *p1, *p2 ;
+char **pa    ;           //  pointer to array of sub-strings
+char *my_name = "strip_dot_dirs" ;
+
+/*
+ *  Return if file_1 is NULL or it does not contain "./".
+ */
+      if(!file_1 || !strstr(file_1,"./"))return file_1 ;
+/*
+ *  Duplicate file_1 for processing.
+ */
+      file_2 = strdup(file_1) ;
+      n = strlen(file_2) ;
+/*
+ *  Set top_dir/end_dir flags if the string starts/ends with a '/'.
+ */
+      p1 = file_2 ;
+      top_dir = p1[0] == '/' ;
+      end_dir = p1[n-1] == '/' ;
+      if(ip)printf(" n = %i,  p1[n] = :%c:, p[n-1] = :%c: \n",n,p1[n],p1[n-1]) ;
+      if(top_dir) p1++ ;
+/*
+ * Count number of sub-strings
+ */
+      p2 = strtok(p1,"/") ;
+      for(m=1;p2!=NULL;m++){
+        p2 = strtok(NULL,"/") ;
+        if(ip)printf(" m = %i,  string = %s\n",m,p2) ;
+        if(!p2)break ;
+      }
+      if(ip)printf("  n = %i, m = %i\n",n,m) ;
+/*
+ *  Create array of pointers
+ */
+      pa = (char **)malloc((m+10)*sizeof(char *)) ;
+/*
+ *  Reset string and pointer
+ */
+      free(file_2) ;
+      file_2 = strdup(file_1);
+      p1 = file_2 ;
+      if(top_dir)p1++ ;
+/*
+ *  Fill array
+ */
+      pa[0] = strtok(p1,"/") ;
+      if(ip)printf(" m = %i,  pa[0] = %s\n",m,pa[0]) ;
+      for(i=1;i<m;i++){
+        pa[i] = strtok(NULL,"/") ;
+        if(ip)printf(" m = %i,  pa[i] = %s\n",m,pa[i]) ;
+      }
+      if(ip)printf("  n = %i, m = %i\n",n,m) ;
+/*
+ *  Edit pointers
+ */
+      for(i=1;i<m;i++){
+        if(!strcmp(pa[i],".")) pa[i] = NULL ;
+        if(!strcmp(pa[i],"..")){
+          if(ip)printf(" ZZ1  i = %i, pa[i] = %s\n",i,pa[i]) ;
+          for(j=i-1;j>=0;j--){
+            if(ip)printf(" ZZ2  j = %i, pa[j] = %s\n",j,pa[j]) ;
+            if(pa[j] != NULL && strcmp(pa[j],"..") ){
+              pa[i] = NULL ;
+              pa[j] = NULL ;
+              if(ip)printf("  Set %i and %i to NULL\n",i,j) ;
+              break ;
+            }
+          }
+        }
+      }
+/*
+ *  Find size of remaining terms
+ */
+      n = top_dir ;
+      for(i=0;i<m;i++){
+        if(pa[i])n = n + 1 + strlen(pa[i]) ;
+        if(ip)printf(" i = %i, n = %i, pa[i] = %s\n",i,n,pa[i]) ;
+      }
+      if(end_dir) n++ ;
+/*
+ *  Allocate memory
+ */
+      file_3 = (char *)malloc((n+1)*sizeof(char)) ;
+/*
+ *  Create new filename
+ */
+      strcpy(file_3,top_dir ? "/" : "") ;
+      if(ip)printf(" i = %i, n = %i, file_3 = %s\n",0,n,file_3) ;
+      for(i=0;i<m;i++){
+        if(pa[i]){
+          if(ip)printf(" AA file_3 = %s\n",file_3) ;
+          if(ip)printf(" AA i = %i, file_3 = :%s:,  pa[i] = :%s:\n",i,file_3,pa[i]) ;
+          strcat(file_3,pa[i]) ;
+          if(ip)printf(" BB file_3 = %s\n",file_3) ;
+          strcat(file_3,"/") ;
+          if(ip)printf(" CC file_3 = %s\n",file_3) ;
+        }
+        if(ip)printf(" i = %i, n = %i, file_2 = %s\n",i,n,file_3) ;
+      }
+/*
+ * Deal with final '/'.
+ */
+      if(!end_dir)file_3[n-1] = '\0' ;
+      if(ip)printf("  file_3 = %s\n",file_3) ;
+      free(pa)      ;
+      free(file_1)  ;
+      free(file_2)  ;
+      return file_3 ;
+}
+
 
 //#ifdef MinGW
 #if 0
@@ -901,6 +1090,15 @@ FILE *f ;
       return f ;
 }
 
+FILE *gcaseopen(char* fname, char *ftype){
+
+FILE *f ;
+      f = fcaseopen(fname,ftype) ;
+      if(f != NULL)
+        n_open_files++ ;
+      return f ;
+}
+
 int gclose(FILE *f){
 
 int  iret ;
@@ -925,4 +1123,21 @@ void  zr_clock_gettime(struct timespec clock[4]){
       clock_gettime(CLOCK_THREAD_CPUTIME_ID,  &clock[3] );
 
       return ;
+}
+
+/*
+ *   Close down program safely
+ */
+
+int close_system(void){
+
+/*
+ *  Close down the sound system
+ */
+#ifdef OPENAL
+      alcMakeContextCurrent(NULL);
+      alcDestroyContext(al_context);
+      alcCloseDevice(al_device);
+#endif
+      exit(0) ;
 }

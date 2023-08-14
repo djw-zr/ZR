@@ -171,7 +171,10 @@ int load_shape_d(ShapeNode *snode){
             break ;
           CASE ("ESD_Bounding_Box")
             skip_lbr(msfile) ;
-            snode->esd_bounding_box_xmin = dtoken(msfile) ;
+            token = ctoken(msfile) ;
+            if(is_rbr(token)) break ;
+
+            snode->esd_bounding_box_xmin = atof(token) ; ;
             snode->esd_bounding_box_ymin = dtoken(msfile) ;
             snode->esd_bounding_box_zmin = dtoken(msfile) ;
             snode->esd_bounding_box_xmax = dtoken(msfile) ;
@@ -232,8 +235,12 @@ int load_shape_d(ShapeNode *snode){
             }
             skip_rbr(msfile) ;
             break ;
+/*
+ *  Should the use of the 'Size' token be flagged as an error??
+ */
           CASE ("ESD_Sphere")
           CASE ("ESD_No_Visual_Obstruction")
+          CASE ("Size")
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
             break ;

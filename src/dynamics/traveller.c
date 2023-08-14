@@ -18,7 +18,7 @@
  *==============================================================================
  */
 
-int  trv_position(TravellerNode *t) ;
+//int  trv_position(TravellerNode *t) ;
 int  check_matrices(TravellerNode *t) ;
 
 /*
@@ -34,11 +34,13 @@ int   trv_move(TravellerNode *t, double distance){
   double        dn ;
   char          *my_name = "trv_move" ;
 
+//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
+
       if(ip)printf("\n  Enter routine %s.  Name = %s\n",my_name,
                                (t->wagon) ? t->wagon->train->name : "(null)") ;
 
       if(ip){
-        printf("\n^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
+        printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
         printf("  ENTER %s : idirect = %i,  distance = %f\n",
                                                  my_name,t->idirect,distance) ;
       }
@@ -139,6 +141,7 @@ TrkVectorNode *vn = tn->vector ;
 char          my_name[] = "trv_next" ;
 
       if(!t->wagon) ip = 0 ;
+//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
 
       if(ip){
       printf("\n>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n") ;
@@ -207,7 +210,7 @@ char          my_name[] = "trv_next" ;
 
 int   trv_prev(TravellerNode *t){
 
-int           ip   = 0 ;  // DEBUG
+int           ip = 0   ;  // DEBUG
 int           iret = 0 ;  // Return code
 int           ivector = t->ivector ;
 TravellerNode tc               ;  //  Copy of travelelr node
@@ -216,6 +219,7 @@ TrkVectorNode *vn = tn->vector ;
 char          my_name[] = "trv_prev" ;
 
       if(!t->wagon) ip = 0 ;  // Skip dummy wagons
+//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
 
       if(ip){
         printf("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n") ;

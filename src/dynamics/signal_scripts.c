@@ -4,7 +4,7 @@
  *
  *   File:  signal_scripts.c
  *
- *   This file contains routines used to process teh signal scripts
+ *   This file contains routines used to process the signal scripts
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
@@ -20,12 +20,12 @@
  *  enabled     ::  Signal is enabled
  */
 static SignalDB *signal0 ;
-static int       i_stack = 0 ;
+static int       i_stack = 0   ;
 static const int n_stack = 100 ;
 static double    sc_stack[100] ;
 static double    sc_next_state ;       //  Used by scripts as tempory storage
-static double    has_number_plate ;       //  Used by scripts as tempory storage
-static double    has_gradient_plate ;       //  Used by scripts as tempory storage
+static double    has_number_plate ;    //  Used by scripts as tempory storage
+static double    has_gradient_plate ;  //  Used by scripts as tempory storage
 static char      *sc_name      ;
 
 int find_next_signal(SignalDB *signal, int itype) ;
@@ -43,13 +43,11 @@ int  process_signal_script(SignalDB *signal){
   nodeType  *sig_script, *n1, *n2, *n3 ;
   char      *my_name="process_signal_script" ;
 
-//      ip = strcmp("NSW_SemLQHome", signal->sig_type->name) ;
-//      ip = (67 == signal->uid) ;
-//      ip = (69 == signal->uid) || (74 == signal->uid) ;
+      ip = (n_sig1 == signal->uid)  ;
 
       if(ip){
         printf("\n**********************************************************\n") ;
-        printf(" Routine %s.  Update signal %i, %s\n",my_name,
+        printf(" Routine %s.  Process signal %i, %s\n",my_name,
                                      signal->uid, signal->sig_type->name) ;
         printf("**********************************************************\n\n") ;
         fflush(NULL) ;
@@ -66,6 +64,13 @@ int  process_signal_script(SignalDB *signal){
       n1 = sig_script ;
 
       for(;;){
+        if(ip){
+          printf("  n1 = %p",(void *) n1) ;
+          if(n1)printf(" : n1->type = %i :: %i", n1->type, typeOpr) ;
+          if(n1->type == typeOpr)printf(" : n1->opr.oper %i : %i : %i : %i ",
+                         n1->opr.oper, SC_SCRIPT, SC_DEF_LIST, SC_STMT_LIST) ;
+          printf("\n") ;
+        }
         if(n1->type == typeOpr){
           switch(n1->opr.oper){
             case SC_SCRIPT:
@@ -82,11 +87,13 @@ int  process_signal_script(SignalDB *signal){
               process_signal_statement(n1);
               n1 = NULL ;
               break ;
+            default:
+              process_signal_statement(n1) ;
+              n1 = NULL ;
           }
         }
         if(!n1) break ;
       }
-//      if(ip)exit(0) ;
       return 0 ;
 }
 
@@ -109,9 +116,9 @@ int  process_signal_script(SignalDB *signal){
 
 int  process_signal_statement(nodeType *node){
 
-  int  ip = 0 ;
+  int  ip ;
   int n1, n2 ;
-  double x ;
+  double x, y1, y2 ;
   float  f ;
   char *name1, *name2 ;
   char *my_name="process_signal_statement" ;
@@ -120,8 +127,10 @@ int  process_signal_statement(nodeType *node){
 //      ip = strcmp("NSW_SemLQHome", signal0->sig_type->name) ;
 //      ip = (67 == signal0->uid) ;
 //      ip = (87 == signal0->uid) ;
+      ip = (n_sig1 == signal0->uid)  ;
 
-      if(ip)printf(" Routine %s.  Process node %s\n",my_name, signal0->sig_type->name) ;
+      if(ip)printf(" Routine %s.  Uid = %i, [%i].  Node = %s\n",my_name,
+                                     signal0->uid, n_sig1, signal0->sig_type->name) ;
 //      if(ip)print_sigscr_tree(node) ;
 //      if(!ip)return 0 ;
 
@@ -244,6 +253,40 @@ int  process_signal_statement(nodeType *node){
             }
             break ;
 
+          case SC_EQ :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = nint(sc_pop_stack()) ;
+            if(y1 == y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ IEQ result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_NE :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = nint(sc_pop_stack()) ;
+            if(y1 != y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ INE result  =  %f\n",x) ;
+            }
+            break ;
+
           case SC_IEQ :
             process_signal_statement(node->opr.op[0]) ;  // Function name
             n1 = nint(sc_pop_stack()) ;
@@ -254,7 +297,6 @@ int  process_signal_statement(nodeType *node){
             }else{
               sc_push_stack(0.0) ;
             }
-
             if(ip){
               x = sc_pop_stack() ;
               sc_push_stack(x)   ;
@@ -272,7 +314,142 @@ int  process_signal_statement(nodeType *node){
             }else{
               sc_push_stack(0.0) ;
             }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ INE result  =  %f\n",x) ;
+            }
+            break ;
 
+          case SC_IGT :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            n1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            n2 = nint(sc_pop_stack()) ;
+            if(n1 > n2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ IEQ result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_IGE :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            n1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            n2 = nint(sc_pop_stack()) ;
+            if(n1 >= n2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ INE result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_ILT :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            n1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            n2 = nint(sc_pop_stack()) ;
+            if(n1 < n2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ IEQ result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_ILE :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            n1 = nint(sc_pop_stack()) ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            n2 = nint(sc_pop_stack()) ;
+            if(n1 <= n2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ INE result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_GT :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = sc_pop_stack() ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = sc_pop_stack() ;
+            if(y1 > y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ IEQ result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_GE :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = sc_pop_stack() ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = sc_pop_stack() ;
+            if(y1 >= y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ INE result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_LT :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = sc_pop_stack() ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = sc_pop_stack() ;
+            if(y1 < y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
+            if(ip){
+              x = sc_pop_stack() ;
+              sc_push_stack(x)   ;
+              printf("+++ IEQ result  =  %f\n",x) ;
+            }
+            break ;
+
+          case SC_LE :
+            process_signal_statement(node->opr.op[0]) ;  // Function name
+            y1 = sc_pop_stack() ;
+            process_signal_statement(node->opr.op[1]) ;  // Function name
+            y2 = sc_pop_stack() ;
+            if(y1 <= y2){
+              sc_push_stack(1.0) ;
+            }else{
+              sc_push_stack(0.0) ;
+            }
             if(ip){
               x = sc_pop_stack() ;
               sc_push_stack(x)   ;

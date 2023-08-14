@@ -22,8 +22,12 @@ void str2lcnqne(char *strint)      ;  // rmove quotes and extension as well
 char *zr_basename(char *fname)     ;  // basename replacement
 char *zr_extension(char *fname)    ;  // Return filename extension
 char *zr_corename(char *fname)     ;  // Return filename without extension
-int  zr_filename_MS2L(char *fname) ;  // Convert all '\' in filename to '/'
-char *zr_find_msfile(char *fname)  ;  // Find ms style filename
+int  zr_filename_MS2L(char *pname) ;  // Convert all '\' in filename to '/'
+char *strip_dot_dirs(char *fnane)  ;  //  Strip '/../' and '/./' from string
+int  find_msstyle_file(char *pname) ;  // Find ms style filename
+int  zr_find_msfile2(char *pname)  ;
+int  is_eof(char *token)           ;  // Return 1 if "End of File"
+
 int  calls_per_sec(void)               ;  // Frames_per_second timing function
 int  nint(double d)                ;  // Nearest integer
 
@@ -34,6 +38,7 @@ int  init_data_structures(void) ;
 int  init_pdb(char *filename) ;
 FILE *gopen(char* fname, char *ftype) ;
 int  gclose(FILE *f) ;
+int  close_system(void) ;
 
 int   check_glerror(void) ;
 int   check_glerror2(char *string) ;
@@ -54,6 +59,7 @@ int   init_track_db(char *filename) ;
 void  read_track_path(TrkSector *pnode, MSfile *ms) ;
 void  init_track_path(TrkSector *pnode) ;
 int   list_track_section(TrkSector *pnode) ;
+int   list_platforms_and_sidings() ;
 int   add_world_item_pointers_to_track_vectors(TrkSector *tnnode) ;
 int   set_junction_path(TrkSector *tnnode) ;
 int   set_track_items_posn(TrkDataBase *d) ;
@@ -129,12 +135,14 @@ SignalDB *find_signal(char *name) ;
 
 //  Train and traveller routines
 
+int   load_consist_files() ;
 int   trains_init(void) ;
 int   add_new_train(char *name) ;
-int   add_wagon_to_train(char *train, char *wagon, int idirn) ;
-int   position_train(char *name, int itrack, int ivector, int idirect, double d) ;
+int   add_wagon_to_train(char *wagon, int idirn) ;
+int   position_train(int itrack, int ivector, int idirect, double d) ;
 int   trv_next(TravellerNode *t) ;
 int   trv_prev(TravellerNode *t) ;
+int   trv_position(TravellerNode *t) ;
 int   trv_initv(TravellerNode *tn, int itrack, int ivector, int idirect) ;
 int   test_trav(void)       ;
 int   init_trav(TravellerNode *t) ;
@@ -147,7 +155,9 @@ void  crash_train(TrainNode *t, int i_crash) ;
 void  crash_trains(TrainNode *t0, TrainNode *t1, int i_collide) ;
 void  join_trains(TrainNode *t0, TrainNode *t1, int i_collide) ;
 
+// Sounds
 
+int  collect_sounds(void) ;
 
 
 
@@ -192,11 +202,13 @@ char  *new_tmp_token(MSfile *msfile) ;
 char  *ctoken(MSfile *msfile)        ;
 char  *txt_token(MSfile *msfile)     ;
 int   itoken(MSfile *msfile)         ;
+unsigned int flagtoken(MSfile *msfile) ;
 long  ltoken(MSfile *msfile)         ;
 double dtoken(MSfile *msfile)        ;
-unsigned int uitoken(MSfile *msfile) ;
-long long lltoken_16(MSfile *msfile) ;
-double convert_unit(char *t, char *s) ;
+unsigned int uitoken(MSfile *msfile)   ;
+unsigned int flagtoken(MSfile *msfile) ;
+long long lltoken_16(MSfile *msfile)   ;
+double convert_unit(char *t, char *s)  ;
 
 // Binary read routine (token_tb.c)
 
@@ -241,6 +253,7 @@ int   generate_shape_display_list(ShapeNode *snode) ;
 int   add_texture_pointers_to_shape_items(ShapeNode *snode) ;
 int   sort_textures(TextureNode **t) ;
 int   convert_texture(TextureNode *t) ;
+int   texture_print(char *name) ;
 
 int   scan_for_wagon_files(void)                              ;
 int   add_texture_pointers_to_wagon_shapes(ShapeNode *snode) ;
@@ -279,3 +292,8 @@ void   zr_clock_gettime(struct timespec clock[4]) ;
 //  Freetype
 
 int    freetype_init(void) ;
+
+//OpenAL
+#ifdef OPENAL
+int  setup_openal(int argc, char **argv) ;
+#endif

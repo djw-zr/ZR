@@ -37,7 +37,7 @@
 void graphics_init(void)
 {
 
-int      ip = 0  ;  //  0 = no printing  1, 2 = printing
+int      ip = 2  ;  //  0 = no printing  1, 2 = printing
 int      i, j ;
 int      ivec[10] ;
 GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
@@ -203,9 +203,9 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
  *  Main cull routine calls each sub-routine in turn
  *==============================================================================
  */
-void graphics_reset(void)
-{
-int  ip = 0 ;  //  = 0 for no debug printing
+void graphics_reset(void) {
+
+int  ip = 0 ;                       //  = 0 for no debug printing
 char *my_name = "graphics_reset" ;
 
       if(ip)printf("  ===================================================\n");
@@ -232,7 +232,7 @@ char *my_name = "graphics_reset" ;
       load_needed_textures()   ;
       if(ip)printf("   Routine  %s : Call load_topography_display_lists\n",my_name) ;
       load_topography_display_lists() ;
-      if(ip)printf("   Routine  %s : Call load_needed_display_lists\n",my_name) ;
+//      if(ip)printf("   Routine  %s : Call load_needed_display_lists\n",my_name) ;
 //      load_needed_display_lists() ;
       if(ip)printf("   Exit %s\n",my_name) ;
 #else
@@ -590,12 +590,14 @@ VANode       * va_node ;
  */
 void load_needed_textures(void)
 {
-TextureNode    *tx_node  ;
-int            ip = 0 ;
+TextureNode *tx_node  ;
+int         ipp = 0,
+            ip  = 0  ;
 
-      if(ip)printf("   Enter load_needed_textures\n");
+      if(ipp)printf("   Enter load_needed_textures\n");
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-//        ip = (tx_node == land_texture) ;
+//        ip = ipp && (tx_node == land_texture) ;
+//        ip = ipp && !strcmp(tx_node->name,"FootBrBrank") ;
         if(ip)printf("     Texture name = %s, needed = %i, loaded = %i\n",
                                 tx_node->name,tx_node->needed, tx_node->loaded);
         if(!strcmp_ic(tx_node->name,land_texture_default) && ip){
@@ -613,6 +615,8 @@ int            ip = 0 ;
       }
 
       for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+//        ip = ipp && (tx_node == land_texture) ;
+//        ip = ipp && !strcmp(tx_node->name,"FootBrBrank") ;
         if(ip)printf("     Texture name = %s, needed = %i, loaded = %i\n",
                                 tx_node->name,tx_node->needed, tx_node->loaded);
         if(0 == tx_node->needed || 1 == tx_node->loaded) continue ;

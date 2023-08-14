@@ -9,35 +9,39 @@
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
- *   File containing the code to display the one of the shapes
+ *   These C routines are designed to initialise a balanced binary tree
+ *   in which the branch lengths differ at most by one node.  They
+ *   are based on "https://appliedgo.net/balancedtree"" where the code
+ *   is written for the 'go' language.
  *
- *   Binary tree routines based on: https://appliedgo.net/balancedtree/
+ *   Each node of the tree contains its name, a (void) pointer to
+ *   a data structure and pointers to left and right sub-trees (NULL
+ *   if the sub-trees are not present).
  *
- *   These routines are designed to initialise a balanced binary tree
- *   in which the branch lengths differ at most by one node.  These C
- *   routine are based on https://appliedgo.net/balancedtree/ where
- *   the code is written for the 'go' language.
- *
- *   Each node of the tree contains its name and a (void) pointer to
- *   a data structure.  The user routines are:
+ *   The user routines are:
  *
  *   Btree insert_node(BTree *root_node, char *index, void *data)
  *           Returns : new root node
- *   Btree find_btree(BTree *root_node, char *string)
- *           Returns : node corrresponding to string or NULL
- *         find_btree(BTree *root_node, char *string)
- *           Prints out btree.  At top level 'string' is any name of top level
- *         bt_walk_a2z(BTree *root_node, void f(void *n))
- *         bt_walk_a2z(BTree *root_node, void f(void *n))
- *         bt_walk_a2z(BTree *root_node, void f(void *n))
- *         bt_walk_a2z(BTree *root_node, void f(void *n))
- *           Walk btree in order a to z (alhabetical order), z to a,
- *           top to bottom or bottom to top, applying
- *           function f(*node) to each node.
  *
- *  To compile and test:
- *    gcc -o btree btree.c
- *    ./btree
+ *   Btree find_btree(BTree *root_node, char *string)
+ *           Returns : node corrresponding to index "string" or NULL
+ *
+ *         dump_btree(BTree *root_node, char *string)
+ *           Prints out btree. 'string' is used as a marker
+ *
+ *         bt_walk_a2z(BTree *root_node, void f(void *n))
+ *         bt_walk_z2a(BTree *root_node, void f(void *n))
+ *         bt_walk_t2b(BTree *root_node, void f(void *n))
+ *         bt_walk_b2t(BTree *root_node, void f(void *n))
+ *
+ *           Routines to walk btree in order a to z (alhabetical order),
+ *           z to a, top to bottom or bottom to top,
+ *           applying function f(*node) to each node.
+ *
+ *   To compile and test routines:
+ *       gcc -o btree btree.c
+ *       ./btree
+ *
  *==============================================================================
  */
 
@@ -85,6 +89,11 @@ int l ;
       if(node->right) l -= node->right->height ;
       return l ;
 }
+/*
+ *   Routine to add an index (name) and data (pointer) to the btree.
+ *   Usually the name and data should only be deleted when
+ *   the node is deleted.
+ */
 
 BTree *insert_node(BTree *node, char *index, void *data){
 

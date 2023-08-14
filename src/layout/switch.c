@@ -20,9 +20,9 @@
 
 int change_forward_switch_for_player_train(){
 
-int           ip = 0 ;
+int           ip = 1 ;
 int           n          ;
-double        df         ;  // lenght of end wagons
+double        df         ;  // length of end wagons
 TravellerNode *tff, tf   ;
 TrkSector   *tn1, *tfn ;
 WorldItem     *witem = NULL ;  // World item describing junction
@@ -37,6 +37,7 @@ char          *my_name = "change_forward_switch_for_player_train" ;
       tfn = tf.tn ;
       n = tfn->pin_to_section[tf.idirect ? 1 : 0] ;
       tn1 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+      printf(" Initial value of branch = %i\n",tn1->branch) ;
       if(tn1->branch != 0){
         witem = tn1->vector->world_item ;
         tn1->branch = (1 == tn1->branch) ? 2 : 1 ;
@@ -58,7 +59,7 @@ char          *my_name = "change_forward_switch_for_player_train" ;
 
 int change_rearward_switch_for_player_train(){
 
-int           ip = 0 ;
+int           ip = 1 ;
 int           n          ;
 double        df         ;  // lenght of end wagons
 TravellerNode *tbf, tb   ;
@@ -75,6 +76,7 @@ char          *my_name = "change_rearward_switch_for_player_train" ;
       tbn = tb.tn ;
       n = tbn->pin_to_section[tb.idirect ? 0 : 1] ;
       tn2 = &track_db.trk_sections_array[n-1]   ;  // Section in front
+      printf(" Initial value of branch = %i\n",tn2->branch) ;
       if(tn2->branch != 0){
         witem = tn2->vector->world_item ;
         tn2->branch = (1 == tn2->branch) ? 2 : 1 ;

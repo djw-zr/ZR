@@ -172,7 +172,12 @@ enum signal_flag_enum {
 
 enum signal_feature_enum{
       SIG_NUMBER_PLATE   = 0,
-      SIG_GRADIENT_PLATE
+      SIG_GRADIENT_PLATE,
+      SIG_DECOR,
+      SIG_USER1,
+      SIG_USER2,
+      SIG_USER3,
+      SIG_USER4
 } ;
 
 /*

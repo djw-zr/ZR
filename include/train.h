@@ -116,22 +116,48 @@ struct wagonnode{
   RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data (wagon.h)
 } ;
 
-
 /*
- *   TrainNode is used to specify either a 'train', located on the
- *   track, or a 'consist', standard trains that can be used to
- *   initialise a new train at a chosen point on the track.
+ *   TrainNode; used to specify each train on the track.  This includes
+ *   isolated wagons and groups of wagons without an engine.
  */
 
 struct trainnode{
-  struct trainnode  *next  ;  // Next train in linked list
-  char              *name  ;  // Unique name of train (or consist)
-  double            speed  ;  // Speed of train
-  int               n_wagons ; // Number of wagons
-  WagonNode         *motor ;  // Pointer to primary motor or NULL
-  WagonNode         *first ;  // Pointer to first wagon in train
-  WagonNode         *last  ;  // Pointer to last wagon in train
-  TravellerNode     front  ;  // Location of the front of the train
-  TravellerNode     back   ;  // Location of the back of the train
+  struct trainnode  *next        ;  // Next train in linked list
+  char              *name        ;  // Short unique name of train (or consist)
+  char              *description ;  // Brief summary
+  double            speed        ;  // Speed of train
+  double            max_velocity ;  // Maximum velocity allowed
+  double            durability   ;  // Durability of cargo
+  int               n_wagons     ;  // Number of wagons
+  WagonNode         *motor       ;  // Pointer to primary motor or NULL
+  WagonNode         *first       ;  // Pointer to first wagon in train
+  WagonNode         *last        ;  // Pointer to last wagon in train
+  TravellerNode     front        ;  // Location of the front of the train
+  TravellerNode     back         ;  // Location of the back of the train
+} ;
+
+/*
+ *   ConsistNode is used to specify standard groups of engines
+ *   and/or wagons that can be used to initialise a new train at
+ *   any point on the track.
+ *
+ *   When a train is constructed from this data, a new set of wagon nodes
+ *   has to be generated.
+ *
+ *   Note:  There is also a Flip() option.  This structure does not allow for extra data.
+ */
+
+struct consistnode{
+  struct consistnode *next        ;  // Next consist in linked list
+  struct consistnode *prev        ;  // Next consist in linked list
+  char               *name        ;  // Short unique name of train (or consist)
+  char               *description ;  // Brief summary
+  char               *file_name   ;  // Consist filename
+  double             max_velocity ;  // Maximum velocity allowed m/s
+  double             max_acceleration ;// Maximum acceleration or deacceleration m/s2
+  double             durability   ;  // Durability of cargo
+  int                n_wagons     ;  // Number of wagons
+  DLPointerNode      *first       ;  // Start and end of linked list of pointers
+  DLPointerNode      *last        ;  //   to raw_wagon_nodes in consist
 } ;
 

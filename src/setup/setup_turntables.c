@@ -54,7 +54,10 @@ int setup_turntables(void){
               tt->ax0     = wi->AX ;
               tt->ay0     = wi->AZ ;
               tt->az0     = wi->AY ;
-              tt->angle0 = (wi->AY>0.0) ? 360.0-wi->ANG : wi->ANG ;
+              tt->angle0  = (wi->AY>0.0) ? 360.0-wi->ANG : wi->ANG ;
+              tt->angle   = tt->angle ;
+              tt->i_dirn  = 0    ;
+              tt->tt_list = NULL ;
 
               tt->trk_vector0.tile_east_x  = tt->tile_x0 ;
               tt->trk_vector0.tile_north_z = tt->tile_y0 ;

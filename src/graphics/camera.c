@@ -87,12 +87,18 @@ int camera_new_position(){
  *==============================================================================
  */
       if((current_camera != camera_last) || current_camera == 4){
+        printf(" camera eye = %f %f %f,  center = %f %f %f\n",
+               camera->offset_eye_x, camera->offset_eye_x, camera->offset_eye_x,
+               camera->offset_center_x, camera->offset_center_y, camera->offset_center_z) ;
         offset_eye_x = scalei*camera->offset_eye_x ;
         offset_eye_y = scalei*camera->offset_eye_y ;
         offset_eye_z = scalei*camera->offset_eye_z ;
         offset_center_x = scalei*camera->offset_center_x ;
         offset_center_y = scalei*camera->offset_center_y ;
         offset_center_z = scalei*camera->offset_center_z ;
+//        printf("        eye = %f %f %f,  center = %f %f %f\n",
+//               offset_eye_x, offset_eye_x, offset_eye_x,
+//               offset_center_x, offset_center_y, offset_center_z) ;
 
 //  Other graphic variables
 
@@ -312,5 +318,115 @@ int camera_new_position(){
         printf(" Exit %s\n",my_name) ;
         fflush(NULL) ;
       }
+      return 0;
+}
+
+/*
+ *   Routine to open and read data from file ~/.zr/lookat.txt
+ *   to set position of camera.
+ *   The file gives the tile location and position of the lookat point
+ */
+
+int  read_lookat_file(){
+
+int  n ;
+int  tile_x, tile_y ;
+double lookat_x, lookat_y, lookat_z ;
+size_t slen, nread ;
+FILE *fp ;
+char *file_name ;
+char *look_name = "//lookat.txt" ;
+char *line = NULL ;
+char *token_a[3]   ;
+char *token        ;
+
+
+      tile_x = tile_y = 9999 ;
+      lookat_x = lookat_y = lookat_z = 0.0001;
+      token_a[0] = token_a[1] = token_a[2] = NULL ;
+
+      n = strlen(ZRdotdir) + strlen(look_name) + 1 ;
+      file_name = (char *) malloc(n) ;
+      strcpy(file_name,ZRdotdir)  ;
+      strcat(file_name,look_name) ;
+      printf("  file_name = %s\n",file_name) ;
+
+      fp = fopen(file_name,"r") ;
+      if(fp == NULL){
+        printf("  Lookat file '%s' not found\n",file_name) ;
+        return 0 ;
+      }
+#ifdef SDL2
+      while ((int)(nread = getline1(&line, &slen, fp)) != -1) {
+#else
+      while ((int)(nread = getline(&line, &slen, fp)) != -1) {
+#endif
+        token = strtok(line," \n\r\t");
+        printf("  token = %s\n",token) ;
+        if((token==NULL))continue ;         // If blank skip line
+        if(token[0] == '#')continue;        // If comment ('#') skip line
+        if(token_a[0])free(token_a[0]) ;
+        token_a[0] = strdup(token) ;        // "strdup" defined in system.c
+        printf("  token_a[0] = %s\n",token_a[0]) ;
+
+        token = strtok(NULL," \n\r\t");
+        if((token==NULL))continue ;         // If no 2nd token skip line
+        printf("  token = %s\n",token) ;
+        if(strcmp(token,"="))continue;      // If not '=' skip line
+        if(token_a[1])free(token_a[1]) ;
+        token_a[1] = strdup(token) ;
+        printf("  token_a[1] = %s\n",token_a[1]) ;
+
+        token = strtok(NULL," \n\r\t");
+        if((token==NULL))continue ;         //  If no 3rd token skip line
+        printf("  token = %s\n",token) ;
+        if(token_a[2])free(token_a[2]) ;
+        token_a[2] = strdup(token) ;
+        printf("  token_a[2] = %s\n",token_a[2]) ;
+
+        if(!strcmp(token_a[0],"tile_x")){
+          tile_x = atoi(token_a[2]);
+        }
+        if(!strcmp(token_a[0],"tile_y")){
+          tile_y = atoi(token_a[2]);
+        }
+
+        if(!strcmp(token_a[0],"lookat_x")){
+          lookat_x = atof(token_a[2]);
+        }
+        if(!strcmp(token_a[0],"lookat_y")){
+          lookat_y = atof(token_a[2]);
+        }
+        if(!strcmp(token_a[0],"lookat_z")){
+          lookat_z = atof(token_a[2]);
+        }
+      }
+/*
+ *  Calculate position
+ */
+      printf("  Position:  Tile = %i %i, tile0 = %i %i, X,Y,Z = %7.2f %7.2f %7.2f\n",
+             tile_x, tile_y, tile_x0, tile_y0, lookat_x, lookat_y, lookat_z) ;
+      if(0 == tile_x || 0 == tile_y || 0.0001 == lookat_x || 0.0001 == lookat_y || 0.0001 == lookat_z ){
+        printf("  Some values unset.  Position not changed\n") ;
+        return 0 ;
+      }
+
+      cameras[0].offset_center_x = (tile_x - tile_x0 + 0.5)*tile_size + lookat_x ;
+      cameras[0].offset_center_y = (tile_y - tile_y0 + 0.5)*tile_size + lookat_y ;
+      cameras[0].offset_center_z = (lookat_z - tile_h0) ;
+
+      cameras[0].offset_eye_x = cameras[0].offset_center_x ;
+      cameras[0].offset_eye_y = cameras[0].offset_center_y + 30.0;
+      cameras[0].offset_eye_z = cameras[0].offset_center_z + 30.0 ;
+
+//        printf(" AA camera eye = %f %f %f,  center = %f %f %f\n",
+//               cameras[0].offset_eye_x, cameras[0].offset_eye_x, cameras[0].offset_eye_x,
+//               cameras[0].offset_center_x, cameras[0].offset_center_y, cameras[0].offset_center_z) ;
+//      current_camera = 0 ;
+      camera_changed = 1 ;
+
+      fclose(fp) ;
+
+
       return 0;
 }

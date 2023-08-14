@@ -17,6 +17,11 @@ int print_train_data(void) ;
 int check_train_movement(TrainNode *t) ;
 
 static TrainNode  *build_train ;
+int position_train2(char *location, int iswap, double idirect) ;
+int add_wagon_to_train2(char *wagon, RawWagonNode *rw0, int idirn) ;
+int add_consist_to_train(char* consist_name) ;
+
+
 
 /*
  *  Routine to initialise the trains and thei positions.  The composition of
@@ -38,64 +43,64 @@ int   trains_init(void){
 
 #if 1
       add_new_train("T01") ;
-      add_wagon_to_train("T01","AcelaHHL", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCAFE", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T01","AcelaHHLBC", 1) ;
-      position_train("T01",779,7,1,8.0) ;     //  Station Platform
+      add_wagon_to_train("AcelaHHL", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCAFE", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLBC", 1) ;
+      position_train(779,7,1,8.0) ;     //  Station Platform
 #endif
 
 #if 1
       add_new_train("T02") ;
-      add_wagon_to_train("T02","AcelaHHL", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCAFE", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLBC", 1) ;
-      position_train("T02",37,4,0,0.0) ;     //  Station Platform
+      add_wagon_to_train("AcelaHHL", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCAFE", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLBC", 1) ;
+      position_train(37,4,0,0.0) ;     //  Station Platform
 #endif
 
 #if 1
       add_new_train("T02") ;
-      add_wagon_to_train("T02","AcelaHHL", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCAFE", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T02","AcelaHHLBC", 1) ;
-      position_train("T02",700,2,0,0.0) ;     //  Siding
+      add_wagon_to_train("AcelaHHL", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCAFE", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLBC", 1) ;
+      position_train(700,2,0,0.0) ;     //  Siding
 #endif
 
 
 #if 1
       add_new_train("T03") ;
-      add_wagon_to_train("T03","AcelaHHL", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCAFE", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLCO", 1) ;
-      add_wagon_to_train("T03","AcelaHHLBC", 1) ;
-//      position_train("T03",1119,16,0,0.0) ;     //  Station Platform
-      position_train("T03",1146,8,0,10.0) ;     //  Station Platform
+      add_wagon_to_train("AcelaHHL", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCAFE", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLCO", 1) ;
+      add_wagon_to_train("AcelaHHLBC", 1) ;
+//      position_train(1119,16,0,0.0) ;     //  Station Platform
+      position_train(1146,8,0,10.0) ;     //  Station Platform
 #endif
 
 
@@ -103,157 +108,157 @@ int   trains_init(void){
 
 #if 1
       add_new_train("T01") ;
-      add_wagon_to_train("T01","Dash9", 1) ;
+      add_wagon_to_train("Dash9", 1) ;
 
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;  //  Oil Tanker
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
-      add_wagon_to_train("T01","US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;  //  Oil Tanker
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
+      add_wagon_to_train("US2FullLoggerCar", 1) ;
 
-      position_train("T01",730,1,0,0.0) ;    // Shelby South
+      position_train(730,1,0,0.0) ;    // Shelby South
 #endif
 
 #if 1
 
       add_new_train("T02") ;
-      add_wagon_to_train("T02","Dash9", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1)  ;
-      add_wagon_to_train("T02","US2Freightcar3", 1)  ;   //  Oil ??
-      add_wagon_to_train("T02","US2EmpLoggerCar", 1) ;   //  Empty logs
-      add_wagon_to_train("T02","US2Freightcar4", 1)  ;   //  Trailer on wagon
-      add_wagon_to_train("T02","US2BNSFCar", 1)      ;   //  Coal ??
-      add_wagon_to_train("T02","US2Freight6", 1)     ;   //  Large green goods
-      add_wagon_to_train("T02","US2Freightcar3", 1)  ;   //
-      add_wagon_to_train("T02","US2Freight7", 1)     ;   //  Red Gooods - Santa Fe
-      add_wagon_to_train("T02","US2Freight8", 1)     ;   //  Large green - Burlington and Northern
-      add_wagon_to_train("T02","US2FCarYF2", 1)      ;   //  Large yellow open-sided (closed)
-      add_wagon_to_train("T02","US2DbleHgtFrghtRd", 1) ; //  Double stacked red containers
-      add_wagon_to_train("T02","US2ChemiCar", 1)     ;   //  Small chemicak car
-      add_wagon_to_train("T02","US2FreightcarYel1", 1) ; //  Large yellow open sided (?) goods
-      add_wagon_to_train("T02","US2FCarRE2", 1)      ;   //  Empty red open-sided wagon
-      add_wagon_to_train("T02","US2FullLoggerCar", 1) ;  //  Full of logs
-      add_wagon_to_train("T02","US2WoodChipper", 1)  ;   //  Green open top - Burlington and Northern
-      add_wagon_to_train("T02","US2HopperCar", 1)    ;   //  Hopper car (grey)
-      add_wagon_to_train("T02","US2GrainCar", 1)     ;   //  Hopper car (brown) grain
-      add_wagon_to_train("T02","US2DbleHgtFrghtBl", 1) ; //  Double stacked blue containers
-      add_wagon_to_train("T02","US2FCarYE2", 1)      ;   //  Empty yellow open-sided wagon
-      add_wagon_to_train("T02","US2Freightcar5", 1)  ;   //  Empty flat freight car
-      position_train("T02",512,4,1,0.0) ;     //  Whitefish siding
-//      position_train("T02",541,1,1,0.0) ;     //  Whitefish siding
-//      position_train("T02",541,9,1,-30.0) ;     //  Whitefish siding near signals
-//      position_train("T02",485,15,1,0.0) ;     //  Whitefish approach
-//      position_train("T02",533,11,0,0.0) ;
-//      position_train("T02",467,7,0,0.0) ;
+      add_wagon_to_train("Dash9", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1)  ;
+      add_wagon_to_train("US2Freightcar3", 1)  ;   //  Oil ??
+      add_wagon_to_train("US2EmpLoggerCar", 1) ;   //  Empty logs
+      add_wagon_to_train("US2Freightcar4", 1)  ;   //  Trailer on wagon
+      add_wagon_to_train("US2BNSFCar", 1)      ;   //  Coal ??
+      add_wagon_to_train("US2Freight6", 1)     ;   //  Large green goods
+      add_wagon_to_train("US2Freightcar3", 1)  ;   //
+      add_wagon_to_train("US2Freight7", 1)     ;   //  Red Gooods - Santa Fe
+      add_wagon_to_train("US2Freight8", 1)     ;   //  Large green - Burlington and Northern
+      add_wagon_to_train("US2FCarYF2", 1)      ;   //  Large yellow open-sided (closed)
+      add_wagon_to_train("US2DbleHgtFrghtRd", 1) ; //  Double stacked red containers
+      add_wagon_to_train("US2ChemiCar", 1)     ;   //  Small chemicak car
+      add_wagon_to_train("US2FreightcarYel1", 1) ; //  Large yellow open sided (?) goods
+      add_wagon_to_train("US2FCarRE2", 1)      ;   //  Empty red open-sided wagon
+      add_wagon_to_train("US2FullLoggerCar", 1) ;  //  Full of logs
+      add_wagon_to_train("US2WoodChipper", 1)  ;   //  Green open top - Burlington and Northern
+      add_wagon_to_train("US2HopperCar", 1)    ;   //  Hopper car (grey)
+      add_wagon_to_train("US2GrainCar", 1)     ;   //  Hopper car (brown) grain
+      add_wagon_to_train("US2DbleHgtFrghtBl", 1) ; //  Double stacked blue containers
+      add_wagon_to_train("US2FCarYE2", 1)      ;   //  Empty yellow open-sided wagon
+      add_wagon_to_train("US2Freightcar5", 1)  ;   //  Empty flat freight car
+      position_train(512,4,1,0.0) ;     //  Whitefish siding
+//      position_train(541,1,1,0.0) ;     //  Whitefish siding
+//      position_train(541,9,1,-30.0) ;     //  Whitefish siding near signals
+//      position_train(485,15,1,0.0) ;     //  Whitefish approach
+//      position_train(533,11,0,0.0) ;
+//      position_train(467,7,0,0.0) ;
 #endif
 
 #if 1
       add_new_train("T02") ;
-//      add_wagon_to_train("T02","SD40", 1) ;  //  Shape errors ??
-      add_wagon_to_train("T02","Dash9", 1) ;
+//      add_wagon_to_train("SD40", 1) ;  //  Shape errors ??
+      add_wagon_to_train("Dash9", 1) ;
 
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
-      add_wagon_to_train("T02","US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
+      add_wagon_to_train("US2Freightcar3", 1) ;
 
-      position_train("T02",431,3,0,0.0) ;    //  Columbia Falls Siding
+      position_train(431,3,0,0.0) ;    //  Columbia Falls Siding
 #endif
 
 #if 1
       add_new_train("T03") ;
-      add_wagon_to_train("T03","GP38", 1) ;
+      add_wagon_to_train("GP38", 1) ;
 
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
-      add_wagon_to_train("T03","US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
+      add_wagon_to_train("US2Freight6", 1) ;
 
-      position_train("T03",694,1,0,0.0) ;   //  Kalispell
+      position_train(694,1,0,0.0) ;   //  Kalispell
 #endif
 
 #if 1
       add_new_train("T04") ;
-      add_wagon_to_train("T04","GP38", 1) ;
+      add_wagon_to_train("GP38", 1) ;
 
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
-      add_wagon_to_train("T04","US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
+      add_wagon_to_train("US2Freightcar4", 1) ;
 
-      position_train("T04",125,1,1,0.0) ;   // Cutback
+      position_train(125,1,1,0.0) ;   // Cutback
 #endif
 
 #if 1
       add_new_train("T06") ;
-      add_wagon_to_train("T06","Dash9", 1) ;
+      add_wagon_to_train("Dash9", 1) ;
 
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
-      add_wagon_to_train("T06","US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
+      add_wagon_to_train("US2Freight8", 1) ;
 
-      position_train("T06",191,5,1,0.0) ;  // Glacier Park
+      position_train(191,5,1,0.0) ;  // Glacier Park
 #endif
 
 #if 1
       add_new_train("T07") ;
-//      add_wagon_to_train("T07","SD40", 1) ;
-      add_wagon_to_train("T07","Dash9", 1) ;
+//      add_wagon_to_train("SD40", 1) ;
+      add_wagon_to_train("Dash9", 1) ;
 
-      position_train("T07",205,2,0,0.0) ;  //  Maria - Baloon
+      position_train(205,2,0,0.0) ;  //  Maria - Baloon
 #endif
 
 #if 1
       add_new_train("T08") ;
-//      add_wagon_to_train("T07","SD40", 1) ;
-      add_wagon_to_train("T08","Dash9", 1) ;
-      position_train("T08",449,4,0,0.0) ;  //  Crossing with rising arms
+//      add_wagon_to_train("SD40", 1) ;
+      add_wagon_to_train("Dash9", 1) ;
+      position_train(449,4,0,0.0) ;  //  Crossing with rising arms
 #endif
 
 
@@ -261,517 +266,679 @@ int   trains_init(void){
 #elif defined ROUTE_EUROPE1
 
       add_new_train("T01") ;
-      add_wagon_to_train("T01","RoyalScotsClass", 1) ;
-      add_wagon_to_train("T01","RoyalScotTender", 1) ;
-      add_wagon_to_train("T01","ScotsMailCar", 1) ;
-      add_wagon_to_train("T01","ScotsFirstClass", 1) ;
-      add_wagon_to_train("T01","ScotsFirstClass", 1) ;
-      add_wagon_to_train("T01","ScotsFirstClass", 1) ;
-      add_wagon_to_train("T01","ScotsFirstClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
-      add_wagon_to_train("T01","ScotsThirdClass", 1) ;
+      add_wagon_to_train("RoyalScotsClass", 1) ;
+      add_wagon_to_train("RoyalScotTender", 1) ;
+      add_wagon_to_train("ScotsMailCar", 1) ;
+      add_wagon_to_train("ScotsFirstClass", 1) ;
+      add_wagon_to_train("ScotsFirstClass", 1) ;
+      add_wagon_to_train("ScotsFirstClass", 1) ;
+      add_wagon_to_train("ScotsFirstClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
+      add_wagon_to_train("ScotsThirdClass", 1) ;
 
-      position_train("T01",325,9,0,0.0) ;
-
-      add_new_train("T02") ;
-      add_wagon_to_train("T02","Pendennis", 1) ;
-      add_wagon_to_train("T02","PendennisTender", 1) ;
-      add_wagon_to_train("T02","GWRFirst", 1) ;
-      add_wagon_to_train("T02","GWRFirst", 1) ;
-      add_wagon_to_train("T02","GWRFirst", 1) ;
-      add_wagon_to_train("T02","GWRFirst", 1) ;
-      add_wagon_to_train("T02","GWRRest", 1) ;
-      add_wagon_to_train("T02","GWRRest", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRThird", 1) ;
-      add_wagon_to_train("T02","GWRLuggCar", 1) ;
-      add_wagon_to_train("T02","GWRLuggCar", 1) ;
-
-      position_train("T02",329,10,0,30.0) ;
-
+      position_train(325,9,0,0.0) ;
 
       add_new_train("T02") ;
-      add_wagon_to_train("T02","Scotsman", 1) ;
-      add_wagon_to_train("T02","ScotsTender", 1) ;
-      add_wagon_to_train("T02","ScotsCar1", 1) ;
-      add_wagon_to_train("T02","ScotsCar1", 1) ;
-      add_wagon_to_train("T02","ScotsCar1", 1) ;
-      add_wagon_to_train("T02","ScotsCar3", 1) ;
-      add_wagon_to_train("T02","ScotsCar3", 1) ;
-      add_wagon_to_train("T02","ScotsCar3", 1) ;
-      add_wagon_to_train("T02","ScotsCar3", 1) ;
-      add_wagon_to_train("T02","ScotsCar3", 1) ;
+      add_wagon_to_train("Pendennis", 1) ;
+      add_wagon_to_train("PendennisTender", 1) ;
+      add_wagon_to_train("GWRFirst", 1) ;
+      add_wagon_to_train("GWRFirst", 1) ;
+      add_wagon_to_train("GWRFirst", 1) ;
+      add_wagon_to_train("GWRFirst", 1) ;
+      add_wagon_to_train("GWRRest", 1) ;
+      add_wagon_to_train("GWRRest", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRThird", 1) ;
+      add_wagon_to_train("GWRLuggCar", 1) ;
+      add_wagon_to_train("GWRLuggCar", 1) ;
 
-      position_train("T02",384,17,0,10.0) ;
+      position_train(329,10,0,30.0) ;
+
+
+      add_new_train("T02") ;
+      add_wagon_to_train("Scotsman", 1) ;
+      add_wagon_to_train("ScotsTender", 1) ;
+      add_wagon_to_train("ScotsCar1", 1) ;
+      add_wagon_to_train("ScotsCar1", 1) ;
+      add_wagon_to_train("ScotsCar1", 1) ;
+      add_wagon_to_train("ScotsCar3", 1) ;
+      add_wagon_to_train("ScotsCar3", 1) ;
+      add_wagon_to_train("ScotsCar3", 1) ;
+      add_wagon_to_train("ScotsCar3", 1) ;
+      add_wagon_to_train("ScotsCar3", 1) ;
+
+      position_train(384,17,0,10.0) ;
 
 
 #elif defined ROUTE_EUROPE2
 
       add_new_train("T01") ;
-      add_wagon_to_train("T01","310", 1) ;
-      add_wagon_to_train("T01","310Tender", 1) ;
-      add_wagon_to_train("T01","OESleepCar1", 1) ;
-      add_wagon_to_train("T01","OESleepCar2", 1) ;
-      add_wagon_to_train("T01","OESleepCar3", 1) ;
-      add_wagon_to_train("T01","OESleepCar4", 1) ;
-      add_wagon_to_train("T01","OESleepCar5", 1) ;
-      add_wagon_to_train("T01","OESleepCar6", 1) ;
-      add_wagon_to_train("T01","OESleepCar7", 1) ;
-      add_wagon_to_train("T01","OESleepCar8", 1) ;
-      add_wagon_to_train("T01","OESleepCar9", 1) ;
+      add_wagon_to_train("310", 1) ;
+      add_wagon_to_train("310Tender", 1) ;
+      add_wagon_to_train("OESleepCar1", 1) ;
+      add_wagon_to_train("OESleepCar2", 1) ;
+      add_wagon_to_train("OESleepCar3", 1) ;
+      add_wagon_to_train("OESleepCar4", 1) ;
+      add_wagon_to_train("OESleepCar5", 1) ;
+      add_wagon_to_train("OESleepCar6", 1) ;
+      add_wagon_to_train("OESleepCar7", 1) ;
+      add_wagon_to_train("OESleepCar8", 1) ;
+      add_wagon_to_train("OESleepCar9", 1) ;
 
-      position_train("T01",29,7,1,0.0) ;
+      position_train(29,7,1,0.0) ;
 
 
 #elif defined ROUTE_JAPAN1
 
       add_new_train("T01") ;
-      add_wagon_to_train("T01","KIHA31a", 1) ;
-      add_wagon_to_train("T01","KIHA31", 1) ;
-      position_train("T01",746,5,0,0.0) ;
+      add_wagon_to_train("KIHA31a", 1) ;
+      add_wagon_to_train("KIHA31", 1) ;
+      position_train(746,5,0,0.0) ;
 
       add_new_train("T02") ;
-      add_wagon_to_train("T02","KIHA31a", 1) ;
-      add_wagon_to_train("T02","KIHA31", 1) ;
-      position_train("T02",32,10,0,0.0) ;
+      add_wagon_to_train("KIHA31a", 1) ;
+      add_wagon_to_train("KIHA31", 1) ;
+      position_train(32,10,0,0.0) ;
 
 #elif defined ROUTE_JAPAN2
       add_new_train("T01") ;
-      add_wagon_to_train("T01","KIHA31a", 1) ;
-      add_wagon_to_train("T01","KIHA31", 1) ;
+      add_wagon_to_train("KIHA31a", 1) ;
+      add_wagon_to_train("KIHA31", 1) ;
 
-      position_train("T01",314,1,0,0.0) ;
+      position_train(314,1,0,0.0) ;
 #if 1
       add_new_train("T02") ;
-      add_wagon_to_train("T02","30000", 1) ;
-      add_wagon_to_train("T02","30000", 0) ;
-//      add_wagon_to_train("T02","30000", 1) ;
-      position_train("T02",282,4,0,0.0) ;
+      add_wagon_to_train("30000", 1) ;
+      add_wagon_to_train("30000", 0) ;
+//      add_wagon_to_train("30000", 1) ;
+      position_train(282,4,0,0.0) ;
 
       add_new_train("T02") ;
-      add_wagon_to_train("T02","KIHA140", 1) ;
-      position_train("T02",309,3,0,0.0) ;
+      add_wagon_to_train("KIHA140", 1) ;
+      position_train(309,3,0,0.0) ;
 
       add_new_train("T03") ;
-      add_wagon_to_train("T03","2000", 1) ;
-      add_wagon_to_train("T03","2000RearEng", 1) ;
-      position_train("T03",255,6,0,0.0) ;
+      add_wagon_to_train("2000", 1) ;
+      add_wagon_to_train("2000RearEng", 1) ;
+      position_train(255,6,0,0.0) ;
 
       add_new_train("T04") ;
-      add_wagon_to_train("T04","2000", 1) ;
-      add_wagon_to_train("T04","2000RearEng", 1) ;
-      position_train("T04",266,6,0,35.0) ;
+      add_wagon_to_train("2000", 1) ;
+      add_wagon_to_train("2000RearEng", 1) ;
+      position_train(266,6,0,35.0) ;
 
 
       add_new_train("T06") ;
-      add_wagon_to_train("T06","2000", 1) ;
-      add_wagon_to_train("T06","2000RearEng", 1) ;
-//      add_wagon_to_train("T02","Genesis", 1) ;     //  Amtrack
-//      add_wagon_to_train("T02","Series7000Carg", 1) ;
-//      add_wagon_to_train("T02","2000ACarriage", 1) ;
+      add_wagon_to_train("2000", 1) ;
+      add_wagon_to_train("2000RearEng", 1) ;
+//      add_wagon_to_train("Genesis", 1) ;     //  Amtrack
+//      add_wagon_to_train("Series7000Carg", 1) ;
+//      add_wagon_to_train("2000ACarriage", 1) ;
 
-      position_train("T06",310,9,0,0.0) ;
+      position_train(310,9,0,0.0) ;
 
       add_new_train("T07") ;
-      add_wagon_to_train("T07","2000", 1) ;
-      add_wagon_to_train("T07","2000RearEng", 1) ;
-//      position_train("T07",62,183,0,0.0) ;
-      position_train("T07",11,3,0,0.0) ;
+      add_wagon_to_train("2000", 1) ;
+      add_wagon_to_train("2000RearEng", 1) ;
+//      position_train(62,183,0,0.0) ;
+      position_train(11,3,0,0.0) ;
 
 #endif
 
 #elif defined ROUTE_TUTORIAL
 
       add_new_train("T01") ;
-      add_wagon_to_train("T01","Dash9", 1) ;
-      position_train("T01",13,2,0,0.0) ;
+      add_wagon_to_train("Dash9", 1) ;
+      position_train(13,2,0,0.0) ;
 
 
 #elif defined ROUTE_AU_NSW_SW_SS
 
 #if 1
       add_new_train("T01") ;
-      add_wagon_to_train("T01","AU_NSW_3028_C30T", 1) ;
-      add_wagon_to_train("T01","AU_NSW_3028_tender", 1) ;
+      add_wagon_to_train("AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3028_tender", 1) ;
       for(i=0;i<30;i++){
-        add_wagon_to_train("T01","AU_NSW_Dtruck2_Coal", 1) ;
+        add_wagon_to_train("AU_NSW_Dtruck2_Coal", 1) ;
       }
-      add_wagon_to_train("T01","LHG_Brake_Van", 1) ;
-      position_train("T01",730,1,1,1.0) ;    // Near Lithgow
+      add_wagon_to_train("LHG_Brake_Van", 1) ;
+      position_train(730,1,1,1.0) ;    // Near Lithgow
 #endif
 #if 1
       add_new_train("T02") ;
-      add_wagon_to_train("T02","AU_NSW_3028_C30T", 1) ;
-      add_wagon_to_train("T02","AU_NSW_3028_tender", 1) ;
-      position_train("T02",659,7,0,0.0) ;    // Near Mount Victoria
+      add_wagon_to_train("AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3028_tender", 1) ;
+      position_train(659,7,0,0.0) ;    // Near Mount Victoria
 
       add_new_train("T02") ;
-      add_wagon_to_train("T02","AU_NSW_3028_C30T", 1) ;
-      add_wagon_to_train("T02","AU_NSW_3028_tender", 1) ;
-      position_train("T02",4321,1,0,1.0) ;    // Near Clyde
+      add_wagon_to_train("AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3028_tender", 1) ;
+      position_train(4321,1,0,1.0) ;    // Near Clyde
 
       add_new_train("T03") ;
-      add_wagon_to_train("T03","AU_NSW_3028_C30T", 1) ;
-      add_wagon_to_train("T03","AU_NSW_3028_tender", 1) ;
-      position_train("T03",5076,2,1,0.0) ;    //  Redfern
+      add_wagon_to_train("AU_NSW_3028_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3028_tender", 1) ;
+      position_train(5076,2,1,0.0) ;    //  Redfern
 
       add_new_train("T04") ;
-      add_wagon_to_train("T04","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T04","AU_NSW_3102_tender", 1) ;
-      position_train("T04",5911,2,0,0.0) ;    // Sydney
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(5911,2,0,0.0) ;    // Sydney
 
       add_new_train("T06") ;
-      add_wagon_to_train("T06","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T06","AU_NSW_3102_tender", 1) ;
-      position_train("T06",1023,2,0,0.0) ;    // Works
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1023,2,0,0.0) ;    // Works
 
       add_new_train("T07") ;
-      add_wagon_to_train("T07","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T07","AU_NSW_3102_tender", 1) ;
-      position_train("T07",1611,2,1,0.0) ;    // Rooty Hill
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1611,2,1,0.0) ;    // Rooty Hill
 
       add_new_train("T08") ;
-      add_wagon_to_train("T08","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T08","AU_NSW_3102_tender", 1) ;
-      position_train("T08",3262,2,0,0.0) ;    // Cambelltown
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(3262,2,0,0.0) ;    // Cambelltown
 
       add_new_train("T09") ;
-      add_wagon_to_train("T09","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T09","AU_NSW_3102_tender", 1) ;
-      position_train("T09",760,3,1,0.0) ;    // Lithgow Loop
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(760,3,1,0.0) ;    // Lithgow Loop
 
       add_new_train("T10") ;
-      add_wagon_to_train("T10","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T10","AU_NSW_3102_tender", 1) ;
-      position_train("T10",3161,1,1,0.0) ;    //  Richmond
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(3161,1,1,0.0) ;    //  Richmond
 
       add_new_train("T11") ;
-      add_wagon_to_train("T11","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T11","AU_NSW_3102_tender", 1) ;
-      position_train("T11",1701,1,0,0.0) ;    //  Blacktown
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1701,1,0,0.0) ;    //  Blacktown
 
       add_new_train("T12") ;
-      add_wagon_to_train("T12","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T12","AU_NSW_3102_tender", 1) ;
-      position_train("T12",2250,3,1,0.0) ;    //  Clyburn
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(2250,3,1,0.0) ;    //  Clyburn
 
       add_new_train("T13") ;
-      add_wagon_to_train("T13","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T13","AU_NSW_3102_tender", 1) ;
-      position_train("T13",2747,5,0,0.0) ;    //  Chester Hill
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(2747,5,0,0.0) ;    //  Chester Hill
 
       add_new_train("T14") ;
-      add_wagon_to_train("T14","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T14","AU_NSW_3102_tender", 1) ;
-      position_train("T14",5062,3,1,0.0) ;    //  Sydney Raiway Sidings
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(5062,3,1,0.0) ;    //  Sydney Raiway Sidings
 
       add_new_train("T15") ;
-      add_wagon_to_train("T15","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T15","AU_NSW_3102_tender", 1) ;
-      position_train("T15",7706,2,0,0.0) ;    //  Back of beyond /Town no name
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(7706,2,0,0.0) ;    //  Back of beyond /Town no name
                                               // 1423 10258
 
       add_new_train("T16") ;
-      add_wagon_to_train("T16","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T16","AU_NSW_3102_tender", 1) ;
-      position_train("T16",8051,3,0,0.0) ;    //  Yennora
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(8051,3,0,0.0) ;    //  Yennora
 
       add_new_train("T18") ;
-      add_wagon_to_train("T18","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T18","AU_NSW_3102_tender", 1) ;
-      position_train("T18",7495,5,0,0.0) ;    //  Goulburn
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(7495,5,0,0.0) ;    //  Goulburn
 
       add_new_train("T19") ;
-      add_wagon_to_train("T19","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T19","AU_NSW_3102_tender", 1) ;
-      position_train("T19",7035,3,0,0.0) ;    //  Moss Vale
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(7035,3,0,0.0) ;    //  Moss Vale
 
       add_new_train("T20") ;
-      add_wagon_to_train("T20","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T20","AU_NSW_3102_tender", 1) ;
-      position_train("T20",6683,3,1,0.0) ;    //  Picton
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(6683,3,1,0.0) ;    //  Picton
 
       add_new_train("T21") ;
-      add_wagon_to_train("T21","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T21","AU_NSW_3102_tender", 1) ;
-      position_train("T21",3244,4,0,0.0) ;    //  Cambelltown
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(3244,4,0,0.0) ;    //  Cambelltown
 
       add_new_train("T22") ;
-      add_wagon_to_train("T22","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T22","AU_NSW_3102_tender", 1) ;
-      position_train("T22",4668,3,0,0.0) ;    //  Line to Newcastle
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(4668,3,0,0.0) ;    //  Line to Newcastle
 
       add_new_train("T23") ;
-      add_wagon_to_train("T23","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T23","AU_NSW_3102_tender", 1) ;
-      position_train("T23",1122,5,1,0.0) ;    //  Mudgee / Wallerwang
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1122,5,1,0.0) ;    //  Mudgee / Wallerwang
 
       add_new_train("T24") ;
-      add_wagon_to_train("T24","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T24","AU_NSW_3102_tender", 1) ;
-      position_train("T24",1290,2,0,0.0) ;    //  North-west Collery
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1290,2,0,0.0) ;    //  North-west Collery
 
       add_new_train("T25") ;
-      add_wagon_to_train("T25","AU_NSW_3102_C30T", 1) ;
-      add_wagon_to_train("T25","AU_NSW_3102_tender", 1) ;
-      position_train("T25",1038,2,1,0.0) ;    //  Bowenfeld
+      add_wagon_to_train("AU_NSW_3102_C30T", 1) ;
+      add_wagon_to_train("AU_NSW_3102_tender", 1) ;
+      position_train(1038,2,1,0.0) ;    //  Bowenfeld
 
 #endif
 
+#elif defined ROUTE_NEW_FOREST
+#if 0
+      add_new_train("T01") ;
+      add_wagon_to_train("LJ_ExGW_Railcar", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_E", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_Sign_E", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_Worn_E", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_L", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_Sign_L", 1) ;
+      add_wagon_to_train("35T_ClassB_Tank_Esso_Worn_L", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001T", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001 discs18", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001T", 1) ;
+      add_wagon_to_train("BR_BTP_41", 1) ;
+      add_wagon_to_train("BR_BTP_41_T", 1) ;
+      add_wagon_to_train("BR_BTP_95", 1) ;
+      add_wagon_to_train("BR_BTP_95_T", 1) ;
+#if 0
+      add_wagon_to_train("DR_BR_5MT_44917", 1) ;   //  Textures missing ??
+      add_wagon_to_train("DR_BR_5MT_44917T", 1) ;
+      add_wagon_to_train("DR_BR_5MT_45440", 1) ;
+      add_wagon_to_train("RF_BR_3FT_47190", 1) ;
+      add_wagon_to_train("RF_BR_3FT_47191", 1) ;
+#endif
+      position_train2("MiddleRoad1", 1, 10.0) ;
 
+      add_new_train("T01a") ;
+      add_wagon_to_train("AAC_DEE_MNR_35001 discs18", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001T", 1) ;
+      add_wagon_to_train("BR_BTP_41", 1) ;
+      add_wagon_to_train("BR_BTP_95", 1) ;
+      add_wagon_to_train("BR_BTP_95_T", 1) ;
+      add_wagon_to_train("BR_BTP_41_T", 1) ;
+      add_wagon_to_train("BR_BTP_41", 1) ;
+      add_wagon_to_train("BR_BTP_95", 1) ;
+      add_wagon_to_train("BR_BTP_95_T", 1) ;
+      add_wagon_to_train("BR_BTP_41_T", 1) ;
+      position_train2("Weymouth3", 1, 10.0) ;
+#endif
+#if 0
+      add_new_train("T01b") ;
+      add_wagon_to_train("DEE_D6541_VB", 1) ;
+//      add_wagon_to_train("AAC_DEE_MNR_35001 discs18", 1) ;
+//      add_wagon_to_train("AAC_DEE_MNR_35001T", 1) ;
+#if 0
+      add_wagon_to_train("BR_BTP_41", 1) ;
+      add_wagon_to_train("BR_BTP_95", 1) ;
+      add_wagon_to_train("BR_BTP_95_T", 1) ;
+      add_wagon_to_train("BR_BTP_41_T", 1) ;
+      add_wagon_to_train("BR_BTP_41", 1) ;
+      add_wagon_to_train("BR_BTP_95", 1) ;
+      add_wagon_to_train("BR_BTP_95_T", 1) ;
+      add_wagon_to_train("BR_BTP_41_T", 1) ;
+#endif
+      position_train2("Weymouth4", 1, 150.0) ;
+//      position_train(4920,5,0,0.0) ;    //  Weymouth arrival
+#endif
+#if 0
+      add_new_train("T02") ;
+      add_wagon_to_train("LJ_ExGW_Railcar", 1) ;
+      add_consist_to_train("DR_BR_4MT_76007_LE") ;
+      add_consist_to_train("LR_Goods") ;
+      position_train2("DorchupSiding", 1, 10.0) ;
+
+      add_new_train("T03") ;
+      add_consist_to_train("CCW_BR_Q_30548_LC_LE") ;
+      position_train2("WarehamDownBay", 1, 10.0) ;
+
+      add_new_train("T03a") ;
+      add_consist_to_train("BR 3F 43278 Light") ;
+      add_consist_to_train("QuayGds") ;
+      position_train2("CorfeCastleDn", 1, 10.0) ;
+
+      add_new_train("T03b") ;
+      add_wagon_to_train("AAC_DEE_MNR_35001 discs18", 1) ;
+      add_wagon_to_train("AAC_DEE_MNR_35001T", 1) ;
+      position_train2("SwanageMain", 0, 0.0) ;
+
+      add_new_train("T04") ;
+      add_wagon_to_train("LJ_ExGW_Railcar", 1) ;
+      position_train2("PooleQuay East", 1, 10.0) ;
+
+      add_new_train("T05") ;
+      add_consist_to_train("80002") ;
+      position_train2("BrkYd1", 1, 10.0) ;
+#endif
+      add_new_train("T06") ;
+      add_wagon_to_train("LJ_ExGW_Railcar", 1) ;
+//      add_consist_to_train("RL_540WlooWmth70A2WC") ;
+    position_train2("Lymington Pier", 1, 10.0) ;
+//      position_train(27,16,0,0.0) ;    //  Lymington entrance
+#if 0
+      add_new_train("T07") ;
+      add_consist_to_train("RL_51xxLE") ;
+      position_train2("Berths38_41", 1, 10.0) ;
+
+      add_new_train("T08") ;
+      add_consist_to_train("RL_4MT_76031D09") ;
+      position_train2("RomseyYard1", 1, 10.0) ;
+
+      add_new_train("T09") ;
+      add_consist_to_train("RL_4MT_760069D17") ;
+      position_train2("ElghUpLoop", 1, 10.0) ;
+
+      add_new_train("T10") ;
+      add_consist_to_train("RL_4F44146LE") ;
+      position_train2("Bstoke Down carriage", 1, 10.0) ;
+
+      add_new_train("T11") ;
+      add_consist_to_train("RL_44411LE") ;
+      position_train2("FC1", 1, 10.0) ;
+
+      add_new_train("T12") ;
+      add_consist_to_train("RL_43xxgds") ;
+      position_train2("MidsomerNortonGds1", 1, 10.0) ;
+
+      add_new_train("T13") ;
+      add_consist_to_train("RL_3MT_82014D04") ;
+      position_train2("Templecombe Up siding", 1, 10.0) ;
+
+      add_new_train("T14") ;
+      add_consist_to_train("RL_std573082") ;
+      add_consist_to_train("RL_2323PmthSSYeovil72C482U") ;
+      position_train2("EvercreechJct Up", 1, 10.0) ;
+
+      add_new_train("T15") ;
+      add_consist_to_train("RL_34046LE") ;
+      position_train2("Bath jct", 1, 10.0) ;
+
+//      add_new_train("T16") ;
+//      add_wagon_to_train("LJ_ExGW_Railcar", 1) ;
+//      position_train2("EvercreechJct", 1, 10.0) ;
+
+#endif
 /*
  *  ZIG ZAG Route
  */
 #else
 
       add_new_train("T01") ;
-      add_wagon_to_train("T01","1905-I103", 1) ;
-      position_train("T01",387,3,0,-50.0) ;     //  Station Bowenfels
+      add_wagon_to_train("1905-I103", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Coal", 1) ;
+      position_train2("Goods Siding", 1, 10.0) ;
 
+#if 1
       add_new_train("T02") ;
 
-      add_wagon_to_train("T02","4W-LV-load", 1) ;
-      add_wagon_to_train("T02","4W-LV-mty", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_Ash", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_Ballast", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_Coal", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_Empty", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_FlatSheet", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck1_HumpSheet", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck2_Coal", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck2_Empty", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck2_FlatSheet", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck2_HumpSheet", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck3_Ballast", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck3_Coal", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck3_FlatSheet", 1) ;
-      add_wagon_to_train("T02","AU_NSW_Dtruck3_HumpSheet", 1) ;
+      add_wagon_to_train("4W-LV-load", 1) ;
+      add_wagon_to_train("4W-LV-mty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ash", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Coal", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_FlatSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_HumpSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_Coal", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_FlatSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_HumpSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Coal", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_FlatSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_HumpSheet", 1) ;
 
-      add_wagon_to_train("T02","4W-HG-Brake-Van", 1) ;
+      add_wagon_to_train("4W-HG-Brake-Van", 1) ;
 
-      position_train("T02",408,3,0,0.0) ;     //  Station Bowenfels
+      position_train2("No 2 Loop Siding", 0, 30.0) ;
+//      position_train(408,3,0,0.0) ;     //  Station Bowenfels
 
-//      add_wagon_to_train("T02","4W-HG-Brake-Van", 1) ;
-//      position_train("T02",376,1,1,10.0) ;     //  Station Bowenfels
-//      position_train("T02",373,1,1,0.0) ;     //  Station Bowenfels
-//      position_train("T02",373,1,0,0.0) ;     //  Train Reversed
-//      position_train("T02",357,3,0,0.0) ;
-//      position_train("T02",384,1,1,0.0) ;
-//      position_train("T02",356,33,0,0.0) ;  //  Near Bowenfels Level Crossing 1
+//      add_wagon_to_train("4W-HG-Brake-Van", 1) ;
+//      position_train(376,1,1,10.0) ;     //  Station Bowenfels
+//      position_train(373,1,1,0.0) ;     //  Station Bowenfels
+//      position_train(373,1,0,0.0) ;     //  Train Reversed
+//      position_train(357,3,0,0.0) ;
+//      position_train(384,1,1,0.0) ;
+//      position_train(356,33,0,0.0) ;  //  Near Bowenfels Level Crossing 1
 
       add_new_train("T03") ;
-
-      add_wagon_to_train("T03","1905-A115", 1) ;
-      add_wagon_to_train("T03","1905-A115-t", 1) ;
-      add_wagon_to_train("T03","1905-J484", 1) ;
-      add_wagon_to_train("T03","1905-J484-t", 1) ;
-      add_wagon_to_train("T03","1905-AD-Sleeper", 1) ;
-      add_wagon_to_train("T03","1905-AD-Sleeper", 1) ;
-      add_wagon_to_train("T03","1905-AC-StateCar", 1) ;
-      add_wagon_to_train("T03","1905-AB-Diner", 1) ;
-      add_wagon_to_train("T03","1905-CBC", 1) ;
-      add_wagon_to_train("T03","1905-CBC", 1) ;
-      add_wagon_to_train("T03","1905-CBC", 1) ;
-      add_wagon_to_train("T03","1905-HO-JWW", 1) ;
-
-      position_train("T03",356,1,1,0.0) ;   // Bowenfels End-of-Line
-//      position_train("T03",384,1,1,0.0) ;
-//      position_train("T03",415,1,0,0.0) ;
+#if 1
+      add_consist_to_train("zz_w17_pickup_goods") ;
+#else
+      add_wagon_to_train("1905-A115", 1) ;
+      add_wagon_to_train("1905-A115-t", 1) ;
+      add_wagon_to_train("1905-J484", 1) ;
+      add_wagon_to_train("1905-J484-t", 1) ;
+      add_wagon_to_train("1905-AD-Sleeper", 1) ;
+      add_wagon_to_train("1905-AD-Sleeper", 1) ;
+      add_wagon_to_train("1905-AC-StateCar", 1) ;
+      add_wagon_to_train("1905-AB-Diner", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-HO-JWW", 1) ;
+#endif
+      position_train(356,1,1,0.0) ;   // Bowenfels End-of-Line
+//      position_train(384,1,1,0.0) ;
+//      position_train(415,1,0,0.0) ;
 
       add_new_train("T04") ;
 
-      add_wagon_to_train("T04","1905-O449", 1) ;
-      add_wagon_to_train("T04","1905-O449-t", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","AU_NSW_Dtruck3_Empty", 1) ;
-      add_wagon_to_train("T04","4W-HG-Brake-Van", 1) ;
+      add_wagon_to_train("1905-O449", 1) ;
+      add_wagon_to_train("1905-O449-t", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("4W-HG-Brake-Van", 1) ;
 
-      position_train("T04",431,4,0,70.0) ;
+      position_train2("Hermitage Colliery - Arrival Road", 1, 30.0) ;
+//      position_train(431,4,0,70.0) ;
 
       add_new_train("T05") ;
 
-      add_wagon_to_train("T05","1905-B319", 1) ;
-      add_wagon_to_train("T05","1905-B319-t", 1) ;
-      add_wagon_to_train("T05","1905-P708", 1) ;
-      add_wagon_to_train("T05","1905-P708-t", 1) ;
+      add_wagon_to_train("1905-B319", 1) ;
+      add_wagon_to_train("1905-B319-t", 1) ;
+      add_wagon_to_train("1905-P708", 1) ;
+      add_wagon_to_train("1905-P708-t", 1) ;
 
-      add_wagon_to_train("T05","JWW_Htype_E", 1) ;
-      add_wagon_to_train("T05","JWW_Htype_L", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T05","4W-CV-load", 1) ;
-      add_wagon_to_train("T05","4W-CV-load", 1) ;
-      add_wagon_to_train("T05","4W-CV-load", 1) ;
-      add_wagon_to_train("T05","4W-CV-load", 1) ;
-      add_wagon_to_train("T05","4W-CV-load", 1) ;
-      add_wagon_to_train("T05","4W-CV-mty", 1) ;
-      add_wagon_to_train("T05","4W-CW2-LD", 1) ;
-      add_wagon_to_train("T05","4W-CW2", 1) ;
-      add_wagon_to_train("T05","4W-GSV2-Pigs", 1) ;
-      add_wagon_to_train("T05","4W-GSV2-Sheep", 1) ;
-      add_wagon_to_train("T05","4W-GSV2", 1) ;
-      add_wagon_to_train("T05","4W-GSV2", 1) ;
-      add_wagon_to_train("T05","4W-LV-load", 1) ;
-      add_wagon_to_train("T05","4W-LV-mty", 1) ;
-      position_train("T05",242,2,0,0.0) ;
+      add_wagon_to_train("JWW_Htype_E", 1) ;
+      add_wagon_to_train("JWW_Htype_L", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-mty", 1) ;
+      add_wagon_to_train("4W-CW2-LD", 1) ;
+      add_wagon_to_train("4W-CW2", 1) ;
+      add_wagon_to_train("4W-GSV2-Pigs", 1) ;
+      add_wagon_to_train("4W-GSV2-Sheep", 1) ;
+      add_wagon_to_train("4W-GSV2", 1) ;
+      add_wagon_to_train("4W-GSV2", 1) ;
+      add_wagon_to_train("4W-LV-load", 1) ;
+      add_wagon_to_train("4W-LV-mty", 1) ;
+
+      position_train2("No 2 Short Deadend", 1, 60.0) ;
+//      position_train(242,2,0,0.0) ;
 
       add_new_train("T06") ;
 
-      add_wagon_to_train("T06","1905-D347", 1) ;
-      add_wagon_to_train("T06","1905-D347-t", 1) ;
-      add_wagon_to_train("T06","4W-CV-load", 0) ;
-      add_wagon_to_train("T06","4W-CV-mty", 1) ;
+      add_wagon_to_train("1905-D347", 1) ;
+      add_wagon_to_train("1905-D347-t", 1) ;
+      add_wagon_to_train("4W-CV-load", 0) ;
+      add_wagon_to_train("4W-CV-mty", 1) ;
 
-      add_wagon_to_train("T06","AU_NSW_Dtruck1_Empty", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck2_Empty", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Empty", 1) ;
 
-      add_wagon_to_train("T06","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T06","WVR-4W-AcidTank-9", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb4MT", 1) ;
-      add_wagon_to_train("T06","NI4wHopUnb4MT", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_FlatSheet", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_HumpSheet", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_Coal", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_Coal", 1) ;
-      add_wagon_to_train("T06","AU_NSW_Dtruck3_Ballast", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
+      add_wagon_to_train("NI4wHopUnb4MT", 1) ;
+      add_wagon_to_train("NI4wHopUnb4MT", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_FlatSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_HumpSheet", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Coal", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Coal", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck3_Ballast", 1) ;
 
-      add_wagon_to_train("T06","JWW_Htype_E", 1) ;
-      add_wagon_to_train("T06","JWW_Htype_L", 1) ;
-      add_wagon_to_train("T06","JWW_Htype_L", 1) ;
-      add_wagon_to_train("T06","JWW_Htype_E", 1) ;
-      add_wagon_to_train("T06","4W-HG-Brake-Van", 1) ;
+      add_wagon_to_train("JWW_Htype_E", 1) ;
+      add_wagon_to_train("JWW_Htype_L", 1) ;
+      add_wagon_to_train("JWW_Htype_L", 1) ;
+      add_wagon_to_train("JWW_Htype_E", 1) ;
+      add_wagon_to_train("4W-HG-Brake-Van", 1) ;
 
-      position_train("T06",189,5,0,0.0) ;
+//      position_train2("No 2 Loop Siding", 0, 60.0) ;
+      position_train(189,5,0,0.0) ;
 
-//      position_train("T06",376,1,1,0.0) ;
-//      position_train("T06",123,1,1,0.0) ;
-//      position_train("T06",377,6,0,0.0) ;
-//        position_train("T06",554,4,0,-10.0) ;  // Mt Victoria Turntable
-//        position_train("T06",251,3,0,0.0) ;  // Golburn - Train shed line 3
-//        position_train("T06",541,5,0,0.0) ;  // Mt Victoria
-//        position_train("T06",356,13,1,10.0) ;  // Bowenfels distant
-//        position_train("T06",356,33,1,10.0) ;  // Bowenfels level crossing
-//        position_train("T06",392,1,0,20.0) ;  // Default Bowenfels siding
-//      position_train("T06",363,1,1,0.0) ;
+//      position_train(376,1,1,0.0) ;
+//      position_train(123,1,1,0.0) ;
+//      position_train(377,6,0,0.0) ;
+//        position_train(554,4,0,-10.0) ;  // Mt Victoria Turntable
+//        position_train(251,3,0,0.0) ;  // Golburn - Train shed line 3
+//        position_train(541,5,0,0.0) ;  // Mt Victoria
+//        position_train(356,13,1,10.0) ;  // Bowenfels distant
+//        position_train(356,33,1,10.0) ;  // Bowenfels level crossing
+//        position_train(392,1,0,20.0) ;  // Default Bowenfels siding
+//      position_train(363,1,1,0.0) ;
 
       add_new_train("T07") ;
 
-      add_wagon_to_train("T07","1905-S654", 1) ;
-      add_wagon_to_train("T07","1905-C144", 1) ;
-      add_wagon_to_train("T07","1905-C144-t", 1) ;
-      add_wagon_to_train("T07","4W-CV-load", 1) ;
-      add_wagon_to_train("T07","1905-C144", 1) ;
-      add_wagon_to_train("T07","1905-C144-t", 1) ;
-      add_wagon_to_train("T07","4W-CV-load", 1) ;
-      add_wagon_to_train("T07","4W-CV-load", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb1LD", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb1MT", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb2LD", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb2MT", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb3LD", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb3MT", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb4LD", 1) ;
-      add_wagon_to_train("T07","NI4wHopUnb4MT", 1) ;
+      add_wagon_to_train("1905-S654", 1) ;
+      add_wagon_to_train("1905-C144", 1) ;
+      add_wagon_to_train("1905-C144-t", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("1905-C144", 1) ;
+      add_wagon_to_train("1905-C144-t", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("NI4wHopUnb1LD", 1) ;
+      add_wagon_to_train("NI4wHopUnb1MT", 1) ;
+      add_wagon_to_train("NI4wHopUnb2LD", 1) ;
+      add_wagon_to_train("NI4wHopUnb2MT", 1) ;
+      add_wagon_to_train("NI4wHopUnb3LD", 1) ;
+      add_wagon_to_train("NI4wHopUnb3MT", 1) ;
+      add_wagon_to_train("NI4wHopUnb4LD", 1) ;
+      add_wagon_to_train("NI4wHopUnb4MT", 1) ;
 
 /*
  *  These wagons cause a segmentation fault
  */
-//      add_wagon_to_train("T04","WVR-4W-AcidTank-9-LD", 1) ;
-//      add_wagon_to_train("T04","WVR-4W-AcidTank-9", 1) ;
+//      add_wagon_to_train("WVR-4W-AcidTank-9-LD", 1) ;
+//      add_wagon_to_train("WVR-4W-AcidTank-9", 1) ;
 
-      position_train("T07",51,12,0,0.0) ;
+//      position_train(51,12,0,0.0) ;
+      position_train2("Zig Zag - Top Points - Engine Road", 1, 0.0) ;
 
       add_new_train("T08") ;
 
-      add_wagon_to_train("T08","1905-T524", 1) ;
-      add_wagon_to_train("T08","1905-T524-t", 1) ;
-      add_wagon_to_train("T08","4W-CV-load", 1) ;
-      add_wagon_to_train("T08","1905-AD-Sleeper", 1) ;
-      add_wagon_to_train("T08","1905-AB-Diner", 1) ;
-      add_wagon_to_train("T08","1905-CBC", 1) ;
-      add_wagon_to_train("T08","1905-CBC", 1) ;
-      add_wagon_to_train("T08","1905-CBC", 1) ;
-      add_wagon_to_train("T08","1905-HO-JWW", 1) ;
+      add_wagon_to_train("1905-T524", 1) ;
+      add_wagon_to_train("1905-T524-t", 1) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("1905-AD-Sleeper", 1) ;
+      add_wagon_to_train("1905-AB-Diner", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-CBC", 1) ;
+      add_wagon_to_train("1905-HO-JWW", 1) ;
 
-      position_train("T08",485,5,0,0.0) ;
+//      position_train(485,5,0,0.0) ;
+      position_train2("Mt Victoria - No 1", 1, 20.0) ;
 
       add_new_train("T09") ;
 
-      add_wagon_to_train("T09","1905-S654", 1) ;
-      add_wagon_to_train("T09","AU_NSW_Dtruck1_Empty", 1) ;
-      add_wagon_to_train("T09","AU_NSW_Dtruck2_FlatSheet", 1) ;
+      add_wagon_to_train("1905-S654", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck2_FlatSheet", 1) ;
 
-      position_train("T09",269,10,0,0.0) ;
+      position_train2("No 2 Turntable Road", 0, 30.0) ;
+//      position_train(269,10,0,0.0) ;
 
 //  Wagons in Sidings
 
       add_new_train("T10") ;
-      add_wagon_to_train("T10","4W-CV-load", 1) ;
-      add_wagon_to_train("T10","AU_NSW_Dtruck1_Empty", 1) ;
-      add_wagon_to_train("T10","AU_NSW_Dtruck1_Empty", 1) ;
-      position_train("T10",213,3,1,10.0) ;
+      add_wagon_to_train("4W-CV-load", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      position_train2("No 1 Ash Siding", 1, 10.0)  ;
+      position_train(213,3,1,10.0) ;
 
       add_new_train("T11") ;
-      add_wagon_to_train("T11","AU_NSW_Dtruck1_Ballast", 1) ;
-      add_wagon_to_train("T11","AU_NSW_Dtruck1_Ballast", 1) ;
-      position_train("T11",271,2,0,0.0) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      position_train2("No 2 Repair Siding", 1, 20.0)  ;
+//      position_train(271,2,0,0.0) ;
 
 //  Engines in shed
 
       add_new_train("T12") ;
-      add_wagon_to_train("T12","1905-T524", 1) ;
-      add_wagon_to_train("T12","1905-T524-t", 1) ;
-      position_train("T12",251,5,0,20.0) ;
+      add_wagon_to_train("1905-T524", 1) ;
+      add_wagon_to_train("1905-T524-t", 1) ;
+      position_train2("No 1 Loco Road", 1, 20.0) ;
+//      position_train(251,5,0,20.0) ;
 
       add_new_train("T13") ;
-      add_wagon_to_train("T13","1905-C144", 1) ;
-      add_wagon_to_train("T13","1905-C144-t", 1) ;
-      position_train("T13",258,4,1,5.0) ;
+      add_wagon_to_train("1905-C144", 1) ;
+      add_wagon_to_train("1905-C144-t", 1) ;
+      position_train2("No 2 Loco Road", 0, 50.0) ;
+//      position_train(258,4,1,5.0) ;
 
 
 //  Trucks only in Bowenfels Siding
 
       add_new_train("T14") ;
-      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
-      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
-      add_wagon_to_train("T14","AU_NSW_Dtruck1_Ballast", 1) ;
-      add_wagon_to_train("T14","AU_NSW_Dtruck1_Empty", 1) ;
-      position_train("T14",392,1,1,30.0) ;     //  Station Bowenfels Siding
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Ballast", 1) ;
+      add_wagon_to_train("AU_NSW_Dtruck1_Empty", 1) ;
+      position_train2("Goods Siding", 1, -70.0) ;
+//      position_train(392,1,1,30.0) ;     //  Station Bowenfels Siding
+#endif
+
+#if 1
+//  Tank engine on Mt Victoria Turntable
+
+      add_new_train("T14") ;
+      add_wagon_to_train("1905-S654", 1) ;
+//      position_train2("Turntable Road", 1, -22.0) ;
+//      position_train(554,4,0,-10.0) ;  // Mt Victoria Turntable
+      position_train(538,1,0,0.0) ;  // Mt Victoria Entrance
+#endif
 
 #endif
 
@@ -808,8 +975,12 @@ WagonNode *wagon_init(char *name){
         if((n=strcmp(raw->name,name))==0) break ;
       }
       if(n != 0){
-         printf(" Routine %s.  Unable to find wagon %s\n",my_name,name);
-         exit(-1) ;
+        printf(" Routine %s.  Unable to find wagon %s\n",my_name,name);
+        printf("   Wagon names are:\n") ;
+        for(raw = rawwagonlist_beg; raw!=NULL; raw = raw->next){
+            printf("   Name = %s :: %s\n",raw->name,raw->full_name) ;
+        }
+        exit(-1) ;
       }
 /*
  *  Generate new WagonNode
@@ -959,50 +1130,63 @@ char      *my_name = "add_new_train" ;
  *==============================================================================
  */
 
- int   add_wagon_to_train(char *train, char *wagon, int idirn){
+int   add_wagon_to_train(char *wagon, int idirn){
+
+  int  iret ;
+
+       iret = add_wagon_to_train2(wagon, NULL, idirn) ;
+
+       return iret ;
+}
+
+int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
 
   int           ip = 0     ;  //  Debug
   TrainNode     *t  = NULL ;
   WagonNode     *w  = NULL ;
-  RawWagonNode  *rw = NULL ;
+  RawWagonNode  *rw = rw0  ;
   TravellerNode *z1 = NULL ;
-  char         *my_name = "add_wagon_to_train" ;
+  char          *wagon = wagon0 ;
+  char         *my_name = "add_wagon_to_train2" ;
 
-/*
- *==============================================================================
- *  Find train in list of TrainNodes
- *==============================================================================
- */
-      if(ip)printf(" Routine %s.  Train = %s,  wagon = %s\n",my_name,train,wagon) ;
-      for(t = trainlist_beg; t != NULL ; t=t->next){
-        if(ip)printf(" Routine %s.  AA Train = %s\n",my_name,t->name) ;
-      }
-      for(t = trainlist_beg; t != NULL ; t=t->next){
-        if(ip)printf(" Routine %s.  BB Train = %s\n",my_name,t->name) ;
-        if(!strcmp(t->name,train)) break ;
-      }
-      if(t==NULL){
-        printf(" Routine %s.\n  Unable to find train with name %s\n",
-               my_name,train) ;
-      }
+//      ip = ip && (rw0 != NULL) ;
+      if(ip)printf("  Routine %s\n",my_name) ;
+
       t = build_train ;               //  Always use default
       if(!t) return 0 ;               //  No build train defined
-
 /*
  *==============================================================================
- *  Find wagon in list of raw wagons
+ *  If rw0 is not set, find wagon in list of raw wagons
+ *  First search through names - then full names
  *==============================================================================
  */
-      for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next){
-        if(ip && 1)printf(" Routine %s, wagon = %s, wagon name = %s :: %s\n",
-                    my_name, wagon,
-                    rw->name, rw->shape->name) ;
-        if(!strcmp_ic(rw->name,wagon)) break ;
-      }
-      if(rw==NULL){
-        printf(" Routine %s.\n  Unable to find wagon with name %s\n",
-               my_name,wagon) ;
-               exit(1) ;
+
+      if(rw == NULL){
+        for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next){
+          if(ip)printf(" Routine %s, needed wagon = %s, wagon name = %s :: %s\n",
+                      my_name, wagon,
+                      rw->name, rw->shape->name) ;
+          if(!strcmp_ic(rw->name,wagon)) break ;
+        }
+        if(rw == NULL){
+          for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next){
+          if(ip)printf(" Routine %s, needed wagon = %s, full wagon name = %s :: %s\n",
+                      my_name, wagon,
+                      rw->full_name, rw->shape->name) ;
+            if(!strcmp_ic(rw->full_name,wagon)) break ;
+          }
+        }
+        if(rw==NULL){
+          printf(" Routine %s.\n  Unable to find wagon with name %s\n",
+                my_name,wagon) ;
+          printf("   Wagon names are:\n") ;
+          for(rw = rawwagonlist_beg; rw!=NULL; rw = rw->next){
+            printf("   Name = %s :: %s\n",rw->name,rw->full_name) ;
+          }
+          exit(1) ;
+        }
+      }else{
+        wagon = rw->name ;
       }
 /*
  *==============================================================================
@@ -1099,7 +1283,46 @@ int       i       ;
       return 0 ;
 }
 
-int position_train(char *train, int itrack, int ivector, int idirect, double distance){
+/*
+ *   Add consist to the current train
+ */
+
+int add_consist_to_train(char* consist_name){
+
+  int           ip = 0   ;
+  ConsistNode   *consist ;
+  DLPointerNode *pp_node ;
+  RawWagonNode  *raw_wagon ;
+
+  char *my_name = "add_consist_to_train" ;
+
+      if(ip){
+        printf("  Enter routine '%s'\n", my_name) ;
+        printf("    Consist_name = %s\n",consist_name) ;
+      }
+
+      for(consist = consistlist_beg; consist != NULL ; consist = consist->next){
+        if(strcmp(consist_name,consist->name) == 0) break ;
+      }
+
+      if(!consist){
+        printf("  Routine '%s' error.\n", my_name) ;
+        printf("  Unable to find consist.  Name = '%s'\n",consist_name) ;
+        printf("    Available consists:\n") ;
+        for(consist = consistlist_beg; consist != NULL ; consist = consist->next){
+          printf("      Consist = '%s'\n",consist->name) ;
+        }
+        return 1 ;
+      }
+
+      for(pp_node = consist->first; pp_node != NULL; pp_node = pp_node->next){
+        raw_wagon = (RawWagonNode *)pp_node->pointer ;
+        add_wagon_to_train2( NULL, raw_wagon, 1) ;
+      }
+      return 0 ;
+}
+
+int position_train(int itrack, int ivector, int idirect, double distance){
 
   int           ip  = 0    ;  // Debug
   int           n          ;
@@ -1109,18 +1332,8 @@ int position_train(char *train, int itrack, int ivector, int idirect, double dis
   double       dist = distance ;
   char         *my_name = "position_train" ;
 
-      if(ip)printf("  Routine %s :: AA\n",my_name) ;
-/*
- *  Find train in TrainNode list
- */
-      for(t = trainlist_beg; t != NULL ; t=t->next){
-        if(!strcmp(t->name,train)) break ;
-      }
-      if(ip)printf("  Routine %s :: BB\n",my_name) ;
-      if(t==NULL){
-        printf(" Routine %s.\n  Unable to fine train with name %s\n",
-               my_name,train) ;
-      }
+      if(ip)printf("  Routine %s\n",my_name) ;
+
       t = build_train ;  //  Always assume default
       if(!t) return 0 ;
 /*
@@ -1134,6 +1347,10 @@ int position_train(char *train, int itrack, int ivector, int idirect, double dis
         trv_move(z1, dist) ;    //  Initialise z1 - even if dist == 0.
         if(w->prev != NULL){
           dist += w->dist_front + w->prev->dist_back ;
+        }
+        if(ip){
+          printf("  Traveller position for n = %i\n",n) ;
+          trv_position(z1) ;
         }
       }
       t->n_wagons = n ;
@@ -1149,6 +1366,144 @@ int position_train(char *train, int itrack, int ivector, int idirect, double dis
 
       return 0 ;
 }
+
+/*
+ *  Routine to place the default train at a given platform or siding
+ *  location.  The default is to place the back of train at the
+ *  "ffff0000" end of the platform or siding.
+ *
+ *  l_dir = 1 :  back of the train at the "ffff0000" track item
+ *  distance  :  forward movement of train from default position
+ */
+
+int position_train2(char *location, int l_dir, double distance){
+
+  int           ip  = 0    ;  //  Debug
+  uint          i, k, n    ;
+  uint          itrack     ;  //  Track section uid
+  uint          l_trk      ;
+  double        dist       ;
+  TrainNode     *t  = build_train ;
+  WagonNode     *w  = NULL ;
+  TravellerNode *z0 = NULL ;
+  TravellerNode *z1 = NULL ;
+  TrkItem       *ti, *ti0 = NULL, *ti1 = NULL ;
+  char         *my_name = "position_train2" ;
+
+      if(ip)printf("  Enter routine %s.\n",my_name) ;
+
+/*
+ *  Loop over track items
+ */
+      k = 0 ;
+      for(i=0; i<track_db.trk_items_array_size; i++){
+        ti = &(track_db.trk_items_array[i]) ;
+        if(ti->type_of_node == PLATFORM){
+          if(!strcmp_nq(location,ti->platform_name)){
+            k = ti->platform_data2 ;
+            if(ti->platform_data1[0]=='f'){
+              ti1 = ti;
+              ti0 = &(track_db.trk_items_array[k]) ;
+            }else{
+              ti0 = ti;
+              ti1 = &(track_db.trk_items_array[k]) ;
+            }
+            break ;
+          }
+        }else if(ti->type_of_node == SIDING){
+          if(!strcmp_nq(location,ti->siding_name)){
+            k = ti->siding_data2 ;
+            if(ti->siding_data1[0]=='f'){
+              ti1 = ti;
+              ti0 = &(track_db.trk_items_array[k]) ;
+            }else{
+              ti0 = ti;
+              ti1 = &(track_db.trk_items_array[k]) ;
+            }
+            break ;
+          }
+        }
+      }
+      if(!ti0 || !ti1){
+        printf("  Routine %s error.\n",my_name) ;
+        printf("  Unable to find either or both ends of platform"
+                " or siding '%s'.\n",location) ;
+        close_system() ;
+      }
+/*
+ *  At this stage
+ *   ti0 is at leaving end of platform or siding
+ *   ti1 is at buffer or trainling end
+ */
+      if(ip){
+        printf("  location = %s :: %i %i\n",location,i,k) ;
+        printf("  ti0 = %p :: %i %i : %s\n",
+                (void *)ti0, ti0->type_of_node, ti0->uid, ti0->siding_data1) ;
+        printf("  ti1 = %p :: %i %i : %s\n",
+                (void *)ti1, ti1->type_of_node, ti1->uid, ti1->siding_data1) ;
+      }
+//      close_system() ;
+/*
+ *  Check the two track items are on the same track section
+ */
+      itrack = ti0->track_section ;
+      if(itrack != ti1->track_section){
+        printf("  Routine %s error.\n",my_name) ;
+        printf("  Routine needs both limits of the Platform or Siding"
+                " to lie in the same track section.\n") ;
+        printf("  Start and end limits are in sections %i and %i\n",
+                  itrack,ti1->track_section) ;
+        close_system() ;
+      }
+/*
+ *  Position of end of train
+ */
+      l_trk = (ti0->sect_distance - ti1->sect_distance) >= 0.0    ;
+      dist  = (l_dir ? ti1->sect_distance : ti0->sect_distance)  ;
+
+      if(ip){
+        printf("  location = %s, l_dir = %i, distance = %f\n",
+                  location, l_dir, distance) ;
+        printf("  section distances = %f :: %f\n",
+                  ti0->sect_distance, ti1->sect_distance) ;
+        printf("  itrack+1 = %i, l_trk = %i, dist = %f\n",itrack+1,l_trk,dist) ;
+      }
+/*
+ *  Loop over wagons
+ */
+      for(w = t->last, n=0 ; w != NULL ; w=w->prev, n++){
+        if(ip)printf("  Routine %s :: train = %s, dist = %f, wagon = %s\n",
+                                      my_name,t->name,dist,w->name) ;
+        z0 = w->traveller ;
+        if(w == t->last){
+          trv_initv(z0, itrack+1, 0, 1) ;
+          trv_move(z0, dist)  ;
+          if(l_trk){
+            z0->idirect = l_dir ;
+          }else{
+            z0->idirect = !l_dir ;
+          }
+          trv_move(z0, distance)  ;
+        }else{
+          copy_traveller_position(z0, z1) ;
+          dist = w->dist_back + w->next->dist_front ;
+          trv_move(z0, dist) ;
+        }
+        z1 = z0 ;
+      }
+      t->n_wagons = n ;
+/*
+ *  Position front and back of train
+ */
+      copy_traveller_position(&(t->front), t->first->traveller) ;
+      trv_move(&(t->front), 0.5*t->first->raw_wagon->length) ;
+      copy_traveller_position(&(t->back), t->last->traveller) ;
+      trv_move(&(t->back), -0.5*t->last->raw_wagon->length) ;
+
+      build_train = NULL ;
+      return 0 ;
+}
+
 
 /*
  *  Routine copy traveller used to copy second traveller position without
@@ -1181,6 +1536,7 @@ static TravellerNode *gzl = NULL ;
 int update_trains(void){
 
   int       ip = 0 ;
+  int       ipp = 0 ;
 
   int       iret = 0 ;  //  Return code
   int       i_crash   = 0 ;
@@ -1199,8 +1555,10 @@ int update_trains(void){
   char      *my_name = "update_trains" ;
 
 
-      if(ip){
-        printf("\n  Enter %s.  Run seconds = %f\n",my_name,run_seconds) ;
+      ipp = ip && i_zrt ;
+      if(ipp){
+        printf("\n  Enter %s.  Run seconds = %f :: %i %i %i\n",my_name,run_seconds,
+               ip,i_zrt,ipp) ;
 //        print_train_data() ;
       }
       time = run_seconds ;
@@ -1211,6 +1569,7 @@ int update_trains(void){
  */
       for(t0 = trainlist_beg; t0 != NULL ; t0=t0->next){
 
+        ip = ipp && (t0->speed != 0.0) ;
         if(ip)printf("  Routine %s. Main Loop :: train = %s, speed = %f\n",
                                                  my_name,t0->name,t0->speed) ;
         del_t = delta_seconds ;
@@ -1224,12 +1583,16 @@ int update_trains(void){
         if(t0->speed > 0.0){
           w = t0->first          ;    //  Front of train
           if(w == NULL) return 0 ;
-          gz0  = *w->traveller   ;    //  Make temporary traveller
+          gz0  = *w->traveller   ;    //  Copy to temporary traveller
+          gz0.wagon = NULL       ;
+          if(ip)printf(" Routine %s AA call trv_move\n",my_name) ;
           iret = trv_move(&gz0, 0.5*w->raw_wagon->length) ;
         }else{
-          w = t0->last            ;    //  Back of train
+          w = t0->last           ;    //  Back of train
           if(w == NULL) return 0 ;
-          gz0 = *w->traveller    ;     //  Make temporary traveller
+          gz0 = *w->traveller    ;    //  Copy to temporary traveller
+          gz0.wagon = NULL       ;
+          if(ip)printf(" Routine %s BB call trv_move\n",my_name) ;
           iret = trv_move(&gz0,-0.5*w->raw_wagon->length) ;
         }
         if(iret || junction_error){
@@ -1246,7 +1609,8 @@ int update_trains(void){
         dist_to_move = del_t*t0->speed ;
         dist_remain  = dist_to_move ;
 
-        iret = trv_move(&gz1, dist_to_move) ; //  Move temporary traveller
+       if(ip)printf(" Routine %s CC call trv_move\n",my_name) ;
+       iret = trv_move(&gz1, dist_to_move) ; //  Move temporary traveller
 /*
  *  If crash detected, print error and change timestep for this train
  *  Unfortunately dist_remain is not changed (yet).
@@ -1323,6 +1687,7 @@ int update_trains(void){
               if(t1 == t0)continue ;
               z0 = &(t1->front) ;
               z1 = &(t1->back)  ;
+              if(ip)printf("    Check for train collision\n") ;
               if(ip)printf("    Train0 = %s, Front = %i %f, Back = %i %f  "
                                 "Motor = %i %f\n",
                     t0->name, t0->front.itrack,
@@ -1342,8 +1707,10 @@ int update_trains(void){
   *  Does either end of the second train lie in the same track section
   *              and within the distance moved by the ?
   */
-              if(ip)printf("  Z0 :: %f %f :: %f\n",d0, d1, z0->sect_distance ) ;
-              if(ip)printf("  Z1 :: %f %f :: %f\n",d0, d1, z1->sect_distance ) ;
+              if(ip)printf("  Routine %s.  Z0 :: %f %f :: %f\n",my_name,
+                                        d0, d1, z0->sect_distance ) ;
+              if(ip)printf("  Routine %s.  Z1 :: %f %f :: %f\n",my_name,
+                                        d0, d1, z1->sect_distance ) ;
               if(isect == (int) z0->itrack){
                 if(z0->sect_distance > d0 && z0->sect_distance < d1){
                   i_collide = 1 ;   //  Collision with front of train t1
@@ -1405,6 +1772,7 @@ int update_trains(void){
             dist_moved = (w->dist_back + w->next->dist_front)        ;
             copy_traveller_position(w->traveller,w->next->traveller) ;
           }
+          if(ip)printf(" Routine %s DD call trv_move\n",my_name) ;
           iret = trv_move(w->traveller, dist_moved) ;
 /*
  *  Update wheels on wagon
@@ -1434,8 +1802,10 @@ int update_trains(void){
  *  Update train's front and back travellers
  */
         copy_traveller_position(&(t0->front), t0->first->traveller) ;
+        if(ip)printf(" Routine %s EE call trv_move\n",my_name) ;
         trv_move(&(t0->front), 0.5*t0->first->raw_wagon->length) ;
         copy_traveller_position(&(t0->back), t0->last->traveller) ;
+        if(ip)printf(" Routine %s FF call trv_move\n",my_name) ;
         trv_move(&(t0->back), -0.5*t0->last->raw_wagon->length) ;
 /*
  *  Current train in final position ;  Process any train collision.

@@ -83,20 +83,30 @@ int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
         if(run_seconds - last_p2s > 0.2){
           l_time_p2s = 1 ;
           last_p2s = run_seconds ;
-        }
-        if(run_seconds - last_1s > 1.0){
-          l_time_1s = 1 ;
-          last_1s = run_seconds ;
-        }
-        if(run_seconds - last_5s > 5.0){
-          l_time_5s = 1 ;
-          last_5s = run_seconds ;
-        }
-        if(run_seconds - last_30s > 30.0){
-          l_time_30s = 1 ;
-          last_30s = run_seconds ;
+
+          if(run_seconds - last_1s > 1.0){
+            l_time_1s = 1 ;
+            last_1s = run_seconds ;
+
+            if(run_seconds - last_5s > 5.0){
+              l_time_5s = 1 ;
+              last_5s = run_seconds ;
+
+              if(run_seconds - last_30s > 30.0){
+                l_time_30s = 1 ;
+                last_30s = run_seconds ;
+              }
+            }
+          }
         }
         check_glerror2("My routine 'display', AA AA\n") ;
+
+        if(n_sig0 >0 && l_time_5s && i_zrt){
+          n_sig1 = n_sig0 ;
+          printf("  run seconds = %f : %i\n",run_seconds,n_sig1) ;
+        }else{
+          n_sig1 = -1 ;
+        }
 
 //      if(l_time_1s) printf(" ABC idirect = %i\n", trainlist_beg->first->traveller->idirect) ;
 
@@ -122,7 +132,9 @@ GLfloat  v4[4] ;
       update_level_crossings() ;
       update_turntable(current_turntable) ;
       update_signals() ;
+ #ifndef ROUTE_NEW_FOREST
       update_transfer() ;
+ #endif
 #endif
 /*
  *  If position has changed - update viewpoint
@@ -139,7 +151,11 @@ GLfloat  v4[4] ;
       glClearColor((GLfloat) 0.8,(GLfloat) 0.9,(GLfloat) 1.0,(GLfloat) 0.0);
 #endif
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+#ifdef ROUTE_NEW_FOREST
+      glDepthRange(0.0,10.0) ;
+#else
       glDepthRange(0.0,1.0);
+#endif
 //      glDepthFunc(GL_LEQUAL)     ;            // No effect
       glEnable(GL_DEPTH_TEST)    ;
 //      glEnable(GL_NORMALIZE)     ;
@@ -207,6 +223,7 @@ GLfloat  v4[4] ;
       track_t_end = clock() ;
       n_tracks_plotted = 1 ;
 #endif
+
 
 /*
  *==============================================================================
@@ -291,8 +308,12 @@ GLfloat  v4[4] ;
  *  End of topography
  *==============================================================================
  */
-
-
+/*
+ *==============================================================================
+ *  Plot Shapes
+ *==============================================================================
+ */
+#if 1
 /*
  *==============================================================================
  *  Initialise switches for plotting shapes
@@ -409,8 +430,8 @@ double      a, b, c, d ;
  *   Convert from MSTS location to coordinates used for graphics
  */
             global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                         wnode->tile_x, wnode->tile_y,
-                         witem->X, witem->Y, witem->Z, &x, &y, &z) ;
+                          wnode->tile_x, wnode->tile_y,
+                          witem->X, witem->Y, witem->Z, &x, &y, &z) ;
             a = witem->ANG ;
             b = witem->AX ;
             c = witem->AY ;
@@ -629,7 +650,6 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
 {
 int     it1 = 0,  //  Debug traveller
         it = 0 ;
-
 
   int     gl_display_list ;
   int     n_dist_levels   ;
@@ -974,10 +994,12 @@ GLfloat h = viewport_height ;
       glLoadIdentity() ;
 
 //  Call special 2-D displays
+
       if(display_track_info_on) display_track_info(player_train->first->traveller) ;
       if(display_help_on)       display_help() ;
       if(display_switches_on)   display_switches(player_train) ;
       if(display_train_operations_on) display_train_operations(player_train) ;
+
 //  Restore defaults
 
       glPopMatrix() ;  //  Pop GL_MODELVIEW
@@ -1004,7 +1026,7 @@ GLfloat h = viewport_height ;
  *   It averages over five seconds but takes the first five
  *   seconds to initialise.
  */
-#if 1
+#if 0
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
 
@@ -1061,6 +1083,8 @@ double  t[4] ;
  */
 #if 1
       display_error() ;
+#endif
+
 #endif
 /*
  * Clean up at end of routine display
@@ -1404,9 +1428,10 @@ char       string[128];
         glScalef(scale,scale,scale) ;
 #else
 # if 1
-        glRotatef((GLfloat) d_rotate, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
+        glRotatef((GLfloat) d_rotate, (GLfloat) 0.0, (GLfloat) 0.0, (GLfloat) 1.0 ) ;
+        glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
         glScalef(scale,scale,d_reflect*scale) ;  // Change from left hand to right hand axes
-#else
+# else
         glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
         glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
 # endif
@@ -1539,8 +1564,14 @@ char       *my_name = "display_wagons" ;
 #ifdef geo_coord
         glScalef(scale,scale,scale) ;
 #else
+# if 1
+        glRotatef((GLfloat) d_rotate, (GLfloat) 0.0, (GLfloat) 0.0, (GLfloat) 1.0 ) ;
+        glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
+        glScalef(scale,scale,d_reflect*scale) ;  // Change from left hand to right hand axes
+# else
         glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
         glScalef(scale,scale,-scale) ;  // Change from left hand to right hand axes
+# endif
 #endif
 
         shape = wnode->shape ;

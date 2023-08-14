@@ -7,8 +7,12 @@
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *   Routine to initialise system and top level variables MSTSDir, ORdir,
+ *   ORroutedir etc.  See zr.h.
+ *
 
-You can always view all the environment variables available on your device using
+In windows you can view all environment variables available on your device using
 the Powershell command
  Get-ChildItem Env: | Sort Name
 
@@ -80,6 +84,7 @@ DIR    *fontdir      ;     // DIR pointer to fonts directory
 char *my_name = "process_defaults" ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
+      token_a[0] = token_a[1] = token_a[2] = NULL ;
 
 //  Find users home directory
 #ifdef WINDOWS
@@ -117,6 +122,8 @@ char *my_name = "process_defaults" ;
         if(ip)printf(" Users .zr directory exists.\n");
       }
       closedir(dotzr) ;
+      ZRdotdir = strdup(dotdir) ;
+      printf(" ZRdotdir = %s\n",ZRdotdir) ;
 
 //  Does fonts directory exist?
 

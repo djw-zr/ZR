@@ -68,7 +68,6 @@ int update_signals(void){
       return 0;
 }
 
-
 int update_signal(SignalDB *signal, int icount){
 
   int  ip = 0;
@@ -81,6 +80,9 @@ int update_signal(SignalDB *signal, int icount){
   char         *my_name = "update_signal";
 
       sig_type = signal->sig_type ;
+
+//      ip = (98 == signal->uid) ;
+      ip = (n_sig1 == signal->uid)  ;   // n_sig defined in zr.c
 /*
  *  Catch errors
  */
@@ -88,15 +90,15 @@ int update_signal(SignalDB *signal, int icount){
       ifound = 0 ;
       if(sig_type->sig_draw_ia[k] == -1){
         printf("  ++++++++++++++++++ SIGNAL ERROR ++++++++++++++++++++++\n") ;
-        printf("  Routine %s entered with state = %i, sig_draw_ia[state] = %i\n",
-                 my_name, k, sig_type->sig_draw_ia[k]) ;
-        printf("  Enter %s, signal = %i %s, state = %i\n",
+        printf("  Routine %s entered.  Signal = %i %s.  State = %i\n",
                  my_name, signal->uid, signal->sig_type->name, signal->state) ;
-        printf(" Signal draw array   = ") ;
+        printf("    state = %i, sig_draw_ia[state] = %i\n",
+                  k, sig_type->sig_draw_ia[k]) ;
+        printf("    Signal draw array   = ") ;
         for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_draw_ia[j],
                                   (void *)sig_type->sig_draw_a[j] ) ;
         printf("\n") ;
-        printf(" Signal aspect array = ") ;
+        printf("    Signal aspect array = ") ;
         for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_aspect_ia[j],
                                   (void *)sig_type->sig_aspect_a[j] ) ;
         printf("\n") ;
@@ -120,9 +122,11 @@ int update_signal(SignalDB *signal, int icount){
  */
 
       if(ip){
+        printf("\n====================================================\n") ;
         printf("  Enter %s, signal = %i %s, state = %i, witem uid = %i\n",
                  my_name, signal->uid, signal->sig_type->name, signal->state,
                  signal->witem->uid) ;
+        printf("  Time = %f\n",run_seconds) ;
         printf(" Signal draw array   = ") ;
         for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_draw_ia[j],
                                   (void *)sig_type->sig_draw_a[j] ) ;
@@ -155,8 +159,10 @@ int update_signal(SignalDB *signal, int icount){
                          uid,signal->shape_name,signal->type_name);
         printf("         state = %i, draw_state = %i aspect = %i, icount = %i\n",
                          signal->state,signal->draw_state,signal->aspect,icount);
-        printf("                   wuid = %i\n",wuid);
+        printf("                   wuid       = %i\n",wuid);
         printf("                   sig_shape  = %p\n",(void *)signal->sig_shape);
+        printf("                       name   = %s\n",signal->sig_shape->name);
+        printf("                       s_file = %s\n",signal->witem->filename);
         printf("                   sig_object = %p\n",(void *)signal->sig_object);
         printf("                   trk_item   = %p\n",(void *)signal->trk_item);
         printf("                   trk_item uid  = %i\n",signal->trk_item->uid);
@@ -176,7 +182,10 @@ int update_signal(SignalDB *signal, int icount){
             }
           }
         }
+        printf("====================================================\n") ;
       }
 
       return 0;
 }
+
+

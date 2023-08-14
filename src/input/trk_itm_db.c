@@ -126,7 +126,7 @@ char *token = NULL ;
 
           CASE("SidingName")
             skip_lbr(msfile) ;
-            trk_item->siding_name     = ctoken(msfile) ;
+            trk_item->siding_name     = strip_quotes(ctoken(msfile)) ;
             skip_rbr(msfile) ;
             break;
 
@@ -152,8 +152,8 @@ char *token = NULL ;
               skip_lbr(msfile);                   // '('
               for(k=0;k<4;k++){
                 trk_item->signal_dirs[j][k] = itoken(msfile) ;  // uint 0 = TrackNode  Junction track node
-                                                                // uint 1 = Sd1        0/1 Used with junction
-                                                                // uint 2 = LinkLRPath 0/1 Used with junction
+                                                                // uint 1 = Sd1        May indicate link is a junction
+                                                                // uint 2 = LinkLRPath Index of junction 1 = left
                                                                 // uint 3 = Sd3        0/1 Used with junction
               }
               skip_rbr(msfile);                   // ')'
@@ -234,7 +234,7 @@ char *token = NULL ;
 
           CASE("PlatformName")
             skip_lbr(msfile) ;
-            trk_item->platform_name      = ctoken(msfile) ;
+            trk_item->platform_name      = strip_quotes(ctoken(msfile)) ;
             skip_rbr(msfile) ;
             break;
 
@@ -301,6 +301,8 @@ int init_track_item(TrkItem *trk_item){
       trk_item->siding_data1      = 0    ;
       trk_item->siding_name       = NULL ;
 
+      trk_item->platform_name     = NULL ;
+
       trk_item->signal_data1      = 0    ;
       trk_item->signal_direction  = 0    ;
       trk_item->signal_data3      = 0.0  ;
@@ -308,5 +310,25 @@ int init_track_item(TrkItem *trk_item){
       trk_item->signal            = NULL ;
       trk_item->signal_num_dirs   = 0    ;
 
+      return 0 ;
+}
+
+int list_platforms_and_sidings(){
+
+int     i ;
+int     type_of_node ;
+TrkItem *trk_item    ;
+
+      printf("  Number of items = %i\n",(int)track_db.trk_items_array_size) ;
+      for(i=0;i<(int)track_db.trk_items_array_size;i++){
+        trk_item = &track_db.trk_items_array[i] ;
+        type_of_node = trk_item->type_of_node ;
+        if(PLATFORM == type_of_node){
+          printf("  %i  Platform = %s\n",i, trk_item->platform_name) ;
+        }else if(SIDING == type_of_node){
+          printf("  %i  Siding   = %s\n",i, trk_item->siding_name) ;
+        }
+      }
+      printf("  End of List\n") ;
       return 0 ;
 }

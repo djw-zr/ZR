@@ -98,7 +98,7 @@ int read_turntable_file(void){
       n_turntables = itoken(msfile) ;
       if(ip)printf("     n_turntables = %i\n",n_turntables) ;
       for(;;){
-        if(token1){free(token1) ; token1 = NULL ;}
+        if(token1)free(token1) ;
         token1 = ctoken(msfile) ;
         if(!strcmp(token1,eof_mark)) break ;
         if(ip)printf("  AA  token1 = %s \n",token1) ;
@@ -121,6 +121,7 @@ int read_turntable_file(void){
  *  Read turntable data
  */
             for(;;){
+              if(token2)free(token2) ;
               token2 = ctoken(msfile) ;
               if(is_rbr(token2)) break ;
               if(ip)printf("    BB  token2 = %s \n",token2) ;
@@ -199,6 +200,8 @@ int read_turntable_file(void){
             break ;
         END
       }
+      if(token1)free(token1) ;
+      if(token2)free(token2) ;
       return 0 ;
 }
 

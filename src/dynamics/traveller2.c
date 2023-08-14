@@ -73,6 +73,7 @@ char          my_name[] = "trv_initv" ;
       t->z        = 0.0 ;
       t->ang_deg  = 0.0 ;
       t->vect_position = 0.0 ;
+      t->sect_distance = 0.0 ;
 
       t->itrack  = itrack  ;
       t->ivector = ivector ;
@@ -172,11 +173,14 @@ uint    j_sect                         ;  // Junction section
 uint    n_sect                         ;  // new section
 
       if(!t->wagon) ip = 0 ;  // Skip dummy wagons
+//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
 
       if(ip){
         printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") ;
         printf("  ENTER %s.  idirect = %i, inext = %i\n",
                       my_name,idirect,inext);
+        printf(" t->wagon = %p\n",(void *)t->wagon) ;
+        trv_print(t) ;
       }
 
       if(n_in_pins != 1 || n_ot_pins != 1){
@@ -272,7 +276,7 @@ uint    n_sect                         ;  // new section
  *  After calling routine "set_junction_path()", junctions should have
  *  one input pin and two output pins
  */
-
+      tn2 = tn ;           // Save in case of error.
       if(j>0){
         if((uint)j!=tn->branch){
           if(!t->wagon) return 2 ;  //  Pseudo traveller
@@ -289,12 +293,27 @@ uint    n_sect                         ;  // new section
         n_sect = tn->pin_to_section[tn->branch] ;
         tn = tn->trk_sector[tn->branch] ;
       }
-//      if(n_sect == -1){
+/*
+ *   Check for error
+ *   If the out pin from a junction was zero this was originally treated as a fatal error
+ *   Now it is treated as a faulty end of line.  This allows processing to continue and
+ *   other errors to be found - however the output will be repeated every time trk_next
+ *   finds the same error.
+ */
       if(n_sect <= 0){
+#if 1
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : New track section %i is not a VECTOR_SECTION"
                 " or an END_SECTION\n", n_sect) ;
-        exit(1) ;
+        printf("  Call trv_print for current traveller:\n") ;
+        trv_print(t) ;
+        printf("  Previous track sector:\n") ;
+        printf("    Track sector uid  = %i\n",tn2->uid) ;
+        printf("    Track sector type = %i :: %s\n",tn2->type_of_node,
+                                                   token_trackdb[tn2->type_of_node]) ;
+#endif
+//  Treat as an end of track error
+        return 1 ;
       }
       if(ip)printf("  Routine %s, new section = %i\n", my_name, n_sect) ;
 
@@ -378,6 +397,7 @@ uint    n_sect                         ;  // new section
         printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") ;
         printf("  ENTER %s.  idirect = %i, inext = %i\n",
                       my_name,idirect,inext);
+        trv_position(t) ;
       }
 
       if(n_in_pins != 1 || n_ot_pins != 1){
