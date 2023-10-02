@@ -1,0 +1,31 @@
+README.ROUTES
+=============
+
+    The ZR program was originally developed with the use of the Australian Zig-Zag route.
+        http://www.zigzag.coalstonewcastle.com.au/
+    The download from this web site includes the top level Directories 'Global' and 'Trains' as well as a 'Route' directory containing the main route files under 'au_great_zig_zag'.
+    
+    The Wolgan Valley route is also supported if the top directory from the download 'AU_Wogan_Valley' is added to the Zig-zag 'Routes' directory.
+    
+    A second series of routes depend on copies of the top level MSTS (Microsoft Train System) 'GLOBAL' and 'TRAINS' directories.  These include the MSTS routes, EUROPE1, EUROPE2, JAPAN1, JAPAN2, USA1 AND USA2.
+    
+    The following 'Coals to Newcastle' routes also work when added to the MSTS 'ROUTES' directory.
+    Note that these routes also need  xtracks and newroad files added to the top level 
+      Coals to Newcastle  :: http://www.coalstonewcastle.com.au/
+      Tumulla Bank Route  :: http://www.other.coalstonewcastle.com.au/route/downloads/#001
+      
+    The following routes should run in stand-alone mode:
+      Joppa Junction Route :: http://www.other.coalstonewcastle.com.au/route/downloads/#001
+      New Forest Route     :: https://github.com/rickloader/NewForestRouteV3
+
+    These routes can be run by adding the following line to the configuration file (~/.zr/config):
+      ORdir = [Top level directory contianing directories 'Global', 'Routes' and 'Trains'].
+    If there is more than one definition, the user is given a choice.  If the top level directory contains more an one route, again a choice is offered.
+    
+The IN_USE directories
+======================
+
+    OpenRails is very tolerent of errors in the input files.  Unfortunately, as yet, ZR is not so tolerant and this makes the program the program more likely to fail when used with the larger routes with thousands of differnt files.  It is hope to slowly improve ZR's tolerance, but  it takes time to work through all the minor oddities in spelling and file structure.
+    
+    Some of the most common problems affect engines and wagons, and for this reason ZR looks for directories 'CONSTSTS_IN_USE' and 'TRAINSET_IN_USE' in the 'TRAINS' directory.  If found these directories are used instead of the standard 'CONSISTS' and 'TRAINSET' directories.  This allows faulty wagons to be skipped without affecting the base file structure of the route.
+    

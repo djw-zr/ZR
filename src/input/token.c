@@ -21,12 +21,15 @@
 #include <assert.h>                      // For zlib
 #include "zlib.h"                        //  For zlib
 #define CHUNK 16384                      //  For zlib
+#define ZR_MAX_TOKEN 65535
 
-static char token[4096] ;
+static char token[ZR_MAX_TOKEN] ;
 static int  rbr_buffered  ;
 static int  skip_underscore_token(MSfile *msfile) ;
 static int32_t utf_char_temp,       //  Temporary location for utf character
                utf_flag_temp = 0 ;  //  Set to 1 if utf_char_temp is set.
+static unsigned char utf[3] ;
+static int32_t utf_flag    ;
 
 
 /*
@@ -154,7 +157,7 @@ int32_t fgetu(MSfile *msfile){
  *  Some MSTS 'binary' files have no unicode header but still
  *  need filenames processed as UTF16LE
  */
-      if(msfile->ascii  && !msfile->binary){
+      if(msfile->utf8  && !msfile->binary){
         return fgetc(fp) ;
       }
 /*
@@ -219,21 +222,21 @@ char *new_token(MSfile *msfile){
 
   int   ip = 0 ;
   int32_t   l, c, lastc;
-  int   unicode, compress, text, binary ;
+  int   utf16le, compress, text, binary ;
   FILE  *fp ;
   char  my_name[] = "new_token" ;
 
 //      ip = l_ip ;                  //  Debug printing only when l_ip is set
 
       fp       = msfile->fp        ;
-      unicode  = msfile->unicode   ;
+      utf16le  = msfile->utf16le   ;
       compress = msfile->compress  ;
       text     = msfile->text      ;
       binary   = msfile->binary    ;
 
       if(text != 1){
         printf("\n  ERROR : Routine new_token : File type not supported\n");
-        printf("  unicode  = %i\n",unicode);
+        printf("  utf16le  = %i\n",utf16le);
         printf("  compress = %i\n",compress);
         printf("  text     = %i\n",text);
         printf("  binary   = %i\n",binary);
@@ -259,6 +262,7 @@ char *new_token(MSfile *msfile){
       }
 /*
  *  Skip white space, check for EOF and non-standard tokens
+ *  At this stage c corresponds to one of the UTF codepoints
  */
       for(;;){
         while( (c=fgetu(msfile)) != EOF && (c == ' '  || c == '\t'
@@ -277,8 +281,7 @@ char *new_token(MSfile *msfile){
         }
       }
       l = 0 ;
-//      token[l++] = c ;
-      put_utf8(c, &l) ;
+      put_utf8(c, &l) ;    //  Convert from UTF code point to UTF-8
 /*
  *  Open and closing brackets
  */
@@ -298,42 +301,70 @@ char *new_token(MSfile *msfile){
         }
         utf_flag_temp = 1 ;                         // Put back last character
         utf_char_temp = c ;
-//
-//  Tokens that are a stream of text.
-//  For continuation lines should end "+ but, of course, sometimes this is typed as +".
-//
+/*
+ *  Process streams of text.  These start and end with quotes(").
+ *  If the final quote is followed by a plus sign, the text is continued
+ *  following the next quote.
+ *
+ *  Sometimes in error:
+ *      *  The plus sign appears immediately before the final quote
+ *      *  It is a mess
+ *      Name ( "60007 A4 Gresley, SIR NIGEL GRESLEY, KX Shed 34A, TE 35.5Klbf\n"+
+ *             "Coal 9t, Water 5000gal, Corridor Tender"\n"+)
+ *      *  The plus sign is followed by a close bracket ")"
+ *  In the first case the error is corrected.
+ *  In the second case the plus sign is ignored.
+ */
       }else{
         lastc = ' ';
         for(;;){
-// 1.  Search for matching '"'
-          while(((c=fgetu(msfile)) != '"' || lastc == '\\' ) && l <4094 ){
-            if(c != '\r')token[l++] = c ;       // Skip line feed
+/*
+ *  1.  Search until matching '"' is found
+ */
+          while(((c=fgetu(msfile)) != '"' || lastc == '\\' ) && l <ZR_MAX_TOKEN ){
+            if(c == '"') l-- ;              //  Convert \" to "
+            if(c != '\r') put_utf8(c, &l) ; //  Skip carriage return
             lastc = c ;
           }
-          if(l>= 4094) break ;                  // Leave 'for' loop
-//          token[l++] = c ;
-          put_utf8(c, &l) ;
-
-          c = fgetu(msfile) ;
-//  2.  Test for following '+'
+          if(l>= ZR_MAX_TOKEN) break ;                  // Leave 'for' loop
+          put_utf8(c, &l) ;                 //  Save "
+/*
+ *   2.  The quote '"' should be followed by '+' or white space
+ *       It may be followed immediatly by ')'
+ *       Skip any other characters
+ */
+          while((c=fgetu(msfile)) != EOF && c != ' ' && c != '\t' && c != '\n' && c!= '\r'
+                          && c != '(' && c != ')' && c != '+' ) ;  //  Throw it away
+/*
+ *   3.  Exit unless  '+' found
+ */
           if(c != '+'){
             utf_flag_temp = 1 ;                 // Put back last character
             utf_char_temp = c ;
             break ;                             // Leave 'for' loop
           }
-          token[l++] = c ;
-//  3.  Search for second starting '"'
-          while((c=fgetu(msfile)) != '"' && l <4094 ){
-//            if(c != '\r')token[l++] = c ;
-            if(c != '\r')put_utf8(c, &l) ;
+          lastc = ' ';
+/*
+ *  4.  Search for second starting '"'
+ *      Ignore everything except '"' and  newline.
+ */
+          while((c=fgetu(msfile)) != '"' && l <ZR_MAX_TOKEN ){
+            if(c == ')'){
+              rbr_buffered = 1 ;
+              break ;
+            }
+            if(c == '\n'){
+              put_utf8(c, &l) ;
+            }
           }
-          if(l>= 4094) break ;                 // Leave 'for' loop
-//          token[l++] = c ;
-          put_utf8(c, &l) ;
+          if( rbr_buffered || (l >= ZR_MAX_TOKEN) )  break ;  // Leave 'for' loop
+          put_utf8(c, &l) ;                                   //  Save new starting '"'
         }
       }
-      if(l>=4094){
-        printf("\n  ERROR : Routine new_token : Token is > 4094 characters\n");
+      if(l>=ZR_MAX_TOKEN){
+        printf("\n  ERROR : Routine new_token : Token is > 65535 characters\n");
+        for(l=1;l<128;l++)printf("%c",token[l]) ;
+        printf("\n") ;
         printf(" Program exiting ... \n\n");
         exit(1) ;
       }
@@ -891,13 +922,16 @@ void init_msfile(MSfile *msfile){
   MSblock  *block ;
       msfile->fp        = NULL ;
       msfile->filename  = NULL ;
-      msfile->unicode   = 0    ;
-      msfile->ascii     = 0    ;
+      msfile->utf16le   = 0    ;
+      msfile->utf8      = 0    ;
+//      msfile->unicode   = 0    ;
+//      msfile->ascii     = 0    ;
       msfile->compress  = 0    ;
       msfile->text      = 0    ;
       msfile->binary    = 0    ;
       msfile->world     = 0    ;
       msfile->texture   = 0    ;
+      msfile->token_unused = NULL ;
       for(k=0;k<20;k++){
         block = &(msfile->level[k]) ;
         block->token_name = NULL ;
@@ -955,7 +989,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
   int  ip = 0 ;
   int  i, m, iret ;
   uint n ;
-  int  unicode ;
+  int  utf16le ;
   char buffer[32] ;
   char string[33] ;
   FILE *fp ;
@@ -963,11 +997,10 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 /*
  *  Initialise tokens
  */
-      iprint = iprint || ip ;
-//    printf(" AAAA texture = %i, iprint = %i\n",texture,iprint) ;
-
+      iprint = ip = iprint || ip ;
       init_token() ;
-      if(iprint && n_open_files>0)printf(" n_open_files = %i\n",n_open_files) ;
+      if(ip && n_open_files>0)
+                         printf(" n_open_files = %i\n",n_open_files) ;
 /*
  * Open File
  */
@@ -977,10 +1010,6 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
       fp = gopen(filename,"r");
 #endif
       if(fp==NULL){
-#if 0
-        printf("  Routine %s.  Initial file not found.  File = %s\n",
-                                                     my_name, filename);
-#endif
 #ifdef MinGW
         fp = gcaseopen(filename,"rb");
 #else
@@ -989,22 +1018,19 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
         if(fp==NULL){
           printf(" File not found.  File = %s\n",filename);
           n = strlen(filename) ;
-          for(i=0;i<(int)n;i++) printf("  Char %i  :%c:  :%x:\n",i,filename[i],filename[i]) ;
+          for(i=0;i<(int)n;i++) printf("  Char %i  :%c:  :%x:\n",
+                                            i,filename[i],filename[i]) ;
         }
       }
       if(fp==NULL) return 1 ;
-      init_msfile(msfile) ;           // Initialise the data structure
-
+/*
+ *  Initialise msfile structure
+ */
+      init_msfile(msfile) ;           // Set defaults
       msfile->filename = (char *)malloc((strlen(filename)+1)*sizeof(char)) ;
       strcpy(msfile->filename,filename) ;
-/*
- *   Initialise flags
- */
       msfile->fp = fp ;
-      msfile->unicode = msfile->ascii = msfile->compress = msfile->text
-                                      = msfile->binary   = msfile->world = 0 ;
-      if(1 == texture)msfile->texture = texture   ;
-      msfile->token_unused = NULL ;    // Used when reading text files
+      if(1 == texture)msfile->texture = 1 ;
 /*
  *  Test for two-character unicode.  MSTS files, including the binary files,
  *  represent text and names either using ascii or two character unicode
@@ -1013,15 +1039,15 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
  */
       buffer[0] = getc(fp);
       buffer[1] = getc(fp);
-      unicode = (char)buffer[0]==(char)0xff
+      utf16le = (char)buffer[0]==(char)0xff
                      && (char)buffer[1]==(char)0xfe ;
-      msfile->unicode = unicode ;
-      msfile->ascii = unicode ? 0 : 1 ;
+      msfile->utf16le = utf16le ;
+      msfile->utf8    = utf16le ? 0 : 1 ;
 /*
  *  Read first MSTS header
  *  Some unicode files start with blanks (!)
  */
-      if(unicode){
+      if(utf16le){
         for(i=0;i<256;i++){
           buffer[0] = getc(fp) ; getc(fp) ;
           if('S' == buffer[0])break;
@@ -1034,8 +1060,6 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           buffer[i] = getc(fp);
         }
       }
-//      printf(" Routine open_msfile :: file   = %s\n",filename) ;
-//      printf(" Routine open_msfile :: buffer = %s\n",buffer) ;
 /*
  *  Check for compress
  */
@@ -1052,13 +1076,13 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
         for(i=8;i<12;i++){
           n = n + m*(buffer[i] & 0xff) ;
           m = m*256 ;
-          if(iprint)printf(" BB i, m, n = %i %i %i \n",i,m,n);
+          if(ip)printf(" BB i, m, n = %i %i %i \n",i,m,n);
         }
 
-        if(iprint)printf(" CC msfile->pr = %p  n = %i\n",(void *)msfile->fp,n);
-        iret = zlib_uncompress(msfile,n,iprint);
+        if(ip)printf(" CC msfile->pr = %p  n = %i\n",(void *)msfile->fp,n);
+        iret = zlib_uncompress(msfile,n,ip);
         fp = msfile->fp;
-        if(iprint)printf(" DD msfile->pr = %p\n",(void *)msfile->fp);
+        if(ip)printf(" DD msfile->pr = %p\n",(void *)msfile->fp);
 
         if(iret != 0){
           printf("/n  Error uncompressing file %s\n",msfile->filename);
@@ -1069,7 +1093,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 //  Possible Ascii/text file
         if(-1 == texture){
           rewind(fp);
-          if(unicode){ getc(fp) ; getc(fp) ; }
+          if(utf16le){ getc(fp) ; getc(fp) ; }
           msfile->text = 1 ;                      // Give it a chance
           return 0 ;
 // Error
@@ -1081,7 +1105,6 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           return 1;
         }
       }
-//      printf(" BBBB iprint = %i\n",iprint);
 /*
  *  Texture file
  */
@@ -1089,23 +1112,17 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
 /*
  * Print summary line
  */
-      if(iprint){
-        printf("\n  file       = %s\n",filename);
-        printf("    unicode  = %i,",msfile->unicode);
-        printf(  "  ascii    = %i,",msfile->ascii);
-        printf(  "  compress = %i\n",msfile->compress);
-        if(msfile->unicode)
-          printf(" File is little-endian UTF-16 Unicode text"
-                                  " with CRLF terminators.\n");
-        if(msfile->ascii) printf(" File is text file\n");
-      }
+        if(ip){
+          printf("\n  File is texture file\n");
+          printf(  "    filename = %s\n",filename);
+          printf(  "    compress = %i\n",msfile->compress);
+        }
         return 0 ;
       }
 /*
  *  Read second MSTS header
  */
-//      printf(" CCCC iprint = %i\n",iprint);
-      if(unicode){
+      if(utf16le){
         for(i=16;i<32;i++){
           buffer[i] = getc(fp); getc(fp) ;
         }
@@ -1114,11 +1131,8 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
           buffer[i] = getc(fp);
         }
       }
-//      printf(" DDDD iprint = %i\n",iprint);
-//      for(i=0;i<32;i++)printf(" %x",buffer[i]);
-//      printf("\n") ;
 /*
- *  Check for normal text or binary file
+ *  Check for MSTS type text or binary file
  */
       if('t' == buffer[23]){
         msfile->text = 1 ;
@@ -1136,24 +1150,23 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
       if('w' == buffer[21]){
         msfile->world = 1 ;
       }
-//      printf(" EEEE iprint = %i\n",iprint);
 /*
  * Print summary line
  */
-      if(iprint){
+      if(ip){
         printf("\n  file       = %s\n",filename);
-        printf("    unicode  = %i,",msfile->unicode);
-        printf(  "  ascii    = %i,",msfile->ascii);
+        printf("    utf16le  = %i,",msfile->utf16le);
+        printf(  "  utf8     = %i,",msfile->utf8);
         printf(  "  compress = %i,",msfile->compress);
         printf(  "  text     = %i,",msfile->text);
         printf(  "  binary   = %i,",msfile->binary);
         printf(  "  world    = %i,",msfile->world);
         printf(" ms file ptr = %p\n",(void *)fp) ;
 
-        if(msfile->unicode)
+        if(msfile->utf16le)
           printf(" File is little-endian UTF-16 Unicode text"
                                   " with CRLF terminators.\n");
-        if(msfile->ascii) printf(" File is text file\n");
+        if(msfile->utf8) printf(" File uses UTF-8 characters.\n");
       }
 
       return 0;
@@ -1164,6 +1177,7 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
  *
  * "if NULL" statements used here and elsehwere to keep valgrind happy.
  * It should be possible to remove them.
+ *
  * *****************************************************************************
  */
 int close_msfile(MSfile *msfile)
@@ -1180,36 +1194,6 @@ int close_msfile(MSfile *msfile)
       gclose(msfile->fp) ;
       return 0;
 }
-
-
-#if 0
-
-int32_t fgetu2(MSfile *msfile){
-
-  int32_t c1, c2 ;
-  FILE  *fp = msfile->fp ;
-
-      if(utf_flag_temp){
-        utf_flag_temp = 0 ;
-        return utf_char_temp ;
-      }
-
-      if(msfile->ascii  && !msfile->binary){
-        return fgetc(fp) ;
-      }
-/*
- *  Assume udf-16le
- */
-      c1 = getc(fp) ;
-      if(c1 == EOF) return EOF ;
-      c1 = c1 & 0xFF ;
-      c2 = getc(fp) ;
-      if(c2 == EOF) return EOF ;
-      if(c2 != 0){ c2 = c2 & 0xFF ; c1 = (c2 << 8) | c1 ; }
-      return c1 ;
-}
-
-#endif
 
 char * read_ucharz_a(MSfile *msfile){
 

@@ -20,6 +20,7 @@ static TrainNode  *build_train ;
 int position_train2(char *location, int iswap, double idirect) ;
 int add_wagon_to_train2(char *wagon, RawWagonNode *rw0, int idirn) ;
 int add_consist_to_train(char* consist_name) ;
+int trains_setup_by_user(void) ;
 
 
 
@@ -39,7 +40,12 @@ int   trains_init(void){
 /*
  *  Initialise one or more trains
  */
-#if defined ROUTE_USA1
+#if   defined NO_ROUTE_DEF
+      printf("***************************************\n") ;
+      printf(" Call trains_setup_by_user\n") ;
+      printf("***************************************\n") ;
+      trains_setup_by_user() ;
+#elif defined ROUTE_USA1
 
 #if 1
       add_new_train("T01") ;
@@ -1998,3 +2004,188 @@ int print_wagon_data_to_file(char *filename){
       return 0;
 }
 
+/*
+ *   Routine to allow user to set up trains
+ */
+
+
+int trains_setup_by_user(){
+
+int  ip = 0 ;
+int  i, n, m ;
+int    n_engines   ;
+int    n_tenders   ;
+int    n_carriages ;
+int    n_wagons    ;
+int    n_consists  ;
+int    n_platforms ;
+int    n_sidings   ;
+
+BTree  *engines   = NULL ;
+BTree  *tenders   = NULL ;
+BTree  *carriages = NULL ;
+BTree  *wagons    = NULL ;
+BTree  *consists  = NULL ;
+BTree  *platform_list = NULL ;
+BTree  *siding_list   = NULL ;
+BTree  *found     = NULL ;
+RawWagonNode *rw ;
+ConsistNode  *consist ;
+TrkItem      *ti ;
+
+
+
+
+char  *my_name = "trains_setup_by_user" ;
+/*
+ *  Create Btrees containing engiens wagons, consists, Platforms, Sidings
+ */
+
+      printf("  PROCESS WAGONS\n") ;
+
+      for(rw=rawwagonlist_beg; rw!=NULL; rw=rw->next){
+        if(!strcmp(rw->type,"Engine")){
+          engines = insert_node(engines,rw->name,(void *)rw);
+        }else if(!strcmp(rw->type,"Tender")){
+          tenders = insert_node(tenders,rw->name,(void *)rw);
+        }else if(!strcmp(rw->type,"Carriage")){
+          carriages = insert_node(carriages,rw->name,(void *)rw);
+        }else if(!strcmp(rw->type,"Freight")){
+          wagons = insert_node(wagons,rw->name,(void *)rw);
+        }else{
+          printf("  Type unknown:  %s :: %s\n",rw->type, rw->name) ;
+        }
+      }
+      n_engines   = count_bt_nodes(engines)   ;
+      n_tenders   = count_bt_nodes(tenders)   ;
+      n_carriages = count_bt_nodes(carriages) ;
+      n_wagons    = count_bt_nodes(wagons)    ;
+
+      printf("  PROCESS CONSISTS\n") ;
+
+      for(consist = consistlist_beg; consist != NULL ; consist = consist->next){
+        consists = insert_node(consists,consist->name,(void *)consist);
+      }
+      n_consists   = count_bt_nodes(consists)   ;
+
+      printf("  PROCESS TRACK\n") ;
+
+      for(i=0; i<(int)track_db.trk_items_array_size; i++){
+        ti = &(track_db.trk_items_array[i]) ;
+        if(ti->type_of_node == PLATFORM && ti->platform_name
+                                        && ti->platform_data1[0] == '0'){
+          platform_list = insert_node(platform_list,ti->platform_name,(void *)ti);
+        }else if(ti->type_of_node == SIDING && ti->siding_name
+                                        && ti->siding_data1[0] == '0'){
+          siding_list = insert_node(siding_list,ti->siding_name,(void *)ti);
+        }
+      }
+      n_platforms  = count_bt_nodes(platform_list) ;
+      n_sidings    = count_bt_nodes(siding_list)   ;
+
+      add_new_train("T001") ;
+
+      printf("\n  ENGINES\n\n");
+      print_bt_nodes_with_count_and_index(engines) ;
+      n = 0 ;
+      while(n<1 || n>n_engines){
+        printf("  Enter index of engine (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_engines)continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(engines,n) ;
+        rw = (RawWagonNode *)found->data ;
+        add_wagon_to_train(rw->name,1) ;
+        printf("  Engine added.  Name = %s\n",rw->name) ;
+      }
+
+      printf("\n  TENDERS\n\n");
+      print_bt_nodes_with_count_and_index(tenders) ;
+      n = 0 ;
+      while(n<1 || n>n_tenders){
+        printf("  Enter index of tender (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_tenders)continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(tenders,n) ;
+        rw = (RawWagonNode *)found->data ;
+        add_wagon_to_train(rw->name,1) ;
+        printf("  Tender added.  Name = %s\n",rw->name) ;
+      }
+
+      printf("\n  CARRIAGES\n\n");
+      print_bt_nodes_with_count_and_index(carriages) ;
+      n = 0 ;
+      while(n<1 || n>n_carriages){
+        printf("  Enter index of carriage (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_carriages)continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(carriages,n) ;
+        rw = (RawWagonNode *)find_bt_node_with_index(carriages,n) ;
+        add_wagon_to_train(rw->name,1) ;
+        printf("  Carriage added.  Name = %s\n",rw->name) ;
+      }
+
+      printf("\n  FREIGHT\n\n");
+      print_bt_nodes_with_count_and_index(wagons) ;
+      n = 0 ;
+      while(n<1 || n>n_wagons){
+        printf("  Enter index of wagon (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_wagons)continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(wagons,n) ;
+        rw = (RawWagonNode *)found->data ;
+        add_wagon_to_train(rw->name,1) ;
+        printf("  Wagon added.  Name = %s\n",rw->name) ;
+      }
+
+      printf("\n  CONSISTS\n\n");
+      print_bt_nodes_with_count_and_index(consists) ;
+      n = 0 ;
+      while(n<1 || n>n_consists){
+        printf("  Enter index of consist (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_consists)continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(consists,n) ;
+        consist = (ConsistNode *)found->data ;
+        add_consist_to_train(consist->name) ;
+        printf("  Consist added.  Name = %s\n",consist->name) ;
+      }
+
+      m = 0 ;
+      printf("\n  PLATFORMS\n\n");
+      print_bt_nodes_with_count_and_index(platform_list) ;
+      n = 0 ;
+      while(n<1 || n>n_platforms){
+        printf("  Enter index of platform (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_platforms) continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(platform_list,n) ;
+        ti = (TrkItem *)found->data ;
+        position_train2(ti->platform_name,1,0.0) ;
+        printf("  Position at platform.  Name = %s\n",ti->platform_name) ;
+        m = 1 ;
+        break ;
+      }
+      if(m) return 0;
+
+      printf("\n  SIDINGS\n\n");
+      print_bt_nodes_with_count_and_index(siding_list) ;
+      n = 0 ;
+      while(n<1 || n>n_sidings){
+        printf("  Enter index of siding (or 0 to skip):\n") ;
+        scanf("%i",&n) ;
+        if(n>n_sidings) continue ;
+        if(n<1) break ;
+        found = find_bt_node_with_index(siding_list,n) ;
+        ti = (TrkItem *)found->data ;
+        position_train2(ti->siding_name,1,0.0) ;
+        printf("  Position at siding.  Name = %s\n",ti->siding_name) ;
+      }
+
+      return 0 ;
+}

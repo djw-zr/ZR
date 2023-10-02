@@ -478,7 +478,7 @@ double x, y, z ;
                   z = w0*a0[i0].Z + w1*a0[i1].Z ;
                   glTranslatef((GLfloat) x,(GLfloat) y,(GLfloat) z) ;
                   if(ip || 0){
-                    printf("      Animate Linear Position\n") ;
+                    printf("      Animate LINEAR_POS\n") ;
                     printf("      Animate 0: a, dw, wa : %f,  %f,  %f\n",
                                                       wagon->wheel_angle, dw, wa) ;
                     printf("      Animate 0: Weight    : %f,  %f\n",w0,w1) ;
@@ -510,7 +510,7 @@ double qx, qy, qz, qw ;
                   a  = acos(qw) ;
 // Skip for very small rotations
                   if(fabs(a)>0.001){
-                    if(ip)printf("      Animate Small rotation\n") ;
+                    if(ip)printf("      Animate Rotation\n") ;
                     s = 1.0/sin(a) ;
                     x = qx*s ;
                     y = qy*s ;

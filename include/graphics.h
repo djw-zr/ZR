@@ -248,21 +248,20 @@ GLdouble offset_center_x =    1.979062 ;     //  Initial losition looked at
 GLdouble offset_center_y =   10.094621 ;
 GLdouble offset_center_z =    0.005371 ;
 #elif defined ROUTE_NEW_FOREST
-#if 1
 GLdouble offset_eye_x    =    7.438929 ;      //  Initial position of eye
 GLdouble offset_eye_y    =    5.197604 ;
 GLdouble offset_eye_z    =    1.333684 ;
 GLdouble offset_center_x =    7.477778 ;     //  Initial losition looked at
 GLdouble offset_center_y =    5.121358 ;
 GLdouble offset_center_z =    1.333684 ;
-#else
-GLdouble offset_eye_x    =    13.4 ;      //  Initial position of eye
-GLdouble offset_eye_y    =    30.4 ;
-GLdouble offset_eye_z    =    1.7 ;
-GLdouble offset_center_x =    13.5 ;     //  Initial losition looked at
-GLdouble offset_center_y =    30.5 ;
-GLdouble offset_center_z =    1.3 ;
-#endif
+
+#elif defined NEW_ROUTE
+GLdouble offset_eye_x    =    0.0 ;     //  Initial position of eye
+GLdouble offset_eye_y    =    0.0 ;
+GLdouble offset_eye_z    =    0.0 ;
+GLdouble offset_center_x =    1.0 ;     //  Initial losition looked at
+GLdouble offset_center_y =    1.0 ;
+GLdouble offset_center_z =    1.0 ;
 
 /*
  *   Zig-Zag Route
@@ -477,10 +476,15 @@ char    *land_texture_default = "ACleanTrackBase" ;
 char    *land_texture_default = "ACleanTrackBase" ;
 #elif defined ROUTE_TUTORIAL
 char    *land_texture_default = "ACleanTrackBase" ;
+#elif defined NO_ROUTE_DEF
+//char    *land_texture_default = "ACleanTrackBase" ;
+//char    *land_texture_default = "terrain" ;
+char    *land_texture_default = NULL ;
 #elif defined ROUTE_NEW_FOREST
 char    *land_texture_default = "HW_c1" ;
 #else
-char    *land_texture_default = "BrownScrub" ;
+char    *land_texture_default = "BrownScrub" ;  //  au_zig_zag
+//char    *land_texture_default = "microtex" ;
 #endif
 TextureNode *land_texture = NULL              ;  // Non-zero if present
 

@@ -46,16 +46,18 @@ int load_world_filenames() {
   char     string7[7] ;
   struct dirent *f_entry;
   WorldNode *world ;
+  char      *world1_dir = "/world/" ;
+  char      *world2_dir = "/World/" ;
 
       l_ip = 0 ;
 
 /*
  *  1.  Search for world directory (world, WORLD)
  */
-      len1 = strlen(ORroutedir) + strlen("world/") + 1 ;
+      len1 = strlen(ORroutedir) + strlen(world1_dir) + 1 ;
       wdir_name = (char *)malloc(len1) ;
-      strcpy(wdir_name,ORroutedir)    ;
-      strcat(wdir_name,"world/")      ;
+      strcpy(wdir_name,ORroutedir)     ;
+      strcat(wdir_name,world1_dir)     ;
       if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
 #if 1
       iret = zr_find_msfile2(wdir_name);
@@ -74,7 +76,7 @@ int load_world_filenames() {
       wdir = opendir(wdir_name) ;
       if(wdir == NULL){
         strcpy(wdir_name,ORroutedir)    ;
-        strcat(wdir_name,"World/")      ;
+        strcat(wdir_name,world2_dir)      ;
         if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
         wdir = opendir(wdir_name) ;
         if(wdir == NULL){
@@ -173,10 +175,11 @@ int  load_world(WorldNode *wnode){
   char    my_name[] = "load_world" ;
 
 
-//      ip1 = wnode->tile_x == -6141 && wnode->tile_y == 14888 ;
-//      ip = ip1 ;
+//      ip1 = wnode->tile_x == -6074 && wnode->tile_y == 14922 ;
+//      ip1 = wnode->tile_x == -6074 && wnode->tile_y == 14922 ;
+      ip = ip1 ;
 
-      if(ip)printf("\n  Enter routine : %s\n",my_name);
+      if(ip1)printf("\n  Enter routine : %s\n",my_name);
 
 /*
  * =============================================================================
@@ -193,17 +196,23 @@ int  load_world(WorldNode *wnode){
       }
       parent_dir = zr_parentdir(wnode->wfile) ;  // Must be freed
       full_parent_dir = zr_full_parentdir(wnode->wfile) ;  // Must be freed
-      if(ip)printf("  AAAA  wfile      = %s\n",wnode->wfile) ;
-      if(ip)printf("  AAAA  parent_dir = %s\n",parent_dir) ;
+
+      if(ip){
+        printf("        wfile      = %s\n",wnode->wfile) ;
+        printf("        parent_dir = %s\n",parent_dir) ;
+        if(msfile->text){
+          printf("  World file is text.  Filename = %s\n",wnode->wfile) ;
+        }
+      }
 /*
- *  Filename plus flags for unicode/ascii, binary/text and compressed
+ *  Filename plus flags for utf16le/utf8, binary/text and compressed
  *  This routine has to use the token_bc.c routines to process both
  *  binary and text files.
  */
 
       if(ip || ip1){
         printf("  File = %c%c%c %s\n",
-                  (msfile->unicode  ? 'u' : 'a'),
+                  (msfile->utf16le  ? 'u' : 'a'),
                   (msfile->binary   ? 'b' : 't'),
                   (msfile->compress ? 'c' : ' '),wnode->wfile);
       }
@@ -445,7 +454,7 @@ int  load_world(WorldNode *wnode){
               itoken2,token_idc[itoken2], msblock2->length-msblock2->l_label-9) ;
             if(UID == itoken2){
               world_item->uid = read_uint32_a(msfile) ;
-//              ip = ip1 & (6855 == world_item->uid) ;
+              ip = ip1 & (2542 == world_item->uid || 2544 == world_item->uid) ;
               if(ip)printf("      world_item->uid         = %i\n",world_item->uid);
 /*
  *  Process shape filename
@@ -866,11 +875,13 @@ DynTrackSect *dyn_trk_sect ;
             printf("  Exit end_block\n") ;
           }
 #endif
+#if 0
           if(world_item->uid == 50038){
             printf("\n+++++++++++++++++ WORLD ITEM +++++++++++++++++++++++++\n") ;
             list_wfile_item(world_item) ;
             printf("++++++++++++++++++++++++++++++++++++++++++++++++++++++\n\n") ;
           }
+#endif
 /*
  *  End of level 1 procesing
  */
@@ -1045,13 +1056,18 @@ int add_shape_pointers_to_world_items(){
  *  Initialise variable n_animations and allocate memory for the animation pointers
  */
               snode = witem->snode ;
-              if(snode){
+              if(snode  && snode->lod_control){
                 witem->n_animations = snode->lod_control->dist_level->n_hierarchy ; ;
                 witem->animations = (double **)malloc(witem->n_animations*sizeof(double **)) ;
                 for(k=0;k<witem->n_animations;k++)witem->animations[k] = NULL ;
               }else if(n_errors++<20){
                 printf(" Routine %s\n",my_name) ;
-                printf(" Unable to find shapefile corresponding to %s\n",wname);
+                if(!snode->lod_control){
+                  printf("  lod_control missing for shape %s needed for %s\n",
+                                             snode->name,wname) ;
+                }else{
+                  printf(" Unable to find shapefile corresponding to %s\n",wname);
+                }
                 printf(" wname in ascii : ") ;
                 for(i=0;i<(int)strlen(wname);i++) printf(" %x ",wname[i]) ;
                 printf("\n") ;
@@ -1067,14 +1083,14 @@ int add_shape_pointers_to_world_items(){
                 printf("    witem->shape->name = %s",witem->snode->name) ;
 
                 printf("\n") ;
-//#ifndef ROUTE_NEW_FOREST
+#if 0
                 if(i_list++ == 0){
                   for(snode = shapelist_beg; NULL != snode; snode=snode->next ){
 //                   if(!strncmp(wname,snode->name,7))
                       printf("  Shape name = %s :: %s\n",snode->name, snode->s_file);
                   }
                 }
-//#endif
+#endif
                 if(0){
                   printf("\n  Routine %s ... \n",my_name) ;
                   printf("  Program ending ...\n") ;
@@ -1213,10 +1229,10 @@ BTree *bb = (BTree *)b ;
 }
 
 /*
- *   If tthe corresponding *.ws file is present, read the sound sources
+ *   If the corresponding *.ws file is present, read the sound sources
  *   in the file and add to a list held in the world node.
  */
-
+#ifdef OPENAL
 int  load_world_soundfile(WorldNode *w){
 
   int ip = 0 ;
@@ -1247,7 +1263,7 @@ int  load_world_soundfile(WorldNode *w){
         fp = fopen(s_file,"r") ;
         if(fp == NULL) return 0 ;  // No *.ws file
       }
-      printf("  World soundfile found: %s\n",s_file);
+      if(ip)printf("  World soundfile found: %s\n",s_file);
 
       iret = open_msfile(s_file, msfile, 0, 0) ;
       if(iret){
@@ -1410,6 +1426,8 @@ int  load_world_soundfile(WorldNode *w){
       close_msfile(msfile) ;
       return 0 ;
 }
+#endif
+
 #if 0
 /data1/djw/Hobbies/OR/Open_Rails_Train_Simulator_-_ZZ/Routes/au_great_zig_zag/world/w+001451+010331.ws
 	Soundregion (
@@ -1436,3 +1454,66 @@ int  load_world_soundfile(WorldNode *w){
 	)
 
 #endif
+/*
+ *  Routine to print information about a given world item defined
+ *  by tile and uid
+ */
+
+int  print_world_item_data(int tile_x, int tile_y, int uid){
+
+int       ip = 0 ;
+int       item_found = 0 ;
+int       i ;
+WorldNode *wnode ;
+WorldItem *witem ;
+SignalObj *sigobj ;
+
+char *my_name = "print_world_item_data" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+      for(wnode = worldlist_beg; wnode != NULL ; wnode = wnode->next){
+//        printf("  Tile %i %i %p \n",wnode->tile_x, wnode->tile_y, (void *)wnode->world_item) ;
+        if(tile_x != 0 && tile_y != 0 &&
+           (wnode->tile_x != tile_x || wnode->tile_y != tile_y)) continue ;
+        for(witem = wnode->world_item; witem != NULL ; witem = witem->next){
+//          printf("  %i\n",witem->uid) ;
+          if(witem->uid != uid) continue ;
+          item_found = 1 ;
+          printf("\n***************************************************\n") ;
+          printf("  World item:  tile_x = %i, tile_y = %i, uid = %i\n",
+                                                       tile_x, tile_y, uid) ;
+          printf("    Type = %i :: %s\n",witem->worldtype,token_idc[witem->worldtype]) ;
+          printf("    shape file = %s\n",witem->filename) ;
+          printf("    X  = %f,  Y  = %f, Z  = %f\n",witem->X,witem->Y,witem->Z) ;
+          printf("    AX = %f,  AY = %f, AZ = %f, ANG = %f\n",
+                                      witem->AX,witem->AY,witem->AZ,witem->ANG) ;
+          printf("    n_animations  = %i\n",witem->n_animations) ;
+          for(i=0; i<witem->n_animations; i++){
+            printf("    animation[%i]  = %f\n",i,
+                        (witem->animations[i]) ? *(witem->animations[i]) : 0.0)  ;
+          }
+          printf("    n_tr_item     = %i\n",witem->n_tr_item)  ;
+          for(i=0; i<witem->n_tr_item; i++){
+            printf("    tr_item_db[%i]  = %i : %i\n",
+                                i,witem->tr_item_db[i],witem->tr_item_db_id[i])  ;
+          }
+
+          if(witem->worldtype == SIGNAL_ALT){
+            sigobj = &(witem->u.signal_obj) ;
+            printf("    signal_sub_object = %i\n",sigobj->signal_sub_object) ;
+            printf("    n_signal_units    = %i\n",sigobj->n_signal_units) ;
+            for(i=0; i<sigobj->n_signal_units; i++){
+              printf("      sub_object = %i,  track item = %i, u_data1 = %i, signal = %i\n",
+                         sigobj->sub_object[i], sigobj->tr_item[i],
+                         sigobj->u_data1[i], sigobj->signal[i]->uid) ;
+            }
+          }
+        }
+        if(item_found == 0){
+          printf("  ERROR. Routine %s\n",my_name) ;
+          printf("    Track item not found for Tile %i %i,  item %i\n",
+                       tile_x, tile_y, uid) ;
+        }
+      }
+      return 0 ;
+}

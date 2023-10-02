@@ -18,6 +18,11 @@ Introduction
 
     The program has been developed using the "Great Zig Zag Railway" route available from:
        https://www.zigzag.coalstonewcastle.com.au/
+       
+Versions 0.6.#
+==============
+
+     These are primarily bugfix versions.  See the files Commit_0.6.# for details.  Version 0.6.3 also contains some changes to the way that the configuration file is processsed.
 
 Version 0.6.0
 =============

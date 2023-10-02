@@ -1,0 +1,25 @@
+Version 0.6.3
+=============
+
+    Bugfix commit.  These are further bugs that showed up when 
+    testing ZR using different routes.  See README.ROUTES.
+
+Configuration file changes.
+
+    The program works as before when the configuration file
+    (~/.zr/config) defines both ORdir and ORroutedir.
+    
+    If the configuration file defines a single top level directory
+    using the 'ORdir = ...', statement, then this is the one used.
+    If 'ORroutedir' is defined or the directory contains only one 
+    route then this is the one used.  If not the user is asked to 
+    choose the route.
+    
+    If the configuration file contains more than one ORdir line,
+    then the user is given an option of which top level directory
+    to use.  If this contains more than one route, the user is 
+    is again asked to choose.
+    
+    There are then options to choose engines, carriages, wagons
+    and consists and the starting platform or siding.
+    

@@ -48,6 +48,8 @@ int read_turntable_file(void){
               *token2 = NULL,
               *string = NULL,
               string7[7] ;
+  char *open_r  = "/OpenRails"          ;
+  char *t_table = "/turntables.dat"     ;
   char *my_name = "read_turntable_file" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
@@ -57,9 +59,10 @@ int read_turntable_file(void){
       turntablelist_end = NULL ;
       msfile = &msfile0 ;
 
-      or_dir_name = (char *)malloc(strlen(ORroutedir)+10);
+      n = strlen(ORroutedir) + strlen(open_r) + 1 ;
+      or_dir_name = (char *)malloc(n*sizeof(char));
       strcpy(or_dir_name,ORroutedir) ;
-      strcat(or_dir_name,"OpenRails") ;
+      strcat(or_dir_name,open_r) ;
 
       iret = stat(or_dir_name,&sb) ;
       if(iret){
@@ -70,9 +73,10 @@ int read_turntable_file(void){
         return 0 ;
       }
 
-      tt_name = malloc(strlen(or_dir_name) + 16) ;
+      n = strlen(or_dir_name) + strlen(t_table) + 1 ;
+      tt_name = (char *)malloc(n) ;
       strcpy(tt_name,or_dir_name) ;
-      strcat(tt_name,"/turntables.dat") ;
+      strcat(tt_name,t_table)     ;
 
       iret = stat(tt_name,&sb) ;
       if(iret){
@@ -106,6 +110,11 @@ int read_turntable_file(void){
 /*
  *  Level 1 tokens
  */
+          CASE("Comment")
+          CASE("comment")
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
           CASE("Turntable")
             skip_lbr(msfile) ;
             tt = (TurnTable *)malloc(sizeof(TurnTable)) ;
@@ -129,6 +138,11 @@ int read_turntable_file(void){
  *  Level 2 tokens
  */
               SWITCH(token2)
+                CASE("Comment")
+                CASE("comment")
+                  skip_lbr(msfile) ;
+                  skippast_rbr(msfile) ;
+                  break ;
                 CASE("WFile")            //  Name within "quotes"!
                   skip_lbr(msfile) ;
                   string = new_tmp_token(msfile) ;  // Temporary string

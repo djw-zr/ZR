@@ -57,16 +57,17 @@ int read_signals_db(void){
       *token4 = NULL,
       *token5 = NULL,
       *string = NULL, *string2;
-  char my_name[] ="read_signals_db" ;
+  char *sigcfg  = "/sigcfg.dat"     ;
+  char *my_name = "read_signals_db" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
  *  The file sigcfg.dat should be in the main "Route" directory (ORRoutedir))
  */
-      l = strlen(ORroutedir) + strlen("sigcfg.dat") + 1;
+      l = strlen(ORroutedir) + strlen(sigcfg) + 1;
       string = (char *) malloc(l) ;
       strcpy(string,ORroutedir)   ;
-      strcat(string,"sigcfg.dat") ;
+      strcat(string,sigcfg) ;
 // Check file exists
       iret = zr_find_msfile2(string) ;
       if(iret){
@@ -109,6 +110,11 @@ int read_signals_db(void){
         if(!strcmp(token1,eof_mark)) break ;
         if(ip)printf("  AA  token 1 = %s \n",token1) ;
         SWITCH(token1)
+          CASE("Comment")
+          CASE("comment")
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
 /*
  *  Top level 1.  Light textures
  *  Defines a single light texture, used as background to draw lit lights onto signals
@@ -151,6 +157,8 @@ int read_signals_db(void){
                 DEFAULT
                   printf("  ERROR in routine %s\n",my_name) ;
                   printf("  Unrecognised token.  Token = '%s'",token2) ;
+                  printf("  Filename :: %s\n",msfile->filename) ;
+                  printf("  Program stopping ... \n") ;
                   exit(0) ;
               END
             } // End of loop over Light Textures
@@ -183,6 +191,8 @@ int read_signals_db(void){
                     printf("  ERROR in routine %s\n",my_name) ;
                     printf("  Unrecognised token.  Token = '%s'\n",token3) ;
                     printf("            while expecting 'colour' token\n") ;
+                    printf("  Filename :: %s\n",msfile->filename) ;
+                    printf("  Program stopping ... \n") ;
                     exit(0) ;
                   }
                   skip_lbr(msfile) ;
@@ -197,6 +207,8 @@ int read_signals_db(void){
                 DEFAULT
                   printf("  ERROR in routine %s\n",my_name) ;
                   printf("  Unrecognised token.  Token = '%s'",token2) ;
+                  printf("  Filename :: %s\n",msfile->filename) ;
+                  printf("  Program stopping ... \n") ;
                   exit(0) ;
               END
             }// End Loop over Lights Table Entries
@@ -220,6 +232,11 @@ int read_signals_db(void){
                 break ;
               }
               SWITCH(token2)
+                CASE("Comment")
+                CASE("comment")
+                  skip_lbr(msfile) ;
+                  skippast_rbr(msfile) ;
+                  break ;
                 CASE("SignalType")
                   skip_lbr(msfile) ;
                   if(m2>=n2){
@@ -275,6 +292,7 @@ int read_signals_db(void){
                         }else{
                           printf("  Routine %s error\n",my_name) ;
                           printf("  Unrecognised signal type :: %s\n",string) ;
+                          printf("  Filename :: %s\n",msfile->filename) ;
                           printf("  Program stopping ... \n") ;
                           exit(0) ;
                         }
@@ -310,6 +328,7 @@ int read_signals_db(void){
                         }else{
                           printf("  Routine %s error\n",my_name) ;
                           printf("  Unrecognised signal flag :: %s\n",string) ;
+                          printf("  Filename :: %s\n",msfile->filename) ;
                           printf("  Program stopping ... \n") ;
                           exit(0) ;
                         }
@@ -379,6 +398,7 @@ int read_signals_db(void){
                                       }else{
                                         printf("  Routine %s error\n",my_name) ;
                                         printf("  Unrecognised signal flag :: %s\n",string) ;
+                                        printf("  Filename :: %s\n",msfile->filename) ;
                                         printf("  Program stopping ... \n") ;
                                         exit(0) ;
                                       }
@@ -387,6 +407,7 @@ int read_signals_db(void){
                                   DEFAULT
                                     printf("  Routine %s error\n",my_name) ;
                                     printf("  Unrecognised signal light token :: %s\n",token5) ;
+                                    printf("  Filename :: %s\n",msfile->filename) ;
                                     printf("  Program stopping ... \n") ;
                                     exit(0) ;
                                 END
@@ -395,6 +416,7 @@ int read_signals_db(void){
                             DEFAULT
                               printf("  Routine %s error\n",my_name) ;
                               printf("  Unrecognised signal lights token :: %s\n",token5) ;
+                              printf("  Filename :: %s\n",msfile->filename) ;
                               printf("  Program stopping ... \n") ;
                               exit(0) ;
                           END
@@ -448,6 +470,7 @@ int read_signals_db(void){
                                       if(strcmp(string,"DrawLight")){
                                         printf("  Routine %s error\n",my_name) ;
                                         printf("  Unrecognised DrawLight token :: %s\n",string) ;
+                                        printf("  Filename :: %s\n",msfile->filename) ;
                                         printf("  Program stopping ... \n") ;
                                         exit(0) ;
                                       }
@@ -468,6 +491,7 @@ int read_signals_db(void){
                                             DEFAULT
                                               printf("  Routine %s error\n",my_name) ;
                                               printf("  Unrecognised DrawLight token :: %s\n",string) ;
+                                              printf("  Filename :: %s\n",msfile->filename) ;
                                               printf("  Program stopping ... \n") ;
                                               exit(0) ;
                                           END
@@ -489,6 +513,7 @@ int read_signals_db(void){
                                   DEFAULT
                                     printf("  Routine %s error\n",my_name) ;
                                     printf("  Unrecognised Signal Draw State token:: %s\n",token5) ;
+                                    printf("  Filename :: %s\n",msfile->filename) ;
                                     printf("  Program stopping ... \n") ;
                                     exit(0) ;
                                 END
@@ -497,6 +522,7 @@ int read_signals_db(void){
                             DEFAULT
                               printf("  Routine %s error\n",my_name) ;
                               printf("  Unrecognised signal lights token :: %s\n",token4) ;
+                              printf("  Filename :: %s\n",msfile->filename) ;
                               printf("  Program stopping ... \n") ;
                               exit(0) ;
                           END
@@ -545,6 +571,7 @@ int read_signals_db(void){
                               else{
                                 printf("  Routine %s error\n",my_name) ;
                                 printf("  Unrecognised Signal Aspect :: string = %s\n",string) ;
+                                printf("  Filename :: %s\n",msfile->filename) ;
                                 printf("  Program stopping ... \n") ;
                                 exit(0) ;
                               }
@@ -577,6 +604,7 @@ int read_signals_db(void){
                                       DEFAULT
                                         printf("  Routine %s error\n",my_name) ;
                                         printf("  Unrecognised Signal FLAG :: string = %s\n",string) ;
+                                        printf("  Filename :: %s\n",msfile->filename) ;
                                         printf("  Program stopping ... \n") ;
                                         exit(0) ;
                                     END
@@ -585,6 +613,7 @@ int read_signals_db(void){
                                   DEFAULT
                                     printf("  Routine %s error\n",my_name) ;
                                     printf("  Unrecognised Signal Aspect Component :: string = %s\n",string) ;
+                                    printf("  Filename :: %s\n",msfile->filename) ;
                                     printf("  Program stopping ... \n") ;
                                     exit(0) ;
                                 END
@@ -594,6 +623,7 @@ int read_signals_db(void){
                             DEFAULT
                               printf("  Routine %s error\n",my_name) ;
                               printf("  Unrecognised Signal Aspect token :: %s\n",token4) ;
+                              printf("  Filename :: %s\n",msfile->filename) ;
                               printf("  Program stopping ... \n") ;
                               exit(0) ;
                           END
@@ -607,6 +637,7 @@ int read_signals_db(void){
                       DEFAULT
                         printf("  Routine %s error\n",my_name) ;
                         printf("  Unrecognised Signal Type token :: %s\n",token3) ;
+                        printf("  Filename :: %s\n",msfile->filename) ;
                         printf("  Program stopping ... \n") ;
                         exit(0) ;
                     END
@@ -632,10 +663,12 @@ int read_signals_db(void){
                   sig_shape->name      = ctoken(msfile) ;
                   string = new_tmp_token(msfile) ;
                   if(ip)printf("      CC  string  = %s \n",string) ;
+                  if(ip)printf("      CC  name    = %s \n",sig_shape->name) ;
                   if(strcmp(string,"SignalSubObjs")){
                     printf("  Routine %s error\n",my_name) ;
                     printf("  Unrecognised sub-token of %s\n","SignalShape") ;
                     printf("  Token is %s\n",string) ;
+                    printf("  Filename :: %s\n",msfile->filename) ;
                     printf("  Program stopping ... \n") ;
                     exit(0) ;
                   }
@@ -660,7 +693,8 @@ int read_signals_db(void){
                     sig_subobj->sig_back_facing    = 0 ;
                     sig_subobj->sig_jn_link        = 0 ;
                     sig_subobj->n_sig_jn_lnk       = 0 ;
-                    sig_subobj->sig_script_type     = NULL ;
+                    sig_subobj->sig_jn_lnk_a       = NULL ;
+                    sig_subobj->sig_script_type    = NULL ;
 
                   }
                   for(m2=0;m2<n2;m2++){
@@ -671,6 +705,7 @@ int read_signals_db(void){
                       printf("  Routine %s error\n",my_name) ;
                       printf("  Unrecognised sub-token of %s\n","SignalSubObjs") ;
                       printf("  Token is %s\n",string) ;
+                      printf("  Filename :: %s\n",msfile->filename) ;
                       printf("  Program stopping ... \n") ;
                       exit(0) ;
                     }
@@ -709,6 +744,7 @@ int read_signals_db(void){
                             printf("  Routine %s error\n",my_name) ;
                             printf("  Unrecognised sub-token of %s\n","SigSubType") ;
                             printf("  Token is %s\n",string) ;
+                            printf("  Filename :: %s\n",msfile->filename) ;
                             printf("  Program stopping ... \n") ;
                             exit(0) ;
                           }
@@ -737,6 +773,7 @@ int read_signals_db(void){
                               printf("  Routine %s error\n",my_name) ;
                               printf("  Unrecognised sub-token of %s\n","SignalFlags") ;
                               printf("  Token is %s\n",string) ;
+                              printf("  Filename :: %s\n",msfile->filename) ;
                               printf("  Program stopping ... \n") ;
                               exit(0) ;
                             }
@@ -750,16 +787,21 @@ int read_signals_db(void){
                         CASE("SigSubJnLinkIf")
                           skip_lbr(msfile) ;
                           sig_subobj->n_sig_jn_lnk  = itoken(msfile) ;
-                          sig_subobj->sig_jn_lnk_a[0] = itoken(msfile) ;
-                          if(sig_subobj->n_sig_jn_lnk>1){
-                            sig_subobj->sig_jn_lnk_a[1] = itoken(msfile) ;
+                          if(sig_subobj->n_sig_jn_lnk > 0){
+                            sig_subobj->sig_jn_lnk_a =
+                                  (int *)malloc(sig_subobj->n_sig_jn_lnk*sizeof(int)) ;
+                            for(i=0;i<sig_subobj->n_sig_jn_lnk;i++){
+                              sig_subobj->sig_jn_lnk_a[i] = itoken(msfile) ;
+                            }
                           }
                           if(ip){
                             printf(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n") ;
                             printf("  n_sig_jn_lnk     = %i\n",sig_subobj->n_sig_jn_lnk) ;
-                            printf("  n_sig_jn_lnk_a[] = %i %i\n",
-                                      sig_subobj->sig_jn_lnk_a[0],sig_subobj->sig_jn_lnk_a[1]) ;
-                            printf(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n") ;
+                            for(i=0;i<sig_subobj->n_sig_jn_lnk;i++){
+                              printf("  n_sig_jn_lnk_a[%i] = %i\n",
+                                                           i, sig_subobj->sig_jn_lnk_a[i]) ;
+                              printf(" &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&\n") ;
+                            }
                           }
                           skip_rbr(msfile) ;
                           break ;
@@ -767,6 +809,7 @@ int read_signals_db(void){
                           printf("  Routine %s error\n",my_name) ;
                           printf("  Unrecognised sub-token of %s\n","SignalSubObj") ;
                           printf("  Token is %s\n",string) ;
+                          printf("  Filename :: %s\n",msfile->filename) ;
                           printf("  Program stopping ... \n") ;
                           exit(0) ;
                           break ;
@@ -778,6 +821,7 @@ int read_signals_db(void){
                 DEFAULT
                   printf("  Routine %s error\n",my_name) ;
                   printf("  Unrecognised SignalShape token :: %s\n",token3) ;
+                  printf("  Filename :: %s\n",msfile->filename) ;
                   printf("  Program stopping ... \n") ;
                   exit(0) ;
               END
@@ -819,6 +863,7 @@ int read_signals_db(void){
                 DEFAULT
                   printf("  Routine %s error\n",my_name) ;
                   printf("  Unrecognised ScriptFile token :: %s\n",token2) ;
+                  printf("  Filename :: %s\n",msfile->filename) ;
                   printf("  Program stopping ... \n") ;
                   exit(0) ;
               END
@@ -828,6 +873,7 @@ int read_signals_db(void){
           DEFAULT
             printf("  Routine %s error\n",my_name) ;
             printf("  Unrecognised Top Loop token :: %s\n",token1) ;
+            printf("  Filename :: %s\n",msfile->filename) ;
             printf("  Program stopping ... \n") ;
             exit(0) ;
             break ;

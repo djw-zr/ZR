@@ -53,7 +53,7 @@ int sc_push_stack(double x){
  */
 double block_state(SignalDB *signal){
 
-  int    ip       ;
+  int    ip = 0   ;
   int    i, j, k, jn, iret ;
   int    l_start  ;
   int    l_found  ;
@@ -81,6 +81,7 @@ double block_state(SignalDB *signal){
 //      ip = (69 == signal->uid) || (74 == signal->uid) ;
       ip = (n_sig1 == signal0->uid) ;
 //      if(!ip) return 0.0 ;
+
       trk_item = signal->trk_item           ;
       sig_subobj = signal->sig_subobj ;
 /*
@@ -104,11 +105,18 @@ double block_state(SignalDB *signal){
         printf("  track section    =  %i\n", track_section) ;
 
       }
+//  DEBUG or REALITY
+
+      if(track_section == 0)return (double) SIG_OCCUPIED ;
 
       trk_sect   = &(track_db.trk_sections_array[track_section]) ;
+//      printf(" trk_sect                = %p\n",(void *)trk_sect) ;
+//      printf(" trk_sect->trk_item_list = %p\n",(void *)trk_sect->trk_item_list) ;
       if(!(trk_sect->trk_item_list)) exit(0) ;
       i          = trk_sect->trk_item_list[track_item_index] ;
+//      printf(" i = %i\n", i) ;
       trk_item2  = &(track_db.trk_items_array[i]) ;
+//      printf(" trk_item2               = %p\n",(void *)trk_item2) ;
 
       if(ip){
         printf("  Check :: Index of node = %i,"
@@ -487,10 +495,10 @@ int route_set(SignalDB *signal){
  *  next signal along the track.
  *  Return SIGASP_STOP if no signal head of the specified function type is identified.
  */
-int next_sig_mr(SignalDB *signal){
+double next_sig_mr(double type){
 
-      signal = signal ;
-      return 0 ;
+      type = type  ;
+      return (double) SIG_STOP ;
 }
 /*
  *  Return least restrictive state
@@ -508,21 +516,30 @@ double next_sig_lr(double type){
       return (double) iret ;
 }
 /*
- *  As above but for the opposing signal - (the signal controlling entry into this
- *    block from the opposite direction).
+ *  As next_sig_mr but for the opposing signal - (the signal controlling
+ *  entry into this block from the opposite direction).
  */
-int opp_sig_mr(SignalDB *signal){
+double opp_sig_mr(double type){
 
-      signal = signal ;
+      type = type  ;
       return 0 ;
 }
 /*
  *  Return least restrictive state
  */
-int this_sig_lr(SignalDB *signal){
+double this_sig_lr(double type){
 
-      signal = signal ;
-      return 0 ;
+int     ip = 0 ;
+int     i  ;
+SigType *sig_type = signal0->sig_type ;
+char    *my_name  = "this_sig_mr"  ;
+
+      type = type ;
+
+      for(i=7;i>=0;i--){
+        if(sig_type->sig_draw_a[i]) break ;
+      }
+      return (double) i ;
 }
 /*
  *  As above but for the signal at the same position and in the same direction
@@ -530,15 +547,24 @@ int this_sig_lr(SignalDB *signal){
  *
  *  Returns -1 if no signal of the specified type is identified.
  */
-int this_sig_mr(SignalDB *signal){
+double this_sig_mr(double type){
 
-      signal = signal ;
-      return 0 ;
+int     ip = 0 ;
+int     i  ;
+SigType *sig_type = signal0->sig_type ;
+char    *my_name  = "this_sig_mr"  ;
+
+      type = type ;
+
+      for(i=0;i<8;i++){
+        if(sig_type->sig_draw_a[i]) break ;
+      }
+      return (double) i ;
 }
 /*
  *  Return least restrictive state
  */
-int opp_sig_lr(SignalDB *signal){
+double opp_sig_lr(SignalDB *signal){
 
       signal = signal ;
       return 0 ;
@@ -609,14 +635,15 @@ int sig_feature(int n){
 
 int def_draw_state(int k){
 
-  int     ip ;
-  int     i  ;
-  SigType *sig_type = signal0->sig_type ;
-  char    *my_name  = "def_draw_state"  ;
+int     ip = 0 ;
+int     i  ;
+static int icount = 0 ;
+SigType *sig_type = signal0->sig_type ;
+char    *my_name  = "def_draw_state"  ;
 
 
- //     ip = ip && (97 == signal0->uid) ;
-      ip = (n_sig1 == signal0->uid) ;
+//     ip = ip && (97 == signal0->uid) ;
+//      ip = (n_sig1 == signal0->uid) ;
       if(k<0 || k>8){
         printf("  Routine %s called with state index out of range\n",my_name) ;
         printf("    Index       = %i\n",k) ;
@@ -624,11 +651,17 @@ int def_draw_state(int k){
                    signal0->uid, signal0->shape_name, signal0->type_name) ;
         return -1;
       }
+/*
+ *  If error : return most restrictive state
+ */
       if(!(sig_type->sig_draw_a[k])){
-        printf("  Routine %s called with unsupported state index\n",my_name) ;
-        printf("  Signal %i :: %s :: %s\n",
-                   signal0->uid, signal0->shape_name, signal0->type_name) ;
-        return -1 ;
+        if(icount<4){
+          printf("  Routine %s called with unsupported state index %i\n",my_name, k) ;
+          printf("  Signal %i :: %s :: %s\n",
+                     signal0->uid, signal0->shape_name, signal0->type_name) ;
+          icount ++ ;
+        }
+        k = (int)this_sig_mr(0.0) ;
       }
       if(ip){
         printf("  Routine %s\n", my_name) ;
@@ -648,6 +681,12 @@ int def_draw_state(int k){
           }else{
             printf("%p ",(void *)sig_type->sig_draw_a[i]) ;
           }
+        }
+        if(!(sig_type->sig_draw_a[k])){
+          printf("\n  Routine %s called with unsupported state index\n",my_name) ;
+          printf("  Signal %i :: shape_name = %s :: type_name = %s :: index = %i\n",
+                    signal0->uid, signal0->shape_name, signal0->type_name,k) ;
+          return 0 ;
         }
         printf("\n**********************************************************\n") ;
         printf("    Set draw_state to %i :: %s \n",sig_type->sig_draw_a[k]->index,
@@ -675,7 +714,7 @@ int train_has_call_on_restricted(){
 
 int sc_save(char* name){
 
-  int   ip ;
+  int   ip = 0 ;
   double x ;
   char   *my_name = "sc_save" ;
 
@@ -712,7 +751,7 @@ int sc_save(char* name){
 
 int sc_func(char *name){
 
-  int    ip ;
+  int    ip = 0 ;
   double x,y ;
   char   *my_name = "sc_func" ;
 
@@ -733,6 +772,28 @@ int sc_func(char *name){
       }else if(!strcmp(name,"next_sig_lr")){
         x = sc_pop_stack() ;
         x = next_sig_lr(x) ;
+        sc_push_stack(x) ;
+      }else if(!strcmp(name,"this_sig_lr")){
+        x = sc_pop_stack() ;
+        x = this_sig_lr(x) ;
+        sc_push_stack(x) ;
+        if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
+      }else if(!strcmp(name,"next_sig_mr")){
+        x = sc_pop_stack() ;
+        x = next_sig_mr(x) ;
+        sc_push_stack(x) ;
+      }else if(!strcmp(name,"this_sig_mr")){
+        x = sc_pop_stack() ;
+        x = this_sig_mr(x) ;
+        sc_push_stack(x) ;
+        if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
+      }else if(!strcmp(name,"next_sig_lr")){
+        x = sc_pop_stack() ;
+        x = next_sig_lr(x) ;
+        sc_push_stack(x) ;
+      }else if(!strcmp(name,"this_sig_lr")){
+        x = sc_pop_stack() ;
+        x = this_sig_lr(x) ;
         sc_push_stack(x) ;
         if(ip)printf("  +++ Routine %s. Function '%s' processed\n",my_name,name) ;
       }else if(!strcmp(name,"sig_feature")){

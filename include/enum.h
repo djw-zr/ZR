@@ -47,6 +47,13 @@ enum MatrixType {
       MAT_GENERAL
 } ;
 
+const char *token_mat_type[4] = {
+/*   0  */    "MAT_UNIT",
+/*   1  */    "MAT_TRANSLATE",
+/*   2  */    "MAT_ROTATE",
+/*   3  */    "MAT_GENERAL"
+} ;
+
 enum MatrixAnim {
       MAT_NONE,
       MAT_WHEEL,

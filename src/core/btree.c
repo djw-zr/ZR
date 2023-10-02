@@ -53,6 +53,7 @@
 #include <stdlib.h>
 
 
+
 typedef struct btree {
 struct btree *left  ;        //    Left node
 struct btree *right ;        //    Right node
@@ -70,6 +71,9 @@ BTree    *root ;
 BTree  *rebalance(BTree *n) ;
 void   print_btree(char *s, BTree *n) ;
 void   dump_btree(BTree *n, int i, char *lr) ;
+static int bt_icount  ;                      // Used to count elements
+static int bt_icount_n ;
+static BTree *bt_found ;
 
 int  bt_max(int i, int j){
     return (i>=j) ? i : j ;
@@ -221,6 +225,19 @@ int  l ;
       return find_btree(n->right,string) ;
 }
 
+BTree *find_btree_ic(BTree *n, char *string){
+
+int  l ;
+
+      if(!n) return NULL ;
+
+      l = strcmp_ic(n->index,string) ;
+
+      if(l == 0)return n ;
+      if(l <  0)return find_btree_ic(n->left,string) ;
+      return find_btree_ic(n->right,string) ;
+}
+
 void  dump_btree(BTree *n, int i, char *lr){
 
 int  l;
@@ -279,12 +296,128 @@ void  bt_walk_b2t(BTree *n, void f(void *n)){
       return ;
 }
 
-void  print_node(void *n){
+/*
+ *  Functions to count elements of btree
+ *  and print an ordered list
+ */
+int   reset_bt_count(){
 
+      bt_icount = 0 ;
+      return 0;
+}
+
+int   return_bt_count(){
+      return bt_icount ;
+}
+
+void increment_bt_count(void *n){
+
+     if(n)bt_icount++ ;
+     return ;
+}
+
+void print_bt_node_with_count_and_index(void *n){
+BTree *p ;
+      p = (BTree *) n ;
+      printf("  %3i :: %s\n",++bt_icount,(char *)p->index) ;
+      return ;
+}
+
+void print_bt_nodes_with_count_and_index(BTree *p){
+
+      reset_bt_count() ;
+      bt_walk_z2a(p, print_bt_node_with_count_and_index) ;
+      return ;
+}
+
+int count_bt_nodes(BTree  *p){
+     reset_bt_count() ;
+     bt_walk_z2a(p,increment_bt_count) ;
+     return bt_icount ;
+}
+
+void  print_node(void *n){
 BTree *p ;
       p = (BTree *) n ;
       printf("  Print : Node = %p,  Index = %s,     Value = %s\n",(void *)p, p->index, (char *)p->data) ;
       return ;
+}
+
+void  find_bt_node_with_count_n(void *p){
+
+int   ip = 0 ;
+BTree *p1;
+char  *my_name = "find_bt_node_with_count_n" ;
+
+      p1 = (BTree *)p ;
+
+      if(ip)printf("  Routine %s :: p = %p\n",my_name,p) ;
+      if(!p) return ;
+      bt_icount++ ;
+      if(ip)printf("     bt_count = %i, bt_count_n = %i\n",bt_icount, bt_icount_n) ;
+      if(bt_icount == bt_icount_n)bt_found = (BTree *)p;
+      if(ip)printf("     Node = %p,  Index = %s, bt_found = %p, Index = %s\n",
+                       (void *)p1, p1->index, (void *)bt_found,
+                        bt_found ? bt_found->index : "NULL") ;
+      return ;
+}
+
+BTree *find_bt_node_with_index(BTree *p, int n){
+
+int   ip = 0 ;
+char *my_name = "find_bt_node_with_index" ;
+
+      bt_icount_n = n ;
+      bt_icount   = 0 ;
+      bt_found    = NULL ;
+      bt_walk_z2a(p,find_bt_node_with_count_n) ;
+      if(ip)printf("  Routine %s.  Found %p, index = %s\n",my_name,
+             (void *)bt_found, bt_found ? bt_found->index : "NULL" ) ;
+      return bt_found ;
+}
+
+/*
+ *   Routine to save list of sub-directories in a b-tree
+ */
+
+BTree *bt_subdirectory_list(char *base_dir){
+
+
+int    ip = 1    ;
+int    len       ;
+BTree  *b = NULL ;
+DIR    *cdir      ;
+struct dirent *f_entry ;
+char   *sub_dir ;
+char   *my_name = "bt_subdirectory_list" ;
+
+/*
+ *  Open directory
+ */
+      cdir = opendir(base_dir) ;
+      if(cdir == NULL){
+        printf("  Routine %s error.\n", my_name) ;
+        printf("    Unable to find base directory.\n") ;
+        printf("    Base directory = %s\n",base_dir) ;
+        printf("    Program stopping ... \n") ;
+        close_system() ;
+      }
+/*
+ *  Loop through files
+ */
+      while ((f_entry = readdir(cdir)) != NULL) {
+        if(ip)printf("  Found directory = %s\n", f_entry->d_name)  ;
+        if(f_entry->d_name[0] == '.')continue ;
+        sub_dir = (char *)malloc(strlen(base_dir)+strlen(f_entry->d_name)+2) ;
+        strcpy(sub_dir,base_dir) ;
+        strcat(sub_dir,"/") ;
+        strcat(sub_dir,f_entry->d_name) ;
+
+        b = insert_node(b, f_entry->d_name, (void *) sub_dir) ;
+        increment_bt_count(b) ;
+      }
+      closedir(cdir) ;
+      return b ;
 }
 
 #ifndef __ZR_H__

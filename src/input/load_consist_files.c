@@ -59,9 +59,9 @@ int load_consist_files(void){
   ConsistNode *consist,
               **consist_a ;
 
-  char   *con_dir  = "Trains/Consists" ;
-  char   *con_dir1 = "Trains/Consists_In_Use" ;
-  char   *my_name = "load_consists"    ;
+  char   *con_dir  = "/Trains/Consists" ;
+  char   *con_dir1 = "/Trains/Consists_In_Use" ;
+  char   *my_name = "load_consist_files"    ;
 
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
@@ -135,7 +135,7 @@ int load_consist_files(void){
       for(consist=consistlist_beg ; consist != NULL ; consist=consist->next){
         n++ ;
         root_name = zr_basename2(consist->file_name) ;
-        if(strcmp(root_name,consist->name)){
+        if(strcmp_ic(root_name,consist->name)){
           printf("  Consist file possible error.  Filename and consist name do not match.\n");
           printf("  Consist name = %s.  Filename = %s\n", consist->name, root_name) ;
         }
@@ -258,6 +258,10 @@ int read_consist_file(char *file_name){
                         consist->description = strip_quotes(string) ;
                         skip_rbr(msfile) ;
                         break ;
+                      CASE("Default")
+                        skip_lbr(msfile) ;
+                        skippast_rbr(msfile) ;
+                        break ;
                       CASE("Serial")
                         skip_lbr(msfile) ;
                         itoken(msfile)   ;  //  Skip
@@ -305,6 +309,10 @@ int read_consist_file(char *file_name){
                             CASE("Flip")
                               skip_lbr(msfile) ;
                               skip_rbr(msfile) ;
+                              break ;
+                            CASE("EngineVariables")
+                              skip_lbr(msfile) ;
+                              skippast_rbr(msfile) ;
                               break ;
                             CASE("UiD")
                               skip_lbr(msfile) ;

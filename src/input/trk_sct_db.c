@@ -28,7 +28,7 @@ static int find_potential_world_items(TrkSector *ts0,int uid0,
  */
 
 int init_track_db(char * filename){
-int    i, j, ip = 0 ;
+int    i, j, n, ip = 0 ;
 char   *datafile ;
 char   *token    ;
 char   *string   ;
@@ -43,8 +43,10 @@ MSfile msfile  ;
  * Open track database file ; usually *.tdb
  * *****************************************************************************
  */
-      datafile = (char *)malloc(strlen(ORroutedir)+strlen(filename)+1);
+      n = strlen(ORroutedir)+strlen(filename)+1 ;
+      datafile = (char *)malloc(n*sizeof(char));
       strcpy(datafile,ORroutedir);
+      strcat(datafile,"/");
       strcat(datafile,filename);
       if(ip)printf("  File = %s\n",datafile) ;
 
@@ -209,6 +211,7 @@ TrkVectorNode *vec          ;
       trk_min_height = h0 ;
       trk_max_height = h1 ;
       tile_h0 = 100.0*floor(trk_min_height/100.0) ;
+      if(tile_h0 <0.0) tile_h0 = 0.0 ;
 
       free(datafile) ;
       close_msfile(&msfile) ;

@@ -33,8 +33,9 @@ int init_road_db(char * filename)
  * Open road database file ; usually *.rdb
  * *****************************************************************************
  */
-    datafile = (char *)malloc(strlen(ORroutedir)+strlen(filename)+1);
+    datafile = (char *)malloc(strlen(ORroutedir)+strlen(filename)+2);
     strcpy(datafile,ORroutedir);
+    strcat(datafile,"/");
     strcat(datafile,filename);
 
     if(open_msfile(datafile, &msfile, 0, 0)!=0) error1(myname,ffname,datafile);

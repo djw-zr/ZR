@@ -33,6 +33,7 @@ int tilelist_init(int tile_w, int tile_e, int tile_s, int tile_n)
        *t_file    = NULL ;
   FILE *fp ;
   TileListNode  *tilelist_new ;
+  char *tiles_dir = "/TILES/" ;
 /*
  * Set up tile_array, an array of pointers to the tile nodes
  */
@@ -46,13 +47,13 @@ int tilelist_init(int tile_w, int tile_e, int tile_s, int tile_n)
           tilelist_new = tiledata_new(i,j) ;
           name = TileToFileName(i, j, 15);
 // Check for T file
-          len = strlen(name) + strlen(ORroutedir) + strlen("TILES/") + 3 ;
-          t_file    = (char *)malloc(len) ;
-          strcpy(t_file   ,ORroutedir)    ;
-          strcat(t_file   ,"TILES/")      ;
-          strcat(t_file   ,name)          ;
-          strcat(t_file   ,".t")          ;
-          fp = gopen(t_file   ,"r")       ;
+          len = strlen(ORroutedir) + strlen(tiles_dir) + strlen(name) + 3 ;
+          t_file  = (char *)malloc(len) ;
+          strcpy(t_file, ORroutedir)    ;
+          strcat(t_file, tiles_dir)     ;
+          strcat(t_file, name)          ;
+          strcat(t_file   ,".t")        ;
+          fp = gopen(t_file   ,"r")     ;
           if(NULL == fp){
 //            printf(" File not found : %i %i : %s\n",i,j,name);
             nn = (j-tile_s)*ni + i - tile_w ;
@@ -97,10 +98,10 @@ static TileListNode *tiledata_new(int i, int j)
       tiledata->gl_display_list = 0  ;
 
       tiledata->terrain_data.terrain_errthreshold_scale = 0.0 ;
-      tiledata->terrain_data.terrain_water_height_offset_SW = 0.0 ;
-      tiledata->terrain_data.terrain_water_height_offset_SE = 0.0 ;
-      tiledata->terrain_data.terrain_water_height_offset_NE = 0.0 ;
-      tiledata->terrain_data.terrain_water_height_offset_NW = 0.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_SW = -20.0 ;  //  Default
+      tiledata->terrain_data.terrain_water_height_offset_SE = -20.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_NE = -20.0 ;
+      tiledata->terrain_data.terrain_water_height_offset_NW = -20.0 ;
       tiledata->terrain_data.terrain_alwaysselect_maxdist   = 0.0 ;
       tiledata->terrain_data.terrain_nsamples               = 0   ;
       tiledata->terrain_data.terrain_sample_rotation        = 0.0 ;
@@ -276,15 +277,16 @@ int tilelist_init2(){
   DIR    *tdir = NULL    ;
   struct dirent *f_entry ;
   TileListNode  *tl_node   ;
-  char   my_name[] = "tilelist_init2" ;
+  char   *tiles_dir = "/TILES/" ;
+  char   *my_name   = "tilelist_init2" ;
 
 /*
  *  1.  Search for TILES directory
  */
-      len1 = strlen(ORroutedir) + strlen("TILES/") + 1 ;
+      len1 = strlen(ORroutedir) + strlen(tiles_dir) + 1 ;
       tdir_name = (char *)malloc(len1) ;
       strcpy(tdir_name,ORroutedir)     ;
-      strcat(tdir_name,"TILES/")       ;
+      strcat(tdir_name,tiles_dir)       ;
       if(ip)printf(" Trying directory TILES = %s\n",tdir_name) ;
       iret = zr_find_msfile2(tdir_name) ;
       if(!iret)tdir = opendir(tdir_name) ;
@@ -296,7 +298,7 @@ int tilelist_init2(){
         exit(1) ;
       }
 /*
- *  2.  Loop throught files
+ *  2.  Loop through the files
  */
       while ((f_entry = readdir(tdir)) != NULL) {
         len2 = strlen(f_entry->d_name) ;
@@ -324,8 +326,8 @@ int tilelist_init2(){
         if(ip)printf("    tiley    = %i\n", tl_node->tiley) ;
         if(ip)printf("    zoom     = %i\n", tl_node->zoom)  ;
 
-        tl_node->t_found   = 1     ;
-        tl_node->next      = tilelist_head ;
+        tl_node->t_found = 1     ;
+        tl_node->next    = tilelist_head ;
         tilelist_head    = tl_node ;
       }
       tile_west  =  16384 ;

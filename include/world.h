@@ -212,7 +212,7 @@ typedef struct worlditem {
   uint             static_detail_level ;
   long             vdb_id          ;
 /*
- *  Animation matrix variables.  It a world item is animated, the number of
+ *  Animation matrix variables.  If a world item is animated, the number of
  *  animation pointers equals the hierarch array size in the item's ShapeNode
  *  structure - but only pointers to animation variables will be non-NULL.
  */

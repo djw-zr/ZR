@@ -61,6 +61,8 @@ char   my_name[] = "load_shape_filenames" ;
 struct dirent *f_entry   = NULL ;
 struct dirent **namelist = NULL ;
 ShapeNode *shape     ;
+char   *shape_dir   = "/SHAPES/" ;
+char   *g_shape_dir = "/Global/Shapes/" ;
 BTree  *btree_node   ;
 /*
  *   Process shape files in directories
@@ -68,15 +70,15 @@ BTree  *btree_node   ;
  */
       for(idir=0;idir<2;idir++){
         if(idir==0){
-          len1 = strlen(ORroutedir) + strlen("SHAPES/") + 1 ;
+          len1 = strlen(ORroutedir) + strlen(shape_dir) + 1 ;
           sdir_name = (char *)malloc(len1) ;
           strcpy(sdir_name,ORroutedir)    ;
-          strcat(sdir_name,"SHAPES/")      ;
+          strcat(sdir_name,shape_dir)      ;
         }else{
-          len1 = strlen(ORdir) + strlen("Global/Shapes/") + 1 ;
+          len1 = strlen(ORdir) + strlen(g_shape_dir) + 1 ;
           sdir_name = (char *)malloc(len1) ;
           strcpy(sdir_name,ORdir)    ;
-          strcat(sdir_name,"Global/Shapes/")      ;
+          strcat(sdir_name,g_shape_dir)      ;
         }
         if(ip)printf(" Directory SHAPES = %s\n",sdir_name) ;
         iret = zr_find_msfile2(sdir_name) ;
@@ -173,8 +175,12 @@ BTree  *btree_node   ;
 //         printf(" CC i = %i\n",i) ;
             shapelist_end = shape ;
             shape->next   = NULL ;
+            if(ip)printf("  Routine %s.  shapelist_end name added = %s :: %s\n",
+                           my_name, name, namelist[i]->d_name);
           }else{
             shape = (ShapeNode *)btree_node->data ;
+            if(ip)printf("  Routine %s.  btree already contains   = %s :: %s\n",
+                           my_name, name, namelist[i]->d_name);
           }
 /*
  *  Save name and filename
@@ -355,7 +361,7 @@ int  init_shape_node(ShapeNode *shape){
 
 int load_shape(ShapeNode *snode ) {
 
-  uint    ip = 1 ;                  //  Debug printing when ip == 1
+  uint    ip = 0 ;                  //  Debug printing when ip == 1
   uint    i, j, k, l, m, n, itoken;
   int     iret ;
   MSfile  msfile0 ;
@@ -364,12 +370,12 @@ int load_shape(ShapeNode *snode ) {
   char    *string ;
   char    my_name[] = "load_shape" ;
 
-      ip = ip && !strcmp_ic(snode->name,test_shape) ;
+//      ip = ip && !strcmp_ic(snode->name,test_shape) ;
 //      ip = !strncmp(snode->name,"mm_",3) || !strncmp(snode->name,"MM_",3) ;
       if(ip || 0){
         printf("\n  Enter routine : %s : %i\n",my_name, ip);
-        printf("  Shape name = %s\n",snode->name);
-        printf("  File = %s\n",snode->s_file);
+        printf("    Shape name = %s\n",snode->name);
+        printf("    File       = %s\n",snode->s_file);
       }
 /*
  * =============================================================================
@@ -377,22 +383,30 @@ int load_shape(ShapeNode *snode ) {
  *  compressed files, reads the next 16 bytes and sets the flags.
  * =============================================================================
  */
-      if(ip)printf(" AA\n");
+      if(ip)printf("  AA\n");
       zr_filename_MS2L(snode->s_file) ;          //  Convert '\' to '/'
       if(ip)printf("  Routine %s, snode->s_file = %s\n",my_name,snode->s_file) ;
       iret = zr_find_msfile2(snode->s_file) ;
+/*
+ *  If the shape is not found - print message and set name to NULL
+ *  This shape is then skipped by the display routine
+ */
       if(iret){
         printf("\n\n  ERROR in routine %s\n",my_name);
         printf("      zr_find_msfile2 failed to find shape file\n");
         printf("      Shape name = %s\n",snode->name);
         printf("      Shape file = %s\n",snode->s_file) ;
-        exit(1) ;
+        free(snode->name) ;
+        snode->name = NULL ;
+        return 1 ;
       }
       if(ip)printf("  Routine %s,        File = %s\n",my_name,snode->s_file) ;
       l = open_msfile(snode->s_file, msfile, 0, ip) ;
       if(l!=0){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
-        exit(1) ;
+        free(snode->name) ;
+        snode->name = NULL ;
+        return 1 ;
       }
       fp = msfile->fp      ;
       init_levels(msfile) ;   // Initialise system to track data blocks

@@ -187,9 +187,10 @@ uint    n_sect                         ;  // new section
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : Wrong number of old pins : n_in_pins, n_ot_pins ="
                                            " %i %i\n",  n_in_pins,n_ot_pins) ;
-        printf("  uid              = %i",tn->uid) ;
-        printf("  type_of_node     = %i",tn->type_of_node) ;
-        printf("  length_of_vector = %i",tn->length_of_vector) ;
+        printf("    Track sector uid = %i\n",tn->uid) ;
+        printf("    Type_of_node     = %i :: %s\n",
+                          tn->type_of_node, token_trackdb[tn->type_of_node]) ;
+        printf("    Length_of_vector = %i\n",tn->length_of_vector) ;
         exit(1) ;
       }
       if( (idirect != 1 && idirect !=0) || (inext !=1 && inext != -1)){
@@ -404,6 +405,10 @@ uint    n_sect                         ;  // new section
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : Wrong number of old pins : n_in_pins, n_ot_pins ="
                                            " %i %i\n",  n_in_pins,n_ot_pins) ;
+        printf("    Track sector uid = %i\n",tn->uid) ;
+        printf("    Type_of_node     = %i :: %s\n",
+                          tn->type_of_node, token_trackdb[tn->type_of_node]) ;
+        printf("    Length_of_vector = %i\n",tn->length_of_vector) ;
         exit(1) ;
       }
       if( (idirect != 1 && idirect !=0) || (inext !=1 && inext != -1)){

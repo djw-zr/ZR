@@ -15,7 +15,7 @@
 int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 
   uint        ip  = 0         ;   //  0 = no printing
-  static int  ipp = 0         ;   //  1 = Print first pass only
+  static int  ipp = 1         ;   //  1 = Print first pass only
   int         ic = 0, icc = -1 ;   //  Control
   uint        i, j, k, l, m, n ;
   uint        im, iskip       ;
@@ -29,6 +29,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
   PrimState   *prim_state     ;
   VTXState    *vtx_state      ;
   Matrix4x3   *matrix4x3      ;
+  SignalObj   *signal_obj     ;
   int         gl_display_list ;
   int         gl_tex_ref_no   ;
   int         prim_state_idx  ;
@@ -77,12 +78,44 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 //      ip = l_time_1s && witem && (340 == witem->uid) ;
 //      ip = !strcmp_ic(snode->name,"Dock");
 //      ip = !strcmp_ic(snode->name,"lymtownstabldg");
-      ip = !strcmp_ic(snode->name,"ctn_point_indication") ;
-//      &&   -6177 == witem->world_node->tile_x && 14881 == witem->world_node->tile_y ;
-
+//      ip = !strcmp_ic(snode->name,"ctn_point_indication") ;
+/*
+ *  Triple semaphore at entrance to Lymington Harbour, New Forest Route
+ */
+//      ip =  l_time_5s && 1930 == witem->uid
+//         &&   -6141 == witem->world_node->tile_x && 14888 == witem->world_node->tile_y ;
+/*
+ *  Three light signal at York 440  MECoast route
+ */
+//      ip =  l_time_5s && 590 == witem->uid
+//         &&   -6073 == witem->world_node->tile_x && 15048 == witem->world_node->tile_y ;
+/*
+ *  Platform signal at Mount Victoria - Zig-Zag Route
+ */
+//      ip =  410 == witem->uid
+//                &&  1454 == witem->world_node->tile_x
+//                && 10325 == witem->world_node->tile_y ;
+/*
+ *  Approach signal at Mount Victoria - Zig-Zag Route
+ */
+//           ip =  (414 == witem->uid || 415 == witem->uid)
+//                 &&  1454 == witem->world_node->tile_x
+//                 && 10325 == witem->world_node->tile_y ;
+/*
+ *  Signal outside Philidelphia :  Route USA1
+ */
+//           ip =  4353 == witem->uid
+//                 && -11009 == witem->world_node->tile_x
+//                 &&  14317 == witem->world_node->tile_y ;
+/*
+ *  Points at Lymington pier :  New Forest Route
+ */
+//           ip =  202 == witem->uid
+//           ip =  180 == witem->uid
+//                 && -6141 == witem->world_node->tile_x
+//                 && 14888 == witem->world_node->tile_y ;
       if(!ipp)ip = 0 ;                        // Print on first pass only.
       if(ip) ipp = 0 ;
-//      ip = (l_time_5s && witem->uid == 413) ;
 
 //      ip = l_pd ;
 
@@ -100,6 +133,9 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
       if(ip){
         printf("\n\n =================================================\n") ;
         printf(" Generate display for : %s\n",snode->name) ;
+        printf(" World Item  uid = %i, worldtype = %i %s, filename = %s, anim_value = %f\n",
+                  witem->uid,witem->worldtype,token_idc[witem->worldtype],
+                  witem->filename,witem->anim_value) ;
       }
 #endif
       if(0 == strcmp(snode->name,"underground_marker")) return 0;
@@ -306,7 +342,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  *
  *  Each matrix also has a corresponding animation node.  For fixed parts
  *  these do nothing but for moving parts they include a translation and/or
- *  a rotation.  Three flags are used, with enum values LINEAR_KEY, TCB_KEY
+ *  a rotation.  Three flags are used, with enum values LINEAR_KEY, TCB_ROT
  *  and SLERP_ROT.  In the first two cases the corresponding animation is used
  *  instead of the translation or rotation component of the main matrix.
  *  In the last case the animation is applied in addition to any rotation due to
@@ -325,9 +361,11 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
           vtx_state  = &(snode->vtx_state[ivtx_state]) ;
 /*
  *  Initialise array "ima" for this sub-object
- *  If shape is a signal - skip of this sub-object is not being used
+ *  If shape is a signal - skip if this sub-object is not being used
  */
           im = 0 ;
+          for(i=0;i<10;i++)ima[i] = 0 ;
+
           ima[0] = vtx_state->imatrix ;
           if(witem && SIGNAL_ALT == witem->worldtype &&
                                     witem->u.signal_obj.sm_skip[ima[0]])continue ;
@@ -377,16 +415,25 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
           while(im--){
             matrix4x3   = &(snode->matrix[ima[im]])      ;
             a_lin = a_tcb = 0 ;                  // use matrix flag
-            if(animation && prim_state->name &&
-                            strcmp(prim_state->name,"TRANS")){
+/*
+ *  Chek that object is animated and primitive state is not "TRANS"
+ *  Note program fails if check on prim_state->name is not done
+ */
+            if(animation && (!prim_state->name || (prim_state->name &&
+                            strcmp(prim_state->name,"TRANS") ) ) ){
               anim_node = &(animation->anim_node[ima[im]])  ;
               n_controllers = anim_node->n_controllers      ;
+              if(ip)printf("  CHECK CONTROLLERS  :: n_controllers = %i/n",n_controllers) ;
               for(i=0;i<n_controllers;i++){
                 n_anim_keys = anim_node->controller[i].n_anim_keys ;
                 for(j=0; j< n_anim_keys; j++){
-                  m = anim_node->controller[i].anim_key->type ;
+                  m = anim_node->controller[i].anim_key[j].type ;
                   if(m == TCB_KEY)   a_tcb = 1 ;
+                  if(m == SLERP_ROT) a_tcb = 1 ;
                   if(m == LINEAR_KEY)a_lin = 1 ;
+                  if(ip)printf("    controller = %i, anim_ley = %i, type = %i %s,"
+                               "  a_lin = %i, a_tcb = %i\n",
+                               i, j, m, token_idc[m], a_lin, a_tcb) ;
                 }
               }
             }else{
@@ -400,9 +447,9 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 #if 1
               printf("         shape = %s, sub_object = %i, tri_list = %i\n"
                        "                prim_state = %i, prim_state->name = %s,\n"
-                       "                vertex_state = %i, matrix_type = %i\n",
+                       "                vertex_state = %i, matrix_type = %i, %s\n",
                           snode->name, k, l, prim_state_idx, prim_state->name,
-                                        ivtx_state, matrix4x3->type) ;
+                          ivtx_state, matrix4x3->type, token_mat_type[matrix4x3->type]) ;
 #else
               printf("         shape = %s, sub_object = %i, tri_list = %i\n",
                           snode->name, k, l ) ;
@@ -415,8 +462,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 #endif
                 printf("         Matrix    name = %s\n",matrix4x3->name) ;
                 printf("         PrimState name = %s\n",prim_state->name) ;
-                printf("         Animation  n_controllers = %i\n",
-                     n_controllers) ;
+                printf("         Animation  n_controllers = %i\n",n_controllers) ;
+                printf("         a_lin = %i,  a_tcb = %i\n", a_lin, a_tcb) ;
             }
 /*
  *   First apply main matrices
@@ -475,7 +522,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
                         m,(void *)witem->u.signal_obj.signal[m]) ;
             }
             for(m=0;m<n;m++){
-              printf("  matrix %i, animation[i] = %p\n",
+              printf("  matrix %i, animation[m] = %p\n",
                         m,(void *)witem->animations[m]) ;
             }
           }
@@ -514,10 +561,10 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             }else if(n_controllers == 2){
               c0 = &(anim_node->controller[0]) ;
               c1 = &(anim_node->controller[1]) ;
-              if(c0->type == TCB_ROT && c1->type == LINEAR_POS){
+              if((c0->type == TCB_ROT || c0->type == SLERP_ROT) && c1->type == LINEAR_POS){
                 c0 = &(anim_node->controller[1]) ;
                 c1 = &(anim_node->controller[0]) ;
-              }else if(!(c0->type == TCB_ROT && c1->type == LINEAR_POS)){
+              }else if(!((c0->type == TCB_ROT || c0->type == SLERP_ROT) && c1->type == LINEAR_POS)){
                 n_controllers = 0 ;
               }
             }
@@ -538,14 +585,15 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
                   if(ip){
                     printf(" Animations:  im = %i, ima[im] = %i, ima[im+1] = %i\n",
                               im, ima[im], ima[im+1]) ;
-                    for(j=0;j<(uint)witem->n_animations;j++)
-                        printf(" %p ",(void *)witem->animations[j]) ;
+                    for(j=0;j<(uint)witem->n_animations;j++){
+                      printf(" %p ",(void *)witem->animations[j]) ;
+                    }
                     printf("\n") ;
                   }
                   if(witem->animations[ima[im]]){
                     wa = *witem->animations[ima[im]] ;
                     if(ip)printf("  AAZ  Using animations array im :: wa = %f\n",wa) ;
-                  }else if(ima[im]< witem->n_animations
+                  }else if(ima[im+1] >= 0 && ima[im]< witem->n_animations
                                        && witem->animations[ima[im+1]]){
                     wa = *witem->animations[ima[im+1]] ;
                     if(ip)printf("  AAZ  Using animations array im+1 :: wa = %f\n",wa) ;
@@ -595,7 +643,7 @@ double x, y, z ;
                 z = w0*a0[i0].Z + w1*a0[i1].Z ;
                 glTranslatef((GLfloat) x,(GLfloat) y,(GLfloat) z) ;
                 if(ip || 0){
-                  printf("      Animate Linear Position\n") ;
+                  printf("      Animate LINEAR_POS\n") ;
                   printf("      Animate 0: dw, wa : %f,  %f\n", dw, wa) ;
                   printf("      Animate 0: Weight    : %f,  %f\n",w0,w1) ;
                   printf("      Animate 0: Translate : %f,  %f,  %f\n",
@@ -604,17 +652,17 @@ double x, y, z ;
                                                           a0[i1].X,a0[i1].Y,a0[i1].Z) ;
                   printf("      Animate  : Translate : %f,  %f,  %f\n",x,y,z) ;
                 }
-              }else if(cc->type == TCB_ROT){
+              }else if(cc->type == TCB_ROT || cc->type == SLERP_ROT){
 double x=0.0, y=0.0, z=0.0, s, a, b  ;
 double qx, qy, qz, qw ;
                 if((a0[i0].X*a0[i1].X + a0[i0].Y*a0[i1].Y + a0[i0].Z*a0[i1].Z + a0[i0].W*a0[i1].W) > 0.0){
-                  if(ip)printf("      Animate TCB_ROT  1\n") ;
+                  if(ip)printf("      Animate %s  1\n", token_idc[cc->type]) ;
                   qx = w0*a0[i0].X + w1*a0[i1].X ;
                   qy = w0*a0[i0].Y + w1*a0[i1].Y ;
                   qz = w0*a0[i0].Z + w1*a0[i1].Z ;
                   qw = w0*a0[i0].W + w1*a0[i1].W ;
                 }else{
-                  if(ip)printf("      Animate TCB_ROT  2\n") ;
+                  if(ip)printf("      Animate %s  2\n", token_idc[cc->type]) ;
                   qx = w0*a0[i0].X - w1*a0[i1].X ;
                   qy = w0*a0[i0].Y - w1*a0[i1].Y ;
                   qz = w0*a0[i0].Z - w1*a0[i1].Z ;
@@ -628,7 +676,7 @@ double qx, qy, qz, qw ;
                 a  = acos(qw) ;
 // Skip for very small rotations
                 if(fabs(a)>0.001){
-                  if(ip)printf("      Animate Small rotation\n") ;
+                  if(ip)printf("      Animate Rotation\n") ;
                   s = 1.0/sin(a) ;
                   x = qx*s ;
                   y = qy*s ;
@@ -650,7 +698,8 @@ double qx, qy, qz, qw ;
                   printf("      Animate 1: Rotate    : %f,  %f,  %f,  %f :: %f\n",
                                                       qx, qy, qz, qw,
                                                       qx*qx + qy*qy + qz*qz + qw*qw) ;
-                  printf("      Animate 1: Rotate     : %f : %f,  %f,  %f\n",a,x,y,z) ;
+                  printf("      Animate 1: Rotate     : %f : %f,  %f,  %f\n",
+                                                      a, x, y, z) ;
                 }
               }           //  End logic over type of Controller
 #endif
@@ -758,7 +807,18 @@ double qx, qy, qz, qw ;
 /*
  *  At this stage apply any lights
  */
-          if(witem && witem->worldtype == SIGNAL_ALT  && 1  && 0 == n_controllers
+uint  k;
+          if(ip && witem && witem->worldtype == SIGNAL_ALT){
+            signal_obj = &(witem->u.signal_obj) ;
+            printf("  signal_obj = %p, n_matrices = %i, ima[0] = %i\n",
+            (void *)signal_obj, signal_obj->n_matrices, ima[0]) ;
+            for(k=0;k<signal_obj->n_matrices;k++){
+              printf("  k = %i, sm_skip[k] = %i, sm_signal[k] = %p\n",
+                     k, signal_obj->sm_skip[k],(void *)signal_obj->sm_signal[k]) ;
+            }
+          }
+          if(witem && witem->worldtype == SIGNAL_ALT
+//            && 1  && 0 == n_controllers
              && witem->u.signal_obj.sm_signal[ima[0]] ){
 //            && (!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head1")
 //            || !strcmp_ic(witem->snode->matrix[ima[0]].name,"Head2") ) ) {
@@ -781,7 +841,7 @@ double qx, qy, qz, qw ;
 //            ip = ip && l_time_1s && (witem->uid == 87) ;
 //            ip = l_time_1s && (witem->uid == 340) ;
             if(ip){
-              printf(" ++++++++  Display ++++++++++\n") ;
+              printf(" ++++++++  Display Light ++++++++++\n") ;
               printf(" World item uid = %i, type = %i  %s\n",
                         witem->uid, witem->worldtype, token_idc[witem->worldtype]) ;
               printf(" Sub-object = %i, Matrix = %i, name = %s\n",

@@ -22,7 +22,8 @@ void str2lcnqne(char *strint)      ;  // rmove quotes and extension as well
 char *zr_basename(char *fname)     ;  // basename replacement
 char *zr_extension(char *fname)    ;  // Return filename extension
 char *zr_corename(char *fname)     ;  // Return filename without extension
-int  zr_filename_MS2L(char *pname) ;  // Convert all '\' in filename to '/'
+int  find_msstyle_file(char *pname) ; // Find file with msstyle name
+int  zr_filename_MS2L(char *pname) ;  // Find file with msstyle name
 char *strip_dot_dirs(char *fnane)  ;  //  Strip '/../' and '/./' from string
 int  find_msstyle_file(char *pname) ;  // Find ms style filename
 int  zr_find_msfile2(char *pname)  ;
@@ -69,6 +70,7 @@ int   find_track_item_posn(TrkDataBase *, int id,
 int   init_tsec_db(void) ;
 int   print_tsec_section(int section_index) ;
 int   print_tsec_shape(int shape_index) ;
+int   print_world_item_data(int tile_x, int tile_y, int uid) ;
 
 int   make_tile_vertex_arrays(void)                    ;
 int   make_tile_vertex_array(TileListNode *tl_node)    ;
@@ -105,12 +107,13 @@ int   update_transfer(void)         ;
 
 int   read_tr_items_files(char *filename) ;
 int   read_tr_items(MSfile *fp, char *header);
-int   read_sigscr_file(char *dir, char *file) ;
+int   load_sigscr_file(char *dir, char *file) ;
 char  *sigscr_token_string(int i) ;
 int   process_signal_script(SignalDB *signal) ;
 int   add_texture_pointers_to_signals(void) ;
 
-int find_next_signal_mr(SignalDB *signal, int itype, int itype2) ;
+int  find_next_signal_mr(SignalDB *signal, int itype, int itype2) ;
+int  print_signal_data(SignalDB *signal) ;
 
 int   init_road_db(char *filename) ;
 void  read_road_path(TrkSector *road_path, MSfile *msfile) ;

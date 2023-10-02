@@ -54,13 +54,21 @@ typedef struct msblock {
 /*
  *  MSfile structure used to save data used while reading each
  *  MSTS format file whether text or binary
+ *
+ *  GNU/Linux like most other modern software uses the UTF-8
+ *  representation of characters for text.
+ *
+ *  However MSTS traditionally used utf-16 two byte characters.
+ *  In disk files these were stroed in little endian order,
+ *  i.e. with the least significant byte first.
+ *
  */
 
 typedef struct msfile {              // MSTS files
   FILE *fp           ;                 // Standard file pointer
   char *filename     ;                 // File name
-  int  unicode       ;                 // Unicode file
-  int  ascii         ;                 // Ascii file
+  int  utf16le       ;                 // File uses UTF-16
+  int  utf8          ;                 // File uses UTF-8
   int  compress      ;                 // Compressed file (gzip?)
   int  text          ;                 // Text file
   int  binary        ;                 // Binary file
@@ -118,13 +126,18 @@ typedef struct pdbnode {
   int    MaxLineVoltage        ;
   int    RouteStart[4]         ;
 
+  int    ORTSSwitchSMSNumber      ;
+  int    ORTSCurveSMSNumber       ;
+  int    ORTSCurveSwitchSMSNumber ;
+
   double SpeedLimit            ;
   double TerrainErrorScale     ;
   double TempRestrictedSpeed   ;
   double DerailScale           ;
   double TimetableTollerance   ;
   double GravityScale          ;
-  double ForestClearDistance   ;
+
+  double ORTSForestClearDistance ;
 
   struct envnode  Environment[12] ;
 
@@ -1009,7 +1022,7 @@ typedef struct shapenode {
   PrimState          *prim_state       ;
 
   uint               dlevel_selection  ;
-  uint               nhierarchy        ;    //  CONFUSE WITH distance level !!!!  Should be hier...
+  uint               nhierarchy        ;    //  CONFUSE WITH distance level !!!!  Should be here...  ??
   int                *hierarchy        ;
   uint               *hierarchy_flag   ;    //  1=Wheel, 2=Bogie
   uint               n_lod_controls    ;

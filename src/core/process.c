@@ -68,23 +68,30 @@ windir                         C:\Windows
  */
 void process_defaults(){
 
-int    i             ;
+int    i, n, n_dirs  ;
 int    ip = 0        ;     // 0 = no printing
 size_t slen, nread, ll=128 ;
 char   *home         ;     // Full name of user's home directory
 char   *dotdir       ;     // Full name of .zr directory
 char   *config       ;     // Full name of config file
 char   *fonts        ;     // Full name of fonts file
+char   *routes_dir   ;
 char   *line = NULL  ;
 char   *token_a[3]   ;
 char   *token        ;
+char   *string1, *string2 ;
 FILE   *fptr = NULL  ;     // Pointer to config file
 DIR    *dotzr        ;     // DIR pointer to .zr directory
 DIR    *fontdir      ;     // DIR pointer to fonts directory
+BTree  *ORdirs = NULL ;    // BTree with list of directories
+BTree  *bt_node      ;
+BTree  *bt_dirs      ;
+char   *routes = "/Routes"    ;
 char *my_name = "process_defaults" ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
       token_a[0] = token_a[1] = token_a[2] = NULL ;
+      reset_bt_count() ;           //  Reset counter of ORdirs
 
 //  Find users home directory
 #ifdef WINDOWS
@@ -217,34 +224,158 @@ char *my_name = "process_defaults" ;
 
         token = strtok(NULL," \n\r\t");
         if((token==NULL))continue ;         //  If no 3rd token skip line
+        while(token[strlen(token)-1] == '/')
+              token[strlen(token)-1] = '\0' ;  // Remove any final '/'
         free(token_a[2]) ;
         token_a[2] = strdup(token) ;
 
         if(!strcmp(token_a[0],"MSTSdir")){
+#if 0
           free(MSTSdir);
           MSTSdir = token_a[2];
           token_a[2] = NULL ;               //  Leave string for MSTSdir
-        }
-        if(!strcmp(token_a[0],"ORdir")){
+#else
+          free(token_a[2]) ; token_a[2] = NULL ;
+          printf("  Token MSTSdir no longer used\n") ;
+#endif
+        }else if(!strcmp(token_a[0],"ORdir")){
           free(ORdir);
           ORdir = token_a[2];
           token_a[2] = NULL ;               //  Remove link to string
-        }
-        if(!strcmp(token_a[0],"ORroutedir")){
+/*
+ *  Find basename of directory
+ */
+          string1 = strdup(ORdir) ;
+          string2 = zr_basename(string1) ;
+          if(0 == strlen(string2)){
+            printf("  ORdir name not recognised.  Full name = %s\n",ORdir);
+            continue ;
+          }
+/*
+ *  Add top level directory to Btree if it is new
+ */
+          if(!find_btree(ORdirs,string2)){
+            ORdirs = insert_node(ORdirs,strdup(string2),strdup(ORdir)) ;
+            increment_bt_count((void *)ORdirs) ;
+          }
+          free(string1) ;
+          free(string2) ;
+        }else if(!strcmp(token_a[0],"ORroutedir")){
           free(ORroutedir);
           ORroutedir = token_a[2];
+          printf("  Token ORroutedir no longer used\n") ;
           token_a[2] = NULL ;               //  Remove link to string
+        }else if(!strcmp(token_a[0],"ORroute")){
+          if(ORroute){
+            printf("  Token ORroute redefined\n") ;
+            free(ORroute) ;
+          }
+          ORroute = token_a[2] ;
+          token_a[2] = NULL ;
         }
       }
-// Free malloc storage
+/*
+ *  If number of directories in top level lisy is greater than one
+ *     ask user to choose:
+ */
+      n_dirs = return_bt_count() ;
+      printf("  Number of ORdir directories = %i\n",n_dirs) ;
+      printf("    List of directories:\n") ;
+      print_bt_nodes_with_count_and_index(ORdirs) ;
+
+      if(n_dirs > 1){
+        n = 0 ;
+        while(n<1 || n>n_dirs){
+          printf("  Enter index of top level directory to use (0 to exit):\n") ;
+          scanf("%i",&n) ;
+          if(n<1) exit(0) ;
+        }
+      }else if(1==n_dirs){
+        n = 1 ;
+      }else{
+        printf("  Error:  Configuration file contains no 'ORdir'.\n") ;
+        printf("          Program stopping ... \n") ;
+        exit(0) ;
+      }
+      bt_node = find_bt_node_with_index(ORdirs,n) ;
+      printf("  Found  t_node = %p\n",(void *) bt_node) ;
+      if(bt_node)printf("    index = %s\n    name = %s\n",
+            (char *)bt_node->index, (char *)bt_node->data) ;
+      ORdir = (char *)bt_node->data ;
+/*
+ *  If ORroute is not defined ask user to choose:
+ */
+      if(ORdir && !ORroute){
+        reset_bt_count() ;
+        n = strlen(ORdir) + strlen(routes) + 2 ;
+        routes_dir = malloc(n*sizeof(char)) ;
+        strcpy(routes_dir,ORdir)  ;
+        strcat(routes_dir,routes) ;
+        zr_find_msfile2(routes_dir) ;
+        bt_dirs = bt_subdirectory_list(routes_dir) ;
+        n_dirs  = return_bt_count() ;
+
+        printf("  Number of routes = %i\n",n_dirs) ;
+        printf("    List of routes:\n") ;
+        print_bt_nodes_with_count_and_index(bt_dirs) ;
+        if(n_dirs > 1){
+          n = 0 ;
+          while(n<1 || n>n_dirs){
+            printf("  Enter index of route to use (0 to exit):\n") ;
+            scanf("%i",&n) ;
+            if(n<1) exit(0) ;
+          }
+          bt_node = find_bt_node_with_index(bt_dirs,n) ;
+        }else if(n_dirs == 1){
+          bt_node = find_bt_node_with_index(bt_dirs,1) ;
+        }else{
+          printf("  ERROR:  No routes found.\n") ;
+          printf("          Program stopping ... \n") ;
+          exit(0) ;
+        }
+        ORroute = strdup(bt_node->index) ;
+        ORroutedir = (char *)bt_node->data ;
+        printf("  Found  t_node = %p\n",(void *) bt_node) ;
+        printf("    ORroute = %s\n    ORroutedir = %s\n",
+                     ORroute, ORroutedir) ;
+
+/*
+ *  If only one ORdir and ORroute specified construct Route directory
+ */
+      }else if(!ORroutedir && ORdir && ORroute){
+        n = strlen(ORdir) + strlen(routes) + strlen(ORroute) + 1 ;
+        if(ORroutedir)free(ORroutedir) ;
+        ORroutedir = (char *)malloc(n) ;
+        strcpy(ORroutedir,ORdir) ;
+        strcat(ORroutedir,routes)   ;
+        strcat(ORroutedir,ORroute) ;
+      }
+/*
+ *  Check for error
+ */
+      if(!ORdir || !ORroutedir){
+        printf("  ERROR.  Base directory or route not set.\n") ;
+        printf("    Base directory  = %s\n",ORdir)      ;
+        printf("    Route directory = %s\n",ORroutedir) ;
+        printf("    Program stopping ... \n") ;
+        exit(0) ;
+      }
+      printf("  ORdir      = %s\n",ORdir) ;
+      printf("  ORroute    = %s\n",ORroute) ;
+      printf("  ORroutedir = %s\n",ORroutedir) ;
+/*
+ *  Free malloc storage
+ */
       gclose(fptr) ;
       free(dotdir) ;
       free(config) ;
       free(line)   ;
       for(i=0;i<3;i++)free(token_a[i]);
 
+      printf("  AA ORdir   = %s\n",ORdir) ;
+      printf("  ORroute    = %s\n",ORroute) ;
+      printf("  ORroutedir = %s\n",ORroutedir) ;
       if(ip){
-        printf("   MSTSdir    = %s\n",MSTSdir);
         printf("   ORdir      = %s\n",ORdir);
         printf("   ORroutedir = %s\n",ORroutedir);
       }

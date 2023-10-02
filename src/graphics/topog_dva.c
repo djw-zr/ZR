@@ -39,6 +39,7 @@ GLuint         *index1, nindex1;
 
 int            nv, iv ;
 VANode         *va_node ;
+TerrainData    *terrain ;
 
 GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
 GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
@@ -47,10 +48,19 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 
       if(ip)printf(" Enter routine %s : %i %i : %i \n",
         my_name,tnode->tilex,tnode->tiley,tnode->needed) ;
+
+      if(tnode == NULL) return 0 ;
+      terrain = &(tnode->terrain_data) ;
+
 //      if(tnode->needed == 0) return 0;
       if(!land_texture->gl_tex_ref_no){
         printf("  ERROR.  Routine %s called when land_texture not installed\n",
                                                                        my_name);
+        printf("          land_texture = %p\n",(void *)land_texture);
+        printf("          land_texture = %s\n",land_texture->name);
+        printf("          basic        = %i\n",land_texture->basic);
+        printf("          needed       = %i\n",land_texture->needed);
+        printf("          loaded       = %i\n",land_texture->loaded);
         exit(1) ;
       }
 /*
@@ -73,7 +83,7 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
  *  Main Loop
  */
 
-      nv = tnode->terrain_data.nbx*tnode->terrain_data.nby ;
+      nv = terrain->nbx * terrain->nby ;
       if(ip)printf("  Dimensions %i %i : %i\n",
              tnode->terrain_data.nbx,tnode->terrain_data.nby,nv) ;
       for(iv=0;iv<nv;iv++){

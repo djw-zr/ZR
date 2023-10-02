@@ -574,13 +574,13 @@ static const yytype_uint8 yytranslate[] =
   /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_uint8 yyrline[] =
 {
-       0,   134,   134,   142,   146,   151,   156,   158,   162,   164,
-     167,   170,   174,   175,   176,   177,   178,   179,   180,   181,
-     182,   183,   184,   185,   186,   187,   188,   192,   193,   196,
-     197,   198,   199,   200,   201,   202,   203,   204,   205,   206,
-     207,   208,   209,   210,   211,   212,   213,   214,   215,   216,
-     217,   218,   219,   220,   221,   222,   223,   224,   228,   229,
-     233,   234,   235
+       0,   134,   134,   157,   161,   166,   171,   173,   177,   179,
+     182,   185,   189,   190,   191,   192,   193,   194,   195,   196,
+     197,   198,   199,   200,   201,   202,   203,   207,   208,   211,
+     212,   213,   214,   215,   216,   217,   218,   219,   220,   221,
+     222,   223,   224,   225,   226,   227,   228,   229,   230,   231,
+     232,   233,   234,   235,   236,   237,   238,   239,   243,   244,
+     248,   249,   250
 };
 #endif
 
@@ -1532,387 +1532,403 @@ yyreduce:
         case 2:
 #line 134 "bas.y" /* yacc.c:1646  */
     {
+    nodeType  *node, *last_node ;
+    int       op_index ;
                                    if(ip)printf("\n BISON: EXIT MSTS COMPILER ROUTINE\n");
-                                   (yyval.nPtr) = opr(SC_PROGRAM,1,(yyvsp[0].nPtr)) ;
-                                   *sTree = (yyval.nPtr) ;
-                                   return 0; /*exit(0)*/; }
-#line 1540 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 3:
-#line 142 "bas.y" /* yacc.c:1646  */
-    {
-                                   if(ip)printf("\n BISON: Found SC_SCRIPT_LIST 1\n");
-                                   (yyval.nPtr) = (yyvsp[0].nPtr);                }
-#line 1548 "y.tab.c" /* yacc.c:1646  */
-    break;
-
-  case 4:
-#line 146 "bas.y" /* yacc.c:1646  */
-    {
-                                   if(ip)printf("\n BISON: Found SC_SCRIPT_LIST 2\n");
-                                   (yyval.nPtr) = opr(SC_SCRIPT_LIST, 2, (yyvsp[-1].nPtr), (yyvsp[0].nPtr)); }
+                                   if(*sTree == NULL){
+                                     (yyval.nPtr) = opr(SC_PROGRAM,1,(yyvsp[0].nPtr)) ;
+                                     *sTree = (yyval.nPtr) ;
+                                     return 0; /*exit(0)*/;
+                                   }else{
+                                     last_node = NULL ;
+                                     for(node=*sTree; node != NULL && node->opr.oper != SC_SCRIPT ; node= node->opr.op[0]){
+                                       last_node = node ;
+                                     }
+                                     if(node == NULL){
+                                       last_node->opr.op[0] = (yyval.nPtr) ;
+                                     }else{
+                                       printf("  ERROR :: Unable to join script trees\n") ;
+                                     }
+                                     return 0;
+                                   }
+                                 }
 #line 1556 "y.tab.c" /* yacc.c:1646  */
     break;
 
-  case 5:
-#line 151 "bas.y" /* yacc.c:1646  */
+  case 3:
+#line 157 "bas.y" /* yacc.c:1646  */
     {
-                                   if(ip)printf("\n BISON: Found SC_SCRIPT\n");
-                                   (yyval.nPtr) = opr(SC_SCRIPT,3,str((yyvsp[-2].sValue)),(yyvsp[-1].nPtr),(yyvsp[0].nPtr)) ; }
+                                   if(ip)printf("\n BISON: Found SC_SCRIPT_LIST 1\n");
+                                   (yyval.nPtr) = opr(SC_SCRIPT_LIST, 2, NULL, (yyvsp[0].nPtr)); }
 #line 1564 "y.tab.c" /* yacc.c:1646  */
     break;
 
+  case 4:
+#line 161 "bas.y" /* yacc.c:1646  */
+    {
+                                   if(ip)printf("\n BISON: Found SC_SCRIPT_LIST 2\n");
+                                   (yyval.nPtr) = opr(SC_SCRIPT_LIST, 2, (yyvsp[-1].nPtr), (yyvsp[0].nPtr)); }
+#line 1572 "y.tab.c" /* yacc.c:1646  */
+    break;
+
+  case 5:
+#line 166 "bas.y" /* yacc.c:1646  */
+    {
+                                   if(ip)printf("\n BISON: Found SC_SCRIPT\n");
+                                   (yyval.nPtr) = opr(SC_SCRIPT,3,str((yyvsp[-2].sValue)),(yyvsp[-1].nPtr),(yyvsp[0].nPtr)) ; }
+#line 1580 "y.tab.c" /* yacc.c:1646  */
+    break;
+
   case 6:
-#line 156 "bas.y" /* yacc.c:1646  */
+#line 171 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found DEFINITION\n");
                                    (yyval.nPtr) = (yyvsp[0].nPtr);                            }
-#line 1571 "y.tab.c" /* yacc.c:1646  */
+#line 1587 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 7:
-#line 158 "bas.y" /* yacc.c:1646  */
+#line 173 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found DEFINITION LIST\n");
                                    (yyval.nPtr) = opr(SC_DEF_LIST, 2, (yyvsp[-1].nPtr), (yyvsp[0].nPtr));   }
-#line 1578 "y.tab.c" /* yacc.c:1646  */
+#line 1594 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 8:
-#line 162 "bas.y" /* yacc.c:1646  */
+#line 177 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found EXTERN FLOAT FUNCTION\n");
                                    (yyval.nPtr) = opr(SC_DEF_EFUN, 1, str((yyvsp[-2].sValue)));  }
-#line 1585 "y.tab.c" /* yacc.c:1646  */
+#line 1601 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 9:
-#line 164 "bas.y" /* yacc.c:1646  */
+#line 179 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found EXTERN FLOAT FUNCTION\n");
                                    (yyval.nPtr) = opr(SC_DEF_EFUN, 1, str((yyvsp[-3].sValue)));  }
-#line 1592 "y.tab.c" /* yacc.c:1646  */
+#line 1608 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 10:
-#line 167 "bas.y" /* yacc.c:1646  */
+#line 182 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found EXTERN FLOAT VARIABLE\n");
                                    (yyval.nPtr) = opr(SC_DEF_EVAR, 1, str((yyvsp[-1].sValue)));  }
-#line 1599 "y.tab.c" /* yacc.c:1646  */
+#line 1615 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 11:
-#line 170 "bas.y" /* yacc.c:1646  */
+#line 185 "bas.y" /* yacc.c:1646  */
     { if(ip)printf("\n BISON: Found EXTERN FLOAT VARIABLE\n");
                                    (yyval.nPtr) = opr(SC_DEF_VAR, 1, str((yyvsp[-1].sValue)));    }
-#line 1606 "y.tab.c" /* yacc.c:1646  */
+#line 1622 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 12:
-#line 174 "bas.y" /* yacc.c:1646  */
+#line 189 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_NO_OP, 2, NULL, NULL);   }
-#line 1612 "y.tab.c" /* yacc.c:1646  */
+#line 1628 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
-#line 175 "bas.y" /* yacc.c:1646  */
+#line 190 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[-1].nPtr) ;                            }
-#line 1618 "y.tab.c" /* yacc.c:1646  */
+#line 1634 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
-#line 176 "bas.y" /* yacc.c:1646  */
+#line 191 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_PRINT, 1, (yyvsp[-1].nPtr)) ;          }
-#line 1624 "y.tab.c" /* yacc.c:1646  */
+#line 1640 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
-#line 177 "bas.y" /* yacc.c:1646  */
+#line 192 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_ASSIGN, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr)); }
-#line 1630 "y.tab.c" /* yacc.c:1646  */
+#line 1646 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
-#line 178 "bas.y" /* yacc.c:1646  */
+#line 193 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IAS, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));    }
-#line 1636 "y.tab.c" /* yacc.c:1646  */
+#line 1652 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 17:
-#line 179 "bas.y" /* yacc.c:1646  */
+#line 194 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_PE, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));     }
-#line 1642 "y.tab.c" /* yacc.c:1646  */
+#line 1658 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 18:
-#line 180 "bas.y" /* yacc.c:1646  */
+#line 195 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_ME, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));     }
-#line 1648 "y.tab.c" /* yacc.c:1646  */
+#line 1664 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 19:
-#line 181 "bas.y" /* yacc.c:1646  */
+#line 196 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_XE, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));     }
-#line 1654 "y.tab.c" /* yacc.c:1646  */
+#line 1670 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 20:
-#line 182 "bas.y" /* yacc.c:1646  */
+#line 197 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_DE, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));     }
-#line 1660 "y.tab.c" /* yacc.c:1646  */
+#line 1676 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 21:
-#line 183 "bas.y" /* yacc.c:1646  */
+#line 198 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IASD, 2, str((yyvsp[-3].sValue)), (yyvsp[-1].nPtr));   }
-#line 1666 "y.tab.c" /* yacc.c:1646  */
+#line 1682 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 22:
-#line 184 "bas.y" /* yacc.c:1646  */
+#line 199 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_WHILE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));       }
-#line 1672 "y.tab.c" /* yacc.c:1646  */
+#line 1688 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 23:
-#line 185 "bas.y" /* yacc.c:1646  */
+#line 200 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IF, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));      }
-#line 1678 "y.tab.c" /* yacc.c:1646  */
+#line 1694 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 24:
-#line 186 "bas.y" /* yacc.c:1646  */
+#line 201 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IF, 3, (yyvsp[-4].nPtr), (yyvsp[-2].nPtr), (yyvsp[0].nPtr));  }
-#line 1684 "y.tab.c" /* yacc.c:1646  */
+#line 1700 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 25:
-#line 187 "bas.y" /* yacc.c:1646  */
+#line 202 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[-1].nPtr);                             }
-#line 1690 "y.tab.c" /* yacc.c:1646  */
+#line 1706 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 26:
-#line 188 "bas.y" /* yacc.c:1646  */
+#line 203 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_EXIT, 1, NULL);          }
-#line 1696 "y.tab.c" /* yacc.c:1646  */
+#line 1712 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 27:
-#line 192 "bas.y" /* yacc.c:1646  */
+#line 207 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[0].nPtr);                             }
-#line 1702 "y.tab.c" /* yacc.c:1646  */
+#line 1718 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 28:
-#line 193 "bas.y" /* yacc.c:1646  */
+#line 208 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_STMT_LIST, 2, (yyvsp[-1].nPtr), (yyvsp[0].nPtr));   }
-#line 1708 "y.tab.c" /* yacc.c:1646  */
+#line 1724 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 29:
-#line 196 "bas.y" /* yacc.c:1646  */
+#line 211 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_VARIABLE,1,str((yyvsp[0].sValue))) ;    }
-#line 1714 "y.tab.c" /* yacc.c:1646  */
+#line 1730 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 30:
-#line 197 "bas.y" /* yacc.c:1646  */
+#line 212 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IVALUE,1,str((yyvsp[0].sValue))) ;      }
-#line 1720 "y.tab.c" /* yacc.c:1646  */
+#line 1736 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 31:
-#line 198 "bas.y" /* yacc.c:1646  */
+#line 213 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_FVALUE,1,str((yyvsp[0].sValue))) ;      }
-#line 1726 "y.tab.c" /* yacc.c:1646  */
+#line 1742 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 32:
-#line 199 "bas.y" /* yacc.c:1646  */
+#line 214 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_UMINUS, 1, (yyvsp[0].nPtr));          }
-#line 1732 "y.tab.c" /* yacc.c:1646  */
+#line 1748 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 33:
-#line 200 "bas.y" /* yacc.c:1646  */
+#line 215 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[0].nPtr) ;                            }
-#line 1738 "y.tab.c" /* yacc.c:1646  */
+#line 1754 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 34:
-#line 201 "bas.y" /* yacc.c:1646  */
+#line 216 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('+', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1744 "y.tab.c" /* yacc.c:1646  */
+#line 1760 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 35:
-#line 202 "bas.y" /* yacc.c:1646  */
+#line 217 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('-', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1750 "y.tab.c" /* yacc.c:1646  */
+#line 1766 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 36:
-#line 203 "bas.y" /* yacc.c:1646  */
+#line 218 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('*', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1756 "y.tab.c" /* yacc.c:1646  */
+#line 1772 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 37:
-#line 204 "bas.y" /* yacc.c:1646  */
+#line 219 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('/', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1762 "y.tab.c" /* yacc.c:1646  */
+#line 1778 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 38:
-#line 205 "bas.y" /* yacc.c:1646  */
+#line 220 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('<', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1768 "y.tab.c" /* yacc.c:1646  */
+#line 1784 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 39:
-#line 206 "bas.y" /* yacc.c:1646  */
+#line 221 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr('>', 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));            }
-#line 1774 "y.tab.c" /* yacc.c:1646  */
+#line 1790 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 40:
-#line 207 "bas.y" /* yacc.c:1646  */
+#line 222 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_GE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));          }
-#line 1780 "y.tab.c" /* yacc.c:1646  */
+#line 1796 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 41:
-#line 208 "bas.y" /* yacc.c:1646  */
+#line 223 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_LE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));          }
-#line 1786 "y.tab.c" /* yacc.c:1646  */
+#line 1802 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 42:
-#line 209 "bas.y" /* yacc.c:1646  */
+#line 224 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_NE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));          }
-#line 1792 "y.tab.c" /* yacc.c:1646  */
+#line 1808 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 43:
-#line 210 "bas.y" /* yacc.c:1646  */
+#line 225 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_EQ, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));          }
-#line 1798 "y.tab.c" /* yacc.c:1646  */
+#line 1814 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 44:
-#line 211 "bas.y" /* yacc.c:1646  */
+#line 226 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IGT, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1804 "y.tab.c" /* yacc.c:1646  */
+#line 1820 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 45:
-#line 212 "bas.y" /* yacc.c:1646  */
+#line 227 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_ILT, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1810 "y.tab.c" /* yacc.c:1646  */
+#line 1826 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 46:
-#line 213 "bas.y" /* yacc.c:1646  */
+#line 228 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IGE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1816 "y.tab.c" /* yacc.c:1646  */
+#line 1832 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 47:
-#line 214 "bas.y" /* yacc.c:1646  */
+#line 229 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_ILE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1822 "y.tab.c" /* yacc.c:1646  */
+#line 1838 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 48:
-#line 215 "bas.y" /* yacc.c:1646  */
+#line 230 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_IEQ, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1828 "y.tab.c" /* yacc.c:1646  */
+#line 1844 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 49:
-#line 216 "bas.y" /* yacc.c:1646  */
+#line 231 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_INE, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1834 "y.tab.c" /* yacc.c:1646  */
+#line 1850 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 50:
-#line 217 "bas.y" /* yacc.c:1646  */
+#line 232 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[-1].nPtr) ;                            }
-#line 1840 "y.tab.c" /* yacc.c:1646  */
+#line 1856 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 51:
-#line 218 "bas.y" /* yacc.c:1646  */
+#line 233 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_NOT, 1, (yyvsp[0].nPtr));             }
-#line 1846 "y.tab.c" /* yacc.c:1646  */
+#line 1862 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 52:
-#line 219 "bas.y" /* yacc.c:1646  */
+#line 234 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_NOT, 1, (yyvsp[0].nPtr));             }
-#line 1852 "y.tab.c" /* yacc.c:1646  */
+#line 1868 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 53:
-#line 220 "bas.y" /* yacc.c:1646  */
+#line 235 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_INT, 1, (yyvsp[0].nPtr));             }
-#line 1858 "y.tab.c" /* yacc.c:1646  */
+#line 1874 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 54:
-#line 221 "bas.y" /* yacc.c:1646  */
+#line 236 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_AND, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1864 "y.tab.c" /* yacc.c:1646  */
+#line 1880 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 55:
-#line 222 "bas.y" /* yacc.c:1646  */
+#line 237 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_OR, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));          }
-#line 1870 "y.tab.c" /* yacc.c:1646  */
+#line 1886 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 56:
-#line 223 "bas.y" /* yacc.c:1646  */
+#line 238 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_EOR, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1876 "y.tab.c" /* yacc.c:1646  */
+#line 1892 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 57:
-#line 224 "bas.y" /* yacc.c:1646  */
+#line 239 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_EOR, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));         }
-#line 1882 "y.tab.c" /* yacc.c:1646  */
+#line 1898 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 58:
-#line 228 "bas.y" /* yacc.c:1646  */
+#line 243 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = (yyvsp[0].nPtr) ;                            }
-#line 1888 "y.tab.c" /* yacc.c:1646  */
+#line 1904 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 59:
-#line 229 "bas.y" /* yacc.c:1646  */
+#line 244 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_EXPR_LIST, 2, (yyvsp[-2].nPtr), (yyvsp[0].nPtr));   }
-#line 1894 "y.tab.c" /* yacc.c:1646  */
+#line 1910 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 60:
-#line 233 "bas.y" /* yacc.c:1646  */
+#line 248 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_FUNCTION,1,str((yyvsp[-1].sValue))) ;    }
-#line 1900 "y.tab.c" /* yacc.c:1646  */
+#line 1916 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 61:
-#line 234 "bas.y" /* yacc.c:1646  */
+#line 249 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_FUNCTION,1,str((yyvsp[-2].sValue))) ;    }
-#line 1906 "y.tab.c" /* yacc.c:1646  */
+#line 1922 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 62:
-#line 235 "bas.y" /* yacc.c:1646  */
+#line 250 "bas.y" /* yacc.c:1646  */
     { (yyval.nPtr) = opr(SC_FUNCTION,2,str((yyvsp[-3].sValue)),(yyvsp[-1].nPtr)) ; }
-#line 1912 "y.tab.c" /* yacc.c:1646  */
+#line 1928 "y.tab.c" /* yacc.c:1646  */
     break;
 
 
-#line 1916 "y.tab.c" /* yacc.c:1646  */
+#line 1932 "y.tab.c" /* yacc.c:1646  */
       default: break;
     }
   /* User semantic actions sometimes alter yychar, and that requires
@@ -2140,7 +2156,7 @@ yyreturn:
 #endif
   return yyresult;
 }
-#line 238 "bas.y" /* yacc.c:1906  */
+#line 253 "bas.y" /* yacc.c:1906  */
 
 /*
  *  C Routines used to generate tree

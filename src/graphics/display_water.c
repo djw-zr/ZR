@@ -37,7 +37,7 @@ void display_topog_water(TileListNode *tl_node){
       h_ne = (t_data->terrain_water_height_offset_NE - tile_h0)*ti ;
       h_nw = (t_data->terrain_water_height_offset_NW - tile_h0)*ti ;
 
-//      ip = (tl_node->tilex == 1448 && tl_node->tiley==10331) ;
+      ip = (tl_node->tilex == -6074 && tl_node->tiley==14921) ;
 //      ip = (tl_node->tilex == 1450 && tl_node->tiley==10331) ;
       if(ip){
         printf("  Water :: %i %i :: %f %f :: %f %f %f %f :: %f\n",

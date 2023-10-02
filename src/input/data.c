@@ -21,6 +21,7 @@
  *          is used.
  * *****************************************************************************
  */
+char* find_trk_file() ;
 
 int init_data_structures(){
 
@@ -29,52 +30,78 @@ int init_data_structures(){
  */
 
 #if defined ROUTE_MSTS  || defined ROUTE_AU_NSW_SW_SS
-  char *pdb_file = msts_pdb_file ;
-  char *tdb_file = msts_tdb_file ;
-  char *rdb_file = msts_rdb_file ;
+  char *pdb_file0 = msts_pdb_file ;
+  char *tdb_file0 = msts_tdb_file ;
+  char *rdb_file0 = msts_rdb_file ;
 #elif defined ROUTE_NEW_FOREST
 // Project file : Name, Description, Route start
-  char pdb_file[] = "Watersnake.trk" ;
+  char pdb_file0[] = "Watersnake.trk" ;
 // Track data base : nodes, crossings etc.
-  char tdb_file[] = "Watersnake.tdb" ;
+  char tdb_file0[] = "Watersnake.tdb" ;
 // Road data base  : nodes etc.
-  char rdb_file[] = "Watersnake.rdb" ;
+  char rdb_file0[] = "Watersnake.rdb" ;
 #else
 // Project file : Name, Description, Route start
-  char pdb_file[] = "au_great_zig_zag.trk" ;
+  char pdb_file0[] = "au_great_zig_zag.trk" ;
 // Track data base : nodes, crossings etc.
-  char tdb_file[] = "au_great_zig_zag.tdb" ;
+  char tdb_file0[] = "au_great_zig_zag.tdb" ;
 // Road data base  : nodes etc.
-  char rdb_file[] = "au_great_zig_zag.rdb" ;
+  char rdb_file0[] = "au_great_zig_zag.rdb" ;
 // Splash Image
 //  char spl_file[] = "au_great_zig_zag.ace" ;
 #endif
   char spl_file[] = "au_great_zig_zag.ace" ;
 
-uint           i      ;
+char *pdb_file ;
+char *tdb_file ;
+char *rdb_file ;
+
+uint           i, n, iret   ;
 uint           ip = 0  ;  //  0 = no printing
 TileListNode   *tl_node ;
 ShapeNode      *snode  ;
 WorldNode      *wnode  ;
 WorldItem      *witem  ;
-TrkSector    *tnnode ;
-TrkItem    *tinode ;
+TrkSector      *tnnode ;
+TrkItem        *tinode ;
 int            wtype   ;
-TextureNode    *tx_node  ;
+TextureNode    *tx_node ;
 DynProfile     *dnode  ;
 RawWagonNode   *rwnode ;
 SigScriptFile  *sig_script ;
+SignalDB       *signal ;
+BTree          *btree  ;
 char           my_name[] = "init_data_structures" ;
 
       printf("***********************************************************\n") ;
       printf(" Enter %s\n",my_name) ;
       enum_btree_init() ;
+      printf("  DD ORdir   = %s\n",ORdir) ;
+      printf("  ORroute    = %s\n",ORroute) ;
+      printf("  ORroutedir = %s\n",ORroutedir) ;
+
+#if 0
+      pdb_file = pdb_file0 ;
+      tdb_file = tdb_file0 ;
+      rdb_file = rdb_file0 ;
+#else
+      printf("  Construct names.  ORroute = %s\n",ORroute) ;
+      n = strlen(ORroute) + 5 ;
+      pdb_file = (char *)malloc(n) ;
+      strcpy(pdb_file,ORroute) ; strcat(pdb_file,".trk") ;
+#endif
+      iret = zr_find_msfile2(pdb_file) ;
+      if(iret){
+        free(pdb_file) ;
+        pdb_file = find_trk_file() ;
+        if(!pdb_file){
+          printf("   pdb_file not found.  File = %s\n",pdb_file) ;
+          exit(0) ;
+        }
+      }
 #if 1
       printf("   pdb_file = %s\n",pdb_file) ;
-      printf("   tdb_file = %s\n",tdb_file) ;
-      printf("   rdb_file = %s\n",rdb_file) ;
 #endif
-//      if(1)exit(0) ;
 /*
  * *****************************************************************************
  *  First read the project files in the route directory. In the
@@ -91,6 +118,14 @@ char           my_name[] = "init_data_structures" ;
       printf("***********************************************************\n") ;
       printf("   Read OR project file\n");
       init_pdb(pdb_file) ;
+      n = strlen(pdb_beg->FileName) + 5;
+      tdb_file = (char *)malloc(n) ;
+      rdb_file = (char *)malloc(n) ;
+      strcpy(tdb_file,pdb_beg->FileName) ; strcat(tdb_file,".tdb") ;
+      strcpy(rdb_file,pdb_beg->FileName) ; strcat(rdb_file,".rdb") ;
+      printf("   tdb_file = %s\n",tdb_file) ;
+      printf("   rdb_file = %s\n",rdb_file) ;
+
 //   Check that all files have been close
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
@@ -179,7 +214,9 @@ char           my_name[] = "init_data_structures" ;
       for(wnode=worldlist_beg; wnode!=NULL; wnode=wnode->next){
         load_world(wnode) ;
         bt_walk_a2z(wnode->shape_tree, add_world_shapes_to_master) ;
+#ifdef OPENAL
         load_world_soundfile(wnode) ;
+#endif
       }
       if(ip)dump_btree(shape_master,0,"X") ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -354,11 +391,14 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load shape files\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
-        if(ip)printf(" data :: shape name = %s :: %s\n",snode->name, snode->s_file) ;
+        if(ip || 0)printf(" data :: shape name = %s :: %s\n",snode->name, snode->s_file) ;
         if(!strcmp(snode->name,"JP1SigGant4"))continue ;
-        load_shape(snode) ;
-        load_shape_d(snode) ;
-        correct_shape(snode) ;
+        if(!strncmp(snode->name,"DFu",3))continue ;  //  Chiltern DFu2/3
+        if(!strncmp(snode->name,"DAr",3))continue ;  //  Chiltern DArbiter2
+        if(load_shape(snode) == 0){
+          load_shape_d(snode) ;
+          correct_shape(snode) ;
+        }
 //        if(!strcmp(snode->name,"underground_marker"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"A1tPnt6dLft"))print_shape_file_data(snode) ;
 //        if(!strcmp(snode->name,"UKCrossGate_fix"))print_shape_file_data(snode) ;
@@ -391,7 +431,10 @@ char           my_name[] = "init_data_structures" ;
       printf("   Read signal script file \n");
 //  Sometimes there are more than one signal script files.  This assumes that
 //  only one is valid as in the AU_NSW_SW_SS route
-      read_sigscr_file(ORroutedir,"sigscr.dat") ;
+      for(sig_script = raw_signal_db->script_file; sig_script != NULL;
+                                                sig_script = sig_script->next){
+        load_sigscr_file(ORroutedir,sig_script->scriptfile_name) ;
+      }
 
 /*
  * *****************************************************************************
@@ -426,19 +469,41 @@ char           my_name[] = "init_data_structures" ;
       printf("   Read and load texture files\n");
       if(ip || 1)printf("   land_texture_default = %s\n",land_texture_default) ;
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
-//        if(!strncmp(tx_node->name,"AU_Ash",6))continue ;
+//        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
         if(load_texture(tx_node))continue ;
         convert_texture(tx_node) ;
-//        printf("  Land texture = %s,   %s\n",land_texture_default,tx_node->name) ;
-//  Check for interim land texture
-        if(strcmp_ic(tx_node->name,land_texture_default))continue;
-        tx_node->basic = 1     ;    //  Must be loaded
-        tx_node->needed = 1    ;
-        land_texture = tx_node ;
-        if(ip || 1)printf("   land_texture = %p\n",(void *)land_texture) ;
+/*
+ *  Add to btree
+ */
+          texture_tree = insert_node(texture_tree,tx_node->name,(void *) tx_node) ;
       }
-      if(!land_texture)printf(" ERROR : Land texture not found\n") ;
+/*
+ *  Look for the default terrain.  If missing look for a suitable alternative.
+ */
+//      dump_btree(texture_tree,0,"X") ;
+      btree = NULL ;
+      if(land_texture_default)btree = find_btree(texture_tree,land_texture_default) ;
+      if(!btree)btree = find_btree(texture_tree,"HW_c1") ;
+      if(!btree)btree = find_btree(texture_tree,"BrownScrub") ;
+      if(!btree)btree = find_btree(texture_tree,"ACleanTrackBase") ;
+      if(!btree)btree = find_btree(texture_tree,"US2ScrubTrans") ;
+      if(!btree)btree = find_btree(texture_tree,"terrain") ;
+      if(!btree)btree = find_btree(texture_tree,"microtex") ;
+
+      if(!btree){
+        printf(" ERROR : Land texture not found\n") ;
+        exit(0) ;
+      }else{
+        land_texture = (TextureNode *)btree->data ;
+        printf("   land_texture name = %s\n",land_texture->name) ;
+        land_texture->basic = 1 ;
+        land_texture->needed = 1 ;
+        if(!(land_texture->loaded)){
+          load_texture(land_texture) ;
+          convert_texture(land_texture) ;
+        }
+        printf("   land_texture->loaded 2 = %i\n",land_texture->loaded) ;
+      }
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
  *      3.  In each ShapeNode add pointers to the required textures.
@@ -497,21 +562,23 @@ char           my_name[] = "init_data_structures" ;
  * *****************************************************************************
  */
       printf("***********************************************************\n") ;
-      printf(" INITIALSE SIGNALS\n") ;
+      printf("  INITIALSE SIGNALS\n") ;
       printf("***********************************************************\n") ;
       printf("   Add links to textures needed by the signals\n");
       add_texture_pointers_to_signals() ;
       printf("   Initialise other raw signal pointers\n");
       setup_raw_signals() ;
+//      printf("   ====  sTree = %p\n",(void *)sTree) ;
       printf("   Initialise individual signals\n");
       setup_signals() ;
+//      printf("   ====  sTree = %p\n",(void *)sTree) ;
 /*
  * *****************************************************************************
  *    Read turntable file and generate a list of turntables
  * *****************************************************************************
  */
       printf("***********************************************************\n") ;
-      printf("   Initialise turntables \n");
+      printf("   INITIALISE TURNTABLES \n");
       printf("***********************************************************\n") ;
       read_turntable_file() ;
       printf("   Setup turntables \n");
@@ -524,7 +591,7 @@ char           my_name[] = "init_data_structures" ;
  * *****************************************************************************
  */
       printf("***********************************************************\n") ;
-      printf("   Initialise level crossings \n");
+      printf("   INITIALISE LEVEL CROSSINGS \n");
       printf("***********************************************************\n") ;
       setup_level_crossings() ;
 /*
@@ -539,12 +606,13 @@ char           my_name[] = "init_data_structures" ;
  *    Process Sound Files
  * *****************************************************************************
  */
+#ifdef OPENAL
       printf("***********************************************************\n") ;
-      printf(" INITIALSE SOUNDS\n") ;
+      printf("  INITIALSE SOUNDS\n") ;
       printf("***********************************************************\n") ;
-      printf("   Collect and Initialise Sounds\n");
-//      collect_sounds() ;
-
+      printf("    Collect and Initialise Sounds\n");
+      collect_sounds() ;
+#endif
 
 /*
  * *****************************************************************************
@@ -552,7 +620,7 @@ char           my_name[] = "init_data_structures" ;
  * *****************************************************************************
  */
       printf("***********************************************************\n") ;
-      printf(" PRINT SUMMARY DATA\n") ;
+      printf("  PRINT SUMMARY DATA\n") ;
       printf("***********************************************************\n") ;
 // List tiles
 #if 0
@@ -573,6 +641,17 @@ int   i, j, nn, ni ;
         }
       }
 }
+#endif
+/*
+ *   List world item
+ */
+#if 1
+      printf("***********************************************************\n") ;
+      printf("  List Shapes\n");
+      printf("***********************************************************\n") ;
+      print_world_item_data(-6074, 14922,2542) ;
+      print_world_item_data(-6074, 14922,2544) ;
+//      print_world_item_data(0, 0,2109) ;
 #endif
 // List track sections
 //   NOTE node N is in trk_sections_array[N-1]
@@ -686,7 +765,10 @@ TrkSector     *t = &(track_db.trk_sections_array[i]) ;
 uint       j, k;
 LodControl *lod_control ;
 DistLevel  *dist_level  ;
-      printf("   List Shapes :: Test shape = %s\n",test_shape);
+      printf("***********************************************************\n") ;
+      printf("  List Shapes\n");
+      printf("***********************************************************\n") ;
+      printf("       Test shape = %s\n",test_shape);
       for(snode=shapelist_beg,i=0; snode!=NULL; snode=snode->next,i++){
         printf("   Shape : %3i : %s\n",i,snode->name);
 # if 0
@@ -777,10 +859,21 @@ TrkItem *ti ;
       }
 #endif
 /*
+ * List Signal data
+ */
+#if 0
+    for(signal = signallist_beg; signal != NULL; signal = signal->next){
+      print_signal_data(signal) ;
+    }
+#endif
+/*
  * List Tile data
  */
 #if 0
       ip = 0 ;
+      printf("***********************************************************\n") ;
+      printf("  List Tiles\n");
+      printf("***********************************************************\n") ;
       if(ip){
   int   i, j, k, kmin, kmax, n ;
   unsigned short  *kp ;
@@ -857,7 +950,7 @@ TrkItem *ti ;
  *  Read the project (.trk) file and populate the project database
  *     The database is stored in a PdbNode structure
  *     For the moment only one pdb is supported, stored as the
- *     first item of a linked list, adn pointed to by pdb_beg
+ *     first item of a linked list, and pointed to by pdb_beg
  */
 
 int init_pdb(char *filename)
@@ -872,8 +965,9 @@ char      myname[] = "init_pdb, in file: data.c" ;
 
       if(ip)printf("\n   Enter init_pdb\n\n");
 
-      full_filename = (char *)malloc(strlen(ORroutedir)+strlen(filename)+1);
+      full_filename = (char *)malloc(strlen(ORroutedir)+strlen(filename)+2);
       strcpy(full_filename,ORroutedir);
+      strcat(full_filename,"/");
       strcat(full_filename,filename);
       if(ip)printf("    filename = %s\n",full_filename);
 
@@ -884,10 +978,11 @@ char      myname[] = "init_pdb, in file: data.c" ;
         exit(1) ;
       }
       if(ip)printf("    msfile pointer  = %p\n\n",(void *)msfile.fp);
-//
-//  Create new trknode
-//
-      pdb = (PdbNode *)malloc(sizeof(PdbNode));
+/*
+ *  Create new trknode
+ */
+//      pdb = (PdbNode *)malloc(sizeof(PdbNode));
+      pdb = &project_db ;
       pdb_init(pdb) ;
 
       if(NULL == pdb_end){
@@ -926,7 +1021,7 @@ char      myname[] = "init_pdb, in file: data.c" ;
               break ;
           CASE ("Filename")
           CASE ("FileName")
-              pdb->FileName = ctoken(&msfile) ;
+              pdb->FileName = strip_quotes(ctoken(&msfile)) ;
               break ;
           CASE ("Electrified")
               pdb->Electrified = itoken(&msfile) ;
@@ -1017,7 +1112,16 @@ char      myname[] = "init_pdb, in file: data.c" ;
               pdb->MilepostUnitsKilometers = 1 ;
               break ;
           CASE ("ORTSUserPreferenceForestClearDistance")
-              pdb->ForestClearDistance   = dtoken(&msfile) ;
+              pdb->ORTSForestClearDistance   = dtoken(&msfile) ;
+              break ;
+          CASE ("ORTSSwitchSMSNumber")
+              pdb->ORTSSwitchSMSNumber   = itoken(&msfile) ;
+              break ;
+          CASE ("ORTSCurveSMSNumber")
+              pdb->ORTSCurveSMSNumber    = itoken(&msfile) ;
+              break ;
+          CASE ("ORTSCurveSwitchSMSNumber")
+              pdb->ORTSCurveSwitchSMSNumber = itoken(&msfile) ;
               break ;
 
           DEFAULT
@@ -1068,13 +1172,17 @@ int i;
       pdb->MilepostUnitsKilometers = 0 ;
       pdb->MaxLineVoltage     = 0 ;
 
+      pdb->ORTSSwitchSMSNumber      = 0 ;
+      pdb->ORTSCurveSMSNumber       = 0 ;
+      pdb->ORTSCurveSwitchSMSNumber = 0 ;
+
       pdb->SpeedLimit           = 0.0 ;
       pdb->TerrainErrorScale    = 0.0 ;
       pdb->TempRestrictedSpeed  = 0.0 ;
       pdb->DerailScale          = 0.0 ;
       pdb->TimetableTollerance  = 0.0 ;
       pdb->GravityScale         = 1.0 ;
-      pdb->ForestClearDistance  = 20.0 ;
+      pdb->ORTSForestClearDistance = 20.0 ;
 
       for(i=0;i<12;i++){
         pdb->Environment[i].weather = NULL ;
@@ -1114,3 +1222,42 @@ int i ;
 
     return 0;
 }
+
+char* find_trk_file(){
+
+int    ip = 0     ;
+int    l, iret    ;
+char   *route_dir ;
+char   *trk_file = NULL ;
+DIR    *wdir ;
+struct dirent *f_entry ;
+struct stat   *stbuf ;
+char *my_name = "find_trk_file" ;
+
+      route_dir = strdup(ORroutedir) ;
+      if(ip)printf("  Routine %s.  Route directory = %s\n",my_name,route_dir) ;
+/*
+ *  Find route directory
+ */
+      iret = zr_find_msfile2(route_dir) ;
+      if(iret){
+        printf("  Routine %s.  Unable to find directory %s\n",my_name,route_dir);
+        exit(0) ;
+      }
+      if(ip)printf("  Routine %s.  Route directory = %s\n",my_name,route_dir) ;
+/*
+ *  Open directory
+ */
+      wdir = opendir(route_dir) ;
+      while ((f_entry = readdir(wdir)) != NULL) {
+        l = strlen(f_entry->d_name) ;
+        if(strcmp_ic(".trk",&(f_entry->d_name[l-4])) != 0) continue ;
+/*
+ *  Generate full file name
+ */
+        trk_file = strdup(f_entry->d_name) ;
+        if(ip)printf("    Track file name = %s\n", trk_file);
+      }
+      return trk_file ;
+}
+

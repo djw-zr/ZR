@@ -30,7 +30,7 @@ static void list_audio_devices(const ALCchar *devices) ;
  */
 int  setup_openal(int argc, char **argv){
 
-  int  ip = 1 ;
+  int  ip = 0 ;
   ALboolean enumeration;
   const ALCchar *devices;
   const ALCchar *defaultDeviceName = NULL ;

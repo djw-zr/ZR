@@ -100,14 +100,18 @@ int           n_tiles_plotted, n_shapes_plotted, n_tracks_plotted ;
           }
         }
         check_glerror2("My routine 'display', AA AA\n") ;
+#ifdef DISPLAY_5_SECONDS
+        if(!l_time_5s) return ;
+#endif
 
+#if 0
         if(n_sig0 >0 && l_time_5s && i_zrt){
           n_sig1 = n_sig0 ;
           printf("  run seconds = %f : %i\n",run_seconds,n_sig1) ;
         }else{
           n_sig1 = -1 ;
         }
-
+#endif
 //      if(l_time_1s) printf(" ABC idirect = %i\n", trainlist_beg->first->traveller->idirect) ;
 
 //  Note light0_ values can be modified by the keyboard (see keyboard.c).
@@ -126,7 +130,18 @@ GLfloat  v4[4] ;
         printf(" Enter display :: %i\n",i_display++) ;
         printf(" ++++++++++++++++++++++++++++++++++++++++++++++++++\n");
       }
-
+/*
+ *  Start multi-processor section
+ */
+//#pragma omp parallel
+{
+#pragma omp sections
+{
+/*
+ *  Start MP 1
+ */
+#pragma omp section
+{
 #ifdef _Display_Normal
       update_trains() ;  // Update using monotonic time
       update_level_crossings() ;
@@ -136,6 +151,12 @@ GLfloat  v4[4] ;
       update_transfer() ;
  #endif
 #endif
+}
+/*
+ *  Start MP 2
+ */
+#pragma omp section
+{
 /*
  *  If position has changed - update viewpoint
  */
@@ -150,12 +171,10 @@ GLfloat  v4[4] ;
 #else
       glClearColor((GLfloat) 0.8,(GLfloat) 0.9,(GLfloat) 1.0,(GLfloat) 0.0);
 #endif
+
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-#ifdef ROUTE_NEW_FOREST
-      glDepthRange(0.0,10.0) ;
-#else
       glDepthRange(0.0,1.0);
-#endif
+
 //      glDepthFunc(GL_LEQUAL)     ;            // No effect
       glEnable(GL_DEPTH_TEST)    ;
 //      glEnable(GL_NORMALIZE)     ;
@@ -995,10 +1014,12 @@ GLfloat h = viewport_height ;
 
 //  Call special 2-D displays
 
-      if(display_track_info_on) display_track_info(player_train->first->traveller) ;
       if(display_help_on)       display_help() ;
-      if(display_switches_on)   display_switches(player_train) ;
-      if(display_train_operations_on) display_train_operations(player_train) ;
+      if(player_train){
+        if(display_track_info_on) display_track_info(player_train->first->traveller) ;
+        if(display_switches_on)   display_switches(player_train) ;
+        if(display_train_operations_on) display_train_operations(player_train) ;
+      }
 
 //  Restore defaults
 
@@ -1117,9 +1138,13 @@ double t[4] ;
       if(l_pd)printf(" Exit  display()\n");
       l_pp = 0    ;  //  Turn off flag for: new display after position move
       l_disp1 = 0 ;  //                     printing
-      return ;
-}
 
+}                    //  End of #pragma omp section 2
+}                    //  End of #pragma omp sections
+}                    //  End of #pragma omp parallel
+
+return ;
+}
 /*
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890

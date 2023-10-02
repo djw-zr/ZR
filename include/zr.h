@@ -157,13 +157,14 @@ int  __switch_next2__ ;
  *  Special Variables
  */
 
-
-char    *MSTSdir    ;        // Top directory for MSTS files (if any)
-char    *ORdir      ;        // Top directory for OR routes (if any)
-char    *ORroutedir ;        // Top directory of current route (if any)
-char    *ZRdotdir   ;        // Location of users .zr file
-char    *ZRconfig   ;        // Location of user config file ($Home/.zr/config)
-char    *ZRfonts    ;        // Location of user font file ($Home/.zr/fonts)
+char    *MSTSdir    = NULL ;       // Top directory for MSTS files (if any)
+char    *ORdir      = NULL ;       // Top directory for OR routes (if any)
+char    *ORdname    = NULL ;       // Shortened name of top directory
+char    *ORroute    = NULL ;       // Name of route
+char    *ORroutedir = NULL ;       // Full name of route directory
+char    *ZRdotdir   = NULL ;       // Location of users .zr file
+char    *ZRconfig   = NULL ;       // Location of user config file ($Home/.zr/config)
+char    *ZRfonts           ;       // Location of user font file ($Home/.zr/fonts)
 char    eof_mark[] = "******Z" ;   // Use to flag end-of-file in text files.
 
 int     n_open_files = 0  ;  // used by gopen and gclose
@@ -204,8 +205,9 @@ int     l_ip    = 0 ;           //  Used to control some debug printing
 
 // Top level pointers to structures
 
-TrkDataBase track_db ;    // Track database - with track sections and track items
-TrkDataBase road_db  ;    // Road database  - with road sections and road items
+PdbNode     project_db ;    // Project database
+TrkDataBase track_db   ;    // Track database - with track sections and track items
+TrkDataBase road_db    ;    // Road database  - with road sections and road items
 
 // Top level pointers to tsection.dat items
 
@@ -244,6 +246,7 @@ ConsistNode  *consistlist_beg   = NULL ;  // Pointer to first node in list of co
 ConsistNode  *consistlist_end   = NULL ;  // Pointer to last node
 ShapeNode    *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
 ShapeNode    *wshapelist_end = NULL    ;  // Pointer to last node
+
 TextureNode  *wtexturelist_beg = NULL ;
 TextureNode  *wtexturelist_end = NULL ;
 
@@ -269,6 +272,7 @@ TextureNode *texturelist_beg = NULL ;
 TextureNode *texturelist_end = NULL ;
 int         load_texture_filenames();
 int         load_texture(TextureNode *t) ;
+BTree       *texture_tree = NULL    ;
 
 // Rail and road profiles
 

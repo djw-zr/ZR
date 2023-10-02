@@ -1,0 +1,99 @@
+Version 0.6.2
+=============
+
+    Bugfix commit.  These were bugs that showed up when testing
+    ZR using the New Forest route.
+
+1.  Textures
+
+    Some texture files have alpha arrays or mask arrays which
+    are all zero.  In these cases ZR now follows Openrails and
+    now ignores the alpha and mask fields.
+
+2.  Matrix 0
+
+    By convention shape files contain a set of matrices which
+    are used to move a sub-object to its final position.  The
+    first of these, which acts on the whole structure, is
+    usually a unit matrix.  However in some shape files this
+    is not true.  In these cases, ZR now follows OpenRails
+    and always assumes that matrix 0 is a unit matrix and that
+    any original offset or rotation is now part of the matrix
+    used to position the shape in the scenery.
+
+3.  Non-breaking spaces
+
+    These are now treated as white space.
+
+4.  Signal Scripts
+
+    The script routines now handle additional script functions
+    and operators.
+
+5.  Removal of Quotes
+
+    The names of consists, platforms and sidings now have
+    quotes stripped from the names.
+
+6.  Alias directory
+
+    The alias directory is now correctly interpreted as
+    relative to the current route directory.
+
+7.  Camera position
+
+    The camera movement code has been changed so that
+    short vertical movements (Alt-Page Up/Down) are now
+    in increments of 25cm.
+
+    When shapes positions are displayed (Alt-n), the lookat
+    point now has a red 3-D cross.  Each of the six arms has
+    a length of 1 m.
+
+8.  Turntables
+
+    Variables are now initialised correctly.
+
+9.  Signals
+
+    The code no longer assumes that every head in a signal is
+    displayed.
+
+    The track item position code has been corrected.
+
+10.  Switches/Points
+
+    The code has been corrected such that the left hand branch
+    is now (correctly) assumed to be the the first of the two
+    outgoing branches in the track description file.
+
+11. Default Wagon and Consist directory
+
+    At present the ZR code loads all the information about the wagons
+    and consists found in the top level TRAINS, even if they are
+    not needed.
+
+    To speed processing, the program now searches for directories
+    TRAINSETS_IN_USE and CONSISTS_IN_USE.  If found they are used
+    instead of the main directories, which can be very large.
+
+12. ctn_point_indication
+
+    This shape from the zig-zag route is now displayed.  Previously
+    it was always skipped.
+
+13. Character codes
+
+    Originally MSTS used the UTF-16 (two byte) format for
+    text characters in all files except "sigscr.data" which
+    used UTF-8.  (Actually they probably used ASCII but as
+    only the first 128 symbols were used this corresponds
+    to the same set of UTF-8 codes).  UTF-8 is now regularly
+    used in many of the other files used to specify both
+    wagons and routes.
+
+    ZR now correctly converts UTF-16 to UTF-8, for use with
+    modern linux software.
+
+14. The commit includes some files added while developing
+    a capability to handle sound.

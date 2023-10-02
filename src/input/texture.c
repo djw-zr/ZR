@@ -48,6 +48,9 @@ int load_texture_filenames() {
   struct dirent *f_entry   = NULL ;
   struct dirent **namelist = NULL ;
   TextureNode *texture     = NULL ;
+  char        *texture_dir   = "/TEXTURES/" ;
+  char        *terrtex_dir   = "/TerrTex/" ;
+  char        *g_texture_dir = "/Global/Textures/" ;
   char        my_name[] = "load_texture_filenames" ;
 
 /*
@@ -59,17 +62,22 @@ int load_texture_filenames() {
         printf(" *******************************************************\n");
       }
 #if 1
-      for(idir=0;idir<2;idir++){
-        if(idir==0){
-          len1 = strlen(ORroutedir) + strlen("TEXTURES/") + 1 ;
+      for(idir=0;idir<3;idir++){
+        if(0 == idir){
+          len1 = strlen(ORroutedir) + strlen(texture_dir) + 1 ;
           tdir_name = (char *)malloc(len1) ;
           strcpy(tdir_name,ORroutedir)    ;
-          strcat(tdir_name,"TEXTURES/")      ;
-        }else{
-          len1 = strlen(ORdir) + strlen("Global/Textures/") + 1 ;
+          strcat(tdir_name,texture_dir)      ;
+        }else if(1 == idir){
+          len1 = strlen(ORdir) + strlen(g_texture_dir) + 1 ;
           tdir_name = (char *)malloc(len1) ;
           strcpy(tdir_name,ORdir)    ;
-          strcat(tdir_name,"Global/Textures/")      ;
+          strcat(tdir_name,g_texture_dir)      ;
+        }else{
+          len1 = strlen(ORroutedir) + strlen(terrtex_dir) + 1 ;
+          tdir_name = (char *)malloc(len1) ;
+          strcpy(tdir_name,ORroutedir)    ;
+          strcat(tdir_name,terrtex_dir)      ;
         }
 #else
         tdir_name = current_dir ;
@@ -119,9 +127,16 @@ int load_texture_filenames() {
 //          if(strcmp_ic(".ace",&(f_entry->d_name[len2-4]))!= 0) continue ;
 //          if(ip)printf("  Found texture file = %s\n", f_entry->d_name);
 /*
- * Initialise new texture node
+ *  Loop over filenames
+ *  Skip files in TERRTEX directory with tile-like names
  */
         for(i=0;i<n;i++){
+          if(idir > 1 && (namelist[i]->d_name[0] == '_'
+                       ||  namelist[i]->d_name[0] == '-' )) continue ;
+/*
+ * Initialise new texture node
+ *   Skip files in TERRTEX directory with tile-like names
+ */
           texture = (TextureNode *)malloc(sizeof(TextureNode)) ;
           if(texturelist_beg == NULL){
             texturelist_beg = texture       ;
@@ -147,11 +162,11 @@ int load_texture_filenames() {
           strcpy(texture->filename,tdir_name) ;
 //          strcat(texture->filename,f_entry->d_name);
           strcat(texture->filename,namelist[i]->d_name);
-          free(namelist[i]) ;
+          if(namelist[i])free(namelist[i]) ;
         }
-      free(namelist);
+        if(namelist)free(namelist);
 //      closedir(tdir) ;
-      free(tdir_name);
+        if(tdir_name)free(tdir_name);
       }
       return 0;
 }
@@ -220,10 +235,13 @@ int load_texture(TextureNode *tnode){
  *  open_msfile reads and checks the first 16 bytes of the texture file
  *  and sets the compress flag.
  */
+//      ip = !strcmp(tnode->name,"ACleanTrackBase") ;
       if(ip){
         printf("\n  Read texture:\n") ;
+        printf(  "    == name     : %s\n",tnode->name) ;
         printf(  "    == filename : %s\n",tnode->filename) ;
       }
+//      ip = !strcmp(tnode->name,"hhp") ;
 /*
  *  Call open_msfile with third parameter = 1 to indicate a texture file.
  */
@@ -548,7 +566,7 @@ int ioff ;
         for(i=0;i<image_count;i++){                 // Number if mipmap images
           n = tnode->height/m ;
           m = m * 2 ;
-          if(ip)printf("  Image %i,  width = %i\n",i,n) ;
+          if(ip)printf("  Image %i,  height = %i\n",i,n) ;
           for(j=0;j<n;j++){
             ioff = read_int32(fp) ;    // Offsets to each scan line
             if(ip)printf("   Line %4i, offset = %4x  %i\n",j, ioff, ioff);
@@ -598,8 +616,10 @@ int   w = width, nb, h, nwords ;
 /*
  *  Initialise alpha channel (for 0x0e ony??)
  */
-            for(l=0;l<w;l++){
-              tnode->texture[i][(j*w+l)*nb + 3] = 0xFF ;
+            if(4 == nb){
+              for(l=0;l<w;l++){
+                tnode->texture[i][(j*w+l)*nb + 3] = 0xFF ;
+              }
             }
 /*
  * Loop over channels
@@ -697,7 +717,7 @@ int   w = width, nb, h, nwords ;
               }
             }
           }
-          free(maskp) ;
+          if(maskp)free(maskp) ;
           maskp = NULL ;
         }          // Loop over images
       }          // End processing of "structured data" style file

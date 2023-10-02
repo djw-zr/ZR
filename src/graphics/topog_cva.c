@@ -64,7 +64,11 @@ int i1, j1 ;
             iy,  tile_y0, tile_eye_y0 ) ;
         }
 #endif
-        if(tl_node->needed) make_tile_vertex_array(tl_node)  ;
+        if(tl_node->needed){
+          if(ip)printf("  Routine %s.  Make tile vertex array for tile ::  %i  %i\n",
+                       my_name, ix, iy) ;
+          make_tile_vertex_array(tl_node)  ;
+        }
       }
       if(ip)printf(" Exit : %s\n",my_name) ;
       return 0;
@@ -137,11 +141,21 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       glMaterialfv(GL_FRONT,GL_DIFFUSE,mat_dif_land) ;
       glMaterialfv(GL_FRONT,GL_SPECULAR,mat_spc_land) ;
 /*
- *  Check texture reference exists
+ *  Ensure texture reference number is installed
  */
+      if(land_texture && !land_texture->gl_tex_ref_no){
+        make_texture_resident(land_texture) ;
+        land_texture->loaded = 1 ;
+      }
       if(!land_texture || !land_texture->gl_tex_ref_no){
         printf("  ERROR.  Routine %s called for tile (%i, %i) "
         "when land_texture not installed.\n",my_name,tile_x,tile_y);
+        printf("          land_texture = %p\n",(void *)land_texture);
+        printf("          land_texture = %s\n",land_texture->name);
+        printf("          basic        = %i\n",land_texture->basic);
+        printf("          needed       = %i\n",land_texture->needed);
+        printf("          loaded       = %i\n",land_texture->loaded);
+        exit(0) ;
       }
 /*
  *   Create oversize arrays including halo rows and columns

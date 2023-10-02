@@ -87,7 +87,7 @@ int camera_new_position(){
  *==============================================================================
  */
       if((current_camera != camera_last) || current_camera == 4){
-        printf(" camera eye = %f %f %f,  center = %f %f %f\n",
+        if(ip)printf(" camera eye = %f %f %f,  center = %f %f %f\n",
                camera->offset_eye_x, camera->offset_eye_x, camera->offset_eye_x,
                camera->offset_center_x, camera->offset_center_y, camera->offset_center_z) ;
         offset_eye_x = scalei*camera->offset_eye_x ;

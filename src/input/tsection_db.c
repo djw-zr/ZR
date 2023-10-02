@@ -155,6 +155,8 @@ char    *token1 = NULL,
         *token2 = NULL,
         *token3 = NULL,
         *string = NULL      ;
+char    *global = "/Global/" ;
+char    *open_r = "/OpenRails/" ;
 TrackSection *track_section = NULL ;
 TrackShape   *track_shape   = NULL ;
 SectionIdx   *section_idx   = NULL ;
@@ -173,26 +175,27 @@ int          *section       = NULL ;
         printf("  ORdir      = %s\n",ORdir) ;
 //  Construct filename
         if(0==idir){
-          l = strlen(ORdir) + strlen("Global/") + strlen(base_name) + 1 ;
+          l = strlen(ORdir) + strlen(global) + strlen(base_name) + 1 ;
           if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
 //          if(ip)printf(" string = %s\n",string);
           strcpy(string,ORdir) ;
           if(ip)printf(" string = %s\n",string);
-          strcat(string,"Global/") ;
+          strcat(string,global) ;
         }else if(1==idir){
-          l = strlen(ORroutedir) + strlen("OpenRails/")
+          l = strlen(ORroutedir) + strlen(open_r)
                                  + strlen(base_name) + 1 ;
           if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
           strcpy(string,ORroutedir) ;
           if(ip)printf(" string = %s\n",string);
-          strcat(string,"OpenRails/") ;
+          strcat(string,open_r) ;
         }else{
-          l = strlen(ORroutedir) + strlen(base_name) + 1 ;
+          l = strlen(ORroutedir) + strlen(base_name) + 2 ;
           if(ip)printf(" l = %i, %i\n",l,idir);
           string = (char *)malloc(l) ;
           strcpy(string,ORroutedir) ;
+          strcat(string,"/") ;
           if(ip)printf(" string = %s\n",string);
         }
         if(ip)printf(" string = %s\n",string);
@@ -309,12 +312,19 @@ int          *section       = NULL ;
                           skip_rbr(msfile) ;
                           break ;
                         DEFAULT
+                          printf("  ERROR  Routine %s, \n",my_name) ;
+                          printf("         Level 3 processing TrackSection\n") ;
+                          printf("         Token not recognised.  Token = %s\n",token3);
                           exit(1) ;
                       END // Switch(token3)
                     }
                     if(token3 != NULL){free(token3) ; token3 = NULL ;}
                     break ;
                   DEFAULT
+                    printf("  ERROR  Routine %s, \n",my_name) ;
+                    printf("         Level 2 processing TackSections\n") ;
+                    printf("         Token not recognised.  Token = %s\n",token2);
+                    exit(1) ;
                     exit(1) ;
                 END // Switch(token2)
               }
@@ -341,6 +351,7 @@ int          *section       = NULL ;
                       if(is_rbr(token3)) break ;
                       SWITCH(token3)
                         CASE("FileName")
+                        CASE("Filename")
                           skip_lbr(msfile) ;
                           track_shape->filename  = ctoken(msfile)  ;
                           skip_rbr(msfile) ;
@@ -420,18 +431,27 @@ int          *section       = NULL ;
                           skip_rbr(msfile) ;
                           break ;
                         DEFAULT
+                          printf("  ERROR  Routine %s, \n",my_name) ;
+                          printf("         Level 3 processing TrackShape\n") ;
+                          printf("         Token not recognised.  Token = %s\n",token3);
                           exit(1) ;
                       END // Switch(token3)
                     }
                    if(token3 != NULL){free(token3) ; token3 = NULL ;}
                     break ;
                   DEFAULT
+                    printf("  ERROR  Routine %s, \n",my_name) ;
+                    printf("         Level 2 processing TackShape2\n") ;
+                    printf("         Token not recognised.  Token = %s\n",token2);
                     exit(1) ;
                 END // Switch(token2)
               }
               if(token2 != NULL){free(token2) ; token2 = NULL ;}
               break ;
             DEFAULT
+              printf("  ERROR  Routine %s, \n",my_name) ;
+              printf("         Level 1 Top level\n") ;
+              printf("         Token not recognised.  Token = %s\n",token1);
               exit(1) ;
           END
         }  // End of main loop

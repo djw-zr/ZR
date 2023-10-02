@@ -148,6 +148,7 @@ char     ffname[] = "__FILE__"  ;
  */
         SWITCH(token)
           CASE("Comment")
+          CASE("Comments")
           CASE("comment")
           CASE("Coimment")
             skip_lbr(msfile) ;
@@ -354,9 +355,10 @@ char     ffname[] = "__FILE__"  ;
                         w->r021  = convert_unit(token,"m") ;
                         token = new_tmp_token(msfile) ;
                         w->r022  = convert_unit(token,"m") ;
-                        skip_rbr(msfile) ;
+                        skippast_rbr(msfile) ;            //  Cheat for MECoast route
                         break ;
                       CASE("Comment")
+                      CASE("comment")
                       CASE("Velocity")
 //                      CASE("comment")
                         skip_lbr(msfile) ;
@@ -375,6 +377,7 @@ char     ffname[] = "__FILE__"  ;
                   w->couplinghasrigidconnection2 = itoken(msfile) ;
                   skip_rbr(msfile) ;
                   break ;
+                CASE("Comment")
                 CASE("comment")
                 CASE("Velocity")
                 CASE("CouplingUniqueType")
@@ -661,6 +664,7 @@ char     ffname[] = "__FILE__"  ;
                   skip_rbr(msfile) ;
                   break ;
                 CASE("Sound")
+                CASE("WagonShape")
                   skip_lbr(msfile)   ;
                   skippast_rbr(msfile) ;
                   break ;
@@ -780,6 +784,8 @@ char     ffname[] = "__FILE__"  ;
           CASE("#Size")
           CASE("Shape")
           CASE(":AuxiliaryLeakRate")
+          CASE("xSize")
+          CASE("Bolsters")
 
           CASE("PassengerCapacity")
           CASE("MaxHandBrakeForce")
@@ -789,6 +795,7 @@ char     ffname[] = "__FILE__"  ;
           CASE("ORTSBrakeEmergencyTimeFactor")
           CASE("ORTSAuxilaryResCapacity")
           CASE("ORTSCylinderBackPressure")
+          CASE(":ORTSExternalSoundPassedThroughPercent")
           CASE("ORTSFreightAnims")
           CASE("FreightAnimStatic")
           CASE("ORTSDirectAdmissionValve")
@@ -804,6 +811,12 @@ char     ffname[] = "__FILE__"  ;
           CASE("ORTSHeatingConnectingHoseOuterDiameter")
           CASE("ORTSHeatingConnectingHoseInnerDiameter")
           CASE("ORTSWagonSpecialType")
+          CASE("ORTSLengthBogieCentre")
+          CASE("ORTSLengthCarBody")
+          CASE("ORTSLengthCouplerFace")
+          CASE("ORTSNumberBogies")
+          CASE("ORTSWagonSpecialType")
+          CASE("ORTSExternalSoundPassedThroughPercent")
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
             break ;
@@ -811,7 +824,7 @@ char     ffname[] = "__FILE__"  ;
           DEFAULT
             printf("     Routine %s. Wagon %s. File %s\n", my_name, w->name, msfile->filename) ;
             printf("     ERROR.  Token not recognised.  Token = :%s:\n",token);
-            for(i=0;i<(int)strlen(token);i++) printf("      token[%i] = %x\n",i, token[i]) ;
+//            for(i=0;i<(int)strlen(token);i++) printf("      token[%i] = %x\n",i, token[i]) ;
             if((token[0] & 0xFF) == 0xA0)printf(" First character of token is non-breaking space\n") ;
             skip_lbr(msfile)   ;
             skippast_rbr(msfile) ;
@@ -1096,6 +1109,8 @@ char     ffname[] = "__FILE__"  ;
             CASE("BrakesEngineBrakeType")
             CASE("BrakesTrainBrakeType")
             CASE("BrakesEngineControllers")
+            CASE("BrakeEquipmentType")
+            CASE("BrakeSystemType")
 
             CASE("CutoffMaxReverse")
             CASE("CutoffMaxForward")
@@ -1223,6 +1238,15 @@ char     ffname[] = "__FILE__"  ;
             CASE("ORTSTrainControlSystem")
             CASE("ORTSTrainControlSystemSound")
             CASE("ORTSTrainControlSystemParameters")
+            CASE("ORTSDieselEngineMaxPower")
+            CASE("ORTSExternalSoundPassedThroughPercent")
+            CASE("xORTSSuperheatCutoffPressureFactor")
+            CASE("xORTSBoilerEfficiency")
+            CASE("xORTSCylinderInitialPressureDrop")
+            CASE("xORTSCylinderBackPressure")
+            CASE("xORTSBoilerEvaporationRate")
+            CASE("xORTSBrakePipeTimeFactor")
+            CASE("ORTSTractiveEffortFactor")
               skip_lbr(msfile) ;
               skippast_rbr(msfile) ;
               break ;
@@ -1283,12 +1307,13 @@ char *read_scaled_token(MSfile *msfile){
 
       l = strlen(string) ;                 // length of string
       n = strspn(string,"1234567890-.e");
-//      printf(" read_scaled_token 1 : l = %i, n = %i, string = %s\n",l,n,string);
+/*
+ * If just a pure number is returned, look at next token
+ */
       if(l==n){
         token = new_tmp_token(msfile) ;
-        l = strlen(token) ;
         n = strspn(token,"1234567890-.e") ;
-        if(l==n ||is_rbr(token)){
+        if(n > 0 ||is_rbr(token)){
           return_token(token,msfile) ;
         }else if(token[0]!='#'){
           strncat(string,token,256-l) ;

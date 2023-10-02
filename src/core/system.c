@@ -87,15 +87,15 @@ char         c1, c2 ;
 
 int strncmp_ic(const char *s1, const char *s2, int nn){
 
-unsigned int i, l1, l2  ;
+unsigned int i, l1, l2, n ;
 char         c1, c2 ;
 
      l1 = strlen(s1) ;
      l2 = strlen(s2) ;
-     if(l1 != l2 && ((int)l1 < nn || (int)l2 < nn) ) return 1 ;
-     if(nn<(int)l1) l1 = nn ;
+     n  = nn ;
+     if( (l1 < n) || (l2 < n) ) return 1 ;
 
-     for(i=0;i<l1;i++){
+     for(i=0;i<n;i++){
        c1 = s1[i]  ;
        c2 = s2[i]  ;
        c1 = tolower(c1) ;
@@ -493,7 +493,7 @@ char *my_name = "zr_find_msfile" ;
  *
  *   Given a full pathname, the routine it tries to find an existing
  *   file or directory with the same pathname.  If that does not
- *   exist, it call itself to repeat the chack on the parent directory.
+ *   exist, it call itself to repeat the check on the parent directory.
  *   If a matching parent is found it searches for a file in the current
  *   directory whose name matches when the case of each character
  *   is ignored.
@@ -594,6 +594,7 @@ char *my_name = "zr_find_msfile2" ;
         free(string) ;
         string = strdup(di->d_name) ;
         for(i=0;i<strlen(string);i++) string[i] = tolower(string[i]) ;
+//        printf("  base name = %s, file found = %s\n",base,string) ;
         ok = !strcmp(string,base) ;
         if(ok)break ;
       }
@@ -643,6 +644,7 @@ int  i, j, n  ;
       for(i=0,j=0;i<n;i++,j++){
         if(fname[i] == '\\')fname[j] = '/' ;
         if(fname[i] == '/' && fname[i+1] == '/')i++ ;   // Convert "//" to "/"
+        fname[j] = fname[i] ;
       }
       fname[j] = '\0' ;
       return 0 ;
@@ -660,6 +662,20 @@ char *zr_to_upper(char *string){
      for(i=0;i<n;i++)upper[i]=toupper(string[i]);
      upper[n]='\0' ;
      return upper ;
+}
+
+char *zr_to_lower(char *string){
+
+ int i, n ;
+ static char *lower = NULL;
+
+     if(lower)free(lower);
+     lower = NULL ;
+     n = strlen(string) ;
+     lower = (char *)malloc(n+1) ;
+     for(i=0;i<n;i++)lower[i]=tolower(string[i]);
+     lower[n]='\0' ;
+     return lower ;
 }
 
 /*

@@ -39,9 +39,10 @@ int print_sigscr_tree(nodeType *p);
 
 int  process_signal_script(SignalDB *signal){
 
-  int       ip = 0 ;
-  nodeType  *sig_script, *n1, *n2, *n3 ;
-  char      *my_name="process_signal_script" ;
+int        ip = 0 ;
+static int ierr = 0 ;
+nodeType   *sig_script, *n1, *n2, *n3 ;
+char       *my_name="process_signal_script" ;
 
       ip = (n_sig1 == signal->uid)  ;
 
@@ -55,19 +56,28 @@ int  process_signal_script(SignalDB *signal){
       signal0 = signal ;
 
       sig_script = signal->sig_script ;
+/*
+ *  Limit error printing
+ */
       if(!sig_script){
-        printf("  Routine %s.  Signal script missing for signal %i :: %s :: %s\n",
-               my_name, signal->uid, signal->shape_name, signal->type_name) ;
+        if(ierr++ < 4){
+          printf("  Routine %s.  Signal script missing for signal %i :: %s :: %s\n",
+                my_name, signal->uid, signal->shape_name, signal->type_name) ;
+        }
         return 0 ;
       }
 
       n1 = sig_script ;
 
+//      printf("   ====  sTree = %p\n",(void *)sTree) ;
+//      if(ip)print_sigscr_tree(sTree) ;  // Everything
+      if(ip)print_sigscr_tree(n1) ;
+
       for(;;){
         if(ip){
           printf("  n1 = %p",(void *) n1) ;
           if(n1)printf(" : n1->type = %i :: %i", n1->type, typeOpr) ;
-          if(n1->type == typeOpr)printf(" : n1->opr.oper %i : %i : %i : %i ",
+          if(n1->type == typeOpr)printf(" : n1->opr.oper %i : SC_SCRIPT %i : SC_DEF_LIST %i : SC_STMT_LIST %i ",
                          n1->opr.oper, SC_SCRIPT, SC_DEF_LIST, SC_STMT_LIST) ;
           printf("\n") ;
         }
@@ -116,7 +126,7 @@ int  process_signal_script(SignalDB *signal){
 
 int  process_signal_statement(nodeType *node){
 
-  int  ip ;
+  int  ip = 0 ;
   int n1, n2 ;
   double x, y1, y2 ;
   float  f ;

@@ -23,10 +23,6 @@
   ALCcontext *al_context;
   ALCdevice  *al_device;
 
-
-
-
-
 #endif
 
 /*

@@ -1,0 +1,5 @@
+Version 0.6.1
+=============
+
+    Minor upgrade of program.  Includes an improvement in handling texture
+    files.

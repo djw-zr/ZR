@@ -82,26 +82,40 @@ char     my_name[] = "graphics_init" ;
       tile_x0 = tile_west  ;
       tile_y0 = tile_south ;
       tile_h0 = 100.0*floor(trk_min_height/100.0) ;
+      if(tile_h0 < 0.0)tile_h0 = 0.0 ;
       if(ip)printf("   Origin for 3D graphics:  Tile = %i, %i.  Height = %.2f m.\n",
                                           tile_x0, tile_y0, tile_h0) ;
 /*
  *  Initialise display sub-windows
  */
       init_train_operations_window(1) ;
-
 /*
  *  Initialise cameras
  *
- *  This is needed to initialise the eye position before the required
- *       shapes and textures are identified
+ *  This section is needed to initialise the eye position before
+ *       the required shapes and textures are identified.
+ *  If there is no route defined and no player train,
+ *       then use a default position based on the RouteStart values.
  */
-       cameras_init() ;
+      cameras_init() ;
 /*
  *  Start with camera  '0'
  */
-       current_camera = 0 ;
-       camera_changed = 1 ;
-       camera_new_position() ;
+      current_camera = 0 ;
+#ifdef NO_ROUTE_DEF
+      if(player_train){
+        current_camera = 1 ;
+      }else{
+        offset_center_x = project_db.RouteStart[0] - tile_x0 + project_db.RouteStart[2]/plot_scale ;
+        offset_center_y = project_db.RouteStart[1] - tile_y0 + project_db.RouteStart[3]/plot_scale ;
+        offset_center_z = 0.15 ;
+        offset_eye_x    = offset_center_x - 0.1 ;
+        offset_eye_y    = offset_center_y - 0.1 ;
+        offset_eye_z    = 0.2 ;
+      }
+#endif
+      camera_changed = 1 ;
+      camera_new_position() ;
 /*
  *   Initialise Lighting
  *   Defaults for glLightModel are
@@ -600,7 +614,7 @@ int         ipp = 0,
 //        ip = ipp && !strcmp(tx_node->name,"FootBrBrank") ;
         if(ip)printf("     Texture name = %s, needed = %i, loaded = %i\n",
                                 tx_node->name,tx_node->needed, tx_node->loaded);
-        if(!strcmp_ic(tx_node->name,land_texture_default) && ip){
+        if( ip && (tx_node == land_texture)){
           printf(" Routine load_needed_textures  ================\n") ;
           printf("  Texture = %s\n",tx_node->name) ;
           printf("   basic  = %i\n",tx_node->basic) ;

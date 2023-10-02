@@ -70,6 +70,7 @@ struct signaldb {
   SigSubObj   *sig_subobj  ;  // Signal Shape Sub-node describing this signal
   SigType     *sig_type    ;  // Raw signal node describing this signal
   nodeType    *sig_script  ;  // Root of script for this signal
+  ShapeNode   *sig_snode   ;  // Shape describing this signal
   int         enabled      ;  // Option to disable signal ??
   int         state        ;  //  MSTS Signal Aspect : STOP, CLEAR_1, etc
   int         draw_state   ;  //  Openrails: def_draw_state(state)
@@ -227,7 +228,7 @@ struct sigsubobj {
 //  The junction link will be different for each junction the signal
 //  is used for, so the following should both be zero.
   int  n_sig_jn_lnk    ;  //  Always missing ??
-  int  sig_jn_lnk_a[2]   ;  //  Always missing ??
+  int  *sig_jn_lnk_a   ;  //  Always missing ??
 } ;
 
 struct sigscriptfile {

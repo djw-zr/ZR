@@ -41,11 +41,18 @@ C:\ZR>gcc zr.c -DSDL2 -Dkb_dev -Dgrid_lines -Duse_vertex_arrays -DMinGW -I"C:\Pr
 #endif
 
 char  my_file[] = "__FILE__" ;
-int   l_pd = 0              ;  // l_pd = 1 to print debug information
-int   l_pp = 0              ;  // l_pp = 1 to print after a new position
-int   i_count = 0           ;  // Used to count number of debug print statements
-float d_rotate  = 90.0      ;  // Deug : default rotation angle (0, 90)
-float d_reflect = -1.0      ;  // Default reflection value (-1,1)
+int   l_pd = 0          ;  // l_pd = 1 to print debug information
+int   l_pp = 1          ;  // l_pp = 1 to print after a new position
+
+int   n_sig0 = -1      ;
+int   n_sig1 = -1         ;
+//int   n_sig0 = 3655      ;  // MECoast route York
+//int   n_sig1 = 3655      ;  //
+//int   n_sig0 = 1570      ;  // NewForestRoute Bug
+//int   n_sig1 = 1570      ;  //
+int   i_count = 0       ;  // Used to count number of debug print statements
+float d_rotate  =  0.0  ;  // Debugug : default rotation angle (0, 90)
+float d_reflect = -1.0  ;  // Default reflection value (-1,1)
 
 //char test_shape[] = "A1tPnt6dLft" ;
 //char test_shape[] = "Ashphaltplat20m250r" ;
@@ -54,6 +61,9 @@ float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 //char test_shape[] = "policePHIL" ;
 //char test_shape[] = "JP2grntent" ;
 //char test_shape[] = "acelahhl" ;
+//char test_shape[] = "amgantry1" ;     //  USA1 signal
+//char test_shape[] = "trm9d46" ;     //  New Forest Switch
+//char test_shape[] = "ukfs_tcr_r_250m_7d13" ;     //  New Forest Switch
 //char test_shape[] = "a1t50mstrt" ;
 //char test_shape[] = "N1tEndPnt3d" ;
 //char test_shape[] = "1905-S654" ;
@@ -67,8 +77,26 @@ float d_reflect = -1.0      ;  // Default reflection value (-1,1)
 //char test_shape[] = "NSW_SemLQJct-M-L" ;  //  Used to track error in prim_state
 //char test_shape[] = "a1t100mStrt" ;  //  Used to track error in track orientation
 //char test_shape[] = "OESignal01" ;
-char test_shape[] = "BBS-NSWGR-60ft-TT-open2_animate" ;
-//char test_shape[] = " " ;  //  Dummy
+//char test_shape[] = "BBS-NSWGR-60ft-TT-open2_animate" ;
+//char test_shape[] = "footbrwmth" ;   //  Footbridge Weymouth : New Forest Route
+//char test_shape[] = "rfdowncastshaft" ;   //                   : New Forest Route
+//char test_shape[] = "DR_BR_5MT_44917" ;   //                   : New Forest Route
+//char test_shape[] = "ukfs_tlm_17m5_9d46" ;   //                   : New Forest Route
+//char test_shape[] = "Dock" ;   //                   : New Forest Route
+//char test_shape[] = "lymtownstabldg" ;   //                   : New Forest Route
+//char test_shape[]   = "seatLSWR2" ;   //                   : New Forest Route
+//char test_shape[]   = "corfestation" ;   //                   : New Forest Route
+//char test_shape[]   = "latgantry3sigrh" ;   //                   : New Forest Route
+//char test_shape[]   = "srjctbsmsbsindic" ;   //                   : New Forest Route
+//char test_shape[]   = "ctn_point_indication" ;   //                   : New Forest Route
+//char test_shape[]   = "JP1Signal2" ;   //                   : Japan 1
+//char test_shape[]   = "nsw_lq-2doll-bracketl" ;   //           : au_great_zig_zag
+//char test_shape[]   = "us2bsignal3" ;   //           : au_great_zig_zag
+//char test_shape[]   = "srjct-bs-ms-bs" ;   //           : New Forest
+//char test_shape[]   = "lswrhfdshortrail" ;   //           : New Forest
+//char test_shape[]   = "rt3aspsig" ;   //           : MECoast
+//char test_shape[]   = "rifeathers" ;   //           : MECoast
+char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;
 int   c_width, c_height ;
@@ -99,15 +127,26 @@ char my_name[] = "zr" ;
       clock_gettime(CLOCK_MONOTONIC, &run_clock0) ; //  Run clock
       start_seconds = clock()/CLOCKS_PER_SEC ;
       process_defaults() ;
+/*
+ *  Start sound
+ */
+#ifdef OPENAL
+      setup_openal(argc, argv) ;
+#endif
+
       init_system() ;
+      printf("  BB ORdir   = %s\n",ORdir) ;
+      printf("  ORroute    = %s\n",ORroute) ;
+      printf("  ORroutedir = %s\n",ORroutedir) ;
       init_data_structures() ;
 /*
  *  Exit if plotting not required
  */
       if(!l_plot){
         printf("\n  Program %s stopping ...\n\n",my_name);
-        return 0;
+        close_system() ;
       }
+
 /*
  *  Open window and start main loop
  */
@@ -122,7 +161,7 @@ int  iret ;
       printf("  Call SDL_Init\n") ;
       if (SDL_Init(SDL_INIT_EVERYTHING) != 0){
         printf("Error initialising SDL: %s\n", SDL_GetError());
-        return 0;
+        close_system();
       }
       printf("  SDL successfully initialised!\n");
 
@@ -380,30 +419,50 @@ GLfloat ansio, ansio_ext    ;
 /*
  *==============================================================================
  * Process program arguments
+ *
+ *   Option -t should be the shortened name of one of the top level directories
+ *             defined in the configuraiton file '.zr/config'.
+ *          -r should be the name of one of the route directories contained
+ *             within the corresponding first level 'Routes' directory.
+ *
+ *   If not defined here, and there is more than one alternative specified
+ *   in the configuraiton file '.zr/config', then they are requested later.
+ *
  *==============================================================================
  */
 
 int process_args(int argc, char **argv){
-int  i ;
+int  ip = 1 ;
+int  i      ;
 char string[256] ;
 
       if(argc < 2) return 0 ;
 
       string[0] = '\0';
-      for(i=0;i<argc;i++){
+      for(i=1;i<argc;i++){
         sscanf(argv[i],"%s",string);
 //  Turn on plotting
         if(!strncmp(string,"-p",2)){
           l_plot = 1 ;
+        }else if(!strncmp(string,"-t",2)){
+          ORdname = strdup(argv[++i]) ;
+        }else if(!strncmp(string,"-r",2)){
+          ORroute = strdup(argv[++i]) ;
 //  Display help message
         }else if(!strncmp(string,"-h",2) || !strncmp(string,"--h",3)){
           printf(" Program zr help\n") ;
           printf("   Options:\n") ;
-          printf("   --help  ::  This help message\n") ;
-          printf("   -h      ::  This help message\n") ;
-          printf("   -p      ::  Load data and display using OpenGL\n") ;
-          printf("           ::  Otherwise just load data\n\n") ;
+          printf("   --help   ::  This help message\n") ;
+          printf("   -h       ::  This help message\n") ;
+          printf("   -t dname ::  Top level directory\n") ;
+          printf("   -r rname ::  Name of route\n") ;
+          printf("   -p       ::  Load data and display using OpenGL\n") ;
+          printf("            ::  Otherwise just load data\n\n") ;
           exit(0);
+        }else{
+          printf("    Option not recognised.  Argument = %s\n",string) ;
+          printf("    Program stopping ...\n") ;
+          exit(0) ;
         }
       }
 /*
@@ -417,6 +476,13 @@ char string[256] ;
       printf("  Program stopping ...\n") ;
       exit(1) ;
 #endif
+/*
+ *  Report
+ */
+      if(ip){
+        if(ORdname)printf("  process_args :: Top directory name = %s\n",ORdname) ;
+        if(ORroute)printf("  process_args :: Name of route      = %s\n",ORroute) ;
+      }
       return 0 ;
 }
 
@@ -435,6 +501,7 @@ int  ip = 0 ;
 }
 #endif
 
+#include "fcaseopen.c"
 #include "system.c"
 #if defined MinGW
   #include "system_alt.c"
@@ -491,6 +558,7 @@ int  ip = 0 ;
 #include "load_wagon_file.c"
 #include "load_wagon_files.c"
 #include "load_turntable.c"
+#include "load_consist_files.c"
 #include "setup_turntables.c"
 #include "update_turntables.c"
 #include "setup_transfers.c"
@@ -518,6 +586,11 @@ int  ip = 0 ;
 
 #ifdef USE_FREETYPE
 #  include "freetype.c"
+#endif
+
+#ifdef OPENAL
+#  include "setup_openal.c"
+#  include "setup_sounds.c"
 #endif
 
 #if defined GLUT || defined USE_ZRGLUT

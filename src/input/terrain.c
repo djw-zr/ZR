@@ -74,8 +74,14 @@ int read_ms_terrain(TileListNode *tile)
   FILE   *fp ;
   char    myname[] = "read_ms_terrain" ;
 
-      if(ip)printf("\n  Enter routine : %s\n",myname);
-      if(ip)printf("  File = %s\n",tile->t_file);
+//      ip = tile->tilex == -6047 && tile->tiley == 14921 ;
+//      ip = 0 ;
+
+      if(ip){
+        printf("\n=============================================\n") ;
+        printf("\n  Enter routine : %s\n",myname);
+        printf("  File = %s\n",tile->t_file);
+      }
 /*
  * =============================================================================
  *  open_msfile reads and checks the first 16 bytes of the terrain file,
@@ -88,7 +94,7 @@ int read_ms_terrain(TileListNode *tile)
         exit(1) ;
       }
       fp = msfile.fp ;
-      if(ip)printf("  TILEX = %i,  TILEZ = %i\n",tile->tilex, tile->tiley);
+      if(ip)printf("  TILEX = %i,  TILEZ = %i\n\n",tile->tilex, tile->tiley);
 /*
  *   Code based on TerrainFile.cs
  *                 public class terrain,
@@ -102,7 +108,7 @@ int read_ms_terrain(TileListNode *tile)
       label_length1 = read_uint8(fp)  ;
       remaining_bytes1 = block_bytes1 - 9 ;
 
-      if(ip) {
+      if(ip && 0) {
         printf(" AA itoken1          = %X  :: %i\n", itoken1, itoken1) ;
         printf(" AA flags1           = %X  :: %i\n", flags1,  flags1 ) ;
         printf(" AA block_bytes1     = %X  :: %i\n", block_bytes1, block_bytes1) ;
@@ -123,17 +129,17 @@ int read_ms_terrain(TileListNode *tile)
             remaining_bytes2 = block_bytes2 - 9 ;
             remaining_bytes1 = remaining_bytes1 - block_bytes2 ;
 
-//      printf("\n");
-//      printf(" BB itoken2 = %i, flags2 = %i, remaining_bytes2 = %i, label_length2 = %i\n",
-//                 itoken2, flags2, remaining_bytes2, label_length2) ;
-//      printf(" BB token_idc[%i] 0x%x = %s\n",itoken2,itoken2,token_idc[itoken2]) ;
+            if(ip && 0){
+              printf(" BB itoken2 = %i, flags2 = %i, remaining_bytes2 = %i, label_length2 = %i\n",
+                 itoken2, flags2, remaining_bytes2, label_length2) ;
+              printf(" BB token_idc[%i] 0x%x = %s\n",itoken2,itoken2,token_idc[itoken2]) ;
+            }
 
             switch(itoken2){                                   // SWITCH 2
               case(TERRAIN_ERRTHRESHOLD_SCALE):
                 terrain_data->terrain_errthreshold_scale = read_real32(fp) ;
                 remaining_bytes2 = remaining_bytes2 - 4 ;
-//                printf("\n");
-//                printf(" terrain_errthreshold_scale = %f\n",terrain_data->terrain_errthreshold_scale);
+                if(ip)printf("\n terrain_errthreshold_scale = %f\n",terrain_data->terrain_errthreshold_scale);
                 break ;
               case(TERRAIN_WATER_HEIGHT_OFFSET):
                 terrain_data->terrain_water_height_offset_SW = read_real32(fp) ;
@@ -147,17 +153,21 @@ int read_ms_terrain(TileListNode *tile)
                 if(remaining_bytes2 == 0)break ;
                 terrain_data->terrain_water_height_offset_NW = read_real32(fp) ;
                 remaining_bytes2 = remaining_bytes2 - 4 ;
-//                printf("\n");
-//                printf(" terrain_water_height_offset_SW = %f\n",terrain_data->terrain_water_height_offset_SW);
-//                printf(" terrain_water_height_offset_SE = %f\n",terrain_data->terrain_water_height_offset_SE);
-//                printf(" terrain_water_height_offset_NE = %f\n",terrain_data->terrain_water_height_offset_NE);
-//                printf(" terrain_water_height_offset_NW = %f\n",terrain_data->terrain_water_height_offset_NW);
+                if(ip){
+                  printf("\n");
+                  printf(" terrain_water_height_offset_SW = %f\n",terrain_data->terrain_water_height_offset_SW);
+                  printf(" terrain_water_height_offset_SE = %f\n",terrain_data->terrain_water_height_offset_SE);
+                  printf(" terrain_water_height_offset_NE = %f\n",terrain_data->terrain_water_height_offset_NE);
+                  printf(" terrain_water_height_offset_NW = %f\n",terrain_data->terrain_water_height_offset_NW);
+                }
                 break ;
               case(TERRAIN_ALWAYSSELECT_MAXDIST) :
                 terrain_data->terrain_alwaysselect_maxdist = read_real32(fp) ;
                 remaining_bytes2 = remaining_bytes2 - 4 ;
-//                printf("\n");
-//                printf(" terrain_alwaysselect_maxdist = %f\n",terrain_data->terrain_alwaysselect_maxdist);
+                if(ip){
+                  printf("\n");
+                  printf(" terrain_alwaysselect_maxdist = %f\n",terrain_data->terrain_alwaysselect_maxdist);
+                }
                 break;
               case(TERRAIN_SAMPLES) :
                 for(;remaining_bytes2>0;){                       //  LOOP 2
@@ -167,63 +177,72 @@ int read_ms_terrain(TileListNode *tile)
                   label_length3    = read_uint8(fp)  ;
                   remaining_bytes3 = block_bytes3 - 9 ;
                   remaining_bytes2 = remaining_bytes2 - block_bytes3 ;
-
-//      printf("\n");
-//      printf(" CC itoken3 = %i, flags3 = %i, remaining_bytes3 = %i, label_length3 = %i\n",
-//                 itoken3, flags3, remaining_bytes3, label_length3) ;
-//      printf(" CC token_idc[%i] 0x%x = %s\n",itoken3,itoken3,token_idc[itoken3]) ;
-
-//                      printf(" AA remaining_bytes3 = %i\n",remaining_bytes3);
+                  if(ip && 0){
+                    printf("\n");
+                    printf(" CC itoken3 = %i, flags3 = %i, remaining_bytes3 = %i, label_length3 = %i\n",
+                              itoken3, flags3, remaining_bytes3, label_length3) ;
+                    printf(" CC token_idc[%i] 0x%x = %s\n",itoken3,itoken3,token_idc[itoken3]) ;
+                    printf(" AA remaining_bytes3 = %i\n",remaining_bytes3);
+                  }
                   switch(itoken3){                                // SWITCH 3
                     case(TERRAIN_NSAMPLES):
                       terrain_data->terrain_nsamples = read_uint32(fp) ;
-//                      printf(" BB remaining_bytes3 = %i\n",remaining_bytes3);
+                      if(ip)printf(" BB remaining_bytes3 = %i\n",remaining_bytes3);
                       remaining_bytes3 = remaining_bytes3 - 4 ;
-//                      printf(" CC remaining_bytes3 = %i\n",remaining_bytes3);
-//                      printf("\n");
-//                      printf(" terrain_nsamples = %i\n",terrain_data->terrain_nsamples);
+                      if(ip){
+//                        printf(" CC remaining_bytes3 = %i\n",remaining_bytes3);
+                        printf("\n");
+                        printf(" terrain_nsamples      = %i\n",terrain_data->terrain_nsamples);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_ROTATION):
                       terrain_data->terrain_sample_rotation = read_real32(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 4 ;
-//                      printf("\n");
-//                      printf(" terrain_sample_rotation = %f\n",terrain_data->terrain_sample_rotation);
+                      if(ip){
+                        printf("\n terrain_sample_rotation = %f\n",terrain_data->terrain_sample_rotation);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_FLOOR):
                       terrain_data->terrain_sample_floor = read_real32(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 4 ;
-//                      printf("\n");
-//                      printf(" terrain_sample_floor = %f\n",terrain_data->terrain_sample_floor);
+                      if(ip){
+                        printf(" terrain_sample_floor   = %f\n",terrain_data->terrain_sample_floor);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_SCALE):
                       terrain_data->terrain_sample_scale = read_real32(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 4 ;
-//                      printf("\n");
-//                      printf(" terrain_sample_scale = %f\n",terrain_data->terrain_sample_scale);
+                      if(ip){
+                        printf(" terrain_sample_scale   = %f\n",terrain_data->terrain_sample_scale);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_SIZE):
                       terrain_data->terrain_sample_size = read_real32(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 4 ;
-//                      printf("\n");
-//                      printf(" terrain_sample_size = %f\n",terrain_data->terrain_sample_size);
+                      if(ip){
+                        printf(" terrain_sample_size     = %f\n",terrain_data->terrain_sample_size);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_YBUFFER):
                       terrain_data->ybuffer = read_ucharz(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 2 - 2*strlen(terrain_data->ybuffer) ;
-//                      printf("\n");
-//                      printf(" terrain_sample_ybuffer = %s\n",terrain_data->ybuffer);
+                      if(ip){
+                        printf(" terrain_sample_ybuffer = %s\n",terrain_data->ybuffer);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_EBUFFER):
                       terrain_data->ebuffer = read_ucharz(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 2 - 2*strlen(terrain_data->ebuffer) ;
-//                      printf("\n");
-//                      printf(" terrain_sample_ebuffer = %s\n",terrain_data->ebuffer);
+                      if(ip){
+                        printf(" terrain_sample_ebuffer = %s\n",terrain_data->ebuffer);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_NBUFFER):
                       terrain_data->nbuffer = read_ucharz(fp) ;
                       remaining_bytes3 = remaining_bytes3 - 2 - 2*strlen(terrain_data->nbuffer) ;
-//                      printf("\n");
-//                      printf(" terrain_sample_nbuffer = %s\n",terrain_data->nbuffer);
+                      if(ip){
+                        printf(" terrain_sample_nbuffer = %s\n",terrain_data->nbuffer);
+                      }
                       break ;
                     case(TERRAIN_SAMPLE_ASBUFFER):
                         for(;0<remaining_bytes3;remaining_bytes3--)getc(fp);
@@ -260,14 +279,15 @@ int read_ms_terrain(TileListNode *tile)
               case(TERRAIN_SHADERS) :                 // Level 2 option
                 terrain_data->number_of_shaders= read_uint32(fp) ;
                 remaining_bytes2 =remaining_bytes2 - 4;
-//                printf("\n EE TERRAIN_SHADERS number of shaders =  %i\n\n", l) ;
+                if(ip)printf("\n EE TERRAIN_SHADERS number of shaders =  %i\n\n",
+                                                                  terrain_data->number_of_shaders) ;
 
                 number_of_shaders = terrain_data->number_of_shaders ;
                 terrain_data->tile_shader = (TileShader *)malloc(number_of_shaders*sizeof(TileShader)) ;
 
                 tile_shader = terrain_data->tile_shader ;
                 for(j=0;j<number_of_shaders;j++,tile_shader++){                     // LOOP 2
-//                  printf(" EE TERRAIN_SHADERS Loop:  j =  %i %i\n",j, number_of_shaders) ;
+                  if(ip)printf(" EE TERRAIN_SHADERS Loop:  j =  %i %i\n",j, number_of_shaders) ;
 
                   itoken3          = read_uint16(fp) ;
                   flags3           = read_uint16(fp) ;
@@ -276,10 +296,12 @@ int read_ms_terrain(TileListNode *tile)
                   remaining_bytes3 = block_bytes3  - 9 ;
                   remaining_bytes2 = remaining_bytes2  - block_bytes3 ;
 
-//                  printf("\n");
-//      printf(" EE itoken3 = %i, flags3 = %i, remaining_bytes3 = %i, label_length3 = %i\n",
-//                  itoken3, flags3, remaining_bytes3, label_length3) ;
-//      printf(" EE token_idc[%i] 0x%x = %s\n",itoken3,itoken3,token_idc[itoken3]) ;
+                  if(ip && 0){
+                    printf("\n");
+        printf(" EE itoken3 = %i, flags3 = %i, remaining_bytes3 = %i, label_length3 = %i\n",
+                    itoken3, flags3, remaining_bytes3, label_length3) ;
+        printf(" EE token_idc[%i] 0x%x = %s\n",itoken3,itoken3,token_idc[itoken3]) ;
+                  }
 /*
  * =============================================================================
  *   Start processing new Shader
@@ -288,15 +310,15 @@ int read_ms_terrain(TileListNode *tile)
 //                  tile_shader = &(terrain_data->tile_shader[j]) ;
                   tile_shader->name = read_ucharz(fp) ;
                   remaining_bytes3 = remaining_bytes3 - 2 - 2*strlen(tile_shader->name);
-//      printf(" DD shader_name = %s\n\n",tile_shader->name) ;
+                  if(ip)printf("   EE shader_name = %s\n\n",tile_shader->name) ;
 
 //===========================================================================================
                   switch(itoken3){                  // SWITCH 3
 //--------------------------------------------------------------------------------------------
                     case(TERRAIN_SHADER):           // Level 3 option
-//                      printf(" ENTER TERRAIN_SHADER\n");
+                      if(ip)printf("   ENTER TERRAIN_SHADER\n");
                       for(;remaining_bytes3>0;){    // LOOP 3
-//                      printf("\n  Loop in TERRAIN_SHADER\n\n");
+                        if(ip)printf("    Loop in TERRAIN_SHADER\n");
                         itoken4          = read_uint16(fp) ;
                         flags4           = read_uint16(fp) ;
                         block_bytes4     = read_uint32(fp) + 8 ;
@@ -312,11 +334,11 @@ int read_ms_terrain(TileListNode *tile)
                         switch(itoken4){              // SWITCH 4
 //-------------------------------------------------------------------------------------------
                           case(TERRAIN_TEXSLOTS):     // Level 4 option
-//                            printf("\n ENTER TERRAIN_TEXSLOTS\n");
+                            if(ip)printf("\n   ENTER TERRAIN_TEXSLOTS\n");
                             tile_shader->number_of_texslots = read_uint32(fp) ;
                             remaining_bytes4 = remaining_bytes4 - 4 ;
 
-//                           printf(" FF number_of_texslots = %i\n\n",tile_shader->number_of_texslots) ;
+                            if(ip)printf("   FF number_of_texslots = %i\n",tile_shader->number_of_texslots) ;
 
                             tile_shader->tex_slot = (TexSlotNode *)malloc(tile_shader->number_of_texslots*sizeof(TexSlotNode)) ;
 
@@ -332,20 +354,21 @@ int read_ms_terrain(TileListNode *tile)
 //            printf(" FF itoken5 = %i, flags5 = %i, remaining_bytes5 = %i, label_length5 = %i\n",
 //                      itoken5, flags5, remaining_bytes5, label_length5) ;
 //            printf(" FF token_idc[%i] 0x%x = %s\n",itoken5,itoken5,token_idc[itoken5]) ;
-//            printf(" FF k (tex_slot) = %i\n\n",k) ;
+                              if(ip)printf("   FF k (tex_slot) = %i\n",k) ;
 
-//                              tex_slot = &(tile_shader->tex_slot[k]) ;
                               tex_slot->filename = read_ucharz(fp) ;
                               tex_slot->A = read_uint32(fp) ;
                               tex_slot->B = read_uint32(fp) ;
                               remaining_bytes5 = remaining_bytes5 - 10 - 2*strlen(tex_slot->filename) ;
 
-//                              printf("  GG filename = %s %i\n",tex_slot->filename,
-//                                                  (int)strlen(tex_slot->filename));
-//                              printf("  GG A        = %i\n",  tex_slot->A);
-//                              printf("  GG B        = %i\n",tex_slot->B);
-//                              printf("  GG remaining_bytes5 = %i\n",remaining_bytes5);
-//                              printf("  GG remaining_bytes4 = %i\n\n",remaining_bytes4);
+                              if(ip){
+                                printf("     GG filename = %s %i\n",tex_slot->filename,
+                                                    (int)strlen(tex_slot->filename));
+                                printf("     GG A        = %i\n",  tex_slot->A);
+                                printf("     GG B        = %i\n",tex_slot->B);
+//                                printf("  GG remaining_bytes5 = %i\n",remaining_bytes5);
+//                                printf("  GG remaining_bytes4 = %i\n\n",remaining_bytes4);
+                              }
                             } ;                          // End LOOP 4
                             break ;                      // End Level 4 option
 //----------------------------------------------------------------------------------------------
@@ -449,8 +472,8 @@ int read_ms_terrain(TileListNode *tile)
 
 //                  tile_patchset = &(terrain_data->tile_patchset[k]) ;
 
-//                  printf("\n ENTER TERRAIN_PATCHSETS k = %i\n",k);
-//                  printf("\n   remaining_bytes3 = %i\n",remaining_bytes3);
+                    if(ip)printf("\n ENTER TERRAIN_PATCHSETS k = %i\n",k);
+                    if(ip)printf("\n   remaining_bytes3 = %i\n",remaining_bytes3);
 
                   itoken4          = read_uint16(fp) ;
                   flags4           = read_uint16(fp) ;
@@ -459,13 +482,13 @@ int read_ms_terrain(TileListNode *tile)
                   remaining_bytes4 = block_bytes4  - 9 ;
                   remaining_bytes3 = remaining_bytes3  - block_bytes4 ;
 
-//                  printf("\n");
-//                  printf(" EE itoken4 = %i, flags4 = %i, remaining_bytes4 = %i, label_length4 = %i\n",
-//                            itoken4, flags4, remaining_bytes4, label_length4) ;
-//                  printf(" EE token_idc[%i] 0x%x = %s\n",itoken4,itoken4,token_idc[itoken4]) ;
+                    if(ip)printf("\n");
+                    if(ip)printf(" EE itoken4 = %i, flags4 = %i, remaining_bytes4 = %i, label_length4 = %i\n",
+                            itoken4, flags4, remaining_bytes4, label_length4) ;
+                    if(ip)printf(" EE token_idc[%i] 0x%x = %s\n",itoken4,itoken4,token_idc[itoken4]) ;
 
                   for(;remaining_bytes4>0;){
-//                  printf("\n ENTER LOOP remaining_bytes4 = %i\\n",remaining_bytes4);
+                    if(ip)printf("\n ENTER LOOP remaining_bytes4 = %i\\n",remaining_bytes4);
 
                   itoken5          = read_uint16(fp) ;
                   flags5           = read_uint16(fp) ;
@@ -474,10 +497,10 @@ int read_ms_terrain(TileListNode *tile)
                   remaining_bytes5 = block_bytes5  - 9 ;
                   remaining_bytes4 = remaining_bytes4  - block_bytes5 ;
 
-//                  printf("\n");
-//                  printf(" FF itoken5 = %i, flags5 = %i, remaining_bytes5 = %i, label_length5 = %i\n",
-//                            itoken5, flags5, remaining_bytes5, label_length5) ;
-//                  printf(" FF token_idc[%i] 0x%x = %s\n\n",itoken5,itoken5,token_idc[itoken5]) ;
+                    if(ip)printf("\n");
+                    if(ip)printf(" FF itoken5 = %i, flags5 = %i, remaining_bytes5 = %i, label_length5 = %i\n",
+                            itoken5, flags5, remaining_bytes5, label_length5) ;
+                    if(ip)printf(" FF token_idc[%i] 0x%x = %s\n\n",itoken5,itoken5,token_idc[itoken5]) ;
 
 /*
  * =============================================================================
@@ -488,37 +511,37 @@ int read_ms_terrain(TileListNode *tile)
                     case(TERRAIN_PATCHSET_DISTANCE) :
                       tile_patchset->terrain_patchset_distance = read_uint32(fp) ;
                       remaining_bytes5 = remaining_bytes5 - 4;
-//                      printf(" terrain_patchset_distance = %i\n",tile_patchset->terrain_patchset_distance);
+                    if(ip)    printf(" terrain_patchset_distance = %i\n",tile_patchset->terrain_patchset_distance);
                       break ;
                     case(TERRAIN_PATCHSET_NPATCHES) :
                       tile_patchset->terrain_patchset_npatches = read_uint32(fp) ;
                       remaining_bytes5 = remaining_bytes5 - 4;
-//                      printf(" terrain_patchset_npatches = %i\n",tile_patchset->terrain_patchset_npatches);
+                    if(ip)    printf(" terrain_patchset_npatches = %i\n",tile_patchset->terrain_patchset_npatches);
                      break ;
                     case(TERRAIN_PATCHSET_PATCHES) :
-//                      printf("\n Case: TERRAIN_PATCHSET_PATCHES\n") ;
-//                      printf("\n Read patches\n") ;
+                    if(ip)    printf("\n Case: TERRAIN_PATCHSET_PATCHES\n") ;
+                    if(ip)    printf("\n Read patches\n") ;
                       number_of_patches = tile_patchset->terrain_patchset_npatches ;
-//                      printf("    number_of_patches    = %i\n",number_of_patches) ;
+                    if(ip)    printf("    number_of_patches    = %i\n",number_of_patches) ;
                       number_of_patches = number_of_patches*number_of_patches ;
-//                      printf("    number_of_patches**2 = %i\n",number_of_patches) ;
+                    if(ip)    printf("    number_of_patches**2 = %i\n",number_of_patches) ;
 
-//                      printf("  tile_patchset             = %p\n",(void *)tile_patchset);
-//                      printf("  remaining_bytes4           = %i\n",remaining_bytes4);
-//                      printf("  remaining_bytes5           = %i\n",remaining_bytes5);
-//                      tile_patchset->tile_patch = NULL ;
-//                      printf("  tile_patchset->tile_patch = %p\n",(void *)tile_patchset->tile_patch);
-//                      printf(" HH number_of_patches = %i\n",number_of_patches);
-//                      printf(" HH sizeof(tilepatch) = %i\n",(int)sizeof(tilepatch));
+                    if(ip)    printf("  tile_patchset             = %p\n",(void *)tile_patchset);
+                    if(ip)    printf("  remaining_bytes4           = %i\n",remaining_bytes4);
+                    if(ip)    printf("  remaining_bytes5           = %i\n",remaining_bytes5);
+                    if(ip)    tile_patchset->tile_patch = NULL ;
+                    if(ip)    printf("  tile_patchset->tile_patch = %p\n",(void *)tile_patchset->tile_patch);
+                    if(ip)    printf(" HH number_of_patches = %i\n",number_of_patches);
+                    if(ip)    printf(" HH sizeof(TilePatch) = %i\n",(int)sizeof(TilePatch));
 
 
                       tile_patch = (TilePatch *)malloc(number_of_patches*sizeof(TilePatch)) ;
-//                      printf(" HH\n");
-//                      printf("  tile_patch = %p\n",(void *)tile_patch);
+                    if(ip)    printf(" HH\n");
+                    if(ip)    printf("  tile_patch = %p\n",(void *)tile_patch);
                       tile_patchset->tile_patch = tile_patch ;
-//                      printf("  tile_patchset->tile_patch = %p\n",(void *)tile_patchset->tile_patch);
+                    if(ip)    printf("  tile_patchset->tile_patch = %p\n",(void *)tile_patchset->tile_patch);
 
-//                      printf("\n ENTER LOOP TERRAIN_PATCHSET_PATCHES number = %i\n",number_of_patches);
+                    if(ip)    printf("\n ENTER LOOP TERRAIN_PATCHSET_PATCHES number = %i\n",number_of_patches);
                       for(l=0;l<number_of_patches;l++,tile_patch++) {
 //                        tile_patch = &(tile_patchset->tile_patch[l]) ;
 //                        printf("\n WITHIN LOOP TERRAIN_PATCHSET_PATCHES l, n = %i %i\n",l,number_of_patches);
@@ -644,18 +667,19 @@ int read_elevations(TileListNode *tlnode){
   unsigned short  *z ;
   char   *name = NULL,
          *full_name ;
-  char    myname[] = "read_elevations" ;
+  char   *tiles_dir = "/TILES/"        ;
+  char   *myname    = "read_elevations" ;
   FILE   *fp = NULL ;
 
       if(ip)printf("\n  Enter routine : %s\n",myname);
       name = tlnode->terrain_data.ybuffer;
       if(ip)printf("  Name = %s\n",name);
-      len = strlen(name) + strlen(ORroutedir) + strlen("TILES/") + 1 ;
+      len = strlen(ORroutedir) + strlen(tiles_dir) +  strlen(name) + 1 ;
       full_name = (char *)malloc(len) ;
 
-      strcpy(full_name   ,ORroutedir)    ;
-      strcat(full_name   ,"TILES/")      ;
-      strcat(full_name   ,name)          ;
+      strcpy(full_name, ORroutedir) ;
+      strcat(full_name, tiles_dir)  ;
+      strcat(full_name, name)       ;
       if(ip){
         printf("  Full name = %s\n",full_name);
         printf("  TILEX = %i, TILEZ = %i\n",tlnode->tilex,tlnode->tiley);

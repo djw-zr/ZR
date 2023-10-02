@@ -20,7 +20,7 @@
 
 int change_forward_switch_for_player_train(){
 
-int           ip = 1 ;
+int           ip = 0 ;
 int           n          ;
 double        df         ;  // length of end wagons
 TravellerNode *tff, tf   ;
@@ -59,7 +59,7 @@ char          *my_name = "change_forward_switch_for_player_train" ;
 
 int change_rearward_switch_for_player_train(){
 
-int           ip = 1 ;
+int           ip = 0 ;
 int           n          ;
 double        df         ;  // lenght of end wagons
 TravellerNode *tbf, tb   ;

@@ -1,0 +1,10 @@
+Version 0.6.0
+=============
+
+    The program now animates signals, reading and interpreting the signal script files using software described in the sister github repository ZR_Scripts.
+    
+    Turntables and transfers (i.e. water towers) are now animated.
+    
+    Trains can be split (using the F9 key and a mouse click).  Engines, wagons and carriages couple when 'colliding' at slow speed.
+    
+    As a result most, if not all, of the basic set of train operations are now animated.

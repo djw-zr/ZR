@@ -45,20 +45,22 @@ int scan_for_wagon_files(){
   struct dirent *f_entry1,
                 *f_entry2 ;
   struct stat   *stbuf   ;
+  char  *trainset       ="/Trains/Trainset/" ;
+  char  *trainset_inuse ="/Trains/Trainset_In_Use/" ;
   char  my_name[] = "scan_for_wagon_files" ;
 
-      l1      = strlen(ORdir) + strlen("Trains/Trainset_In_Use/") + 1 ;
+      l1      = strlen(ORdir) + strlen(trainset_inuse) + 1 ;
       top_dir1 = (char *)malloc(l1*sizeof(char)) ;
-      strcpy(top_dir1,ORdir)                   ;
-      strcat(top_dir1,"Trains/Trainset_In_Use/")           ;
-      iret = zr_find_msfile2(top_dir1);
+      strcpy(top_dir1,ORdir)           ;
+      strcat(top_dir1,trainset_inuse)  ;
+      iret = zr_find_msfile2(top_dir1) ;
       if(iret){
         printf("  Routine %s.  Unable to find directory %s\n",my_name,top_dir1);
         free(top_dir1) ;
-        l1      = strlen(ORdir) + strlen("Trains/Trainset/") + 1 ;
+        l1      = strlen(ORdir) + strlen(trainset) + 1 ;
         top_dir1 = (char *)malloc(l1*sizeof(char)) ;
         strcpy(top_dir1,ORdir)                   ;
-        strcat(top_dir1,"Trains/Trainset/")           ;
+        strcat(top_dir1,trainset)           ;
         iret = zr_find_msfile2(top_dir1);
         if(iret){
           printf("  Routine %s.  Unable to find directory %s\n",my_name,top_dir1);
@@ -75,10 +77,13 @@ int scan_for_wagon_files(){
         if(f_entry1->d_type != DT_DIR ) continue ;
         if((f_entry1->d_name)[0] == '.') continue ;
         if(ip)printf("  Found directory = %s\n", f_entry1->d_name);
-#ifdef ROUTE_NEW_FOREST
+//#ifdef ROUTE_NEW_FOREST
+/*
+ *  Ignore problem engine included in New Forest Route
+ */
         if(!strcmp(f_entry1->d_name,"CCW_George_Jennings") ||
            !strcmp(f_entry1->d_name,"GeorgeJennings")         )continue ;
-#endif
+//#endif
 /*
  *  Generate full directory name
  */

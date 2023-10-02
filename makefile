@@ -30,8 +30,8 @@ SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout src/setup
 CC       = gcc
 LD       = gcc
 CFLAGS   = -m64 -march=native -mcmodel=large
-#CFLAGS  += -O3 #         Level 3 compiler optimisation
-CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
+CFLAGS  += -O3 #         Level 3 compiler optimisation
+#CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable
@@ -41,7 +41,7 @@ CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 
 #  Specify pre-processor options
 #CFLAGS  += -Dsketch_tracks_and_roads #  Plot outline of roads/tracks
-CFLAGS  += -Dgrid_lines #          Outline tiles
+#CFLAGS  += -Dgrid_lines #          Outline tiles
 #CFLAGS  += -Dfull_topog #          Plot all topography
 CFLAGS  += -Dkb_dev #              Keyboard with modified 'flying' keys
 #CFLAGS  += -Dgeo_coord #           Use x=east, y=north, z=up for shapes
@@ -62,7 +62,10 @@ CFLAGS += -D_MultiSample
 #CFLAGS += -DROUTE_JAPAN1 #   Tokyo - Hakone
 #CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line             Segmentation
 #CFLAGS += -DROUTE_TUTORIAL
-#CFLAGS += -DROUTE_AU_NSW_SW_SS
+CFLAGS += -DNO_ROUTE_DEF
+
+CFLAGS += -fpie -fopenmp 
+
 
 #  Conditionals
 
@@ -94,12 +97,12 @@ CFILES := $(shell find $(SRC_DIR) -name "*.c")
 
 #  Makefile targets:
 
-zr: zr.c $(HFILES) $(CFILES) makefile sigscr.o y.tab.o lex.yy.o
+zr: zr.c $(HFILES) $(CFILES) makefile load_sigscr_file.o y.tab.o lex.yy.o
 	$(CC) zr.c -c $(CFLAGS)
-	$(LD) zr.o sigscr.o y.tab.o lex.yy.o -o $@ $(CFLAGS) $(LDFLAGS)
+	$(LD) zr.o load_sigscr_file.o y.tab.o lex.yy.o -o $@ $(CFLAGS) $(LDFLAGS)
 
-sigscr.o: src/input/sigscr.c makefile
-	$(CC) src/input/sigscr.c -c $(CFLAGS)
+load_sigscr_file.o: src/input/load_sigscr_file.c makefile
+	$(CC) src/input/load_sigscr_file.c -c $(CFLAGS)
 
 y.tab.o: src/input/y.tab.c makefile
 	$(CC) src/input/y.tab.c  -c $(CFLAGS)
