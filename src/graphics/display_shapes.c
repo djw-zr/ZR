@@ -35,7 +35,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
   int         prim_state_idx  ;
   int         tex_idx         ;
   int         ivtx_state      ;
-  char        *name ;
+  char        *name           ;
+  static int  ierror = 0      ;
 
   Animation *animation     ;
   AnimNode  *anim_node     ;
@@ -114,13 +115,19 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 //           ip =  180 == witem->uid
 //                 && -6141 == witem->world_node->tile_x
 //                 && 14888 == witem->world_node->tile_y ;
+/*
+ *  Turntable at Oxford :  New Forest Route
+ *           Number of animation nodes < number of matrices
+ */
+//      ip = !strcmp(snode->name,"ukfs_tt_42ft");
+
       if(!ipp)ip = 0 ;                        // Print on first pass only.
       if(ip) ipp = 0 ;
 
 //      ip = l_pd ;
 
 #ifdef _Display_Normal
-      if((witem && (witem->anim_value != 0.0) && ip)){
+      if((ip && witem && (witem->anim_value != 0.0) )){
         printf("\n\n*******************************************************************\n");
         printf("  Routine %s entered for shape %s\n",
                   my_name,snode->name) ;
@@ -194,7 +201,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
           printf("    Texture    : %2.2i : pointer = %p  %p    %s\n",
                                        i,(void *)texture,(void *)name,name);
         }
-        printf(" End of Key Variable Section\n\n") ;
+        printf(" End of List Key Variables\n\n") ;
       }
 /*
  *==============================================================================
@@ -202,6 +209,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  *==============================================================================
  */
       if(ip){
+        printf("  Check for animation\n") ;
         printf("  snode         = %p\n", (void *)snode) ;
         printf("  dist_level    = %p\n", (void *)dist_level) ;
         printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
@@ -306,20 +314,18 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
                                 (void *)texture,gl_tex_ref_no) ;
             }
 
-            if(texture == NULL){
-//  Used to debug but causess continuous errors with MSTS Route Japan 2.
-#if 0
+            if(texture == NULL && ierror++<20){
+//  Used to debug but causes continuous errors with MSTS Route Japan 2.
               printf(" **********************shape_dlist*********************************\n");
               printf("  Routine: %s.  Image missing !\n",my_name);
-              printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
+              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
               printf(" ******************************************************************\n");
-#endif
               break ;
             }else{
-              if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no)){
+              if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no) && ierror++<20){
               printf(" **********************shape_dlist*********************************\n");
               printf("  Routine: %s.  Image unloaded !\n",my_name);
-              printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
+              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
               printf(" ******************************************************************\n");
               }
             }
@@ -413,15 +419,24 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
           if(ip)printf("       Process hierarchy :: im = %i\n",im) ;
 //          im-- ;
           while(im--){
+            if(ip)printf("       New hierarchy :: im      = %i\n",im) ;
+            if(ip)printf("                     :: ima[im] = %i\n",ima[im]) ;
+            if(ip)printf("                     :: hierarchy = %i\n",dist_level->n_hierarchy) ;
             matrix4x3   = &(snode->matrix[ima[im]])      ;
             a_lin = a_tcb = 0 ;                  // use matrix flag
+            if(ip)printf("       animation    = %p\n",(void *)animation) ;
+            if(ip)printf("       n_anim_nodes = %i\n",animation->n_anim_nodes) ;
 /*
- *  Chek that object is animated and primitive state is not "TRANS"
+ *  Check that the shape is animated and primitive state is not "TRANS"
  *  Note program fails if check on prim_state->name is not done
  */
-            if(animation && (!prim_state->name || (prim_state->name &&
+            if(animation && (uint) ima[im] < dist_level->n_hierarchy
+                         && (uint) ima[im] < animation->n_anim_nodes
+                         && (!prim_state->name || (prim_state->name &&
                             strcmp(prim_state->name,"TRANS") ) ) ){
+              if(ip)printf("       Setup anim_node\n") ;
               anim_node = &(animation->anim_node[ima[im]])  ;
+              if(ip)printf("       anim_node = %p\n",(void *)anim_node) ;
               n_controllers = anim_node->n_controllers      ;
               if(ip)printf("  CHECK CONTROLLERS  :: n_controllers = %i/n",n_controllers) ;
               for(i=0;i<n_controllers;i++){
@@ -439,7 +454,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             }else{
               anim_node = NULL  ;
               n_controllers = 0 ;
-            }
+              if(ip)printf("            n_controllers = %i\n",n_controllers) ;
+            }if(ip)
             if(ip){
               printf("       ---------------------------------------------------------\n") ;
               printf("       Hierarchy  im = %i, ima[im] = %i,  Name = %s\n",
@@ -533,14 +549,18 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             if(ip)printf("  Animation : ivtx_state = %i, im = %i, Matrix = %i \n", ivtx_state, im, ima[im]);
 
 // Check number of matrices match
+#if 0
             if(n_anim_nodes != dist_level->n_hierarchy){
               printf("  Routine %s.  Mismatch of n_hierarchy and animation nodes\n",
                                       my_name) ;
               printf("  Shape = %s\n",snode->name) ;
               printf("  n_hierarchy = %i\n",dist_level->n_hierarchy) ;
               printf("  n_anim_nodes = %i\n",n_anim_nodes) ;
+
+              wa = sqrt(-1.0) ;
               exit(1) ;
             }
+#endif
 //  Check for error !!
             if(n_controllers>2){
               printf("  Routine %s.  Error 'n_controllers' too large\n", my_name) ;
@@ -912,16 +932,15 @@ uint  k;
                               texture->loaded, texture->gl_tex_ref_no) ;
                 }
               }
-  /*
-  *  Draw only if n_draw_lights > 0
-  */
-              for(m=0;m<sig_draw->n_draw_lights;m++){
+/*
+ *  Draw only if n_draw_lights > 0 and n_sig_lights > 0
+ *       and ensure that m is less than both.
+ */
+              for(m=0;m<sig_draw->n_draw_lights && m<sig_type->n_sig_lights;m++){
                 n = sig_draw->draw_light_i[m] ;
                 sig_light = &sig_type->sig_light[n] ;
                 light_tab = sig_light->light_tab ;
                 radius = sig_light->radius ;
-  //DEBUG
-  //              radius *= 4.0 ;
 
                 if(ip){
                   printf("  Signal light = %i :: %i\n",m,n) ;

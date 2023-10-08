@@ -39,7 +39,8 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
   int         is_wiper  = 0   ;   //  = 1 when wiper being processed
   int         is_mirror = 0   ;   //  = 1 when mirror being processed
   int         is_pantograph = 0 ;   //  = 1 when pantograph being processed
-  char        *name ;
+  char        *name           ;
+  static int  ierror = 0      ;
 
   Animation *animation     ;
   AnimNode  *anim_node     ;
@@ -206,17 +207,17 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
                                 tex_idx,(void *)texture,gl_tex_ref_no) ;
             }
 
-            if(texture == NULL){
-              printf(" **********************shape_dlist*********************************\n");
+            if(texture == NULL && ierror++ < 20){
+              printf(" **********************wagon_dlist*********************************\n");
               printf("  Routine: %s.  Image missing !\n",my_name);
-              printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
+              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
               printf(" ******************************************************************\n");
               break ;
             }else{
-              if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no)){
-              printf(" **********************shape_dlist*********************************\n");
+              if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no) && ierror++ < 20){
+              printf(" **********************wagon_dlist*********************************\n");
               printf("  Routine: %s.  Image unloaded !\n",my_name);
-              printf("  Shape = %s   Image = %i\n",snode->name,tex_idx);
+              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
               printf(" ******************************************************************\n");
               }
             }

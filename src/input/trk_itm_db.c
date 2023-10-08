@@ -90,6 +90,7 @@ char *token = NULL ;
             trk_item->north_z       = dtoken(msfile) ;  // location in world tile
             trk_item->tile_east_x   = itoken(msfile) ;  // x value world tile (tracknode tile)
             trk_item->tile_north_z  = itoken(msfile) ;  // z value world tile
+            trk_item->tritemrdata   = 1 ;               // R data read
             skip_rbr(msfile) ;
             break;
 
@@ -99,6 +100,7 @@ char *token = NULL ;
             trk_item->p_north_z       = dtoken(msfile) ;
             trk_item->p_tile_east_x   = itoken(msfile) ;
             trk_item->p_tile_north_z  = itoken(msfile) ;
+            trk_item->tritempdata     = 1 ;               // P data read
             skip_rbr(msfile) ;
             break;
 
@@ -106,6 +108,7 @@ char *token = NULL ;
             skip_lbr(msfile) ;
             trk_item->s_data1         = dtoken(msfile) ;  // Extra data
             trk_item->s_data2         = ctoken(msfile) ;
+            trk_item->tritemsdata     = 1 ;               // S data read
             skip_rbr(msfile) ;
             break;
 
@@ -114,6 +117,7 @@ char *token = NULL ;
             trk_item->sr_data1        = itoken(msfile) ;
             trk_item->sr_data2        = itoken(msfile) ;
             trk_item->sr_data3        = dtoken(msfile) ;
+            trk_item->tritemsrdata    = 1 ;               // SR data read
             skip_rbr(msfile) ;
             break;
 
@@ -280,6 +284,12 @@ int init_track_item(TrkItem *trk_item){
 
       trk_item->trk_item_index   = 0    ;
       trk_item->sect_distance    = 0.0 ;
+
+      trk_item->tritemrdata      = 0 ;
+      trk_item->tritempdata      = 0 ;
+      trk_item->tritemsdata      = 0 ;
+      trk_item->tritemsrdata     = 0 ;
+
       trk_item->tile_east_x      = 0    ;
       trk_item->tile_north_z     = 0    ;
       trk_item->p_tile_east_x    = 0    ;

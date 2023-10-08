@@ -723,6 +723,30 @@ int sc_save(char* name){
       if(!strcmp(name,"state")){
         signal0->state = nint(sc_pop_stack()) ;
         if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv1")){
+        signal0->zrv1 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv2")){
+        signal0->zrv2 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv3")){
+        signal0->zrv3 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv4")){
+        signal0->zrv4 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv5")){
+        signal0->zrv5 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv6")){
+        signal0->zrv6 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv7")){
+        signal0->zrv7 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
+      }else if(!strcmp(name,"zrv8")){
+        signal0->zrv8 = nint(sc_pop_stack()) ;
+        if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
       }else if(!strcmp(name,"draw_state")){
         signal0->draw_state = nint(sc_pop_stack()) ;
         if(ip)printf("  +++ Routine %s. Stack saved to variable %s \n",my_name,name) ;
@@ -889,6 +913,30 @@ int sc_var(char *name){
         if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
       }else if(!strcmp(name,"state")){
         sc_push_stack((double)signal0->state) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv1")){
+        sc_push_stack((double)signal0->zrv1) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv2")){
+        sc_push_stack((double)signal0->zrv2) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv3")){
+        sc_push_stack((double)signal0->zrv3) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv4")){
+        sc_push_stack((double)signal0->zrv4) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv5")){
+        sc_push_stack((double)signal0->zrv5) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv6")){
+        sc_push_stack((double)signal0->zrv6) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv7")){
+        sc_push_stack((double)signal0->zrv7) ;
+        if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
+      }else if(!strcmp(name,"zrv8")){
+        sc_push_stack((double)signal0->zrv8) ;
         if(ip)printf("  +++ Routine %s. Variable '%s' to stack\n",my_name,name) ;
       }else if(!strcmp(name,"next_state")){
         sc_push_stack(sc_next_state) ;

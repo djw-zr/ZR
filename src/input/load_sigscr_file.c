@@ -43,6 +43,7 @@ FILE   *yyin, *yyout ;
 int    yyparse(nodeType **sTree) ;
 void   yyset_in(FILE *sfile)     ;
 int    print_sigscr_node(nodeType *p) ;
+int    find_msstyle_file(char *fname) ;
 
 int         itree_depth = 0 ;
 /*
@@ -118,7 +119,7 @@ static char *token[] = {
 #if 0
 int read_sigscr_file(){
 
-int  ip = 1 ;
+int  ip = 0 ;
 int  iret ;
 
       yydebug = 0 ;
@@ -181,6 +182,8 @@ int  iret ;
       return 0 ;
 }
 #else
+int   replace_var_names(nodeType *p) ;
+
 int load_sigscr_file(char *or_route_dir, char *script_file){
 
   int  ip = 0 ;
@@ -231,6 +234,10 @@ int load_sigscr_file(char *or_route_dir, char *script_file){
       }
       if(ip)printf("  Close file \n") ;
       fclose(yyin);
+/*
+ *  Change names of signal variables
+ */
+      replace_var_names(sTree) ;
 /*
  *  Print summary
  */
@@ -354,3 +361,145 @@ char *sigscr_token_string(int i){
       if(i < SC_PROGRAM && i > SC_POW) return NULL ;
       return token[i-SC_PROGRAM] ;
 }
+
+/*
+ *  Routine to replace variable names ie
+ *     float next_state ;
+ *  by standard names
+ *     float zr_sv1 ;
+ *  etc.
+ */
+int replace_var_names1(nodeType *p, nodeType *s);
+int replace_var_names2(nodeType *p, char *s1, char *n2);
+
+int replace_var_names(nodeType *p){
+
+int  ip = 0 ;
+int  i, n, nops, oper, type ;
+nodeType *p1, *p2, *p3 ;
+char *my_name = "replace_var_names" ;
+char *name1 ;
+
+      if(ip)printf("  Enter routine %s  :: %p\n",my_name, (void *)p) ;
+      if(p == NULL) return 0;
+      p1 = p ;
+
+      type =p1->type ;
+      if(type != typeOpr) return 0 ;
+      oper = p1->opr.oper ;
+      if(oper == SC_PROGRAM)p1 = p1->opr.op[0] ;
+
+/*
+ *  Loop over SC_SCRIPT_LISTs
+ */
+      for(;;){
+/*
+ *  Return if end of list
+ */
+        if(p1 == NULL) return 0 ;
+        oper = p1->opr.oper ;
+/*
+ *  Find SC_SCRIPT
+ */
+        if(oper == SC_SCRIPT_LIST){
+          p2 = p1->opr.op[1] ;
+          oper = p2->opr.oper ;
+/*
+ *  Find and print SCRIPT NAME
+ */
+          if(oper == SC_SCRIPT){
+            p3 = p2->opr.op[0] ;
+            oper = p3->opr.oper ;
+            if(ip)printf("  Script = %s\n",p3->str.name) ;
+            replace_var_names1(p2,p2) ;
+          }
+        }else{
+/*
+ *  ERROR
+ */
+          break ;
+        }
+        p1 = p1->opr.op[0] ;
+      }
+      return 0 ;
+}
+
+int replace_var_names1(nodeType *p, nodeType *script){
+
+int  ip = 0 ;
+int  i, n, nops, oper, type ;
+nodeType *p1, *p2 ;
+char *my_name = "replace_var_names1" ;
+char *name1, name2[10] ;
+static int ivar ;
+
+      if(ip)printf("  Enter routine %s  :: %p\n",my_name, (void *)p) ;
+      if(p == NULL) return 0;
+      p1 = p ;
+      if(p == script)ivar = 0 ;
+
+      type =p1->type ;
+      if(ip && type == typeStr){
+        printf("  Found typeStr\n") ;
+        printf("  psn : str :: name = %s\n",p->str.name) ;
+      }else if( type == typeOpr){
+        if(ip)printf("  Found typeOpr\n") ;
+        oper = p1->opr.oper ;
+        nops = p1->opr.nops ;
+        if(oper == SC_DEF_VAR){
+          if(ip)printf("  SC DEF VAR :: nops = %i\n",nops) ;
+          p2 = p1->opr.op[0] ;
+          if(ip && p2->type == typeStr){
+            printf("  variable name = %s\n",p2->str.name) ;
+          }
+          name1 = p2->str.name ;
+/*
+ *  Construct a new variable anme
+ */
+          if(++ivar>8){
+            printf("  ERROR :: Routine %s\n", my_name) ;
+            printf("  Signal script requires more than 8 temporary variables\n") ;
+            printf("  Program stopping\n");
+            exit(0) ;
+          }
+          sprintf(name2,"zrv%i",ivar) ;
+          p2->str.name = strdup(name2) ;
+          replace_var_names2(script, name1, name2) ;
+        }else{
+          for(i=0;i<nops;i++){
+            replace_var_names1(p1->opr.op[i],script);
+          }
+        }
+      }
+      return 0 ;
+}
+
+int replace_var_names2(nodeType *p, char *name1, char *name2){
+
+int  ip = 0 ;
+int  i, n, nops, type ;
+nodeType *p1, *p2 ;
+char *my_name = "replace_var_names2" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+      if(p == NULL) return 0;
+      p1 = p ;
+
+      type =p1->type ;
+      if(type == typeStr){
+        if(ip)printf("  PSN : STR :: NAME = %s\n",p->str.name) ;
+        if(!strcmp(p->str.name, name1)){
+          if(ip)printf("  FOUND NAME %s\n",name1) ;
+          free(p->str.name) ;
+          p->str.name = strdup(name2) ;
+        }
+      }else if( type == typeOpr){
+        nops = p1->opr.nops ;
+        for(i=0;i<nops;i++){
+          replace_var_names2(p1->opr.op[i], name1, name2);
+        }
+      }
+      return 0 ;
+}
+
+

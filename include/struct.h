@@ -291,6 +291,11 @@ typedef struct trkitemnode
 /*
  *  Position data
  */
+  uint                   tritemrdata         ;
+  uint                   tritempdata         ;
+  uint                   tritemsdata         ;
+  uint                   tritemsrdata        ;
+
   uint                   tile_east_x         ;  //  East  (MSTS X) value of the location-tile
   uint                   tile_north_z        ;  //  North (MSTS Z)value of the location-tile
   uint                   p_tile_east_x       ;  //  East  (MSTS X) value of the location-tile

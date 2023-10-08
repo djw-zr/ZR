@@ -1065,6 +1065,7 @@ int add_shape_pointers_to_world_items(){
                 if(!snode->lod_control){
                   printf("  lod_control missing for shape %s needed for %s\n",
                                              snode->name,wname) ;
+
                 }else{
                   printf(" Unable to find shapefile corresponding to %s\n",wname);
                 }
@@ -1098,6 +1099,9 @@ int add_shape_pointers_to_world_items(){
                 }
                 if(20 == n_errors)
                   printf("  Missing shapes:  Error reporting limit reached\n") ;
+                snode->name = NULL ;
+              }else{
+                snode->name = NULL ;
               }
               free(wname) ;
             }

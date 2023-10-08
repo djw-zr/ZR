@@ -96,6 +96,7 @@ float d_reflect = -1.0  ;  // Default reflection value (-1,1)
 //char test_shape[]   = "lswrhfdshortrail" ;   //           : New Forest
 //char test_shape[]   = "rt3aspsig" ;   //           : MECoast
 //char test_shape[]   = "rifeathers" ;   //           : MECoast
+//char test_shape[]   = "ukfs_tt_42ft" ;   //           : Chiltern
 char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;

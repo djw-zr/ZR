@@ -135,27 +135,37 @@ GLfloat  v4[4] ;
  */
 //#pragma omp parallel
 {
-#pragma omp sections
+//#pragma omp single
 {
 /*
- *  Start MP 1
+ *  Start MP  task 1
  */
-#pragma omp section
+//#pragma omp section
 {
 #ifdef _Display_Normal
+/*
+ *  Update trains while land and shapes are being drawn
+ */
       update_trains() ;  // Update using monotonic time
+/*
+ *  Update shapes while wagons are being drawn
+ */
+
       update_level_crossings() ;
       update_turntable(current_turntable) ;
       update_signals() ;
  #ifndef ROUTE_NEW_FOREST
       update_transfer() ;
  #endif
+/* Breakpoint between drawing land and shapes  ...
+ *    ... and drawing wagons
+ */
 #endif
 }
 /*
  *  Start MP 2
  */
-#pragma omp section
+//#pragma omp section
 {
 /*
  *  If position has changed - update viewpoint
@@ -659,7 +669,11 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
       dtrack_t_end   = clock() ;
 #endif
 //      printf("  End display of dynamic tracks\n") ;
-
+/*
+ * Breakpoint between drawing land and shapes  ...
+ *    ... and drawing wagons
+ */
+//#pragma omp barrier
 /*
  *==============================================================================
  *  Display Trains
@@ -1047,7 +1061,7 @@ GLfloat h = viewport_height ;
  *   It averages over five seconds but takes the first five
  *   seconds to initialise.
  */
-#if 0
+#if 1
       glDisable(GL_LIGHTING) ;
       glDisable(GL_TEXTURE_2D) ;
 
@@ -1139,9 +1153,9 @@ double t[4] ;
       l_pp = 0    ;  //  Turn off flag for: new display after position move
       l_disp1 = 0 ;  //                     printing
 
-}                    //  End of #pragma omp section 2
-}                    //  End of #pragma omp sections
-}                    //  End of #pragma omp parallel
+}                    //  End of //#pragma omp section 2
+}                    //  End of //#pragma omp sections
+}                    //  End of //#pragma omp parallel
 
 return ;
 }

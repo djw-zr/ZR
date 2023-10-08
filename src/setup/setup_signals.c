@@ -572,7 +572,15 @@ int setup_signals(void){
             signal->draw_state = 0          ;
             signal->enabled    = 1          ;
             signal->semaphore_pos = 0.0     ;
-            trk_item->signal  = signal      ;
+            signal->zrv1       = 0.0        ;
+            signal->zrv2       = 0.0        ;
+            signal->zrv3       = 0.0        ;
+            signal->zrv4       = 0.0        ;
+            signal->zrv5       = 0.0        ;
+            signal->zrv6       = 0.0        ;
+            signal->zrv7       = 0.0        ;
+            signal->zrv8       = 0.0        ;
+            trk_item->signal   = signal     ;
 //            ip = (67 == signal->uid) ;  //  Level crossing home
 //            ip = (87 == signal->uid) ;  //  Level crossing distant
 //            ip = (122 == signal->uid) ; //  Home and distant
@@ -1337,6 +1345,7 @@ int setup_raw_signals(void){
  */
         if(!sig_snode){
           for(sig_snode = shapelist_beg; sig_snode != NULL; sig_snode=sig_snode->next){
+            if(sig_snode->name == NULL) continue;
             if(!strcmp_ic(sig_snode->name,filename)) break ;
           }
         }

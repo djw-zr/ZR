@@ -882,8 +882,8 @@ int set_track_items_posn(TrkDataBase *database){
   int   trk_item_index ;
   uint  length_of_vector ;
 
-  TrkItem   *trk_item ;
-  TrkSector   *trk_sect ;
+  TrkItem       *trk_item ;
+  TrkSector     *trk_sect ;
   TrkVectorNode *trk_vect ;
 
   double ti_x, ti_y, ti_z ;    //  Track item position
@@ -912,8 +912,7 @@ int set_track_items_posn(TrkDataBase *database){
 
       if(ip)printf("   Enter routine: %s\n",my_name) ;
 /*
- *  Loop over track nodes and for VECTOR_SECTION nodes loop over the
- *  track items
+ *  Loop over track nodes and for VECTOR_SECTION nodes loop over track items
  */
       for(i=0;i<database->trk_sections_array_size;i++){
 //        ip = (34 == i) || (3447 == i) || (4474 == i)  ;
@@ -923,14 +922,14 @@ int set_track_items_posn(TrkDataBase *database){
 //        ip = (trk_sect->uid == 356 ) ;
         if(ip){
           printf("\n============================================================\n") ;
-          printf("\n  NEW TRACK SECTION : position %i, uid %i,  number of Items %i\n",
+          printf("\n  NEW VECTOR SECTION : position %i, uid %i,  number of Items %i\n",
                                i,trk_sect->uid,trk_sect->trk_item_number ) ;
           for(j=0;j<trk_sect->trk_item_number;j++){
             printf("  j = %i, trk_item_list[j] = %i\n",j,trk_sect->trk_item_list[j] ) ;
           }
         }
 /*
- *  Lopp over track items
+ *  Loop over track items and find closest position to centre of track
  */
         for(j=0;j<trk_sect->trk_item_number;j++){
           trk_item_index = trk_sect->trk_item_list[j] ;
@@ -944,202 +943,212 @@ int set_track_items_posn(TrkDataBase *database){
                  token_trackdb[trk_item->type_of_node]) ;
           }
 /*
- *  Calculate position of track item
+ *  If s_data1 is provided, this is the sidtance along the track
+ *   ...
  */
-          global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
-                            trk_item->tile_east_x, trk_item->tile_north_z,
-                            trk_item->east_x, trk_item->north_z, trk_item->height_y,
-                            &ti_x, &ti_y, &ti_z) ;
-          if(ip){
-            printf("   Track Item    : %i  %i\n",trk_item_index, trk_item->type_of_node) ;
-            printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
-            printf("   Track Item at :  %i %i :: %8.2f %8.2f %8.2f\n",
-                                   trk_item->tile_east_x, trk_item->tile_north_z,
-                                   trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
-            printf("   Track Item at :  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
-          }
+          if(trk_item->tritemsdata){
+            trk_item->sect_distance = trk_item->s_data1 ;
+          }else{
 /*
- *  Loop over track vectors
- */
-          found = 0 ;
-          last_error = 10000.0 ;
-          error      = 10001.1 ;
-          for(k=0;k<trk_sect->length_of_vector;k++){
-            trk_vect = &(trk_sect->vector[k]) ;
-/*
- *  Calculate origin of vector
+ *  ... otherwise calculate position of track item from the track vectors
  */
             global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
-                            trk_vect->tile_east_x, trk_vect->tile_north_z,
-                            trk_vect->east_x, trk_vect->north_z, trk_vect->height_y,
-                            &tv_x, &tv_y, &tv_z) ;
-            if(ip)printf("\n    Vector %i origin at:  %8.2f %8.2f %8.2f :: %i :: %8.2f %8.2f %8.2f :: %8.2f\n",
-                            k, tv_x, tv_y, tv_z,trk_vect->is_curved,
-                            trk_vect->ax,trk_vect->ay,trk_vect->az,trk_vect->ang);
+                              trk_item->tile_east_x, trk_item->tile_north_z,
+                              trk_item->east_x, trk_item->north_z, trk_item->height_y,
+                              &ti_x, &ti_y, &ti_z) ;
+            if(ip){
+              printf("   Track Item    : %i  %i\n",trk_item_index, trk_item->type_of_node) ;
+              printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
+              printf("   Track Item at :  %i %i :: %8.2f %8.2f %8.2f\n",
+                                    trk_item->tile_east_x, trk_item->tile_north_z,
+                                    trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
+              printf("   Track Item at :  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
+            }
+  /*
+  *  Loop over track vectors
+  */
+            found = 0 ;
+            last_error = 10000.0 ;
+            error      = 10001.1 ;
+            for(k=0;k<trk_sect->length_of_vector;k++){
+              trk_vect = &(trk_sect->vector[k]) ;
+  /*
+  *  Calculate origin of vector
+  */
+              global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+                              trk_vect->tile_east_x, trk_vect->tile_north_z,
+                              trk_vect->east_x, trk_vect->north_z, trk_vect->height_y,
+                              &tv_x, &tv_y, &tv_z) ;
+              if(ip)printf("\n    Vector %i origin at:  %8.2f %8.2f %8.2f :: %i :: %8.2f %8.2f %8.2f :: %8.2f\n",
+                              k, tv_x, tv_y, tv_z,trk_vect->is_curved,
+                              trk_vect->ax,trk_vect->ay,trk_vect->az,trk_vect->ang);
 
-            trk_vector_length = trk_vect->length ;
-            aa = degree*trk_vect->a_east_x ;
-            bb = degree*trk_vect->a_height_y ;
-            cc = degree*trk_vect->a_north_z ;
-/*
- * Calculate unit normal and unit tangent
- */
-            mstswagon2local(0., 1., 0., 0., 0., 0., aa, bb, cc, 1.,
-                                        0., 0., 0., &nx, &ny, &nz) ;
-            mstswagon2local(0., 0., 1., 0., 0., 0., aa, bb, cc, 1.,
-                                        0., 0., 0., &tx, &ty, &tz) ;
-/*
- *  Straight section
- *  The tests on alpha here and later check for distances along the track
- *  greater than -1.0 m.  This is used instead of 0.0 to allow for rounding
- *  errors.  A check for values greater than -0.01 may be sufficient.
- */
-            if(!(trk_vect->is_curved)){
-              alpha = (ti_x-tv_x)*tx + (ti_y-tv_y)*ty + (ti_z-tv_z)*tz ;
-              if((alpha>=-1.0 && alpha<=trk_vector_length) || ip){
+              trk_vector_length = trk_vect->length ;
+              aa = degree*trk_vect->a_east_x ;
+              bb = degree*trk_vect->a_height_y ;
+              cc = degree*trk_vect->a_north_z ;
+  /*
+  * Calculate unit normal and unit tangent
+  */
+              mstswagon2local(0., 1., 0., 0., 0., 0., aa, bb, cc, 1.,
+                                          0., 0., 0., &nx, &ny, &nz) ;
+              mstswagon2local(0., 0., 1., 0., 0., 0., aa, bb, cc, 1.,
+                                          0., 0., 0., &tx, &ty, &tz) ;
+  /*
+  *  Straight section
+  *  The tests on alpha here and later check for distances along the track
+  *  greater than -1.0 m.  This is used instead of 0.0 to allow for rounding
+  *  errors.  A check for values greater than -0.01 may be sufficient.
+  */
+              if(!(trk_vect->is_curved)){
+                alpha = (ti_x-tv_x)*tx + (ti_y-tv_y)*ty + (ti_z-tv_z)*tz ;
+                if((alpha>=-1.0 && alpha<=trk_vector_length) || ip){
 
-                c_x = tx*alpha  + tv_x ;
-                c_y = ty*alpha  + tv_y ;
-                c_z = tz*alpha  + tv_z ;
+                  c_x = tx*alpha  + tv_x ;
+                  c_y = ty*alpha  + tv_y ;
+                  c_z = tz*alpha  + tv_z ;
 
-                error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
-                                                    + (ti_z-c_z)*(ti_z-c_z) ) ;
-                if(ip){
-                  e_x = tx*trk_vector_length + tv_x ;
-                  e_y = ty*trk_vector_length + tv_y ;
-                  e_z = tz*trk_vector_length + tv_z ;
+                  error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
+                                                      + (ti_z-c_z)*(ti_z-c_z) ) ;
+                  if(ip){
+                    e_x = tx*trk_vector_length + tv_x ;
+                    e_y = ty*trk_vector_length + tv_y ;
+                    e_z = tz*trk_vector_length + tv_z ;
 
-                  printf("=+==Straight track\n") ;
-                  printf("    Length, Rotate  :  %8.2f %8.2f\n", trk_vector_length, trk_vect->ang) ;
-                  printf("    Normal          :  %8.2f %8.2f %8.2f\n",nx, ny, nz) ;
-                  printf("    Tangent         :  %8.2f %8.2f %8.2f\n",tx, ty, tz) ;
-                  printf("----Closest at      :  %8.2f %8.2f %8.2f :: along track %8.2f ## mis-match %8.2f\n",
-                                                    c_x, c_y, c_z, alpha, error);
-                  printf("    Vector end at   :  %8.2f %8.2f %8.2f :: %8.2f\n",
-                                                    e_x, e_y, e_z, trk_vector_length);
+                    printf("=+==Straight track\n") ;
+                    printf("    Length, Rotate  :  %8.2f %8.2f\n", trk_vector_length, trk_vect->ang) ;
+                    printf("    Normal          :  %8.2f %8.2f %8.2f\n",nx, ny, nz) ;
+                    printf("    Tangent         :  %8.2f %8.2f %8.2f\n",tx, ty, tz) ;
+                    printf("----Closest at      :  %8.2f %8.2f %8.2f :: along track %8.2f ## mis-match %8.2f\n",
+                                                      c_x, c_y, c_z, alpha, error);
+                    printf("    Vector end at   :  %8.2f %8.2f %8.2f :: %8.2f\n",
+                                                      e_x, e_y, e_z, trk_vector_length);
+                  }
+                }
+  /*
+  *  Curved Section
+  */
+              }else{
+                track_radius = trk_vect->radius ;
+  /*
+  *  Calculate bi-normal - unit vector to right of track
+  *                        = unit tangent vector X unit normal vector
+  */
+
+                mstswagon2local(1., 0., 0., 0., 0., 0., aa, bb, cc, 1.,
+                                          0., 0., 0., &rx, &ry, &rz) ;
+
+                sa = (trk_vect->angle > 0.0) ? 1.0 : -1.0 ;
+                o_x = tv_x + sa*rx*track_radius ;   //  Centre of arc
+                o_y = tv_y + sa*ry*track_radius ;
+                o_z = tv_z + sa*rz*track_radius ;
+  #if 0
+                temp = nx*ti_x + ny*ti_y + nz*ti_z ;
+                vx = ti_x - temp*nx - o_x ;   //  Unit vector from centre to track item
+                vy = ti_y - temp*ny - o_y ;
+                vz = ti_z - temp*nz - o_z ;
+  #else
+                vx = ti_x - o_x ;   //  Unit vector from centre to track item
+                vy = ti_y - o_y ;
+                vz = ti_z - o_z ;
+                temp = nx*vx + ny*vy + nz*vz ;
+                vx = vx - temp*nx ;  //  After subtracting vertical component
+                vy = vy - temp*ny ;
+                vz = vz - temp*nz ;
+  #endif
+                temp = 1.0/sqrt(vx*vx + vy*vy + vz*vz) ;
+                vx = vx*temp ;        //  Normalise
+                vy = vy*temp ;
+                vz = vz*temp ;
+
+                dott = vx*tx + vy*ty + vz*tz ;
+                dotr = vx*rx + vy*ry + vz*rz ;
+                dotr = -sa*dotr ;
+
+                alpha = atan2(dott,dotr)    ;  //  Angle (radian) between vx and rx
+                alpha1 = alpha ;
+  //              if(alpha < 0.0)alpha = alpha + pi ;
+  //              if(alpha >  0.5*pi)alpha = pi - alpha ;
+                alpha2 = alpha ;
+                alpha = track_radius*alpha  ;  //  Distance along track
+                if((alpha>=-1.0 && alpha<=trk_vector_length+1.0) || ip){
+
+                  c_x = o_x + track_radius*vx ;
+                  c_y = o_y + track_radius*vy ;
+                  c_z = o_z + track_radius*vz ;
+
+                  error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
+                                                      + (ti_z-c_z)*(ti_z-c_z) ) ;
+                  if(ip){
+                    s = sin(trk_vect->angle) ;
+                    c = cos(trk_vect->angle) ;
+                    e_x = o_x - (c*rx - s*tx)*sa*track_radius ; // End position
+                    e_y = o_y - (c*ry - s*ty)*sa*track_radius ;
+                    e_z = o_z - (c*rz - s*tz)*sa*track_radius ;
+
+                    printf("=+==Curved track\n") ;
+                    printf("    Length, Rotate  :  %8.2f %8.2f\n", trk_vector_length, trk_vect->ang) ;
+                    printf("    Radius, Angle   :  %8.2f %8.2f :: %8.2f %8.2f %8.2f\n",
+                                                    trk_vect->radius, trk_vect->angle, c, s, sa) ;
+                    printf("    Normal          :  %8.2f %8.2f %8.2f\n",nx, ny, nz) ;
+                    printf("    Tangent         :  %8.2f %8.2f %8.2f\n",tx, ty, tz) ;
+                    printf("    Bi-Normal       :  %8.2f %8.2f %8.2f\n",rx, ry, rz) ;
+                    printf("    Centre of Arc   :  %8.2f %8.2f %8.2f\n",o_x,  o_y,  o_z)  ;
+                    printf("    Track item      :  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
+                    printf("    Centre to t item:  %8.2f %8.2f %8.2f\n",vx, vy, vz) ;
+                    printf("    dott, dotr, atan:  %8.2f %8.2f %8.2f\n",dott, dotr, atan2(dott,dotr)) ;
+                    printf("    alpha1, alpha2, pi :  %8.2f %8.2f %8.2f\n",alpha1, alpha2, pi) ;
+                    printf("----Closest at      :  %8.2f %8.2f %8.2f :: along track %8.2f ## mis-match %8.2f\n",
+                                                      c_x, c_y, c_z, alpha, error);
+                    printf("    Vector end at   :  %8.2f %8.2f %8.2f :: %8.2f\n",
+                                                      e_x, e_y, e_z, trk_vector_length);
+                  }
                 }
               }
-/*
- *  Curved Section
- */
-            }else{
-              track_radius = trk_vect->radius ;
-/*
- *  Calculate bi-normal - unit vector to right of track
- *                        = unit tangent vector X unit normal vector
- */
-
-              mstswagon2local(1., 0., 0., 0., 0., 0., aa, bb, cc, 1.,
-                                        0., 0., 0., &rx, &ry, &rz) ;
-
-              sa = (trk_vect->angle > 0.0) ? 1.0 : -1.0 ;
-              o_x = tv_x + sa*rx*track_radius ;   //  Centre of arc
-              o_y = tv_y + sa*ry*track_radius ;
-              o_z = tv_z + sa*rz*track_radius ;
-#if 0
-              temp = nx*ti_x + ny*ti_y + nz*ti_z ;
-              vx = ti_x - temp*nx - o_x ;   //  Unit vector from centre to track item
-              vy = ti_y - temp*ny - o_y ;
-              vz = ti_z - temp*nz - o_z ;
-#else
-              vx = ti_x - o_x ;   //  Unit vector from centre to track item
-              vy = ti_y - o_y ;
-              vz = ti_z - o_z ;
-              temp = nx*vx + ny*vy + nz*vz ;
-              vx = vx - temp*nx ;  //  After subtracting vertical component
-              vy = vy - temp*ny ;
-              vz = vz - temp*nz ;
-#endif
-              temp = 1.0/sqrt(vx*vx + vy*vy + vz*vz) ;
-              vx = vx*temp ;        //  Normalise
-              vy = vy*temp ;
-              vz = vz*temp ;
-
-              dott = vx*tx + vy*ty + vz*tz ;
-              dotr = vx*rx + vy*ry + vz*rz ;
-              dotr = -sa*dotr ;
-
-              alpha = atan2(dott,dotr)    ;  //  Angle (radian) between vx and rx
-              alpha1 = alpha ;
-//              if(alpha < 0.0)alpha = alpha + pi ;
-//              if(alpha >  0.5*pi)alpha = pi - alpha ;
-              alpha2 = alpha ;
-              alpha = track_radius*alpha  ;  //  Distance along track
-              if((alpha>=-1.0 && alpha<=trk_vector_length+1.0) || ip){
-
-                c_x = o_x + track_radius*vx ;
-                c_y = o_y + track_radius*vy ;
-                c_z = o_z + track_radius*vz ;
-
-                error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
-                                                    + (ti_z-c_z)*(ti_z-c_z) ) ;
-                if(ip){
-                  s = sin(trk_vect->angle) ;
-                  c = cos(trk_vect->angle) ;
-                  e_x = o_x - (c*rx - s*tx)*sa*track_radius ; // End position
-                  e_y = o_y - (c*ry - s*ty)*sa*track_radius ;
-                  e_z = o_z - (c*rz - s*tz)*sa*track_radius ;
-
-                  printf("=+==Curved track\n") ;
-                  printf("    Length, Rotate  :  %8.2f %8.2f\n", trk_vector_length, trk_vect->ang) ;
-                  printf("    Radius, Angle   :  %8.2f %8.2f :: %8.2f %8.2f %8.2f\n",
-                                                  trk_vect->radius, trk_vect->angle, c, s, sa) ;
-                  printf("    Normal          :  %8.2f %8.2f %8.2f\n",nx, ny, nz) ;
-                  printf("    Tangent         :  %8.2f %8.2f %8.2f\n",tx, ty, tz) ;
-                  printf("    Bi-Normal       :  %8.2f %8.2f %8.2f\n",rx, ry, rz) ;
-                  printf("    Centre of Arc   :  %8.2f %8.2f %8.2f\n",o_x,  o_y,  o_z)  ;
-                  printf("    Track item      :  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
-                  printf("    Centre to t item:  %8.2f %8.2f %8.2f\n",vx, vy, vz) ;
-                  printf("    dott, dotr, atan:  %8.2f %8.2f %8.2f\n",dott, dotr, atan2(dott,dotr)) ;
-                  printf("    alpha1, alpha2, pi :  %8.2f %8.2f %8.2f\n",alpha1, alpha2, pi) ;
-                  printf("----Closest at      :  %8.2f %8.2f %8.2f :: along track %8.2f ## mis-match %8.2f\n",
-                                                    c_x, c_y, c_z, alpha, error);
-                  printf("    Vector end at   :  %8.2f %8.2f %8.2f :: %8.2f\n",
-                                                    e_x, e_y, e_z, trk_vector_length);
+  /*
+  *  Save best match
+  */
+              if(ip)printf("    Update          :  %8.2f %8.2f :: %8.2f %8.2f :: %i\n",
+                              alpha, trk_vector_length, error, last_error, found) ;
+              if(alpha>= -1.0 && alpha<=trk_vector_length){
+                if(error<last_error){
+                  trk_item->sect_distance = alpha + trk_vect->distance0 ;
+                  last_error              = error ;
+                  found                   = 1     ;
+                  if(ip && 0){
+                    printf("    Update success :  %f  %f  :: %f  :: %f\n",
+                                    alpha, trk_vect->distance0, trk_item->sect_distance, last_error) ;
+                    printf("    ==============\n") ;
+                  }
                 }
               }
-            }
-/*
- *  Save best match
- */
-            if(ip)printf("    Update          :  %8.2f %8.2f :: %8.2f %8.2f :: %i\n",
-                            alpha, trk_vector_length, error, last_error, found) ;
-            if(alpha>= -1.0 && alpha<=trk_vector_length){
-              if(error<last_error){
-                trk_item->sect_distance = alpha + trk_vect->distance0 ;
-                last_error              = error ;
-                found                   = 1     ;
-                if(ip && 0){
-                  printf("    Update success :  %f  %f  :: %f  :: %f\n",
-                                   alpha, trk_vect->distance0, trk_item->sect_distance, last_error) ;
-                  printf("    ==============\n") ;
-                }
+            }     //  Loop over track vectors
+            if(!found){
+              printf("\n  Routine %s error.",my_name) ;
+              printf("  Unable to find vector containing track item\n") ;
+              printf("  Track section : position %i, uid %i,  number of Items %i\n",
+                                i,trk_sect->uid,trk_sect->trk_item_number ) ;
+              printf("    Items in track section\n") ;
+              for(j=0;j<trk_sect->trk_item_number;j++){
+                printf("    j = %i, trk_item_list[j] = %i\n",j,trk_sect->trk_item_list[j] ) ;
               }
+              printf("\n") ;
+              printf("   Track Item    : %i  %i  %s\n",trk_item_index,
+                    trk_item->type_of_node, token_trackdb[trk_item->type_of_node]) ;
+              printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
+              printf("   Track Item at:  %i %i :: %8.2f %8.2f %8.2f\n",
+                                    trk_item->tile_east_x, trk_item->tile_north_z,
+                                    trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
+              printf("   Track Item at:  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
+              trk_item->sect_distance = 0.0 ;
             }
-          }     //  Loop over track vectors
-          if(!found){
-            printf("\n  Routine %s error.",my_name) ;
-            printf("  Unable to find vector containing track item\n") ;
-            printf("  Track section : position %i, uid %i,  number of Items %i\n",
-                               i,trk_sect->uid,trk_sect->trk_item_number ) ;
-            printf("    Items in track section\n") ;
-            for(j=0;j<trk_sect->trk_item_number;j++){
-              printf("    j = %i, trk_item_list[j] = %i\n",j,trk_sect->trk_item_list[j] ) ;
+            if(ip && found){
+              printf("  Routine %s : track section %i, track item %i, distance %8.2f, error %8.2f\n\n",
+                    my_name, i, trk_item_index, trk_item->sect_distance, last_error) ;
+              if(trk_item->tritemsdata != 0)
+                printf("   ++++++++++++++ Track Item s distance = %f\n",trk_item->s_data1) ;
             }
-            printf("\n") ;
-            printf("   Track Item    : %i  %i  %s\n",trk_item_index,
-                   trk_item->type_of_node, token_trackdb[trk_item->type_of_node]) ;
-            printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
-            printf("   Track Item at:  %i %i :: %8.2f %8.2f %8.2f\n",
-                                   trk_item->tile_east_x, trk_item->tile_north_z,
-                                   trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
-            printf("   Track Item at:  %8.2f %8.2f %8.2f\n",ti_x, ti_y, ti_z) ;
-            trk_item->sect_distance = 0.0 ;
-          }
-          if(ip && found){
-            printf("  Routine %s : track section %i, track item %i, distance %8.2f, error %8.2f\n\n",
-                   my_name, i, trk_item_index, trk_item->sect_distance, last_error) ;
-          }
+          }     //  End hard calculation
         }       //  Loop over track items
 /*
  *  Sort trk_item_list by distance along track section

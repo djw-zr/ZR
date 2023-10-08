@@ -11,9 +11,10 @@
 #
 #   This version of the makefile is designed for use with Linux
 #
-#   For valgrind compile with "-g -Og", then run:
+#   For valgrind and gdb compile with "-g -Og", then run:
 #   valgrind -v -v --leak-check=yes --track-origins=yes -s --main-stacksize=200000000 ./zr -p
-#
+#   gdb ./zr
+#   (gdb) run
 ################################################################################
 #
 #SHELL      = /bin/sh
@@ -21,6 +22,7 @@
 # Define interface: SDL2 or (default) GLUT
 # This does not work if # follows SDL2
 #IFACE=SDL2
+#SOUND=OPENAL
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
@@ -30,8 +32,8 @@ SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout src/setup
 CC       = gcc
 LD       = gcc
 CFLAGS   = -m64 -march=native -mcmodel=large
-CFLAGS  += -O3 #         Level 3 compiler optimisation
-#CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
+#CFLAGS  += -O3 #         Level 3 compiler optimisation
+CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable
@@ -55,6 +57,7 @@ CFLAGS += -Dculling_off_for_wagons
 CFLAGS += -D_MultiSample
 #CFLAGS += -Dzr_freetype #    -Dfreetype would rename directory
 #CFLAGS += -DMinGW #          Use system_alt.c routines
+#CFLAGS += -DOPENAL #         Setup OpenAL system (in development)
 #CFLAGS += -DROUTE_USA1 #     Northeast Corridor
 #CFLAGS += -DROUTE_USA2 #     Marias Pass
 #CFLAGS += -DROUTE_EUROPE1 #  Settle line
@@ -62,10 +65,15 @@ CFLAGS += -D_MultiSample
 #CFLAGS += -DROUTE_JAPAN1 #   Tokyo - Hakone
 #CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line             Segmentation
 #CFLAGS += -DROUTE_TUTORIAL
+#CFLAGS += -DROUTE_AU_NSW_SW_SS
+#CFLAGS += -DROUTE_NEW_FOREST
 CFLAGS += -DNO_ROUTE_DEF
+#CFLAGS += -DDISPLAY_5_SECONDS # Used for remote tests over a slow network
+#
+#   Option to circumvent linker error with OpenAL functions.  See:
+# https://maskray.me/blog/2021-01-09-copy-relocations-canonical-plt-entries-and-protected
 
-CFLAGS += -fpie -fopenmp 
-
+CFLAGS += -fpie -fopenmp
 
 #  Conditionals
 
@@ -74,6 +82,10 @@ ifeq ($(IFACE),SDL2)
   LIBGL   =  -lSDL2_ttf -lSDL2
 else
   LIBGL   =  -lglut
+endif
+ifeq ($(SOUND),OPENAL)
+  CFLAGS  += -DOPENAL
+  LIBGL   += -lopenal -lalut
 endif
 
 LIBGL   += -lfreetype

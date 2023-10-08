@@ -77,6 +77,14 @@ struct signaldb {
   int         aspect       ;  // State shown by signal : STOP, CLEAR_2 etc
   double      semaphore_pos;  // Current semaphore position : 0.0 to 1.0
   double      light_pos    ;  // Current light state : 0.0 to 1.0
+  double      zrv1 ;
+  double      zrv2 ;
+  double      zrv3 ;
+  double      zrv4 ;
+  double      zrv5 ;
+  double      zrv6 ;
+  double      zrv7 ;
+  double      zrv8 ;
 } ;
 
 struct rawsignaldb {
@@ -201,7 +209,7 @@ struct sigsubobj {
   int  index           ;  // Index of the sub-object 0, 1, 2, ...
   char *name           ;  // Name of the head  HEAD1 or HEAD2 etc
   char *full_name      ;  // "lower dwarf arm" or "upper dwarf arm etc"
-  char *sig_script_type ;  // Type in signal script
+  char *sig_script_type ;  // Type in signal script ALSO the signal type !!!!
 /*
  *  SIGSUB flags.  These relate to a sub-object on a signal shape
  *      Value 1 if present, 0 is absent

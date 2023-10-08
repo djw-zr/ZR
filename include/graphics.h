@@ -522,7 +522,7 @@ int    icount = 0;
 int    ipp = 0 ;
 time_t time_now, time_last = 0, time_inc ;
 int    fps   = 0 ;              // Frames per second when set
-int    l_fps = 1 ;              // When set print frames per second
+int    l_fps = 0 ;              // When set print frames per second
 
 /*
  *==============================================================================

@@ -791,7 +791,7 @@ DistLevel  *dist_level  ;
           }
         }
 # endif
-        if(0 == strcmp_ic(snode->name,test_shape)){
+        if(snode->name && 0 == strcmp_ic(snode->name,test_shape)){
           printf("\n  Shape file data:\n") ;
           print_shape_file_data(snode)  ;
         }
