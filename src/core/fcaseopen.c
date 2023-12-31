@@ -14,7 +14,7 @@
  *   If the search is unsuccessful, the routine returns 0.
  *   If successful it returns 1 and 'r' is set to the successful
  *   filename.
- *   On entry r must have the length of path plus 2 bytes
+ *   On entry r must have the length of path plus 3 bytes
  */
 
 static int casepath(char const *path, char *r){
@@ -108,7 +108,7 @@ char *r = NULL ;;
       if(ip)printf(" fcaseopen : 1.  initial path = %s, fp = %p\n",path,(void *)fp) ;
 #if !defined(_WIN32)
       if (!fp){
-        r = alloca(strlen(path) + 2);
+        r = alloca(strlen(path) + 3);
         if (casepath(path, r)){
           fp = fopen(r, mode);
           if(ip)printf(" fcaseopen : 2.  final path = %s, fp = %p\n",r,(void *)fp) ;
@@ -128,7 +128,7 @@ char *r = NULL ;;
 void casechdir(char const *path){
 
 #if !defined(_WIN32)
-char *r = alloca(strlen(path) + 2);
+char *r = alloca(strlen(path) + 3);
 
       if (casepath(path, r)){
           chdir(r);
