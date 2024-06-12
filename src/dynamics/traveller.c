@@ -422,6 +422,38 @@ char           my_name[] = "trv_position" ;
 }
 
 /*
+ *==============================================================================
+ *  Routine to convert traveller position along track into:
+ *  1.  Position relative to origin of track vector ( x, y, z)
+ *  2.  Position relative to origin of world tiles  (rx,ry,rz)
+ *==============================================================================
+ */
+
+int set_traveller_posn(WagonNode *w){
+
+  double         a, b, c ;
+  double   rail_height = 0.27 ;  // Best fit placing wheels on track
+  GLfloat  scalei = 1.0/plot_scale ;
+  TravellerNode  *tv ;
+  TrkVectorNode  *vn ;
+
+      tv = w->traveller ;
+      vn = tv->vn ;
+      a = degree*vn->a_east_x   ;
+      b = degree*vn->a_height_y ;
+      c = degree*vn->a_north_z  ;
+
+      global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+                         vn->tile_east_x, vn->tile_north_z,
+                         vn->east_x, vn->north_z, vn->height_y+rail_height,
+                         &(tv->x), &(tv->y), &(tv->z) ) ;
+      mstswagon2local(0.0, 0.0, 0.0, tv->x, tv->y, tv->z, a, b, c, scalei,
+                         tv->x, tv->y, tv->z,
+                         &(tv->rx), &(tv->ry), &(tv->rz) ) ;
+      return 0 ;
+}
+
+/*
  *  Routine to check the matrices sued by the traveller.
  *  This is left here in case it is ever useful again.
  */

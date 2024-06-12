@@ -43,7 +43,7 @@ FILE   *yyin, *yyout ;
 int    yyparse(nodeType **sTree) ;
 void   yyset_in(FILE *sfile)     ;
 int    print_sigscr_node(nodeType *p) ;
-int    find_msstyle_file(char *fname) ;
+int    find_msstyle_file(char **fname) ;
 
 int         itree_depth = 0 ;
 /*
@@ -206,7 +206,7 @@ int load_sigscr_file(char *or_route_dir, char *script_file){
  *  Check file exists
  */
       if(ip)printf("  Routine %s.  Checking file %s exists.\n",my_name,string) ;
-      iret = find_msstyle_file(string) ;
+      iret = find_msstyle_file(&string) ;
       if(iret != 0){
         printf("  Unable to find sigscr.dat file\n") ;
         printf("     Full filename = %s\n",string) ;

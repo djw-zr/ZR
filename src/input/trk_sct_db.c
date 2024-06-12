@@ -43,7 +43,7 @@ MSfile msfile  ;
  * Open track database file ; usually *.tdb
  * *****************************************************************************
  */
-      n = strlen(ORroutedir)+strlen(filename)+1 ;
+      n = strlen(ORroutedir)+strlen(filename)+2 ;
       datafile = (char *)malloc(n*sizeof(char));
       strcpy(datafile,ORroutedir);
       strcat(datafile,"/");
@@ -109,8 +109,6 @@ MSfile msfile  ;
       track_db.trk_items_array_size = itoken(&msfile) ;
       track_db.trk_items_array = (TrkItem *)
                   malloc(track_db.trk_items_array_size*sizeof(TrkItem));
-      printf("  ZXZ ZXZ Track item 242 = %p\n",(void *)&track_db.trk_items_array[242] ) ;
-
 /*
  *   Cycle over the track items
  */
@@ -472,7 +470,7 @@ void error1(char *routine, char *file, char *datafile){
       printf("\n  ERROR.  Routine: '%s'.  File: '%s'.\n"
                 "          Routine open_msfile failed to open file.\n"
                 "          File name = %s\n",routine, file, datafile);
-      printf("\n  Program St0pping\n\n");
+      printf("\n  Program Stopping\n\n");
       exit(1) ;
 }
 
@@ -481,7 +479,7 @@ void error2(char *routine, char *file, char *datafile, char *string)
       printf("\n  ERROR.  Routine: '%s'.  File: '%s'.\n"
                 "          Routine failed to find token %s in data file.\n"
                 "          Data file name = %s\n",routine, file, string, datafile);
-      printf("\n  Program St0pping\n\n");
+      printf("\n  Program Stopping\n\n");
       exit(1) ;
 }
 

@@ -38,13 +38,16 @@ int  setup_openal(int argc, char **argv){
   int   iret;
   char  *my_name = "setup_openal" ;
 
+
       if(ip){
         printf("  Enter routine %s\n",my_name) ;
         printf("***********************************************************\n") ;
         printf("  Initialise OpenAL sound system\n") ;
         printf("***********************************************************\n") ;
+        if(argc && argv){ } ;
       }
-      defaultDeviceName = (argc>1) ? argv[1] : "ZR" ;
+//      defaultDeviceName = (argc>1) ? argv[1] : "ZR" ;
+//      defaultDeviceName = "ZR" ;
       enumeration = alcIsExtensionPresent(NULL, "ALC_ENUMERATION_EXT");
       if (enumeration == AL_FALSE)
         fprintf(stderr, "  Enumeration extension not available\n");

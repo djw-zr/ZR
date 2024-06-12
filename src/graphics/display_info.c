@@ -25,6 +25,8 @@ GLfloat    dist, dist0, height0  ;
 
 WorldNode   *wnode ;
 WorldItem   *witem ;
+SoundObjectNode *so_node ;
+
 char        string[2048] ;
 
       if(!display_info) return 0 ;
@@ -71,52 +73,92 @@ char        string[2048] ;
         tx = wnode->tile_x - tile_x0 ;
         ty = wnode->tile_y - tile_y0 ;
 //        ip = wnode->tile_x == -6131 && wnode->tile_y == 14888 ;
-        for(witem = wnode->world_item ; witem != NULL; witem = witem->next){
-          xx = (tx+0.5)*tile_size +  witem->X ;
-          yy = (ty+0.5)*tile_size +  witem->Y ;
-          zz = witem->Z - tile_h0        ;
-          xx = xx*m2d ;
-          yy = yy*m2d ;
-          zz = zz*m2d ;
-          dist = (xx-xc)*(xx-xc) + (yy-yc)*(yy-yc) ;
-          if(dist > dist0)continue ;
+/*
+ *  Plot world items
+ */
+        if(display_info & 1){
+          for(witem = wnode->world_item ; witem != NULL; witem = witem->next){
+            xx = (tx+0.5)*tile_size +  witem->X ;
+            yy = (ty+0.5)*tile_size +  witem->Y ;
+            zz = witem->Z - tile_h0        ;
+            xx = xx*m2d ;
+            yy = yy*m2d ;
+            zz = zz*m2d ;
+            dist = (xx-xc)*(xx-xc) + (yy-yc)*(yy-yc) ;
+            if(dist > dist0)continue ;
 
-          glColor3d(0.0,1.0,1.0) ;
-          glBegin(GL_LINES) ;
-            glVertex3d(xx, yy, zz) ;
-            zz = zz + height0      ;
-            glVertex3d(xx, yy, zz) ;
-          glEnd() ;
-          if(witem->uid == 4485){
-            glColor3d(1.0,1.0,0.0) ;
-          }else{
-            glColor3d(1.0,1.0,1.0) ;
+            glColor3d(0.0,1.0,1.0) ;
+            glBegin(GL_LINES) ;
+              glVertex3d(xx, yy, zz) ;
+              zz = zz + height0      ;
+              glVertex3d(xx, yy, zz) ;
+            glEnd() ;
+            if(witem->uid == 4485){
+              glColor3d(1.0,1.0,0.0) ;
+            }else{
+              glColor3d(1.0,1.0,1.0) ;
+            }
+            zz = zz + (witem->uid%3)*0.2*m2d ;  //  Reduce chance of overlapping world items
+  #if 0
+            sprintf(string," - WORLD   :: uid = %i, type =  %i"
+                          " :: item at :: %f %f %f ",
+                          witem->uid,witem->worldtype,xx,yy,zz);
+  #else
+            sprintf(string," - WORLD   :: uid = %i, type =  %i"
+                          " :: item at :: %f %f %f :: %i %i :: %s",
+                          witem->uid,witem->worldtype,witem->X,witem->Y,witem->Z,
+                          wnode->tile_x, wnode->tile_y, witem->filename);
+  //          if(ip)printf("  World item :: %i %i :: %i :: %s :: %s\n",
+  //                       wnode->tile_x, wnode->tile_y, witem->uid,
+  //                       witem->filename, witem->filename2) ;
+  #endif
+            print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
+
+            sprintf(string," - TR ITEMS :: %i :: %i %i %i %i :: %i %i %i %i",
+                          witem->n_tr_item,
+                          witem->tr_item_db[0],witem->tr_item_db[1],
+                          witem->tr_item_db[2],witem->tr_item_db[3],
+                          witem->tr_item_db_id[0],witem->tr_item_db_id[1],
+                          witem->tr_item_db_id[2],witem->tr_item_db_id[3] );
+            zz = zz - m2d ;
+            print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
           }
-          zz = zz + (witem->uid%3)*0.2*m2d ;  //  Reduce chance of overlapping world items
-#if 0
-          sprintf(string," - WORLD   :: uid = %i, type =  %i"
-                         " :: item at :: %f %f %f ",
-                         witem->uid,witem->worldtype,xx,yy,zz);
-#else
-          sprintf(string," - WORLD   :: uid = %i, type =  %i"
-                         " :: item at :: %f %f %f :: %i %i :: %s",
-                         witem->uid,witem->worldtype,witem->X,witem->Y,witem->Z,
-                         wnode->tile_x, wnode->tile_y, witem->filename);
-//          if(ip)printf("  World item :: %i %i :: %i :: %s :: %s\n",
-//                       wnode->tile_x, wnode->tile_y, witem->uid,
-//                       witem->filename, witem->filename2) ;
-#endif
-          print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
-
-          sprintf(string," - TR ITEMS :: %i :: %i %i %i %i :: %i %i %i %i",
-                         witem->n_tr_item,
-                         witem->tr_item_db[0],witem->tr_item_db[1],
-                         witem->tr_item_db[2],witem->tr_item_db[3],
-                         witem->tr_item_db_id[0],witem->tr_item_db_id[1],
-                         witem->tr_item_db_id[2],witem->tr_item_db_id[3] );
-          zz = zz - m2d ;
-          print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
         }
+/*
+ *  Plot sound sources
+ */
+        if(display_info & 2){
+          for(so_node = wnode->sound_source ; so_node != NULL; so_node = so_node->next){
+            xx = (tx+0.5)*tile_size +  so_node->X ;
+            yy = (ty+0.5)*tile_size +  so_node->Y ;
+            zz = so_node->Z - tile_h0        ;
+            xx = xx*m2d ;
+            yy = yy*m2d ;
+            zz = zz*m2d ;
+            dist = (xx-xc)*(xx-xc) + (yy-yc)*(yy-yc) ;
+            if(dist > dist0)continue ;
+
+            if(l_time_5s)printf(" - SOUND SOURCE   :: uid = %i,"
+                          " :: item at :: %f %f %f :: %i %i :: %s\n",
+                          so_node->uid, so_node->X,so_node->Y,so_node->Z,
+                          wnode->tile_x, wnode->tile_y, so_node->sms_file);
+
+            glColor3d(1.0,1.0,0.0) ;
+            glBegin(GL_LINES) ;
+              glVertex3d(xx, yy, zz) ;
+              zz = zz + 1.5*height0      ;
+              glVertex3d(xx, yy, zz) ;
+            glEnd() ;
+            glColor3d(1.0,1.0,1.0) ;
+            sprintf(string," - SOUND SOURCE   :: uid = %i,"
+                          " :: item at :: %f %f %f :: %i %i :: %s ",
+                          so_node->uid, so_node->X,so_node->Y,so_node->Z,
+                          wnode->tile_x, wnode->tile_y, so_node->sms_file);
+            print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
+          }
+        }
+
+
       }
 
       glEnable(GL_LIGHTING) ;
@@ -164,7 +206,7 @@ int  display_help(){
 
       sprintf(s1," Switches : 'F8' - toggle switch display, 'g' - toggle switch in front, 'G' - toggle switch behind, 'F6' - toggle platforms and sidings");
       print_string_in_window3(10.0,h-190.0,s1,12) ;
-      sprintf(s1,"               : 'F9' - toggle train operations, 'V' - toggle wipers, 'P' - toggle pantographs, 'p' -  mirrors,  'T' - water column"
+      sprintf(s1,"               : 'F9' - toggle train operations, 'v' - toggle wipers, 'V' -  toggle mirrors, 'p','P' - toggle pantographs, 'T' - water column"
       );
       print_string_in_window3(10.0,h-210.0,s1,12) ;
 

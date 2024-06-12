@@ -22,8 +22,6 @@ int add_wagon_to_train2(char *wagon, RawWagonNode *rw0, int idirn) ;
 int add_consist_to_train(char* consist_name) ;
 int trains_setup_by_user(void) ;
 
-
-
 /*
  *  Routine to initialise the trains and thei positions.  The composition of
  *  each train can be done either through a set of subroutines (add_train(),
@@ -949,6 +947,16 @@ int   trains_init(void){
 #endif
 
       mark_textures()              ;
+/*
+ *  Initialise wagon SMS nodes, sound (*.wav) files and OpenAL
+ */
+      if(ip)printf(" ++++++++++ Call setup_train_sms_nodes\n") ;
+      setup_train_sms_nodes() ;
+      if(ip)printf(" ++++++++++ Call initialise_wagon_openal_variables\n") ;
+      initialise_wagon_openal_variables() ;
+/*
+ *  Update trains
+ */
       clock_gettime(CLOCK_MONOTONIC, &run_clock1) ;
       update_trains() ;  // Update using monotonic time
 
@@ -957,74 +965,6 @@ int   trains_init(void){
       return 0  ;
 }
 
-/*
- *  Routine to initialise a WagonNode from the list of raw wagons
- *  Name is name of wagon in rawwagonenode list
- */
-
-WagonNode *wagon_init(char *name){
-
-  int          n    ;
-  RawWagonNode *raw ;
-  WagonNode    *w   ;
-  char         *my_name = "wagon_init" ;
-
-      if(strlen(name) == 0){
-        printf("ERROR.  Routine %s.  Parameter name has zero length\n",my_name);
-        exit(-1) ;
-      }
-
-//  Search for name
-
-      n = 1 ;
-      for(raw = rawwagonlist_beg; raw==NULL; raw = raw->next){
-        if((n=strcmp(raw->name,name))==0) break ;
-      }
-      if(n != 0){
-        printf(" Routine %s.  Unable to find wagon %s\n",my_name,name);
-        printf("   Wagon names are:\n") ;
-        for(raw = rawwagonlist_beg; raw!=NULL; raw = raw->next){
-            printf("   Name = %s :: %s\n",raw->name,raw->full_name) ;
-        }
-        exit(-1) ;
-      }
-/*
- *  Generate new WagonNode
- */
-      w = (WagonNode *)malloc(sizeof(WagonNode)) ;
-      w->next       = NULL  ;
-      w->prev       = NULL  ;
-      w->train      = NULL  ;
-      w->name       = (char *)malloc(strlen(name)*sizeof(char)) ;
-      strcpy(w->name,name)  ;
-      w->index      = 0     ;
-      n = strlen(raw->file) ;
-      w->is_engine  = !strcmp(".eng",&(raw->file[n-4]));
-      w->is_engine  = raw->is_engine ;
-      w->train_dir  = 1     ;     // Initialise as 'true'
-      w->n_travel   = 1     ;     // NOTE Change for multi-bogie wagons
-      w->dist_front = 10.0  ;     // NOTE Change once sd file read
-      w->dist_back  = 10.0  ;
-      w->wheel_angle       = 0.0 ;  //  Angle of wheels
-      w->driverwheel_angle = 0.0 ;  //  Changes when train moves
-      w->traveller  = NULL  ;     //  Initialise once train is generated
-      w->shape      = NULL  ;
-      w->raw_wagon  = raw   ;
-//      w->engine     = NULL  ;
-
-      w->has_wipers      = 0 ;
-      w->wipers_on       = 0 ;
-      w->wipers_off      = 0 ;
-      w->has_mirrors     = 0 ;
-      w->mirrors_out     = 0 ;
-      w->has_pantographs = 0 ;
-      w->pantographs_up  = 0 ;
-      w->wipers_ang      = 0.0 ;
-      w->mirrors_dist    = 0.0 ;
-      w->pantographs_dist= 0.0 ;
-
-      return w ;
-}
 
 TrainNode *consist_init(WagonNode *wagon, char *name){
 
@@ -1045,6 +985,8 @@ TrainNode *consist_init(WagonNode *wagon, char *name){
       c->name       = (char *)malloc(strlen(name)*sizeof(char)) ;
       strcpy(c->name,name)  ;
       c->speed      = 0.0   ;
+      c->last_speed = 0.0   ;
+      c->next       = NULL ;
       c->first      = wagon ;
       c->last       = wagon ;
       c->motor      = (wagon->is_engine) ? wagon : NULL ;
@@ -1106,12 +1048,13 @@ TrainNode *t ;
 char      *my_name = "add_new_train" ;
 
       t = (TrainNode *)malloc(sizeof(TrainNode)) ;
-      t->name  = strdup(name) ;
-      t->speed = 0.0  ;
-      t->next  = NULL ;
-      t->motor = NULL ;
-      t->first = NULL ;
-      t->last  = NULL ;
+      t->name       = strdup(name) ;
+      t->speed      = 0.0  ;
+      t->last_speed = 0.0  ;
+      t->next       = NULL ;
+      t->motor      = NULL ;
+      t->first      = NULL ;
+      t->last       = NULL ;
       init_trav(&t->front) ;
       init_trav(&t->back) ;
 
@@ -1148,12 +1091,14 @@ int   add_wagon_to_train(char *wagon, int idirn){
 int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
 
   int           ip = 0     ;  //  Debug
+  int           i, n, ierr, n_sources ;
   TrainNode     *t  = NULL ;
   WagonNode     *w  = NULL ;
   RawWagonNode  *rw = rw0  ;
+  ShapeNode     *s  = NULL ;
   TravellerNode *z1 = NULL ;
   char          *wagon = wagon0 ;
-  char         *my_name = "add_wagon_to_train2" ;
+  char          *my_name = "add_wagon_to_train2" ;
 
 //      ip = ip && (rw0 != NULL) ;
       if(ip)printf("  Routine %s\n",my_name) ;
@@ -1174,6 +1119,7 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
                       rw->name, rw->shape->name) ;
           if(!strcmp_ic(rw->name,wagon)) break ;
         }
+        if(ip)printf("  Routine %s :: AA :: rw = %p\n",my_name,(void *)rw) ;
         if(rw == NULL){
           for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next){
           if(ip)printf(" Routine %s, needed wagon = %s, full wagon name = %s :: %s\n",
@@ -1182,6 +1128,7 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
             if(!strcmp_ic(rw->full_name,wagon)) break ;
           }
         }
+        if(ip)printf("  Routine %s :: CC :: rw = %p\n",my_name,(void *)rw) ;
         if(rw==NULL){
           printf(" Routine %s.\n  Unable to find wagon with name %s\n",
                 my_name,wagon) ;
@@ -1194,6 +1141,13 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
       }else{
         wagon = rw->name ;
       }
+      if(ip)printf("  Routine %s :: CC\n",my_name) ;
+/*
+ *==============================================================================
+ *  Mark raw wagon as needed
+ *==============================================================================
+ */
+      rw->is_needed = 1 ;
 /*
  *==============================================================================
  *  Create new WagonNode and initialise
@@ -1201,6 +1155,7 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
  */
       w  = (WagonNode *)malloc(sizeof(WagonNode)) ;
       z1 = (TravellerNode *)malloc(sizeof(TravellerNode)) ;
+      if(ip)printf("  Routine %s :: DD\n",my_name) ;
 
       w->next        = NULL  ;
       w->prev        = NULL  ;
@@ -1217,8 +1172,10 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
       w->traveller   = z1 ;
       w->shape       = rw->shape ;
       w->raw_wagon   = rw        ;
-      w->has_wipers  = 0 ;
-      w->has_mirrors     = rw->has_mirrors ;
+      w->bell_on     = 0 ;
+      w->sander_on   = 0 ;
+      w->has_wipers  = rw->has_wipers ;
+      w->has_mirrors = rw->has_mirrors ;
       w->has_pantographs = rw->has_pantographs ;
       w->wipers_on  = 0   ;
       w->wipers_off = 0   ;
@@ -1230,11 +1187,37 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
       w->pantographs_up   = 0   ;
       w->pantographs_dist = 0.0 ;
 
-      z1->shape  = w->shape ;
-      z1->wagon  = w        ;
-      z1->shape->needed = 1 ;
-      z1->shape->loaded = 0 ;
+      w->snd_trigger     = NULL ;
+      w->snd_active      = NULL ;
 
+      rw->shape->needed = 1 ;
+      rw->shape->loaded = 0 ;
+      if(rw->f_shape){
+        rw->f_shape->needed = 1 ;
+        rw->f_shape->loaded = 0 ;
+      }
+/*
+ * Initialise traveller
+ */
+      z1->shape  = rw->shape ;
+      z1->wagon  = w         ;
+      z1->tn = NULL ;
+      z1->vn = NULL ;
+      z1->x       = 0.0 ;
+      z1->y       = 0.0 ;
+      z1->z       = 0.0 ;
+      z1->rx      = 0.0 ;
+      z1->ry      = 0.0 ;
+      z1->rz      = 0.0 ;
+      z1->vx      = 0.0 ;
+      z1->vy      = 0.0 ;
+      z1->vz      = 0.0 ;
+      z1->ang_deg       = 0.0 ;
+      z1->vect_position = 0.0 ;
+      z1->sect_distance = 0.0 ;
+      z1->itrack  = 0 ;
+      z1->ivector = 0 ;
+      z1->idirect = 0 ;
 
       if(t->first == NULL) t->first = w ;
       if(t->last != NULL){
@@ -1242,7 +1225,10 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
         w->prev       = t->last ;
       }
       t->last = w ;
+      if(ip)printf("  Routine %s :: EE\n",my_name)  ;
       if(ip)printf("*** Routine %s.  Added wagon %s to train %s\n",my_name,w->name,t->name);
+      if(ip)            printf(" ==== shape pointer = %p\n",(void *)w->shape) ;
+      if(ip && w->shape)printf(" ==== shape name    = %s\n",w->shape->name) ;
 
 /*
  *==============================================================================
@@ -1281,9 +1267,10 @@ int       i       ;
           printf("*** Routine %s.  Wagon %s has_mirrors     = %i\n",my_name,w->name,w->has_mirrors);
           printf("*** Routine %s.  Wagon %s has_pantographs = %i\n",my_name,w->name,w->has_pantographs);
         }
-
-//        printf("  Wagon %s, is_engine = %i, engine = %p, wiper = %i\n",
-//               w->name, w->is_engine,(void *)w->engine,w->wiper_on);
+        if(ip){
+          printf("  Wagon %s, is_engine = %i, has_wipers = %i\n",
+                  w->name, w->is_engine,w->has_wipers);
+        }
       }
 
       return 0 ;
@@ -1547,366 +1534,6 @@ int  copy_traveller_position(TravellerNode *z1, TravellerNode *z0) {
       return 0 ;
 }
 
-/*
- *   Routine to update train positions
- */
-
-static TravellerNode *gzl = NULL ;
-
-int update_trains(void){
-
-  int       ip = 0 ;
-  int       ipp = 0 ;
-
-  int       iret = 0 ;  //  Return code
-  int       i_crash   = 0 ;
-  int       i_collide = 0 ;
-  int       idirect  ;
-  int       isect    ;
-  TrainNode *t0, *t1 = NULL ;
-  WagonNode *w           ;
-  TravellerNode *z0, *z1, gz0, gz1 ;
-  TrkSector     *ts      ;
-  double    d0, d1, d2   ;
-  double    length       ;
-  double    time, del_t  ;
-  double    dist_to_move ;
-  double    dist_remain, dist_moved   ;
-  char      *my_name = "update_trains" ;
-
-
-      ipp = ip && i_zrt ;
-      if(ipp){
-        printf("\n  Enter %s.  Run seconds = %f :: %i %i %i\n",my_name,run_seconds,
-               ip,i_zrt,ipp) ;
-//        print_train_data() ;
-      }
-      time = run_seconds ;
-/*
- *==============================================================================
- *  Loop over trains
- *==============================================================================
- */
-      for(t0 = trainlist_beg; t0 != NULL ; t0=t0->next){
-
-        ip = ipp && (t0->speed != 0.0) ;
-        if(ip)printf("  Routine %s. Main Loop :: train = %s, speed = %f\n",
-                                                 my_name,t0->name,t0->speed) ;
-        del_t = delta_seconds ;
-        if(0.0 == t0->speed) continue ;    //  Nothing to be done
-        if(ip)printf("\n  Routine %s.  Train is moving\n",my_name) ;
-        camera_changed = 1 ;               //  If connected to this train
-        junction_error = 0 ;
-/*
- *  First move to limit of train in direction of motion
- */
-        if(t0->speed > 0.0){
-          w = t0->first          ;    //  Front of train
-          if(w == NULL) return 0 ;
-          gz0  = *w->traveller   ;    //  Copy to temporary traveller
-          gz0.wagon = NULL       ;
-          if(ip)printf(" Routine %s AA call trv_move\n",my_name) ;
-          iret = trv_move(&gz0, 0.5*w->raw_wagon->length) ;
-        }else{
-          w = t0->last           ;    //  Back of train
-          if(w == NULL) return 0 ;
-          gz0 = *w->traveller    ;    //  Copy to temporary traveller
-          gz0.wagon = NULL       ;
-          if(ip)printf(" Routine %s BB call trv_move\n",my_name) ;
-          iret = trv_move(&gz0,-0.5*w->raw_wagon->length) ;
-        }
-        if(iret || junction_error){
-          printf("  Routine %s.  Train overlaps buffers or incorrectly"
-                                                    " set junction\n",my_name) ;
-          trv_print(&gz0) ;
-          exit (0) ;
-        }
-        gz1  = gz0             ;    //  Make a copy
-/*
- *  Next check for train collision with buffers or incorrectly set junction
- *  during the current timestep
- */
-        dist_to_move = del_t*t0->speed ;
-        dist_remain  = dist_to_move ;
-
-       if(ip)printf(" Routine %s CC call trv_move\n",my_name) ;
-       iret = trv_move(&gz1, dist_to_move) ; //  Move temporary traveller
-/*
- *  If crash detected, print error and change timestep for this train
- *  Unfortunately dist_remain is not changed (yet).
- */
-        i_crash = (iret || junction_error) ;
-        if(i_crash){
-          del_t = (fabs(dist_to_move) - fabs(dist_remain))/fabs(t0->speed) ;
-          if(iret){
-            printf("  Train %s crashed into end of line.\n",t0->name) ;
-          }else{
-            printf("  Train %s derailed at junction.\n",t0->name) ;
-          }
-/*
- *  If the train has not crashed, user traveller gz0 to check for
- *  collisions with other trains.  .
- */
-        }else{
-          dist_moved  = 0.0 ;
-          dist_remain = dist_to_move ;
-          do{
-            idirect = gz0.idirect  ;
-            isect   = gz0.itrack   ;
-            ts      = &track_db.trk_sections_array[isect-1] ; //  Remember '-1'!
-            if(ip)printf("\n  Track section = %i, idirect = %i, speed = %f, name = %s"
-                   "   dist remain = %f\n",
-                        isect, idirect, t0->speed,
-                        (gz0.wagon) ? gz0.wagon->name : "(null)", dist_remain ) ;
-
-            if(gz0.idirect && t0->speed>0.0){
-              d0 = gz0.sect_distance ;
-              d1 = d0 + dist_remain ;
-              if(d1 > ts->length){
-                d1 = ts->length ;
-                dist_remain  -= (ts->length - d0) ;
-              }else{
-                dist_remain = 0.0 ;
-              }
-            }else if(gz0.idirect && t0->speed<0.0){
-              d1   = gz0.sect_distance ;
-              d0   = d1 + dist_remain  ;
-              if(d0 < 0.0){
-                d0 = 0 ;
-                dist_remain += d1 ;
-              }else{
-                dist_remain = 0.0 ;
-              }
-            }else if(!gz0.idirect && t0->speed>0.0){
-              d1   = gz0.sect_distance ;
-              d0   = d1 - dist_remain  ;
-              if(d0 < 0.0){
-                d0 = 0 ;
-                dist_remain -= d1 ;
-              }else{
-                dist_remain = 0.0 ;
-              }
-            }else{
-              d0 = gz0.sect_distance ;
-              d1 = d0 - dist_remain ;
-              if(d1 > ts->length){
-                d1 = ts->length ;
-                dist_remain  -= (ts->length - d0) ;
-              }else{
-                dist_remain = 0.0 ;
-              }
-            }
-            if(ip)printf("  TT  d0 = %f, d1 = %f, d_remain = %f\n",d0, d1, dist_remain) ;
-/*
-*  Loop over all other trains searching for collisions.
-*  This is linited to collisions between the front and end of trains
-*  Collisions with wagons at crossovers and junctions are not covered.
-*/
-            i_collide = 0 ;
-            for(t1 = trainlist_beg; t1!=NULL; t1=t1->next){
-              if(t1 == t0)continue ;
-              z0 = &(t1->front) ;
-              z1 = &(t1->back)  ;
-              if(ip)printf("    Check for train collision\n") ;
-              if(ip)printf("    Train0 = %s, Front = %i %f, Back = %i %f  "
-                                "Motor = %i %f\n",
-                    t0->name, t0->front.itrack,
-                              t0->front.sect_distance,
-                              t0->back.itrack,
-                              t0->back.sect_distance,
-                    (t0->motor) ?t0->motor->traveller->itrack : 0,
-                    (t0->motor) ?t0->motor->traveller->sect_distance : 0.0) ;
-
-              if(ip)printf("    Train1 = %s, Front = %i %f, Back = %i %f  "
-                           "Motor = %i %f  ::   %i %f :: %i %f %f\n",
-                    t1->name, z0->itrack, z0->sect_distance,
-                              z1->itrack, z1->sect_distance,
-                    (t1->motor) ?t1->motor->traveller->itrack : 0,
-                    (t1->motor) ?t1->motor->traveller->sect_distance : 0.0,                              gz0.itrack, gz0.sect_distance, isect, d0, d1) ;
-  /*
-  *  Does either end of the second train lie in the same track section
-  *              and within the distance moved by the ?
-  */
-              if(ip)printf("  Routine %s.  Z0 :: %f %f :: %f\n",my_name,
-                                        d0, d1, z0->sect_distance ) ;
-              if(ip)printf("  Routine %s.  Z1 :: %f %f :: %f\n",my_name,
-                                        d0, d1, z1->sect_distance ) ;
-              if(isect == (int) z0->itrack){
-                if(z0->sect_distance > d0 && z0->sect_distance < d1){
-                  i_collide = 1 ;   //  Collision with front of train t1
-                  if(ip)printf("  COLLIDE with front of train t1\n") ;
-                  dist_moved += (z0->idirect) ? (z0->sect_distance - d0)
-                                              : (d1 - z0->sect_distance) ;
-                  break ;
-                }
-              }
-              if(isect == (int)z1->itrack){
-                if(z1->sect_distance > d0 && z1->sect_distance < d1){
-                  i_collide = -1 ;   //  Collision with back of train t1
-                  if(ip)printf("  COLLIDE with back of train t1\n") ;
-                  dist_moved += (z0->idirect) ? (z1->sect_distance - d0)
-                                              : (d1 - z1->sect_distance) ;
-                  break ;
-                }
-              }
-            }
-            if(i_collide) break ;
-/*
- *  If dist_remain != 0.0, move ghost traveller to next section.
- *  This also checks for possible crashes.
- */
-            if(dist_remain == 0.0)break ;
-
-            if( idirect == (dist_remain > 0.0) ){
-              i_crash = trk_next(&gz0,1) ;
-            }else{
-              i_crash = trk_next(&gz0,-1) ;
-            }
-            if(i_crash){
-              printf("  Routine %s error.  End of line or junction error"
-                                " while checking for train collisions\n", my_name) ;
-              printf("   idirect = %i\n",idirect) ;
-              trv_print(&gz0) ;
-              exit(1) ;
-            }
-          }while(dist_remain != 0.0) ;
-/*
- *  In the case of train collisions, set the timestep sufficient to move the
- *  train to the collision point.  The coupling togeather of trains approaching
- *  each other at low speed is treated near the end.
- */
-         if(i_collide){
-            del_t = fabs(dist_moved/t0->speed) ;
-            if(ip)printf(" Collide. Dist moved = %f, speed = %f, del_t = %f\n",
-                          dist_moved, t0->speed, del_t) ;
-          }
-        }
-/*
- *  End of checks for current train.
- *  Next update each of the engines and wagons in the train
- */
-        for(w=t0->last; w!=NULL; w=w->prev){
-          if(w == t0->last){
-            dist_moved = del_t*t0->speed ;
-          }else{
-            dist_moved = (w->dist_back + w->next->dist_front)        ;
-            copy_traveller_position(w->traveller,w->next->traveller) ;
-          }
-          if(ip)printf(" Routine %s DD call trv_move\n",my_name) ;
-          iret = trv_move(w->traveller, dist_moved) ;
-/*
- *  Update wheels on wagon
- */
-          dist_moved = del_t*t0->speed ;
-          if(w->train_dir){
-            w->wheel_angle += degree*dist_moved*w->raw_wagon->inv_wheelradius ;
-          }else{
-            w->wheel_angle -= degree*dist_moved*w->raw_wagon->inv_wheelradius ;
-          }
-          while(w->wheel_angle > 360.0) w->wheel_angle -= 360.0 ;
-          while(w->wheel_angle <   0.0) w->wheel_angle += 360.0 ;
-
-          if(w->is_engine){
-            if(w->train_dir){
-              w->driverwheel_angle +=
-                              degree*dist_moved*w->raw_wagon->inv_driverwheelradius ;
-            }else{
-              w->driverwheel_angle -=
-                              degree*dist_moved*w->raw_wagon->inv_driverwheelradius ;
-            }
-            while(w->driverwheel_angle > 360.0) w->driverwheel_angle -= 360.0 ;
-            while(w->driverwheel_angle <   0.0) w->driverwheel_angle += 360.0 ;
-          }
-        }  //  End loop over wagons
-/*
- *  Update train's front and back travellers
- */
-        copy_traveller_position(&(t0->front), t0->first->traveller) ;
-        if(ip)printf(" Routine %s EE call trv_move\n",my_name) ;
-        trv_move(&(t0->front), 0.5*t0->first->raw_wagon->length) ;
-        copy_traveller_position(&(t0->back), t0->last->traveller) ;
-        if(ip)printf(" Routine %s FF call trv_move\n",my_name) ;
-        trv_move(&(t0->back), -0.5*t0->last->raw_wagon->length) ;
-/*
- *  Current train in final position ;  Process any train collision.
- */
-        if(i_collide != 0){
-          printf("  TRAINS COLLIDE   Speed = %f\n", t0->speed) ;
-          if(!t1){
-            printf("  Routine %s error."
-                   "  Train pointer t1 set to NULL after crash.\n",my_name) ;
-          }
-          if(fabs(t0->speed) < 2.0){               //  A bit high!
-            join_trains(t0,t1,i_collide) ;
-          }else{
-            crash_trains(t0,t1,i_collide) ;
-          }
-        }else if(i_crash != 0){
-          crash_train(t0,i_crash) ;
-        }
-      }    //  End loop over trains
-/*
- *==============================================================================
- *  Second loop over trains and wagons
- *  Update variables which do not involve train movement using full del_t
- *==============================================================================
- */
-      del_t = delta_seconds ;
-
-      for(t0 = trainlist_beg; t0 != NULL ; t0=t0->next){
-        for(w=t0->last; w!=NULL; w=w->prev){
-/*
- *  Engine Wipers
- */
-          if(w->has_wipers && w->wipers_on){
-//            printf("    WIPER ANG = %f, dell_t = %f\n",w->wiper_ang,del_t) ;
-            w->wipers_ang = w->wipers_ang
-                                           + del_t*180.0 ;    //  Back and forth in 2s
-            if(w->wipers_ang > 360.0){
-              if(w->wipers_off){                        //  Park wipers
-                w->wipers_ang = 0.0 ;
-                w->wipers_on  = 0   ;
-                w->wipers_off = 0   ;
-              }else{
-                w->wipers_ang -= 360.0 ;
-              }
-            }
-          }
-//          printf("    WIPER ANG = %f, dell_t = %f,  wiper_on = %i\n",
-//                  w->wiper_ang,del_t,w->wiper_on) ;
-/*
- *  Engine Mirrors
- */
-          if(w->has_mirrors){
-            if(w->mirrors_out && w->mirrors_dist < 1.0){
-              w->mirrors_dist = w->mirrors_dist + del_t ;    //  Open in 1s
-              if(w->mirrors_dist > 1.0) w->mirrors_dist = 1.0 ;
-            }else if(!w->mirrors_out && w->mirrors_dist > 0.0){
-              w->mirrors_dist = w->mirrors_dist - del_t ;    //  Close in 1s
-              if(w->mirrors_dist < 0.0) w->mirrors_dist = 0.0 ;
-            }
-          }
-/*
- *  Engine Pantographs
- */
-          if(w->has_pantographs){
-            if(w->pantographs_up && w->pantographs_dist < 1.0){
-              w->pantographs_dist = w->pantographs_dist + del_t ;    //  Open in 1s
-              if(w->pantographs_dist > 1.0) w->pantographs_dist = 1.0 ;
-            }else if(!w->pantographs_up && w->pantographs_dist > 0.0){
-              w->pantographs_dist = w->pantographs_dist - del_t ;    //  Close in 1s
-              if(w->pantographs_dist < 0.0) w->pantographs_dist = 0.0 ;
-            }
-          }
-        }
-/*
- *  End loop over trains
- */
-      }
-      time_last = time ;
-      if(ip)printf("  Exit %s\n",my_name) ;
-      return 0 ;
-}
 
 #if 0
 /*
@@ -2026,7 +1653,7 @@ int print_wagon_data_to_file(char *filename){
 int trains_setup_by_user(){
 
 int  ip = 0 ;
-int  i, n, m, itrain, iret ;
+int  i, n, m, itrain, idirn, iret ;
 int    n_engines   ;
 int    n_tenders   ;
 int    n_carriages ;
@@ -2046,7 +1673,7 @@ BTree  *found     = NULL ;
 RawWagonNode *rw ;
 ConsistNode  *consist ;
 TrkItem      *ti ;
-char         tname[10] ;
+char         tname[12] ;
 
 
 
@@ -2107,17 +1734,28 @@ char  *my_name = "trains_setup_by_user" ;
         printf("\n  ENGINES\n\n");
         print_bt_nodes_with_count_and_index(engines) ;
         n = 0 ;
+
         while(n<1 || n>n_engines){
           printf("  Enter index of engine (or 0 to skip):\n") ;
+#ifdef  DEBUG1
+          n = 9 ;
+          found = find_bt_node_with_index(engines,n) ;
+          rw = (RawWagonNode *)found->data ;
+          add_wagon_to_train(rw->name,1) ;
+          printf("  Engine added.  Name = %s\n",rw->name) ;
+          break ;
+#else
           scanf("%i",&n) ;
           if(n>n_engines)continue ;
           if(n<1) break ;
           found = find_bt_node_with_index(engines,n) ;
+#endif
           rw = (RawWagonNode *)found->data ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Engine added.  Name = %s\n",rw->name) ;
         }
 
+#ifndef DEBUG1
         printf("\n  TENDERS\n\n");
         print_bt_nodes_with_count_and_index(tenders) ;
         n = 0 ;
@@ -2131,7 +1769,6 @@ char  *my_name = "trains_setup_by_user" ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Tender added.  Name = %s\n",rw->name) ;
         }
-
         printf("\n  CARRIAGES\n\n");
         print_bt_nodes_with_count_and_index(carriages) ;
         n = 0 ;
@@ -2173,6 +1810,8 @@ char  *my_name = "trains_setup_by_user" ;
           add_consist_to_train(consist->name) ;
           printf("  Consist added.  Name = %s\n",consist->name) ;
         }
+#endif
+
 
         m = 0 ;
         printf("\n  PLATFORMS\n\n");
@@ -2180,12 +1819,18 @@ char  *my_name = "trains_setup_by_user" ;
         n = 0 ;
         while(n<1 || n>n_platforms){
           printf("  Enter index of platform (or 0 to skip):\n") ;
+#ifdef  DEBUG1
+          n = 39 ;
+#else
           scanf("%i",&n) ;
+          idirn = (n>=0) ? 1 : 0 ;
+          n = abs(n) ;
           if(n>n_platforms) continue ;
           if(n<1) break ;
+#endif
           found = find_bt_node_with_index(platform_list,n) ;
           ti = (TrkItem *)found->data ;
-          position_train2(ti->platform_name,1,0.0) ;
+          position_train2(ti->platform_name,idirn,0.0) ;
           printf("  Position at platform.  Name = %s\n",ti->platform_name) ;
           m = 1 ;
           break ;
@@ -2197,19 +1842,25 @@ char  *my_name = "trains_setup_by_user" ;
           while(n<1 || n>n_sidings){
             printf("  Enter index of siding (or 0 to skip):\n") ;
             scanf("%i",&n) ;
+            idirn = (n>=0) ? 1 : 0 ;
+            n = abs(n) ;
             if(n>n_sidings) continue ;
             if(n<1) break ;
             found = find_bt_node_with_index(siding_list,n) ;
             ti = (TrkItem *)found->data ;
-            position_train2(ti->siding_name,1,0.0) ;
+            position_train2(ti->siding_name,idirn,0.0) ;
             printf("  Position at siding.  Name = %s\n",ti->siding_name) ;
           }
         }
+#ifndef DEBUG1
         printf(" Enter 1 for additional train or 0 to continue:\n");
         iret = 0 ;
         scanf("%i",&iret) ;
-        if(!iret) return 0 ;
-
+        if(!iret) break ;
+#else
+        break ;
+#endif
       }
+
       return 0 ;
 }

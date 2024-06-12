@@ -19,6 +19,7 @@ typedef struct trackdistacelevel TrackDistLevel ;
 typedef struct tracksubobject    TrackSubObject ;
 typedef struct railprofile       RailProfile    ;
 typedef struct dlpointernode     DLPointerNode  ;
+typedef struct wavfilenode       WavFileNode    ;
 
 /*
  *  Pointer node for use in doubly-linked lists.
@@ -558,7 +559,7 @@ typedef struct texturenode {
   struct texturenode *next            ;  //  Pointer to the next node
   char               *name            ;  //  Name without '.ace'
   char               *filename        ;  //  Full filename
-  int                basic            ;  //  = 1 if alwauys needed
+  int                basic            ;  //  = 1 if always needed
   int                needed           ;  //  True if needed for graphics
   int                loaded           ;  //  True if loaded into graphics card
   int                width            ;  //  Width of base texture

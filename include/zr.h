@@ -15,6 +15,7 @@
 
 #ifndef __ZR_H__
 #define __ZR_H__
+#define __USE_XOPEN_EXTENDED
 
 #ifdef  SDL2
  #ifdef zr_freetype
@@ -73,6 +74,15 @@
   #include <SDL2/SDL.h>
   #include <SDL2/SDL_opengl_glext.h>
 #endif
+/*
+ * Sound : using OpenAL and ALUT, the OpenAL Utility Toolkit
+ */
+#ifdef OPENAL
+  #include <AL/al.h>
+  #include <AL/alc.h>
+  #include <AL/alut.h>
+  #define BACKEND "alut"
+#endif
 
 #ifdef  USE_FREETYPE
   #include "freetype_zr.h"
@@ -82,7 +92,6 @@
 //  #include <SDL2/SDL_ttf.h>
 //#endif
 
-#include "sound.h"
 
 #ifdef PORTAUDIO
   #include <stdint.h>
@@ -105,6 +114,11 @@ typedef u_int uint ;
 #include "camera.h"
 #include "sigscr.h"
 #include "signals.h"
+
+#ifdef OPENAL
+#include "sound.h"
+#endif
+
 #include "functions.h"    //  Call this last
 
 #ifndef SDL2
@@ -166,6 +180,7 @@ char    *ZRdotdir   = NULL ;       // Location of users .zr file
 char    *ZRconfig   = NULL ;       // Location of user config file ($Home/.zr/config)
 char    *ZRfonts           ;       // Location of user font file ($Home/.zr/fonts)
 char    eof_mark[] = "******Z" ;   // Use to flag end-of-file in text files.
+char    *nftw_file  = NULL ;       // Use to pass filenames to/from routine nftw
 
 int     n_open_files = 0  ;  // used by gopen and gclose
 
@@ -217,14 +232,20 @@ TrackSection  *track_section_end = NULL ;
 TrackShape    *track_shape_beg   = NULL ;
 TrackShape    *track_shape_end   = NULL ;
 
-BTree         *shape_master = NULL ;  // Btree containing all shapes used by world files
-BTree         *enum_master  = NULL ;  // Btree linking enum strings to values
+BTree         *shape_master = NULL ;  // BTree containing all shapes used by world files
+BTree         *sms_master   = NULL ;  // BTree containing all sounds (*.sms) used by world files
+BTree         *wav_master   = NULL ;  // BTree listing all sound (*.wav) files used by sms files
+BTree         *enum_master  = NULL ;  // BTree linking enum strings to values
+BTree         *dir_master   = NULL ;  // BTree with links to directories
 
 // Tiles
 
-TileListNode  *tilelist_head = NULL ;
-TileListNode  **tile_array          ;  //2-D array of pointers relating tile coordinates to nodes.
+TileListNode  *tilelist_head = NULL ;  // Linked list of World Tile nodes
+TileListNode  **tile_array          ;  // 2-D array of pointers to nodes : indexed (east, north)
 int           tile_array_num        ;  // Number of nodes in array
+int           tile_array_nx         ;  // Number of nodes east-west
+int           tile_array_ny         ;  // Number of nodes north-south
+char          **tile_mask_array = NULL ;  // Mask used to prevent frest trees overlapping other objects
 
 //Shapes
 
@@ -240,15 +261,23 @@ TrainNode    *trainlist_beg  = NULL ;
 TrainNode    *trainlist_end  = NULL ;
 TrainNode    *player_train   = NULL ;
 
-RawWagonNode *rawwagonlist_beg  = NULL ;  // Pointer to first node in list of basic wagon structures
-RawWagonNode *rawwagonlist_end  = NULL ;  // Pointer to last node
-ConsistNode  *consistlist_beg   = NULL ;  // Pointer to first node in list of consists
-ConsistNode  *consistlist_end   = NULL ;  // Pointer to last node
-ShapeNode    *wshapelist_beg = NULL    ;  // Pointer to first node in list of wagon shapes
-ShapeNode    *wshapelist_end = NULL    ;  // Pointer to last node
-
+RawWagonNode *rawwagonlist_beg = NULL ;  // Pointer to first node in list of basic wagon structures
+RawWagonNode *rawwagonlist_end = NULL ;  // Pointer to last node
+ShapeNode    *wshapelist_beg   = NULL ;  // Pointer to first node in list of wagon shapes
+ShapeNode    *wshapelist_end   = NULL ;  // Pointer to last node
+SMS_Node     *wsmslist_beg     = NULL ;
+SMS_Node     *wsmslist_end     = NULL ;
 TextureNode  *wtexturelist_beg = NULL ;
 TextureNode  *wtexturelist_end = NULL ;
+ConsistNode  *consistlist_beg  = NULL ;  // Pointer to first node in list of consists
+ConsistNode  *consistlist_end  = NULL ;  // Pointer to last node
+
+BTree        *rwag_master   = NULL ;  // Btree of all wagon nodes
+BTree        *wshape_master = NULL ;  // Btree of all wagon shape nodes
+BTree        *wtex_master   = NULL ;  // Btree of all wagon texture files
+
+BTree        *sound_master  = NULL ;
+
 
 //World
 
@@ -263,8 +292,11 @@ int        list_wfile_item(WorldItem *wi) ;
 
 //Sound
 
-SoundNode  *soundlist_beg = NULL ;
-SoundNode  *soundlist_end = NULL ;
+SMS_Node   *sms_list_beg  = NULL ;
+SMS_Node   *sms_list_end  = NULL ;
+SoundFile  *soundfile_beg = NULL ;
+SoundFile  *soundfile_end = NULL ;
+
 
 // Textures
 

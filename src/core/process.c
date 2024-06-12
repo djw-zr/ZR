@@ -230,7 +230,7 @@ char *my_name = "process_defaults" ;
         token_a[2] = strdup(token) ;
 
         if(!strcmp(token_a[0],"MSTSdir")){
-#if 0
+#if 1
           free(MSTSdir);
           MSTSdir = token_a[2];
           token_a[2] = NULL ;               //  Leave string for MSTSdir
@@ -284,12 +284,16 @@ char *my_name = "process_defaults" ;
       print_bt_nodes_with_count_and_index(ORdirs) ;
 
       if(n_dirs > 1){
+#ifndef DEBUG1
         n = 0 ;
         while(n<1 || n>n_dirs){
           printf("  Enter index of top level directory to use (0 to exit):\n") ;
           scanf("%i",&n) ;
           if(n<1) exit(0) ;
         }
+#else
+        n = 4 ;
+#endif
       }else if(1==n_dirs){
         n = 1 ;
       }else{
@@ -311,7 +315,7 @@ char *my_name = "process_defaults" ;
         routes_dir = malloc(n*sizeof(char)) ;
         strcpy(routes_dir,ORdir)  ;
         strcat(routes_dir,routes) ;
-        zr_find_msfile2(routes_dir) ;
+        zr_find_msfile2(&routes_dir) ;
         bt_dirs = bt_subdirectory_list(routes_dir) ;
         n_dirs  = return_bt_count() ;
 
@@ -319,12 +323,16 @@ char *my_name = "process_defaults" ;
         printf("    List of routes:\n") ;
         print_bt_nodes_with_count_and_index(bt_dirs) ;
         if(n_dirs > 1){
+#ifndef DEBUG1
           n = 0 ;
           while(n<1 || n>n_dirs){
             printf("  Enter index of route to use (0 to exit):\n") ;
             scanf("%i",&n) ;
             if(n<1) exit(0) ;
           }
+#else
+          n = 7 ;
+#endif
           bt_node = find_bt_node_with_index(bt_dirs,n) ;
         }else if(n_dirs == 1){
           bt_node = find_bt_node_with_index(bt_dirs,1) ;

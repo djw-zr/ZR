@@ -12,10 +12,61 @@
  *
  *==============================================================================
  *
- * char *zr_parentdir(char *fname)      :: Parent directory
+ * int  init_system(void)              ::  Initialise clocks and freetypr
+ * int  nint(double d)                 ::  Nearest integer
+ * void  str2lc(char *string)          ::  Convert string to lower case
+ * char *zr_to_upper(char *string)     :: Return tring as upper case
+ * char *zr_to_lower(char *string)     :: Return as lower case
+ *
+ * int  zr_filename_MS2L(char *fname)  :: replace '\' and '\\' by '/'
+ * char *convert_dir_markers(char *string1) ::  Convert '\\' to '/'
+ * char *strip_dot_dirs(char* file_1)  :: Convert '/./' and '/A/../' to '/'
+ *
+ * char *strip_quotes(char *string1)   :: Remove quotes around string
+ * void  zr_str2lcnqne(char *string)   :: Convert string to lower case without
+ *                                     :: quotes and file extension
+ *
+ * int strcmp_ic(const char *s1,
+ *                     const char *s2) ::  Compare two string ignoring case
+ * int strncmp_ic(const char *s1,
+ *            const char *s2, int nn)  :: Ditto
+ * int  strcmp_nq(char *s1a, char *s2a)   :: Compare strings with quotes removed
+ * int  strcmp_nqic(char *s1a, char *s2a) :: Ditto ignoring case
+ *
+ * char *zr_basename(char *fname)      :: filename with directories removed
+ * char *zr_basename2(char *fname)     :: ... and without extension
+ * char *zr_extension(char *fname)     :: return extension
+ * char *zr_extension_lc(char *fname)  :: ... as lower case
+ * char *zr_corename(char *fname)      :: filename without extension
+ * char *zr_parentdir(char *fname)     :: Return parent directory A/B/C -> B
+ * char *zr_full_parentdir(char *fname):: Return full parent name A/B/C -> A/B
+ *
+ * int find_msstyle_file(char **pname) :: Find MS style file
+ * int zr_find_msfile2(char **pname)   :: Ditto modifying *pname
+ * int zr_find_msdir(char **pname)     :: Ditto + save directory in dir_master
+ *
+ * int calls_per_second()              :: Count number of calls per second
+ *
+ * enum MatrixType check_matrix4x3(Matrix4x3 *m) :: Matrix utility routine
+ * int msts4x3_to_opengl4x4(float m[16], Matrix4x3 *m1) :: Ditto
+ * int  zrRotateAxyz( double ang, double  ax, double  ay, double  az,
+ *                                double   x, double   y, double   z,
+ *                               double *rx, double *ry, double *rz)
+ *
+ * FILE *gopen(char* fname, char *ftype) :: Keep count of open files
+ * FILE *gcaseopen(char* fname, char *ftype) :: Ditto
+ * int gclose(FILE *f)                   :: Ditto
+ *
+ * void  zr_clock_gettime(struct timespec clock[4]) ::  Get time
+ * double interpolate_array(int nn, double xx, double *xa, double *ya)
+ *                                                  :: Sound Utility
+ *
+ * int close_system(void)                 ::  Shut down smoothly
  *
  *==============================================================================
+ *
  */
+
 
 /*
  *   Initialise system variables and those not initialised elsewhere
@@ -291,7 +342,7 @@ char *pz ;
 /**
  *  char *zr_corename(char *fname)
  *
- *  Routine to return copy of file fname without extension
+ *  Routine to return copy of filename without extension
  */
 
 char *zr_corename(char *fname){
@@ -502,31 +553,34 @@ char *my_name = "zr_find_msfile" ;
  *   matching pathname and returns zero.
  */
 
-int find_msstyle_file(char *pname) {
+int find_msstyle_file(char **pname) {
 
          return zr_find_msfile2(pname) ;
 }
 
-int zr_find_msfile2(char *pname){
+int zr_find_msfile2(char **pname){
 
-unsigned int  i, n, ok, iret  ;
-unsigned int  ip = 0          ;  // Debug
+unsigned int  i, k, l, n, m, ok, iret  ;
+unsigned int  ip = 0  ;          // Debug
 char *base   = NULL,             //  File name in last directory
      *parent = NULL,             //  Full pathname of parent directory
-     *string = NULL     ;
+     *string = NULL,
+     *pname2 = NULL   ;          //  Revised name
 DIR  *dp          ;
 struct dirent *di ;
 struct stat   sb  ;
 
 char *my_name = "zr_find_msfile2" ;
 /*
- *  Check if file exists
+ *  Use stat() to check if file exists
  */
-      if(ip)printf("\n  Enter routine %s.     Search for = %s\n",my_name,pname) ;
-      fflush(NULL) ;
-      iret = stat(pname, &sb) ;
+      if(ip){
+        printf("\n  Enter routine %s.\n", my_name) ;
+        printf("      %s.  Search for = %s\n", my_name, *pname) ;
+      }
+      iret = stat(*pname, &sb) ;
       if(!iret){
-        if(ip)printf("     File/Directory  exists!\n") ;
+        if(ip)printf("      %s.  File/Directory  exists!\n", my_name) ;
         return 0      ;    //  File or directory exists
       }
 /*
@@ -535,58 +589,93 @@ char *my_name = "zr_find_msfile2" ;
  */
 //      zr_filename_MS2L(pname) ;
 /*
- *    2. Check parent exists  [Use "stat(filename)" to check it exists]
+ *    2. Check parent exists
  */
-      parent = zr_full_parentdir(pname) ;  // malloc parent
+      parent = zr_full_parentdir(*pname) ;  // malloc parent
       if(ip){
         printf("    File/Directory does not exist\n") ;
         printf("    Parent = %s\n",parent) ;
       }
+/*
+ *    3. Handle special cases and check that parent exists
+ */
+
       if(parent==NULL){
         parent = strdup(".") ;
       }else if(!strcmp(parent,"/")){
         *parent = '\0'       ;
       }else{
-        iret = zr_find_msfile2(parent) ;
+//        iret = zr_find_msfile2(&parent) ;
+        iret = zr_find_msdir(&parent) ;
         if(iret){
+          printf("    Parent does not exist\n") ;
+          printf("    Parent = %s\n",parent) ;
           free(parent) ;
           return 1 ;  // Parent does not exist
         }
+        if(ip)printf("  ZZ pname  :: address %p\n",
+                        (void *)&parent)  ;
+        if(ip)printf("  ZZ pname  :: address %p, value %p\n",
+                        (void *)&parent,  (void *)parent)  ;
+        if(ip)printf("  ZZ pname  :: address %p, value %p, string = %s\n",
+                        (void *)&parent,  (void *)parent, parent)  ;
       }
       if(ip){
-        printf("\n    Parent found = %s\n",parent) ;
+        printf("\n    %s Parent found = %s\n",my_name,parent) ;
         fflush(NULL) ;
       }
 /*
- *    3.  Regenerate filename
+ *    4.  Regenerate filename (pnams2) from parent and base
  */
-      base = zr_basename(pname)        ;  // malloc
-      n = strlen(parent)   ;
-      strcpy(pname,parent) ;
-      if(parent[n-1]!='/')strcat(pname,"/")    ;
-      strcat(pname,base)   ;
-      if(ip)printf("    New pname = %s\n",pname) ;
+      base = zr_basename(*pname)        ;  // malloc
+      if(ip)printf("    base = %s\n",base) ;
+
+      l = strlen(*pname) ;
+      n = strlen(parent) ;
+      m = strlen(base)   ;
+
+      k = m + n + 1  ;
+      if(parent[n-1]!='/')k = k+1 ;
+
+      pname2 = malloc(k*sizeof(char)) ;
+
+      strcpy(pname2,parent) ;
+      if(parent[n-1]!='/')strcat(pname2,"/")    ;
+      strcat(pname2,base)   ;
+      if(ip)printf("    New pname = %s\n",pname2) ;
 /*
- *    4.  Check again for file
+ *    5.  Check if new filename  exists
  */
-      iret = stat(pname,&sb) ;
+      iret = stat(pname2,&sb) ;
+/*
+ *  File found.  Copy pname2 to pname if memory available
+ *               Otherwise malloc space for new pname.
+ */
       if(!iret){
         free(parent) ;
         free(base)   ;
         free(string) ;
+        if(l >= n){
+          strcpy(*pname,pname2) ;
+          free(pname2) ;
+        }else{
+          free(*pname) ;
+          *pname = pname2 ;
+        }
         if(ip)printf("     File/Directory  exists!\n") ;
         return 0     ;    //  File or directory exists
       }
 /*
- *    5.  Search parent directory for matching file
+ *    5.  Check parent directory for a match when all characters
+ *        are changed to lower case
  */
       if(ip){
         printf("     File/Directory  does not exist\n") ;
         printf("     Search for matching item  %s\n",base) ;
         printf("                 in directory  %s\n",parent) ;
       }
-      n = strlen(base) ;
-      for(i=0;i<n;i++) base[i]=tolower(base[i]) ;
+      m = strlen(base) ;
+      for(i=0;i<m;i++) base[i]=tolower(base[i]) ;
 
       dp = opendir(parent) ;
       ok = 0 ;
@@ -599,41 +688,230 @@ char *my_name = "zr_find_msfile2" ;
         if(ok)break ;
       }
 /*
- *    Failure ??
+ *    File not found.
  */
       if(!ok){
         closedir(dp) ;
         free(parent) ;
         free(base)   ;
         free(string) ;
-        if(ip)printf("     Routine %s, DD File not found\n", my_name) ;
+        free(pname2) ;
+        if(ip)printf("     Routine %s.  File not found during directory search\n", my_name) ;
         return 1     ;  // File does not exist
       }
 /*
- *    Success !!
+ *    File found.
+ *    Generate full filename
  */
       free(base) ;
       base = strdup(di->d_name) ;
       closedir(dp) ;
-      n = strlen(parent)   ;
-      strcpy(pname,parent) ;
-      if(parent[n-1]!='/')strcat(pname,"/")    ;
-      strcat(pname,base)   ;
-      if(ip)printf("  Routine %s, DD File found.  File = %s\n",
-                                                     my_name,pname) ;
+
+      n = strlen(parent) ;
+      m = strlen(base)   ;
+
+      if(parent[n-1]!='/')n = n+1 ;
+      n = n+m+1;
+      free(pname2) ;
+      pname2 = malloc(n*sizeof(char)) ;
+
+      strcpy(pname2,parent) ;
+      if(parent[n-1]!='/')strcat(pname2,"/")    ;
+      strcat(pname2,base)   ;
+      if(ip)printf("  Routine %s. File found.  File = %s\n",
+                                                     my_name,pname2) ;
+/*
+ *  File found.  Copy pname2 to pname if memory available
+ *               Otherwise malloc space for new pname.
+ *               This will cause an arror if pname is not a malloc variable
+ */
+      if(ip)printf("  Routine %s, l= %i, %i, n= %i %i\n",
+                        my_name,l,(int)strlen(*pname),n,(int)strlen(pname2)) ;
+      if(ip)printf("  AA pname  :: address %p, value %p\n",(void *)&pname,  (void *)pname)  ;
+      if(ip)printf("  AA pname2 :: address %p, value %p\n",(void *)&pname2, (void *)pname2) ;
+      if(l >= n){
+        strcpy(*pname,pname2) ;
+        free(pname2) ;
+        if(ip)printf("  BB pname  :: address %p, value %p\n",(void *)&pname,  (void *)pname)  ;
+        if(ip)printf("  BB pname2 :: address %p\n",(void *)&pname2) ;
+      }else{
+        free(*pname) ;
+        *pname = pname2 ;
+      }
+      if(ip)printf("  CC pname  :: address %p, value %p, string = %s\n",
+                      (void *)&pname,  (void *)pname, *pname)  ;
       free(parent) ;
       free(base)   ;
       free(string) ;
 
+      if(ip)printf("\n  Exit routine %s.\n",my_name) ;
       return 0  ;
 }
 
+/*
+ *  Routine to find MS style directories
+ *  MS ignores character case when specifying file and
+ *  directory names.
+ *  This routine searches for a directory which matches
+ *  *pname after allowing for differences in case.
+ */
 
+int zr_find_msdir(char **pname){
+
+  int     ip = 0 ;
+  uint    i ;
+  int     k, l, n, iret, ok ;
+  BTree   *btree ;
+  char    *base     = NULL ;
+  char    *parent   = NULL ;
+  char    *new_dir  = NULL ;
+  char    *local_dir= NULL ;
+  char    *lc_name  = NULL ;
+  char    *dname    = *pname ;
+  char    *my_name = "zr_find_msdir" ;
+  DIR     *dp       ;
+  struct dirent *di ;
+  struct stat   sb  ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+/*
+ *  Simplify and convert to lc
+ */
+      if(ip) printf("  AA %s :: dname %p :: lc_name %p\n",
+             my_name, (void *)dname, (void *)lc_name) ;
+      lc_name = zr_filename(dname) ;  //  Local copy
+/*
+ *  Check to see if this lc_name is already known
+ */
+      if(ip) printf("  AA1 %s :: dname %p :: lc_name %p\n",
+             my_name, (void *)dname, (void *)lc_name) ;
+      if(ip) printf("  AA1 %s :: dname %s :: lc_name %s\n",
+             my_name, dname, lc_name) ;
+      btree = find_btree(dir_master, lc_name) ;
+      if(btree && btree->data){
+        free(*pname) ;
+        *pname = strdup((char *)btree->data) ;
+        if(ip){
+          printf("  BB   btree->index = %s, *pname = %p  ::%s::%s::\n",
+          btree->index, (void *)*pname, *pname, (char *)btree->data) ;
+          print_btree(dir_master, 0, "0") ;
+        }
+      }
+      if(ip) printf("  CC\n") ;
+/*
+ *  Does this directory exist
+ */
+      iret = stat(*pname, &sb) ;
+      if(!iret){
+        if(ip) printf("  AA2 %s :: dname %p :: lc_name %p\n",
+               my_name, (void *)dname, (void *)lc_name) ;
+        if(ip)printf("      %s.  File/Directory  exists!\n", my_name) ;
+        free(lc_name) ;
+        if(ip)printf("      %s.  File/Directory  exists!\n", my_name) ;
+        return 0      ;    //  File or directory exists
+      }
+/*
+ *  First ensure parent directory exists
+ */
+      parent = zr_full_parentdir(dname) ;
+      if(ip) printf("  DD =  %s\n",parent) ;
+
+      if(parent==NULL){
+        parent = strdup(".") ;
+      }else if(!strcmp(parent,"/")){
+        *parent = '\0'       ;
+      }else{
+        if(ip) printf("  GG %s  parent =  %s\n",my_name, parent) ;
+        iret = zr_find_msdir(&parent) ;
+        if(ip) printf("  GG1 %s  parent =  %s\n",my_name, parent) ;
+        if(iret){
+          if(ip){
+            printf("    Parent does not exist\n") ;
+            printf("    Parent = %s\n",parent) ;
+          }
+          free(parent) ;
+          free(lc_name) ;
+          if(ip) printf("  HH =  %s\n",parent) ;
+          return 1 ;  // Parent does not exist
+        }
+      }
+/*
+ *  Parent found
+ *  Generate new directory as "parent"/"base"
+ */
+      if(ip) printf("  II =  %s\n",parent) ;
+      base = zr_basename(dname) ;
+      l = strlen(dname)  ;
+      n = strlen(parent) ;
+      new_dir = make_filename_3(parent,
+                               (parent[n-1]!='/')?"/":"",base) ;
+      if(ip) printf("  JJ =  %s\n",parent) ;
+/*
+ *  Does the new directory exists
+ */
+      iret = stat(new_dir,&sb) ;    //  0 = found
+      if(ip) printf("  KK =  %i %s\n",iret, new_dir) ;
+/*
+ * If not loop through parent directory looking for
+ *    case independet matches
+ */
+      if(iret){
+        for(i=0; i<strlen(base); i++)base[i] = tolower(base[i]) ;
+        dp = opendir(parent) ;
+        ok = 0 ;
+        while((di=readdir(dp))!= NULL){
+          local_dir = strdup(di->d_name) ;
+          if(ip) printf("  MM  %s\n",local_dir) ;
+          ok = !strcmp_ic(local_dir,base) ;
+          if(ok)break ;
+          free(local_dir) ;
+        }
+        if(ip) printf("  PP\n") ;
+        if(!ok){
+          closedir(dp) ;
+          free(parent) ;
+          free(base)   ;
+          free(new_dir) ;
+          free(lc_name) ;
+          if(ip)printf("     Routine %s, DD File not found\n", my_name) ;
+          return 1     ;  // File does not exist
+        }
+        new_dir = make_filename_3(parent,
+                               (parent[n-1]!='/')?"/":"",local_dir) ;
+        free(local_dir) ;
+        closedir(dp) ;
+      }
+/*
+ * Directory new_dir found concaternate with parent
+ */
+      if(ip) printf("  QQ  new_dir = %s\n",new_dir) ;
+      if(ip)printf("  Routine %s, RR parent   = %s\n", my_name, parent) ;
+      if(ip)printf("  Routine %s, RR new_dir  = %s\n", my_name, new_dir) ;
+      free(base) ;
+      free(parent) ;
+/*
+ *  File found.
+ */
+      if(l >= n){
+        if(ip)printf("  SS\n") ;
+        strcpy(*pname,new_dir) ;
+      }else{
+        if(ip)printf("  TT\n") ;
+        free(*pname) ;
+        *pname = new_dir ;
+      }
+      if(ip)printf("  UU\n") ;
+      if(ip)printf("  Routine %s, ZZ new_dir = %s\n", my_name, new_dir) ;
+      dir_master = insert_node(dir_master, lc_name, new_dir) ;
+      if(ip)print_btree(dir_master,0,"0") ;
+
+      return 0 ;
+}
 
 /**
  *  char *zr_filename_MS2L(char *fname)
  *
- *  Routine to replace '\' by '/' in filenames.
+ *  Routine to replace '\' and '\''\' by '/' in filenames.
  */
 
 int zr_filename_MS2L(char *fname){
@@ -642,9 +920,12 @@ int  i, j, n  ;
 
       n = strlen(fname) ;
       for(i=0,j=0;i<n;i++,j++){
-        if(fname[i] == '\\')fname[j] = '/' ;
-        if(fname[i] == '/' && fname[i+1] == '/')i++ ;   // Convert "//" to "/"
-        fname[j] = fname[i] ;
+        if(fname[i] == '\\'){                   // Convert '\\' to '/'
+          fname[j] = '/' ;
+          if(j > 0 && fname[j-1] == '/')j-- ;   // Convert "//" to "/"
+        }else{
+          fname[j] = fname[i] ;
+        }
       }
       fname[j] = '\0' ;
       return 0 ;
@@ -699,6 +980,7 @@ char *p1, *p2 ;
 char **pa    ;           //  pointer to array of sub-strings
 char *my_name = "strip_dot_dirs" ;
 
+      if(ip)printf("  Enter %s\n",my_name) ;
 /*
  *  Return if file_1 is NULL or it does not contain "./".
  */
@@ -800,11 +1082,38 @@ char *my_name = "strip_dot_dirs" ;
       if(!end_dir)file_3[n-1] = '\0' ;
       if(ip)printf("  file_3 = %s\n",file_3) ;
       free(pa)      ;
-      free(file_1)  ;
       free(file_2)  ;
+      if(ip)printf("  Exit %s\n",my_name) ;
       return file_3 ;
 }
 
+/*
+ *  Routine to convert a potential filename to standare lower case form.
+ *  This removes quotes
+ *       changes "\\" and '\' to '/'
+ *       changes "/./" to '/'
+ *       changes "A/B/../" to A/
+ */
+
+
+char *zr_filename(char *fname){
+
+  char *string1 ;
+  char *string2 ;
+
+      string1 = strdup(fname) ;  //  Make local copy
+      str2lc(string1) ;          //  Make lower case
+#if 0
+      string2 = strip_quotes(string1) ;        // string1 freed
+      string1 = convert_dir_markers(string2) ; // string2 freed
+#else
+      string1 = strip_quotes(string1) ;        // string1 freed
+      string1 = convert_dir_markers(string1) ; // string2 freed
+#endif
+      string1 = strip_dot_dirs(string1) ;
+//      free(string2) ;
+      return string1 ;
+}
 
 //#ifdef MinGW
 #if 0
@@ -1142,6 +1451,42 @@ void  zr_clock_gettime(struct timespec clock[4]){
 }
 
 /*
+ *  Routine to interplate volume and frequency arrays used
+ *  by SMS system
+ */
+
+double interpolate_array(int nn, double xx, double *xa, double *ya){
+
+int    i ;
+double yy ;
+
+      if(nn < 0) return 0.0 ;
+      if(xa[nn-1] > xa[0]){
+        if(xx <= xa[0]) return ya[0] ;
+        if(xx >= xa[nn-1]) return ya[nn-1] ;
+
+        for(i=1; i< nn; i++){
+          if(xx >= xa[i-1] && xx <= xa[i]){
+            yy = ya[i-1] + (ya[i]-ya[i-1])*(xx-xa[i-1])/(xa[i]-xa[i-1]) ;
+            return yy ;
+          }
+        }
+      }else{
+        if(xx >= xa[0])    return ya[0] ;
+        if(xx <= xa[nn-1]) return ya[nn-1] ;
+
+        for(i=1; i< nn; i++){
+          if(xx <= xa[i-1] && xx >= xa[i]){
+            yy = ya[i-1] + (ya[i]-ya[i-1])*(xx-xa[i-1])/(xa[i]-xa[i-1]) ;
+            return yy ;
+          }
+        }
+
+      }
+      return 0.0 ;
+}
+
+/*
  *   Close down program safely
  */
 
@@ -1154,6 +1499,7 @@ int close_system(void){
       alcMakeContextCurrent(NULL);
       alcDestroyContext(al_context);
       alcCloseDevice(al_device);
+//      alutExit() ;  //  Closes OpenAl as well (I think).
 #endif
       exit(0) ;
 }

@@ -36,10 +36,12 @@ void display(void){
 int      iret ;
 uint     i, j, k  ;
 int      ip = 0   ;  // DEBUG
+int      icount = 0 ;
 char     string[128];
 double   scalei = 1.0/plot_scale ;
 double   last_seconds ;
-TileListNode    *tl_node ;
+TileListNode  *tl_node ;
+TrainNode     *train ;
 static double tile_time_used, shape_time_used, track_time_used,
               dtrack_time_used  ;
 char          *my_name = "display" ;
@@ -150,10 +152,13 @@ GLfloat  v4[4] ;
 /*
  *  Update shapes while wagons are being drawn
  */
-
       update_level_crossings() ;
       update_turntable(current_turntable) ;
       update_signals() ;
+ #ifdef OPENAL
+      update_sounds()  ;
+      update_train_sounds() ;
+ #endif
  #ifndef ROUTE_NEW_FOREST
       update_transfer() ;
  #endif
@@ -170,7 +175,7 @@ GLfloat  v4[4] ;
 /*
  *  If position has changed - update viewpoint
  */
-      if(camera_changed)camera_new_position() ;
+      if(camera_changed || camera_moved)camera_new_position() ;
 /*
  *   Initialise graphics
  *   Clear-colour normally set to light blue (sky)
@@ -397,8 +402,8 @@ int         iwi, idi        ;
 double      dist            ;
 double      scale= 1.0/plot_scale ;
 
-double      x, y, z    ;
-double      a, b, c, d ;
+GLdouble    x, y, z    ;
+GLdouble    a, b, c, d ;
 
       shape_t_beg = clock() ;
 /*
@@ -425,9 +430,8 @@ double      a, b, c, d ;
  *  Shape nodes causing errors !!
  *  To be investigated ... .
  */
-          if(NULL == snode)continue ;
-          if(NULL == snode->name)continue ;
-          if(FOREST == witem->worldtype)continue ;
+          if(NULL == snode || NULL == snode->name)continue ;
+//          if(FOREST == witem->worldtype)continue ;
           if(DYNTRACK == witem->worldtype)continue ;
           if(306 == witem->worldtype)continue ;
 /*
@@ -517,6 +521,14 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
             if(0==iret) continue ;
             if(ip)printf(" New world item : shape is in view\n") ;
             n_shapes_plotted++ ;
+/*
+ * Forest trees need rotation towards eye position
+ */
+            if(FOREST == witem->worldtype){
+//              a =  degree*atan2(y-lookat_eye_y, x-lookat_eye_x) - 90.0;
+//              a =  degree*atan2(eye_z_y, eye_z_x) - 90.0;
+              a =  eye_z_ang - 90.0;
+            }
 
             glMatrixMode(GL_MODELVIEW) ;
             glPushMatrix() ;
@@ -526,16 +538,8 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
  *  Note apparent reversal of order of transformations
  */
             glTranslated(x, y, z) ;   // Move to final position ...
-# if 0
-            if(wnode->tile_x == 1448 && wnode->tile_y == 10332
-              && (witem->uid == 6 || witem->uid == 7)){
-              printf(" GGG tile_x = %i, tile_y = %i, uid = %i, shape = %s\n",
-                     wnode->tile_x, wnode->tile_y, witem->uid, witem->filename) ;
-              printf(" HHH  X, Y, Z = %f %f %f, ANG : AX AY AZ = %f : %f %f %f\n",
-                     witem->X, witem->Y, witem->Z, witem->ANG, witem->AX, witem->AY, witem->AZ) ;
-            }
-#endif
             glRotated(a,b,d,c) ;       // ... and rotate
+            glScaled(witem->SX, witem->SY, witem->SZ) ;  //  Scale
 /*
  *  Convert from MSTS axes (x-east, y-up, z-north) used in shape files
  *    to geographical axes (x-east, y-north, z-up)
@@ -774,8 +778,8 @@ int i_train,
           b = degree*vn->a_height_y ;
           c = degree*vn->a_north_z  ;
 /*
- *   Convert vector origin from MSTS coordinates to coordinates
- *   relative to local graphics origin
+ *   Convert origin of the current track vector MSTS coordinates to
+ *   coordinates relative to local graphics origin
  */
           global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                          vn->tile_east_x, vn->tile_north_z,
@@ -785,8 +789,17 @@ int i_train,
                          (double)x,(double)y,(double)z,
                          vn->tile_east_x, vn->tile_north_z,
                          vn->east_x, vn->height_y, vn->north_z, scale) ;
+// mstswagon2local defined in graphics.c
           mstswagon2local(0.0, 0.0, 0.0, tv->x, tv->y, tv->z, a, b, c, scalei,
                          x, y, z, &xr, &yr, &zr) ;
+
+          if(l_time_5s && ip){
+            printf(" ==== display.c ====\n") ;
+            printf("     x  = %f, y  = %f, z  = %f\n", x, y, z) ;
+            printf("     xr = %f, yr = %f, zr = %f\n", xr, yr, zr) ;
+            printf(" tv  x  = %f, y  = %f, z  = %f\n", tv->x, tv->y, tv->z) ;
+            printf(" eye x  = %f, y  = %f, z  = %f\n", lookat_eye_x, lookat_eye_y, lookat_eye_z) ;
+          }
 
 /*
  * Check the wagon is within view - skip if outside view or far away
@@ -1121,6 +1134,12 @@ double  t[4] ;
 #endif
 
 #endif
+/*
+ *  Update train_last variables for each train
+ */
+      for(train = trainlist_beg; train != NULL ; train=train->next){
+        train->last_speed = train->speed ;
+      }
 /*
  * Clean up at end of routine display
  */
@@ -1936,3 +1955,4 @@ int     k, l ;
       glDeleteTextures(4, texName) ;
       return 0 ;
 }
+

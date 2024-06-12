@@ -26,8 +26,12 @@
  *   Btree find_btree(BTree *root_node, char *string)
  *           Returns : node corrresponding to index "string" or NULL
  *
- *         dump_btree(BTree *root_node, char *string)
- *           Prints out btree. 'string' is used as a marker
+ *         dump_btree(BTree *root_node, int i, char *str)
+ *           Prints out btree key (names) and pointer value
+ *           i is level (use zero).  'str' is a marker  (use "0")
+ *
+ *         print_btree(BTree *n, int i, char *lr)
+ *           Can be used instead of dump_btree when the data is a string
  *
  *         bt_walk_a2z(BTree *root_node, void f(void *n))
  *         bt_walk_z2a(BTree *root_node, void f(void *n))
@@ -58,6 +62,7 @@ typedef struct btree {
 struct btree *left  ;        //    Left node
 struct btree *right ;        //    Right node
 char         *index ;        //    Name used to find node
+int          *type  ;        //
 void         *data  ;        //    Pointer to data structure
 int          height ;        //    Height of node
 } BTree ;
@@ -69,8 +74,6 @@ BTree    *root ;
 #endif
 
 BTree  *rebalance(BTree *n) ;
-void   print_btree(char *s, BTree *n) ;
-void   dump_btree(BTree *n, int i, char *lr) ;
 static int bt_icount  ;                      // Used to count elements
 static int bt_icount_n ;
 static BTree *bt_found ;
@@ -112,6 +115,7 @@ int   n  ;
         b->left  = NULL ;
         b->right = NULL ;
         b->index = index ;
+        b->type  = 0     ;
         b->data  = data  ;
         b->height = 1 ;
 //        printf("  New node = %p\n",(void *)b) ;
@@ -126,6 +130,37 @@ int   n  ;
       }else{
 //        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
         node->right = insert_node(node->right,index,data) ;
+        node->height = 1 + node->right->height ;
+      }
+      if(node->left && node->right)
+          node->height = bt_max(node->left->height, node->right->height) + 1 ;
+
+      return rebalance(node) ;
+}
+BTree *insert_node2(BTree *node, char *index, int type, void *data){
+  BTree *b ;
+  int   n  ;
+
+      if(node == NULL){
+        b = malloc(sizeof(BTree)) ;
+        b->left  = NULL ;
+        b->right = NULL ;
+        b->index = index ;
+        b->type  = 0     ;
+        b->data  = data  ;
+        b->height = 1 ;
+//        printf("  New node = %p\n",(void *)b) ;
+        return b ;
+      }
+
+      n = strcmp(index,node->index) ;
+      if(n>0){
+//        printf("  Call insert_node_left  :: %s :: %s\n",index,node->index) ;
+        node->left = insert_node2(node->left,index,type,data) ;
+        node->height = 1 + node->left->height ;
+      }else{
+//        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
+        node->right = insert_node2(node->right,index,type,data) ;
         node->height = 1 + node->right->height ;
       }
       if(node->left && node->right)
@@ -214,8 +249,11 @@ BTree *rebalance(BTree *n){
 
 BTree *find_btree(BTree *n, char *string){
 
-int  l ;
+int ip = 0 ;
+int  l     ;
+char *my_name = "find_btree" ;
 
+      if(ip)printf(" Routine %s.  Btree = %p,  string = %s\n",my_name,(void *)n,string) ;
       if(!n) return NULL ;
 
       l = strcmp(n->index,string) ;
@@ -231,7 +269,7 @@ int  l ;
 
       if(!n) return NULL ;
 
-      l = strcmp_ic(n->index,string) ;
+      l = strcmp(n->index,string) ;
 
       if(l == 0)return n ;
       if(l <  0)return find_btree_ic(n->left,string) ;
@@ -249,6 +287,20 @@ int  l;
              lr,bal(n),n->height,n->index,n->data) ;
       dump_btree(n->left,i+1,"L") ;
       dump_btree(n->right,i+1,"R") ;
+      return ;
+}
+
+void  print_btree(BTree *n, int i, char *lr){
+
+int  l;
+
+      fflush(NULL) ;
+      if(!n) return ;
+      for(l=0;l<i;l++){ printf("  ");}
+      printf(" %s + -- bal = %2i, height =  %2i, INDEX = %s, data = ::%s::\n",
+             lr,bal(n),n->height,n->index,(char *)n->data) ;
+      print_btree(n->left,i+1,"L") ;
+      print_btree(n->right,i+1,"R") ;
       return ;
 }
 
@@ -383,22 +435,28 @@ char *my_name = "find_bt_node_with_index" ;
 BTree *bt_subdirectory_list(char *base_dir){
 
 
-int    ip = 1    ;
+int    ip = 0    ;
 int    len       ;
+int    iret      ;
 BTree  *b = NULL ;
+BTree  *c = NULL ;
 DIR    *cdir      ;
 struct dirent *f_entry ;
+char   *d_name  ;
 char   *sub_dir ;
-char   *my_name = "bt_subdirectory_list" ;
+char   *my_name = "bt_subdirectory" ;
 
+      if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
  *  Open directory
  */
       cdir = opendir(base_dir) ;
+      iret = errno ;
       if(cdir == NULL){
         printf("  Routine %s error.\n", my_name) ;
-        printf("    Unable to find base directory.\n") ;
+        printf("    Unable to open base directory.\n") ;
         printf("    Base directory = %s\n",base_dir) ;
+        printf("    Error number = %i.  Error = %s\n",iret, strerror(iret)) ;
         printf("    Program stopping ... \n") ;
         close_system() ;
       }
@@ -408,15 +466,31 @@ char   *my_name = "bt_subdirectory_list" ;
       while ((f_entry = readdir(cdir)) != NULL) {
         if(ip)printf("  Found directory = %s\n", f_entry->d_name)  ;
         if(f_entry->d_name[0] == '.')continue ;
-        sub_dir = (char *)malloc(strlen(base_dir)+strlen(f_entry->d_name)+2) ;
+/*
+ *  Check for duplicate
+ */
+        c = find_btree(b, f_entry->d_name) ;
+        if(c)continue ;
+        if(ip)printf("  Add directory = %s\n", f_entry->d_name)  ;
+/*
+ *  Add file to btree
+ */
+        d_name = strdup(f_entry->d_name) ;
+        sub_dir = (char *)malloc(strlen(base_dir)+strlen(d_name)+2) ;
         strcpy(sub_dir,base_dir) ;
         strcat(sub_dir,"/") ;
-        strcat(sub_dir,f_entry->d_name) ;
+        strcat(sub_dir,d_name) ;
 
-        b = insert_node(b, f_entry->d_name, (void *) sub_dir) ;
+        b = insert_node(b, d_name, (void *) sub_dir) ;
         increment_bt_count(b) ;
       }
-      closedir(cdir) ;
+      if(ip)dump_btree(b, 0, "O") ;
+      iret = closedir(cdir) ;
+      if(iret != 0){
+        printf("  Routine %s ERROR\n",my_name) ;
+        printf("    Directory not closed cleanly\n") ;
+        printf("    Directory name = %s\n", base_dir) ;
+      }
       return b ;
 }
 

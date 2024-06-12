@@ -206,10 +206,25 @@ const char *token_transfer[15] = {
 /*  11  */    "FreightLivestock",
 /*  12  */    "FreightFuel",
 /*  13  */    "FreightMilk",
-/*  14  */    "SpecialMail",
+/*  14  */    "SpecialMail"
 } ;
 
+/*
+ *   Sound enums
+ */
 
+enum sound_enum{
+     SND_TRG_NONE    = 0,
+     SND_TRG_INITIAL,
+     SND_TRG_VARIABLE,
+     SND_TRG_RANDOM,          //  Random trigger
+     SND_TRG_DISCRETE,        //  Discrete trigger
+     SND_TRG_DIST_TRAV,
+     SND_START_LOOP,
+     SND_PLAY_ONE_SHOT,
+     SND_SEL_SEQUENTIAL,
+     SND_SEL_RANDOM
+} ;
 
 
 

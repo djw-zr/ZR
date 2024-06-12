@@ -379,7 +379,7 @@ void error1(char *routine, char *file, char *datafile)
         printf("\n  ERROR.  Routine: '%s'.  File: '%s'.\n"
                  "          Routine open_msfile failed to open file.\n"
                  "          File name = %s\n",routine, file, datafile);
-        printf("\n  Program St0pping\n\n");
+        printf("\n  Program Stopping\n\n");
         exit(1) ;
 }
 
@@ -388,7 +388,7 @@ void error2(char *routine, char *file, char *datafile, char *string)
         printf("\n  ERROR.  Routine: '%s'.  File: '%s'.\n"
                  "          Routine failed to find token %s in data file.\n"
                  "          Data file name = %s\n",routine, file, string, datafile);
-        printf("\n  Program St0pping\n\n");
+        printf("\n  Program Stopping\n\n");
         exit(1) ;
 }
 #endif

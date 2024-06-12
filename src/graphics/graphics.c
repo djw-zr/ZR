@@ -435,10 +435,14 @@ char      my_name[]="initialise_eye_vectors";
       eye_z_x =  x/r3   ;    //  Vector into viewport screen
       eye_z_y =  y/r3   ;
       eye_z_z =  z/r3   ;
+      eye_z_ang =  degree*atan2(eye_z_y, eye_z_x);
 
-     if(ip)printf("  eye_x_*    = %f %f %f\n",eye_x_x,eye_x_y,eye_x_z) ;
-     if(ip)printf("  eye_y_*    = %f %f %f\n",eye_y_x,eye_y_y,eye_y_z) ;
-     if(ip)printf("  eye_z_*    = %f %f %f\n",eye_z_x,eye_z_y,eye_z_z) ;
+      if(ip){
+        printf("  eye_x_*    = %f %f %f\n",eye_x_x,eye_x_y,eye_x_z) ;
+        printf("  eye_y_*    = %f %f %f\n",eye_y_x,eye_y_y,eye_y_z) ;
+        printf("  eye_z_*    = %f %f %f\n",eye_z_x,eye_z_y,eye_z_z) ;
+        printf("  eye_z_ang  = %f\n",eye_z_ang) ;
+      }
 
       screen_hw_y = tan(radian*viewport_fovy*0.5) ;
       screen_hw_x = screen_hw_y*viewport_width/viewport_height ;
@@ -550,18 +554,20 @@ char    my_name[]="check_topog_in_scene2" ;
 
 
 /*
- *  Routines to transform from MSTS coordinates to the local coordinates
- *  introduced to reduce rounding errors when displaying the 3-D scene.
+ *  Routine to transform from MSTS coordinates, tile units and metres
+ *     to units of scale_dist
+ *  The routine was introduced to reduce rounding errors when
+ *     displaying the 3-D scene.
  *
- *  tile_e0, tile_n0         :: MSTS coordinates (east,north) of local
- *                                                         coordinates origin tile
- *  h0                       :: Height (m) at origin of local coordinates
- *  size                     :: Size of MSTS tiles (m).
- *  scale_dist               :: One 'local distance unit' equals 'scale_dist' metres
- *  tile_e,  tile_n          :: MSTS coordinates of current tile
- *  e, n                     :: MSTS coordinates relative to centre of current tile
- *  h                        :: MSTS height
- *  x, y, z                  :: Position in local coordinates
+ *  tile_e0, tile_n0     :: MSTS coordinates (east,north) of local
+ *                                                     coordinates origin tile
+ *  h0                   :: Height (m) at origin of local coordinates
+ *  size                 :: Size of MSTS tiles (m).
+ *  scale_dist           :: One 'local distance unit' equals 'scale_dist' metres
+ *  tile_e,  tile_n      :: MSTS coordinates of current tile
+ *  e, n                 :: MSTS coordinates (m) relative to centre of current tile
+ *  h                    :: MSTS height
+ *  x, y, z              :: Position in 'scale_dist' units
  */
 
 int  global2local(int tile_e0, int tile_n0, double h0, double size, double scale,
@@ -626,12 +632,12 @@ double x, y, z, e, n, h ;
  *   the transformation used when drawing wagons and is used to check if a
  *   wagon is within the scene
  *
- *   x0, y0, z0  ::  Wagon vector
+ *   x0, y0, z0  ::  Wagon vector (metres)
  *   xt, yt, zt  ::  position relative to origin of track vector (metres)
  *   a,  b,  c   ::  rotations of track about its origin (degrees)
  *   scalei      ::  convert from metres to model grid unit
  *   rx, ry, rz  ::  position of track vector origin (grid units)
- *
+ *   x,  y, z    ::  final position in scale units
  */
 int  mstswagon2local(double x0, double y0, double z0,
                      double xt, double yt, double zt,

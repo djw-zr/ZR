@@ -76,9 +76,10 @@ char           my_name[] = "init_data_structures" ;
       printf("***********************************************************\n") ;
       printf(" Enter %s\n",my_name) ;
       enum_btree_init() ;
-      printf("  DD ORdir   = %s\n",ORdir) ;
+      printf("  ORdir      = %s\n",ORdir) ;
       printf("  ORroute    = %s\n",ORroute) ;
       printf("  ORroutedir = %s\n",ORroutedir) ;
+      printf("  MSTSdir    = %s\n",MSTSdir) ;
 
 #if 0
       pdb_file = pdb_file0 ;
@@ -88,9 +89,10 @@ char           my_name[] = "init_data_structures" ;
       printf("  Construct names.  ORroute = %s\n",ORroute) ;
       n = strlen(ORroute) + 5 ;
       pdb_file = (char *)malloc(n) ;
-      strcpy(pdb_file,ORroute) ; strcat(pdb_file,".trk") ;
+      strcpy(pdb_file,ORroute) ;
+      strcat(pdb_file,".trk") ;
 #endif
-      iret = zr_find_msfile2(pdb_file) ;
+      iret = zr_find_msfile2(&pdb_file) ;
       if(iret){
         free(pdb_file) ;
         pdb_file = find_trk_file() ;
@@ -188,6 +190,10 @@ char           my_name[] = "init_data_structures" ;
         read_ms_terrain(tl_node)    ;
         read_elevations(tl_node)    ;
       }
+//double height ;
+//      find_height(1.4,10.4,&height) ;
+//      printf("  Height = %f\n",height) ;
+//      exit(0) ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 #if 1
 /*
@@ -215,11 +221,18 @@ char           my_name[] = "init_data_structures" ;
         load_world(wnode) ;
         bt_walk_a2z(wnode->shape_tree, add_world_shapes_to_master) ;
 #ifdef OPENAL
-        load_world_soundfile(wnode) ;
+        load_world_soundfile(wnode) ;  //  Load SMS file
 #endif
       }
       if(ip)dump_btree(shape_master,0,"X") ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ *   Link each world sound source and sound region to its
+ *   Sound Management System node.
+ */
+#ifdef OPENAL
+      link_world_sounds_to_sms_nodes() ;
+#endif
 /*
  *  3.   Link track vector nodes to their matching world item
  *       The  add vector length, angle and radius to each track vector node
@@ -244,118 +257,6 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Set track item positions\n") ;
       set_track_items_posn(&track_db) ;
-#endif
-/*
- * *****************************************************************************
- *  Process the files describing engines and wagons.
- * *****************************************************************************
- *
- *    The files describing engines and wagons are found in directories
- *    below XX/Trains/Trainsets.  Here XX can be any of the top level
- *    directories:
- *       MSTSdir    // Top directory for MSTS files
- *       ORdir      // Top directory for OR routes
- *       ORroutedir // Top directory of current route
- *    In the present version of the routines only ORdir is searched.
- *
- *   1.   Generate a lists of wagon files and texture files
- *
- *   a)   Walk file structure and for each *.eng and *.wag
- *        file found generate a new RawWagonNode structure and add it
- *        to the linked list pointed to by rawwagonlist_beg (zr.h).
- *        Add *.jpg (side image), *.s (3-D shape) and *.sd
- *        (bounding box etc) files with the same name to the
- *        WagonNode structure.
- *   b)   For each *.ace file found generate a TextureNode
- *        structure and add it to the linked list pointed to by
- *        wtexturelist_beg (zr.h).
- *        Note:  Many wagons will also use other MSTS or route textures.
- * *****************************************************************************
- */
-#if 1
-      printf("***********************************************************\n") ;
-      printf(" PROCESS WAGONS\n") ;
-      printf("***********************************************************\n") ;
-      printf("   Scan for wagon (*.wag, *.eng) files and the associated  \n") ;
-      printf("   shape (*.s, *.sd) and texture files and initialise the  \n") ;
-      printf("   wagon and shape structures                              \n") ;
-      scan_for_wagon_files() ;
-      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-/*
- *   2.  Load the Shape (*.s) and Additional data (*.sd) files
- */
-      printf("   Read and load wagon shape files\n");
-//      ip = 0 ;
-      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        if(ip){
-          printf(" Call load_shape :: shape name = %s\n",snode->name) ;
-          printf(" Call load_shape :: shape      = %p\n",(void *)snode) ;
-        }
-        load_shape(snode) ;
-        if(ip)printf(" Call load_shape_d :: sd_file = %s\n",snode->sd_file) ;
-        load_shape_d(snode) ;
-//        if(!strcmp(snode->name,"acelahhl"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"UKRoyalScot"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"dash9"))print_shape_file_data(snode) ;
-//      if(!strcmp(snode->name,"4W-CV-load"))print_shape_file_data(snode) ;
-//      if(!strcmp(snode->name,"4W-CW2"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"1905-I103"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->nametexturelist_beg,"1905-S654"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"AU_NSW_Dtruck3"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"SMRcrew"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"AAC_DEE_MNR_35001"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"DR_BR_5MT_44839"))print_shape_file_data(snode) ;
-//        if(!strcmp(snode->name,"33020"))print_shape_file_data(snode) ;
-      }
-      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-/*
- *   3.  Load wagon textures
- *       These are textures found in the
- *       The texture data is loaded into the TextureNode structure
- *       ready for use.
- */
-      printf("   Read and load wagon texture files\n");
-      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-//        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
-        load_texture(tx_node)    ;
-        convert_texture(tx_node) ;
-        if(ip)printf(" Texture name = %s\n",tx_node->name) ;
-      }
-      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-/*
- *    3a.  Sort list
- */
-      printf("   Sort textures\n");
-      printf("   wtexturelist_beg = %p\n",(void *)&wtexturelist_beg) ;
-      sort_textures(&wtexturelist_beg) ;
-/*
- *    4.  Add wagon texture pointers to wagon structures
- *        Each WagonNode structure contains a list of requied
- *        textures.  After this point it also contains pointers to
- *        the corresponding texture structures in memory.
- */
-      printf("   Add links to textures needed by each wagon shape\n");
-      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-//      printf("  Add textures to wagon %s\n",snode->name) ;
-        add_texture_pointers_to_wagon_shapes(snode) ;
-      }
-      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
-/*
- *   5.  Check wheel radii
- */
-#if 0
-      printf("   Check wheel radii\n");
-      for(rwnode = rawwagonlist_beg; rwnode != NULL ; rwnode=rwnode->next){
-        printf(" data :: AA %p\n",(void *)rwnode) ;
-        check_wheel_radii(rwnode) ;
-        printf(" data :: BB\n") ;
-      }
-        printf(" data :: CC\n") ;
-#endif
-/*
- *   6.  Read consist files
- */
-      load_consist_files() ;
 #endif
 /*
  * *****************************************************************************
@@ -416,6 +317,10 @@ char           my_name[] = "init_data_structures" ;
       add_shape_pointers_to_world_items() ;
       if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
 /*
+ *    4.  Process forests
+ */
+      setup_forests() ;
+/*
  * *****************************************************************************
  *  Process the signal files
  *  These are read here so that the signal texture file(s) are known.  The files
@@ -467,7 +372,7 @@ char           my_name[] = "init_data_structures" ;
  *         The data is added to the TextureNode
  */
       printf("   Read and load texture files\n");
-      if(ip || 1)printf("   land_texture_default = %s\n",land_texture_default) ;
+      if(ip)printf("   land_texture_default = %s\n",land_texture_default) ;
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
 //        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
         if(load_texture(tx_node))continue ;
@@ -603,15 +508,161 @@ char           my_name[] = "init_data_structures" ;
 //          SOME SHAPE TEXTURES DEPEND ON NIGHT, SEASON, SNOW ETC.
 /*
  * *****************************************************************************
- *    Process Sound Files
+ *    Process Sound Files for scenery
  * *****************************************************************************
  */
 #ifdef OPENAL
       printf("***********************************************************\n") ;
-      printf("  INITIALSE SOUNDS\n") ;
+      printf("  INITIALSE SOUNDS - EXCEPT WAGON SOUNDS\n") ;
       printf("***********************************************************\n") ;
       printf("    Collect and Initialise Sounds\n");
-      collect_sounds() ;
+      load_sound_files() ;
+#endif
+/*
+ * *****************************************************************************
+ *  Process the files describing engines and wagons.
+ * *****************************************************************************
+ *
+ *    The files describing engines and wagons are found in directories
+ *    below XX/Trains/Trainsets.  Here XX can be any of the top level
+ *    directories:
+ *       MSTSdir    // Top directory for MSTS files
+ *       ORdir      // Top directory for OR routes
+ *       ORroutedir // Top directory of current route
+ *    In the present version of the routines only ORdir is searched.
+ *
+ *   1.   Generate a lists of wagon files and texture files
+ *
+ *   a)   Walk file structure and for each *.eng and *.wag
+ *        file found generate a new RawWagonNode structure and add it
+ *        to the linked list pointed to by rawwagonlist_beg (zr.h).
+ *        Add *.jpg (side image), *.s (3-D shape) and *.sd
+ *        (bounding box etc) files with the same name to the
+ *        WagonNode structure.
+ *   b)   For each *.ace file found generate a TextureNode
+ *        structure and add it to the linked list pointed to by
+ *        wtexturelist_beg (zr.h).
+ *        Note:  Many wagons will also use other MSTS or route textures.
+ * *****************************************************************************
+ */
+#if 1
+      printf("***********************************************************\n") ;
+      printf(" PROCESS WAGONS\n") ;
+      printf("***********************************************************\n") ;
+      printf("   Scan for wagon (*.wag, *.eng) files and the associated  \n") ;
+      printf("   shape (*.s, *.sd) and texture files and initialise the  \n") ;
+      printf("   wagon and shape structures                              \n") ;
+/*
+ * *****************************************************************************
+ *  1.  Scan for wagons and wagon textures
+ *      Add nodes to raw wagon list and wagon texture list
+ * *****************************************************************************
+ */
+      scan_for_wagon_files() ;
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ * *****************************************************************************
+ *  2.  Read wagon files
+ *      Create shape data structures
+ * *****************************************************************************
+ */
+      for(rwnode = rawwagonlist_beg; rwnode != NULL; rwnode = rwnode->next){
+        create_wagon_shape_node(rwnode) ;
+      }
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ * *****************************************************************************
+ *   3.  Read consist files
+ * *****************************************************************************
+ */
+      load_consist_files() ;
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ * *****************************************************************************
+ *  4.  Use wagon and consist data to initialise trains
+ *      and flag needed wagons
+ * *****************************************************************************
+ */
+      trains_init() ;
+/*
+ * *****************************************************************************
+ *   5.  Load the Shape (*.s) and Additional data (*.sd) files
+ * *****************************************************************************
+ */
+      printf("   Read and load wagon shape files\n");
+      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
+        if(ip){
+          printf(" Call load_shape :: shape name = %s\n",snode->name) ;
+          printf(" Call load_shape :: shape      = %p\n",(void *)snode) ;
+        }
+        if(!snode->needed) continue ;
+        load_shape(snode) ;
+        if(ip)printf(" Call load_shape_d :: sd_file = %s\n",snode->sd_file) ;
+        load_shape_d(snode) ;
+        mark_needed_wagon_textures(snode) ;
+//        if(!strcmp(snode->name,"acelahhl"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"UKRoyalScot"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"dash9"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"4W-CV-load"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"4W-CW2"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"1905-I103"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->nametexturelist_beg,"1905-S654"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"AU_NSW_Dtruck3"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"SMRcrew"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"AAC_DEE_MNR_35001"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"DR_BR_5MT_44839"))print_shape_file_data(snode) ;
+//        if(!strcmp(snode->name,"33020"))print_shape_file_data(snode) ;
+      }
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ * *****************************************************************************
+ *   6.  Load wagon textures
+ *       These are textures found in the
+ *       The texture data is loaded into the TextureNode structure
+ *       ready for use.
+ * *****************************************************************************
+ */
+      printf("   Read and load wagon texture files\n");
+      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
+//        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
+        if(!(tx_node->needed)) continue ;
+        load_texture(tx_node)    ;
+        convert_texture(tx_node) ;
+        if(ip)printf(" Texture name = %s\n",tx_node->name) ;
+      }
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ *    6a.  Sort list
+ */
+      printf("   Sort textures\n");
+      if(ip)printf("   wtexturelist_beg = %p\n",(void *)&wtexturelist_beg) ;
+      sort_textures(&wtexturelist_beg) ;
+/*
+ * *****************************************************************************
+ *    7.  Add wagon texture pointers to wagon structures
+ *        Each WagonNode structure contains a list of requied
+ *        textures.  After this point it also contains pointers to
+ *        the corresponding texture structures in memory.
+ * *****************************************************************************
+ */
+      printf("   Add links to textures needed by each wagon shape\n");
+      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
+        if(!(snode->needed)) continue ;
+        add_texture_pointers_to_wagon_shapes(snode) ;
+      }
+      if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
+/*
+ *   5.  Check wheel radii
+ */
+#if 0
+      printf("   Check wheel radii\n");
+      for(rwnode = rawwagonlist_beg; rwnode != NULL ; rwnode=rwnode->next){
+        printf(" data :: AA %p\n",(void *)rwnode) ;
+        check_wheel_radii(rwnode) ;
+        printf(" data :: BB\n") ;
+      }
+        printf(" data :: CC\n") ;
+#endif
 #endif
 
 /*
@@ -645,7 +696,7 @@ int   i, j, nn, ni ;
 /*
  *   List world item
  */
-#if 1
+#if 0
       printf("***********************************************************\n") ;
       printf("  List Shapes\n");
       printf("***********************************************************\n") ;
@@ -918,7 +969,16 @@ TrkItem *ti ;
         }
       }
 #endif
-
+/*
+ * List BTree Data
+ */
+#if 0
+      printf("***********************************************************\n") ;
+      printf("  List BTree Data\n");
+      printf("***********************************************************\n") ;
+      printf("  BTree 'dir_master'  %p\n",(void *)dir_master);
+      dump_btree(dir_master,0,"0") ;
+#endif
       printf("    tile_west  = %i\n",tile_west) ;
       printf("    tile_east  = %i\n",tile_east) ;
       printf("    tile_north = %i\n",tile_north) ;
@@ -935,10 +995,6 @@ TrkItem *ti ;
 
 //      print_wagon_data() ;
       print_wagon_data_to_file("wagonlist.txt") ;
-/*
- *  Initialise trains
- */
-      trains_init() ;
 
       printf("  Exit from %s\n",my_name) ;
       fflush(NULL) ;
@@ -1239,7 +1295,7 @@ char *my_name = "find_trk_file" ;
 /*
  *  Find route directory
  */
-      iret = zr_find_msfile2(route_dir) ;
+      iret = zr_find_msfile2(&route_dir) ;
       if(iret){
         printf("  Routine %s.  Unable to find directory %s\n",my_name,route_dir);
         exit(0) ;

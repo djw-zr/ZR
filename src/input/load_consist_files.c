@@ -73,7 +73,7 @@ int load_consist_files(void){
       strcpy(dir_name,ORdir) ;
       strcat(dir_name,con_dir1) ;
       cpy_name = strdup(dir_name) ;
-      iret = find_msstyle_file(dir_name) ;
+      iret = find_msstyle_file(&dir_name) ;
       if(iret){
         printf("  Routine %s.  Unable to find directory %s\n",my_name,dir_name);
         free(dir_name) ;
@@ -81,7 +81,7 @@ int load_consist_files(void){
         strcpy(dir_name,ORdir) ;
         strcat(dir_name,con_dir) ;
         cpy_name = strdup(dir_name) ;
-        iret = find_msstyle_file(dir_name) ;
+        iret = find_msstyle_file(&dir_name) ;
         if(iret){
           printf("  Routine %s error\n", my_name) ;
           printf("   Unable to find consists directory\n") ;
@@ -238,6 +238,7 @@ int read_consist_file(char *file_name){
               if(token2)free(token2) ;
               token2 = ctoken(msfile) ;
               if(is_rbr(token2)) break ;
+              if(ip)printf("    Token 2 = :%s:\n",token2) ;
               SWITCH(token2)
                 CASE("TrainCfg")
                   skip_lbr(msfile) ;
@@ -251,6 +252,7 @@ int read_consist_file(char *file_name){
                     if(token3)free(token3) ;
                     token3 = ctoken(msfile) ;
                     if(is_rbr(token3)) break ;
+                    if(ip)printf("    Token 3 = :%s:\n",token3) ;
                     SWITCH(token3)
                       CASE("Name")
                         skip_lbr(msfile) ;
@@ -293,6 +295,11 @@ int read_consist_file(char *file_name){
                           if(token4)free(token4) ;
                           token4 = ctoken(msfile) ;
                           if(is_rbr(token4)) break ;
+                          if(!strcmp(token4,"Wagon")){
+                            return_token(token4,msfile) ;  // Some idiot forgot ')'
+                            break ;
+                          }
+                          if(ip)printf("    Token 4 = :%s:\n",token4) ;
                           SWITCH(token4)
                             CASE("WagonData")
                             CASE("EngineData")
@@ -319,26 +326,61 @@ int read_consist_file(char *file_name){
                               itoken(msfile) ;  //  Skip
                               skip_rbr(msfile) ;
                               break ;
+                            CASE("Comment")
+                            CASE("Comments")
+                            CASE("comment")
+                            CASE("Coimment")
+                              skip_lbr(msfile) ;
+                              skippast_rbr(msfile) ;
+                              break ;
+                            CASE("(")
+                              skippast_rbr(msfile) ;
+                              break ;
                             DEFAULT
                             printf("  Routine '%s' error\n",my_name) ;
-                            printf("  Unrecognised level 4 token.  Token = '%s'",token4) ;
+                            printf("  Unrecognised level 4 token.  Token = '%s'\n",token4) ;
                             close_system()  ;
                           END
                         }
                         if(token4){free(token4) ; token4 = NULL; }
                         break ;
+                      CASE("Comment")
+                      CASE("Comments")
+                      CASE("comment")
+                      CASE("Coimment")
+                        skip_lbr(msfile) ;
+                        skippast_rbr(msfile) ;
+                        break ;
+                      CASE("(")
+                        skippast_rbr(msfile) ;
+                        break ;
+//                      CASE("Wagon")
+//                        return_token(token3,msfile) ;  // Some idiot forgot ')'
+//                        break ;
                       DEFAULT
                       printf("  Routine '%s' error\n",my_name) ;
-                      printf("  Unrecognised level 3 token.  Token = '%s'",token3) ;
-                      close_system()  ;
+                      printf("  Unrecognised level 3 token.  Token = '%s'\n",token3) ;
+                      skip_lbr(msfile)   ;
+                      skippast_rbr(msfile) ;
                     END
                   }
                   if(token3){free(token3) ; token3 = NULL; } ;
                   break ;
+                CASE("Comment")
+                CASE("Comments")
+                CASE("comment")
+                CASE("Coimment")
+                  skip_lbr(msfile) ;
+                  skippast_rbr(msfile) ;
+                  break ;
+                CASE("(")
+                  skippast_rbr(msfile) ;
+                  break ;
                 DEFAULT
                 printf("  Routine '%s' error\n",my_name) ;
-                printf("  Unrecognised level 2 token.  Token = '%s'",token2) ;
-                close_system()  ;
+                printf("  Unrecognised level 2 token.  Token = '%s'\n",token2) ;
+                skip_lbr(msfile)   ;
+                skippast_rbr(msfile) ;
               END
             }
             if(token2){free(token2) ; token2 = NULL; } ;
@@ -346,7 +388,8 @@ int read_consist_file(char *file_name){
           DEFAULT
             printf("  Routine '%s' error\n",my_name) ;
             printf("  Unrecognised level 1 token.  Token = '%s'",token1) ;
-            close_system()  ;
+            skip_lbr(msfile)   ;
+            skippast_rbr(msfile) ;
         END
       }
       if(token1)free(token1) ;

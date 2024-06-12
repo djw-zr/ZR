@@ -20,7 +20,7 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
   int        ip = 0 ;
   int        n, m ;
   TrainNode  *new_train, new_train_node, *t ;
-  WagonNode  *wagon, *last_wagon ;
+  WagonNode  *wagon, *last_wagon, *first_wagon ;
   char       *my_name = "split_train_at_wagon" ;
 
       if(ip)printf("  Routine %s.  Train = %s, wagon = %i. n_wagons = %i\n",
@@ -62,7 +62,7 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
         return ;
       }
       train->last = last_wagon ;
-      new_train->first = wagon ;
+      new_train->first = first_wagon = wagon ;
 
       train->last->next      = NULL ;
       new_train->first->prev = NULL ;
@@ -105,6 +105,16 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
           break ;
         }
       }
+/*
+ * Trigger uncoupling sounds triggers 61, 62 and 63
+ */
+      add_snd_trigger_to_list(&(first_wagon->snd_trigger), 61 ) ;
+      add_snd_trigger_to_list(&(first_wagon->snd_trigger), 62 ) ;
+      add_snd_trigger_to_list(&(first_wagon->snd_trigger), 63 ) ;
+
+      add_snd_trigger_to_list(&(last_wagon->snd_trigger), 61 ) ;
+      add_snd_trigger_to_list(&(last_wagon->snd_trigger), 62 ) ;
+      add_snd_trigger_to_list(&(last_wagon->snd_trigger), 63 ) ;
 
       if(ip){
         if(ip)printf(" ZZ GG\n") ;
@@ -257,6 +267,17 @@ void join_trains(TrainNode *t0, TrainNode *t1, int i_collide) {
       }
 
       t0->n_wagons += t1->n_wagons ;
+/*
+ * Trigger coupling sounds : triggers 58, 59 and 60
+ */
+      add_snd_trigger_to_list(&(w0->snd_trigger), 58 ) ;
+      add_snd_trigger_to_list(&(w0->snd_trigger), 59 ) ;
+      add_snd_trigger_to_list(&(w0->snd_trigger), 60 ) ;
+
+      add_snd_trigger_to_list(&(w1->snd_trigger), 58 ) ;
+      add_snd_trigger_to_list(&(w1->snd_trigger), 59 ) ;
+      add_snd_trigger_to_list(&(w1->snd_trigger), 60 ) ;
+
 
       if(ip){
         printf(" DD  Train t0\n");

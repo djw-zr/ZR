@@ -306,6 +306,12 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
   char         *name  = NULL ;
   char         my_name[] = "add_texture_pointers_to_shape_items" ;
 
+      if(!snode->name){
+        printf("  Routine %s error\n", my_name) ;
+        printf("    Shape has no name.  ShapeNode = %p\n",(void *) snode) ;
+        return 1;
+      }
+      if(!strcmp("Forest_Tree",snode->name))ip = 2 ;
       if(ip>1){
         printf("   Enter routine %s\n",my_name) ;
         printf("    Finding textures for shape %s :: %s\n",snode->name, snode->s_file) ;
@@ -356,6 +362,7 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
           }
         }
       }
+
       free(name) ;
       return 0;
 }

@@ -88,7 +88,7 @@ static double key_release_seconds = 0.0 ;
 
 int keyboard_sdl(SDL_Event *event){
 
-int  ip = 1                      ;  // 0 = no printing
+int  ip = 0                      ;  // 0 = no printing
 int  isign = 1                    ;
 int  imod, l_shift, l_ctrl, l_alt ;
 int  i, n  ;
@@ -309,7 +309,7 @@ char        my_name[] = "keyboard_sdl" ;
           case SDLK_F9:
             display_train_operations_on = !display_train_operations_on ;
             break ;
-//  Break or Increase speed backwards
+//  Brake or Increase speed backwards
           case SDLK_a:
             if(ip)printf("  Case a\n") ;
             if(player_train->motor){
@@ -318,7 +318,17 @@ char        my_name[] = "keyboard_sdl" ;
               if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
             }
             break ;
-//  Break or Increase speed
+//  Bell
+          case SDLK_b:
+            if(player_train->motor->bell_on){
+              add_trigger_to_motor(player_train,11) ;
+              player_train->motor->bell_on = 0 ;
+            }else{
+              add_trigger_to_motor(player_train,10) ;
+              player_train->motor->bell_on = 1 ;
+            }
+            break ;
+//  Increase speed
           case SDLK_d:
             if(ip)printf("  Case d\n") ;
               if(player_train->speed>-0.2){ player_train->speed += 0.1 ; }
@@ -374,7 +384,13 @@ char        my_name[] = "keyboard_sdl" ;
             break ;
 //  Toggle wipers on or off
           case SDLK_v:
-            if(l_shift){       //  V :: Wipers
+            if(l_shift){       //  V :: Toggle Mirrors
+              if(player_train && player_train->motor
+                              && player_train->motor->has_mirrors){
+                player_train->motor->mirrors_out =
+                          !player_train->motor->mirrors_out ;
+              }
+            }else{             //  v :: Toggle Wipers
               if(player_train && player_train->motor
                               && player_train->motor->has_wipers){
                 if(player_train->motor->wipers_on){

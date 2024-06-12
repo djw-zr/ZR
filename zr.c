@@ -133,6 +133,7 @@ char my_name[] = "zr" ;
  */
 #ifdef OPENAL
       setup_openal(argc, argv) ;
+//      alutInit(&argc, argv) ;   //  Sets up OpenAL as well (I think).
 #endif
 
       init_system() ;
@@ -147,7 +148,6 @@ char my_name[] = "zr" ;
         printf("\n  Program %s stopping ...\n\n",my_name);
         close_system() ;
       }
-
 /*
  *  Open window and start main loop
  */
@@ -232,7 +232,7 @@ const char title[] = "ZR" ;
 GLint  isbuf, isnum;
       glGetIntegerv(GL_SAMPLE_BUFFERS, &isbuf);
       glGetIntegerv(GL_SAMPLES, &isnum);
-      printf("  Number of sample buffers is %d\n", isbuf);
+      printf("\n  Number of sample buffers is %d\n", isbuf);
       printf("  Number of samples is %d\n", isnum);
 #endif
 /*
@@ -241,6 +241,7 @@ GLint  isbuf, isnum;
  *   Otherwise glGenLists() and glGenTexture() do not work
  */
       printf("  Call graphics_init\n") ;
+      call flush();
       graphics_init() ;
 
       zr_setp4(v4,light0_altde,light0_polar) ;
@@ -394,7 +395,7 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
 GLint  isbuf, isnum;
       glGetIntegerv(GL_SAMPLE_BUFFERS, &isbuf);
       glGetIntegerv(GL_SAMPLES, &isnum);
-      printf("  Number of sample buffers is %d\n", isbuf);
+      printf("\n  Number of sample buffers is %d\n", isbuf);
       printf("  Number of samples is %d\n", isnum);
 #endif
 GLfloat ansio, ansio_ext    ;
@@ -511,6 +512,7 @@ int  ip = 0 ;
 #include "getline.c"
 #include "process.c"
 #include "glfont.c"
+#include "filesearch.c"
 
 #include "data.c"
 #include "enum.c"
@@ -563,7 +565,10 @@ int  ip = 0 ;
 #include "setup_turntables.c"
 #include "update_turntables.c"
 #include "setup_transfers.c"
+#include "find_height.c"
+#include "setup_forests.c"
 #include "update_transfers.c"
+#include "update_trains.c"
 #include "signal_scripts.c"
 #include "test_sphere.c"
 #include "token.c"
@@ -592,6 +597,12 @@ int  ip = 0 ;
 #ifdef OPENAL
 #  include "setup_openal.c"
 #  include "setup_sounds.c"
+#  include "load_sound_files.c"
+#  include "load_sound_files2.c"
+#  include "update_sounds.c"
+#  include "setup_train_sounds.c"
+#  include "update_train_sounds.c"
+#  include "load_wave_file.c"
 #endif
 
 #if defined GLUT || defined USE_ZRGLUT

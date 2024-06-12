@@ -23,7 +23,7 @@ char         *long_name      ;
 char         *description    ;
 double       wheel_radius    ;
 int          num_wheels      ;
-double       head_out[3]     ;
+double       head_out[3]     ;  //  to right, up, forward
 char         *sound          ;
 } RawEngineNode ;
 
@@ -67,6 +67,8 @@ int             type      ;
 typedef struct rawwagonnode {
 struct rawwagonnode *next    ;
 int              is_engine   ;      //  True if engine
+int              is_needed   ;
+int              is_loaded   ;
 char             *name       ;
 char             *file       ;      // *.eng or *.wag file
 char             *s_file     ;      // Shape file
@@ -82,6 +84,7 @@ char             *type       ;      //  Carriage etc
 int              has_wipers  ;
 int              has_mirrors ;
 int              has_pantographs ;
+int              has_doors   ;
 
 double           width       ;
 double           height      ;
@@ -161,8 +164,9 @@ double           rotationlimit[3]    ;
 // Misc
 
 char             *sound_file         ;
+SMS_Node         *sms_node           ;
+ALuint           *sources            ;    //  Array of sound sources
 char             *full_name          ;
-int              has_doors           ;
 
 RawEngineNode    *raw_engine         ;
 struct rawwagonnode *tender  ;      //  Engines only: pointer to tender

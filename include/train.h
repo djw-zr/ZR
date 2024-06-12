@@ -63,9 +63,15 @@ struct travellernode {
   TrkSector    *tn          ;  //  Current track section in track network
   TrkVectorNode *vn         ;  //  Current vector in track section
 
-  double       x            ;  //  Position (m) of traveller
+  double       x           ;  //  Position (m) of traveller
   double       y            ;  //         ... relative to vector start
   double       z            ;  //         ...
+  double       rx           ;  //  Position (m) of traveller
+  double       ry           ;  //         ... relative to origin of layout
+  double       rz           ;  //         ...
+  double       vx           ;  //  Velocity (m/s) of traveller
+  double       vy           ;  //  Velocity (m/s) of traveller
+  double       vz           ;  //  Velocity (m/s) of traveller
   double       ang_deg      ;  //  Rotation of traveller relative to start point
                                //  degrees
   double       vect_position ;  //  Position within track vector
@@ -94,6 +100,8 @@ struct wagonnode{
   int           is_engine  ;  //  True (non-zero) if this has a motor
   uint          train_dir  ;  //  True if wagon in same direction as train
   int           n_travel   ;  //  Number of traveller nodes.
+  int           bell_on      ;  // = 1 when engine bell is on
+  int           sander_on    ;  // = 1 when engine sander is on
   int           has_wipers   ;  // = 1 when engine has wipers
   int           wipers_on    ;  // = 1 when wipers switched on
   int           wipers_off   ;  // = 1 when wiper switched off
@@ -114,6 +122,28 @@ struct wagonnode{
   TravellerNode *traveller ;  //  Vector of traveller nodes
   ShapeNode     *shape     ;  //  Shape node defining wagon
   RawWagonNode  *raw_wagon ;  //  Node with wagon's basic data (wagon.h)
+// Lists of sound triggers - bells, horn etc.
+  TrgLstNode    *snd_trigger ;  //  Linked list of (recent) sound triggers
+  ActLstNode    *snd_active  ;  //  Linked list of active sounds
+/*
+ *  OpenAL variables
+ *  Note: streams in SMS files are sources in OpenAL
+ */
+#ifdef OPENAL
+  SmsGrpNode    *smsgrp_node ;  //
+  int           n_sources    ;  //
+  ALuint        *source      ;  //  OpenAL stream numbers
+  int           *sound_on    ;  //  Sound_on - dist_on && source_on
+  int           *source_on   ;  //  Source on flags
+  double        *sound_gain  ;  //  Sound gain before speed etc. controls
+  int           distance_on  ;  //  Wagon distance < sound max distance
+  int           *cue_points  ;  //  Wave file cue points active
+  int           *cue_in      ;
+  int           *cue_out     ;
+  char          **wav_file   ;  //  Last wave files added to sources
+  SmsStrNode    *snd_stream  ;  //  Pointers to SMS sound stream nodes
+#endif
+
 } ;
 
 /*
@@ -126,6 +156,7 @@ struct trainnode{
   char              *name        ;  // Short unique name of train (or consist)
   char              *description ;  // Brief summary
   double            speed        ;  // Speed of train
+  double            last_speed   ;  // Speed at last graphics update
   double            max_velocity ;  // Maximum velocity allowed
   double            durability   ;  // Durability of cargo
   int               n_wagons     ;  // Number of wagons

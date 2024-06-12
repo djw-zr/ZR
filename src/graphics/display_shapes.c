@@ -17,7 +17,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
   uint        ip  = 0         ;   //  0 = no printing
   static int  ipp = 1         ;   //  1 = Print first pass only
   int         ic = 0, icc = -1 ;   //  Control
-  uint        i, j, k, l, m, n ;
+  uint        i, j, k, l, m, n, ierr ;
   uint        im, iskip       ;
   uint        a_lin, a_tcb    ;   // Flags for linear_key and tcb_key
   int         ima[10]         ;   // Stack for matrices
@@ -58,6 +58,10 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         printf("  Display list routine exiting ... \n") ;
         return 0 ;
       }
+
+//         ip = witem->world_node->tile_x == 1455 &&
+//              witem->world_node->tile_y == 10329 &&
+//              strcmp(snode->name,"Forest") == 0 ;
 
 //       ip = !strcmp(snode->name,"ashphaltplat20m500r") ;
 //       ip = !strcmp(snode->name,"NSW_SemLQHome") ;
@@ -120,10 +124,11 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  *           Number of animation nodes < number of matrices
  */
 //      ip = !strcmp(snode->name,"ukfs_tt_42ft");
+//      ip = !strcmp(snode->name,"Forest_Tree");
+
 
       if(!ipp)ip = 0 ;                        // Print on first pass only.
       if(ip) ipp = 0 ;
-
 //      ip = l_pd ;
 
 #ifdef _Display_Normal
@@ -143,6 +148,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         printf(" World Item  uid = %i, worldtype = %i %s, filename = %s, anim_value = %f\n",
                   witem->uid,witem->worldtype,token_idc[witem->worldtype],
                   witem->filename,witem->anim_value) ;
+        printf(" Shape name = %s\n",snode->name) ;
+        printf(" Distance level = %i\n",dist_level->index) ;
       }
 #endif
       if(0 == strcmp(snode->name,"underground_marker")) return 0;
@@ -254,7 +261,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         if(ip){
           printf("\n") ;
           printf("  SSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSSS\n");
-          printf("  Start loop for sub-object %i\n\n",k) ;
+          printf("  Start of loop for sub-object %i\n\n",k) ;
+          printf("  Number of sub-objects =      %i\n",dist_level->n_sub_objects) ;
         }
         sub_object = &(dist_level->sub_object[k]) ;
         vtx_list   = sub_object->vertex         ;
@@ -316,17 +324,38 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
 
             if(texture == NULL && ierror++<20){
 //  Used to debug but causes continuous errors with MSTS Route Japan 2.
-              printf(" **********************shape_dlist*********************************\n");
+              printf(" **********************%s*********************************\n",
+                     my_name);
               printf("  Routine: %s.  Image missing !\n",my_name);
-              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
+              printf("  Shape = %p,  Name = %s   Image = %i, ierror = %i\n",
+                     (void *)snode, snode->name, tex_idx,ierror);
+              printf("  texture_name pointer = %p, texture_pointer = %p\n",
+                        (void *)snode->texture_name, (void *)snode->texture) ;
+uint i ;
+              for(i=0; i<snode->n_textures; i++){
+                printf("  texture %i / %i, name = %s, texture node = %p\n",
+                       i, snode->n_textures, snode->texture_name[i],
+                                    (void *) snode->texture[i]) ;
+              }
+              if(ierror<3)print_shape_file_data(snode) ;
               printf(" ******************************************************************\n");
               break ;
             }else{
               if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no) && ierror++<20){
               printf(" **********************shape_dlist*********************************\n");
               printf("  Routine: %s.  Image unloaded !\n",my_name);
-              printf("  Shape = %s   Image = %i, ierror = %i\n",snode->name,tex_idx,ierror);
-              printf(" ******************************************************************\n");
+              printf("  Shape = %s   Image = %i, ierror = %i\n",
+                             snode->name, tex_idx, ierror);
+              printf("  texture_name pointer = %p, texture_pointer = %p\n",
+                        (void *)snode->texture_name, (void *)snode->texture) ;
+uint i ;
+              for(i=0; i<snode->n_textures; i++){
+                printf("  texture %i / %i, name = %s, texture node = %p\n",
+                       i, snode->n_textures, snode->texture_name[i],
+                                    (void *) snode->texture[i]) ;
+              }
+              if(ierror<3)print_shape_file_data(snode) ;
+              printf("  ******************************************************************\n");
               }
             }
           }else{
@@ -389,22 +418,47 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  */
           if(ip)printf("     Hierarchy List\n") ;
           while(ima[im] >= 0){
+            if(ip)printf("  Hierarchy loop. AA  im = %i, ima[im] = %i\n",im,ima[im]) ;
             if(im>=10 || ima[im]>(int)snode->nmatrices){
               printf(" Routine %s, matrix out of bounds for shape %s\n", my_name,snode->name);
-              printf("   im = %i,  iam[im] = %i,  name = %s\n",im,ima[im],snode->matrix[ima[im]].name);
+              printf("   ip = %i, k = %i, l = %i\n",ip,k,l) ;
+              printf("   im = %i,  iam[im] = %i\n",im,ima[im]);
+              fflush(NULL) ;
+              printf("   name = %s\n",snode->matrix[ima[im]].name);
               abort();
             }
             im++ ;
             ima[im] = dist_level->hierarchy[ima[im-1]] ;
+            if(ip)printf("  Hierarchy loop. BB  im = %i, ima[im] = %i\n",im,ima[im]) ;
+            if(ip)printf("    dist_level->index = %i nhierarchy = %i\n",
+                          dist_level->index,dist_level->n_hierarchy) ;
+            ierr = 0 ;
+
+            if(ima[im] > 100){
+              if(1) return 1 ;
+uint ii ;
+              printf("  Routine %s error\n",my_name) ;
+              printf("    Hierarchy value greater than size of hierarchy array\n");
+              printf("    Distance level = %p : %i\n",(void *)dist_level, dist_level->index) ;
+              for(ii = 0; ii<im+1; ii++){
+                printf("      im = %i, ima[im] = %i\n", ii, ima[ii]) ;
+              }
+              ierr = 1;
+              return 1 ;
+            }
+
             if(ip){
               if(ima[im]>=0){
                 matrix4x3 = &(snode->matrix[ima[im]])  ;
+                printf("      im = %i, ima[im] = %i,  matrix4x3 = %p\n", im, ima[im], (void *)matrix4x3) ;
+                fflush(NULL) ;
                 printf("      im = %i, ima[im] = %i,  name = %s\n", im, ima[im], matrix4x3->name) ;
               }else{
                 printf("      im = %i, ima[im] = %i\n", im, ima[im]) ;
               }
             }
           }
+          if(ierr) continue ;
           glMatrixMode(GL_MODELVIEW) ;
           glPushMatrix() ;
 /*
@@ -425,7 +479,8 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
             matrix4x3   = &(snode->matrix[ima[im]])      ;
             a_lin = a_tcb = 0 ;                  // use matrix flag
             if(ip)printf("       animation    = %p\n",(void *)animation) ;
-            if(ip)printf("       n_anim_nodes = %i\n",animation->n_anim_nodes) ;
+            if(ip && animation)
+                  printf("       n_anim_nodes = %i\n",animation->n_anim_nodes) ;
 /*
  *  Check that the shape is animated and primitive state is not "TRANS"
  *  Note program fails if check on prim_state->name is not done
@@ -768,7 +823,7 @@ double qx, qy, qz, qw ;
                 nz = snode->normal[inormal].Z ;
                 u  = snode->uvpoint[vertex_uv].U ;
                 v  = snode->uvpoint[vertex_uv].V ;
-                if(ip && 0)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
+                if(0 && ip)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
                         "%9f %9f %9f :: %9f %9f\n",
                                                     k,l,m,n, x,y,z, nx,ny,nz, u,v) ;
                 glTexCoord2f(u, v) ;
@@ -812,7 +867,7 @@ double qx, qy, qz, qw ;
                 nx = snode->normal[inormal].X ;
                 ny = snode->normal[inormal].Y ;
                 nz = snode->normal[inormal].Z ;
-                if(ip && 0)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
+                if(0 && ip)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
                         "%9f %9f %9f\n",
                                                     k,l,m,n, x,y,z, nx,ny,nz) ;
                 glNormal3f(nx, ny, nz) ;

@@ -128,6 +128,7 @@ double    plot_scale = 2048.0    ;  // Size in m of one unit in plotting space
 GLdouble eye_x_x, eye_x_y, eye_x_z ;  //    Unit right vector   (x) in screen
 GLdouble eye_y_x, eye_y_y, eye_y_z ;  //    Unit up vector      (y) in screen
 GLdouble eye_z_x, eye_z_y, eye_z_z ;  //    Unit forward vector (z) in screen
+GLdouble eye_z_ang                 ;  //    Forward angle relative to east.
 
 GLdouble screen_hw_x               ;  // Screen half width at distance 1.0
 GLdouble screen_hw_y               ;  // Screen half height at distance 1.0

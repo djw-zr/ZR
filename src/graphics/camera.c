@@ -75,8 +75,8 @@ int camera_new_position(){
         printf(" camera_last =  %i\n",camera_last) ;
       }
 
-      if(!camera_changed)return 0 ;
-      camera_changed = 0 ;
+      if(!camera_changed && !camera_moved)return 0 ;
+
       camera   = &cameras[current_camera] ;
 /*
  *==============================================================================
@@ -130,11 +130,6 @@ int camera_new_position(){
           t     = player_train->last->traveller ;
         }else{
           t     = player_train->first->traveller ;
-          if(current_camera == 6 && current_camera != camera_last){
-            offset_eye_y =  player_train->first->raw_wagon->length*0.5 - 2.0;
-            if(offset_eye_y< 3)offset_eye_y = 10.0 ;
-            offset_eye_y = offset_eye_y/plot_scale ;
-          }
         }
 /*
  *==============================================================================
@@ -207,7 +202,9 @@ int camera_new_position(){
  *  Set camera last
  *==============================================================================
  */
-      camera_last = current_camera ;
+      camera_last    = current_camera ;
+      camera_changed = 0 ;
+      camera_moved   = 0 ;
 /*
  *==============================================================================
  *  Reset tile containing viewpoint
@@ -259,7 +256,13 @@ int camera_new_position(){
       check_topographic_blocks() ;
 /*
  *==============================================================================
- *  Section when displaying textures or shapes  (Preprocessor options)
+ *  End of camera processing for normal display of model
+ *
+ *  The following code is only used when when displaying textures, wagons
+ *  or shapes, i.e. preprocessor options
+ *    -D_Display_Shapes,
+ *    -D_Display_Wagons
+ *    -D_Display_Textures
  *==============================================================================
  */
 #else
@@ -429,4 +432,45 @@ char *token        ;
 
 
       return 0;
+}
+
+/*
+ *  Routine to update camera offsets for the current engine.
+ *
+ *  The head-out views forward and backwards are an OpenRails
+ *  addition.  Many engines do not have the values defined,
+ *  so routine 'load_wagon_file' sets default values which
+ *  may not be suitable for all engines.
+ */
+
+
+int update_camera_offsets(TrainNode *player_train){
+
+WagonNode     *wagon      = player_train->motor   ;
+RawWagonNode  *raw_wagon  = wagon->raw_wagon      ;
+RawWagonNode  *first_wagon  = player_train->first->raw_wagon      ;
+RawEngineNode *raw_engine = raw_wagon->raw_engine ;
+double        *head_out   = raw_engine->head_out  ;
+
+//  Driver view
+      cameras[ 1].offset_eye_y    =  head_out[1] ;
+      cameras[ 1].offset_eye_z    =  head_out[2] ;
+      cameras[ 1].offset_center_z =  head_out[2] ;
+//  Head-out view forward
+      cameras[ 9].offset_eye_x    =  head_out[0] ;
+      cameras[ 9].offset_eye_y    =  head_out[1] ;
+      cameras[ 9].offset_eye_z    =  head_out[2] ;
+      cameras[ 9].offset_center_x =  head_out[0] ;
+      cameras[ 9].offset_center_z =  head_out[2] ;
+//  Head_out view backwards
+      cameras[10].offset_eye_x    = -head_out[0] ;
+      cameras[10].offset_eye_y    =  head_out[1] ;
+      cameras[10].offset_eye_z    =  head_out[2] ;
+      cameras[10].offset_center_x = -head_out[0] ;
+      cameras[10].offset_center_z =  head_out[2] ;
+// Coupler view
+      cameras[ 6].offset_eye_y    =  first_wagon->length*0.5 + 1.0 ;
+      cameras[ 6].offset_center_y =  first_wagon->length*0.5 + 21.0 ;
+
+      return 0 ;
 }

@@ -114,7 +114,9 @@ char     my_name[] = "graphics_init" ;
         offset_eye_z    = 0.2 ;
       }
 #endif
-      camera_changed = 1 ;
+      if(player_train) update_camera_offsets(player_train) ;
+      camera_changed = 1    ;
+      camera_moved   = 1    ;
       camera_new_position() ;
 /*
  *   Initialise Lighting
@@ -139,7 +141,7 @@ char     my_name[] = "graphics_init" ;
       glEnable(GL_DEPTH_TEST);
       glShadeModel(GL_SMOOTH) ;
 //      glShadeModel(GL_FLAT) ;
-#if  defined _Display_Normal && ! defined sketch_tracks_and_roads
+#if  defined _Display_Normal && !defined sketch_tracks_and_roads
 GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 
       glEnable(GL_FOG) ;
@@ -284,14 +286,6 @@ TextureNode    *tx_node  ;
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
           tx_node->needed = tx_node->basic ;
       }
-#if 0
-      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        snode->needed = 0 ;
-      }
-      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-        tx_node->needed = 0 ;
-      }
-#endif
       return ;
 }
 
@@ -309,7 +303,7 @@ TextureNode    *tx_node  ;
 
 void mark_shapes(void)
 {
-int         ip  = 0 ;
+int         ip = 0 ;
 int         idw = 0,
             idi = 0 ;
 WorldNode   *wnode ;
@@ -338,6 +332,8 @@ char        my_name[] = "mark_shapes" ;
         for(witem = wnode->world_item; witem!=NULL;witem = witem->next){
           idi = idw && (witem->uid == 4485) ;
           snode = witem->snode ;
+          if(ip && snode)printf("    %s : shape %p,  name = %s, needed = %i\n",
+                my_name,  (void *)snode, snode->name, snode->needed) ;
           if(snode != NULL){
             if(0 == snode->needed){
               snode->needed = 1;
@@ -383,14 +379,17 @@ void mark_textures(void)
 ShapeNode   *snode  ;
 TextureNode *tx_node  ;
 int         i, n    ;
-int         ip = 0  ;    // Debug printing
+int         ip = 0  ;    // Debug printing - see Reset
+char        *my_name = "mark_textures" ;
 
 #ifndef _Display_Textures
       if(ip)printf("   Enter mark_textures\n");
-      if(ip)printf("   Process shape textures\n");
+      if(ip)printf("     Process shape textures\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
+//        ip = !strcmp(snode->name,"Forest_Tree") ;
+        if(ip>1)printf("    %s : name = %s, s_file = %s, needed = %i\n",
+              my_name, snode->name, snode->s_file, snode->needed) ;
         if(0 == snode->needed) continue ;
-        if(ip>1)printf("     Shape  %s, s_file %s\n",snode->name, snode->s_file) ;
         n = snode->n_textures ;
         for(i=0; i<n; i++){
           if(ip>1)printf("     %i, %i ::  %p  ::  %s\n",
@@ -398,10 +397,13 @@ int         ip = 0  ;    // Debug printing
           if(NULL == snode->texture[i]) continue;
           tx_node = snode->texture[i] ;
           tx_node->needed = 1           ;
-          if(ip==1)printf("    Texture  %i, %i ::  %s\n",i, n, tx_node->name) ;
+          if(ip)printf("    %s : Texture  %i, %i ::  %s\n",
+                my_name, i, n, tx_node->name) ;
         }
       }
-      if(ip)printf("   Process wagon textures\n");
+//  Reset ip
+      ip = 0 ;
+      if(ip)printf("     Process wagon textures\n");
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
         if(0 == snode->needed) continue ;
         if(ip>1)printf("     Wagon shape  %s  needs textures:\n",snode->name) ;

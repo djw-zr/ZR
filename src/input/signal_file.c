@@ -69,7 +69,7 @@ int read_signals_db(void){
       strcpy(string,ORroutedir)   ;
       strcat(string,sigcfg) ;
 // Check file exists
-      iret = zr_find_msfile2(string) ;
+      iret = zr_find_msfile2(&string) ;
       if(iret){
         printf("    Routine %s.  Data file does not exist\n",my_name) ;
         printf("    Filename = %s\n",string)  ;

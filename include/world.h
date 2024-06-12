@@ -79,9 +79,9 @@ typedef struct forestobj {
   char            *tree_texture      ;
   float           scale_range_min    ;
   float           scale_range_max    ;
-  float           X                  ;
-  float           Y                  ;  // MSTS Z
-  int             population         ;
+  float           X                  ;  // X dimension of forest
+  float           Y                  ;  // Y dimension of forest (MSTS Z)
+  int             population         ;  //  Number of treees
   float           width              ;
   float           height             ;
 } ForestObj ;
@@ -190,20 +190,35 @@ typedef struct worlditem {
   int              worldtype       ;   //  Forest, Speedpost etc
   uint             static_flags    ;   //  See SD constants (at start of file)
   uint             collide_flags   ;   //  As it says
-// Vector and Quaternon defining objects position and orientation in tile
+/*
+ *  Vector defining objects position in tile.
+ *  On input converted from MSTS to geographic axis convention
+ */
   double           X               ;   //  X position in tile, geographic coords
-  double           Y               ;   //  Y position in tile
-  double           Z               ;   //  Z position in tile
-
+  double           Y               ;   //  Y position in tile  :: MSTS Z
+  double           Z               ;   //  Z position in tile  :: MSTS Y
+/*
+ *  Quaternon defining orientation in tile
+ *  Quaternions, even MSTS quaternions, use geographic axis convention
+ */
   double           A               ;   //  Quaternion used by OR
   double           B               ;   //
   double           C               ;   //
   double           D               ;   //
-
+/*
+ *  OpenGL angle and rotation vector :: geographic axis coordinates
+ */
   double           AX              ;   //  X coordinate of rotation vector
   double           AY              ;   //  Y coordinate of rotation vector
   double           AZ              ;   //  Z coordinate of rotation vector
   double           ANG             ;   //  Angle of rotation (degrees)
+/*
+ *  Scale : used to scal unit forest trees to full size
+ *  Use geographic axis convention
+ */
+  double           SX              ;   //  Scale X coordinate
+  double           SY              ;   //  Scale Y coordinate
+  double           SZ              ;   //  Scale Z coordinate
 
   double           max_vis_distance ;
   double           anim_value      ;   //  Variable used for animation
@@ -244,22 +259,39 @@ typedef struct worlditem {
 } WorldItem ;
 
 /*
- *  Sound Source Node
+ *  Sound Object Nodes
  *
- *  Some world tiles have connected sound sources.  These may be the sound
- *  of a town or birds in a wood.  The sound source is generally placed
+ *  Some world tiles have fixed sources of sound - a town, birds, traffic.
+ *  As these may generate more than one sound, for example steady traffic
+ *  plus an occasional car or the sound of a car movng past, the complte
+ *  item is termed a 'sound object', whereas the indicidual components
+ *  are the 'sound sources'.  The sound objects are usually generally placed
  *  a few hundred metres from the track.
  *
- *  Depending on the system used.  This structure will probably also
- *  contain a link to the sound in memory (if and when loaded).
  */
-typedef struct soundsourcenode {
-  struct soundsourcenode *next ;
-  double          X ;  //  Position relative to tile origin
-  double          Y ;
-  double          Z ;
-  char            *filename ;  //  Filename of sound
-} SoundSourceNode ;
+typedef struct soundobjectnode {
+  struct soundobjectnode *next ;
+  int        uid            ;
+  int        source_set     ;
+  double     X              ;  //  Position relative to tile origin
+  double     Y              ;
+  double     Z              ;
+  char       *sms_file      ;  //  Sound Management System (sms) file.
+//  SoundNode     *snd_node ;
+  SMS_Node  *sms_node       ;
+  int        priority_level ;
+  int        n_streams      ;
+  int        *stream_status ;
+#ifdef OPENAL
+  ALuint     *source        ;
+  int        *sound_on      ;  //  Sound_on - dist_on && source_on
+  int        *source_on     ;  //  Source on flags
+  int        *last_file     ;  //  File used last time in sequential selection
+  int        distance_on    ;  //  source distance < sound max distance
+  double     *last_time     ;  //  Last time random trigger used
+  double     *delay         ;  //  Last time random trigger used
+#endif
+} SoundObjectNode ;
 
 /*
  *  Sound Region Node
@@ -275,8 +307,9 @@ typedef struct soundregionnode {
   int            trk_item_id0 ;  // Track Item ID ?
   int            trk_item_id  ;  // Track Item ID
   int            snd_trk_type ;  // Soundregion track Type
-  int            flags      ;
-  uint32_t       vdbid      ;  // Usually FFFFFFFF
+  int            flags        ;
+  int            detail_level ;
+  uint32_t       vdbid        ;  // Usually FFFFFFFF
   double          X ;  //  Position relative to tile origin
   double          Y ;
   double          Z ;
@@ -285,7 +318,7 @@ typedef struct soundregionnode {
   double         QY ;
   double         QZ ;
   double         roty         ;  // Rotation about y (msts vertical) axis
-  char           *filename  ;  //  Filename of sound
+  char           *filename    ;  //  Filename of shape !!
 } SoundRegionNode ;
 
 /*
@@ -381,8 +414,8 @@ typedef struct worldnode {
   uint             vdbid_count ;     //  Number of visibility spheres
   VDbSphere        *vdb_sphere ;     //  Info on visibiliaty from a distance
   WorldItem        *world_item ;     //  Linked List of fixed structures
-  SoundSourceNode  *sound_source ;   //  Linked list of sound sources
-  SoundRegionNode  *sound_region ;   //  Linked list of sound sources
+  SoundObjectNode  *sound_source ;   //  Linked list of sound sources
+  SoundRegionNode  *sound_region ;   //  Linked list of sound regions
   BTree            *shape_tree ;     //  Btree containing shapes
   uint             n_level_XS  ;     //  Number of level crossing sumary nodes
   uint             n_sig_S     ;     //  Number of signal sumary nodes

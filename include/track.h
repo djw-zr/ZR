@@ -88,6 +88,7 @@ typedef struct sectionidx   SectionIdx   ;
 struct tracksection{
 TrackSection      *next         ;  //
 uint              index         ;  //
+char              *filename     ;  //
 float             gauge         ;  //
 float             length        ;  //
 float             radius        ;  //
@@ -108,8 +109,8 @@ int               *section      ;  //  Indices
 struct trackshape{
 TrackShape        *next         ;
 int               index         ;
-uint               num_paths     ;  //
-char*             filename      ;  //
+uint              num_paths     ;  //
+char             *filename      ;  //
 int               main_route    ;  //
 float             clearance_dist;  //
 SectionIdx        *section_idx  ;  //

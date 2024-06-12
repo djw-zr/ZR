@@ -17,8 +17,19 @@ typedef struct wagonnode      WagonNode      ;
 typedef struct trainnode      TrainNode      ;
 typedef struct consistnode    ConsistNode    ;
 
-typedef struct signaldb   SignalDB  ;
+typedef struct signaldb     SignalDB     ;
 
-typedef struct turntable  TurnTable ;
+typedef struct turntable    TurnTable    ;
 
-typedef struct soundnode  SoundNode ;
+typedef struct smsnode      SMS_Node     ;
+typedef struct smsgrpnode   SmsGrpNode   ;
+typedef struct smsactnode   SmsActNode   ;
+typedef struct smsstrnode   SmsStrNode   ;
+typedef struct smsvolnode   SmsVolNode   ;
+typedef struct smsfrqnode   SmsFrqNode   ;
+typedef struct smstrgnode   SmsTrgNode   ;
+typedef struct smsfilnode   SmsFilNode   ;
+typedef struct soundfile    SoundFile    ;
+
+typedef struct trglstnode   TrgLstNode ;
+typedef struct actlstnode   ActLstNode ;

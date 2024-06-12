@@ -667,12 +667,17 @@ int return_token(char *token, MSfile *msfile){
  *       values with units missing (  4.52    )
  */
 
-double convert_unit(char *token, char *unit){
+double convert_unit(char *token0, char *unit){
 
 int    ip = 0 ;         // Debug
+uint   i, j ;
 char   string[32]= "" ; // storage for units
+char   *token ;
 size_t lt, ls ;
 float  value = 1.0e9 ;        //  Something really large
+
+      token = strdup(token0) ;
+      token = strip_quotes(token) ;
 
       if(ip)printf(" convert : token = %s\n",token) ;
       ls = strspn(token,"-1234567890e.") ;
@@ -685,6 +690,12 @@ float  value = 1.0e9 ;        //  Something really large
       string[lt] = '\0' ;
       if(ip)printf("  Number = %s, Unit = %s\n",token,string);
 
+      for(i=0, j=0; i<strlen(string); i++){
+        if(string[i] != '*' && string[i] != '(' &&string[i] != ')')string[j++] = string[i] ;
+      }
+      string[j] = '\0' ;
+      if(ip)printf("  Number = %s, Unit = %s\n",token,string);
+
       sscanf(token,"%f",&value) ;
       if(ip)printf("  Value = %f\n",(float)value);
 
@@ -693,6 +704,8 @@ float  value = 1.0e9 ;        //  Something really large
       }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"t-uk")){
         value = value * 1016.047  ;  // Convert long ton to kg
       }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"t")){
+        value = value * 907.18474  ;  // Convert short ton to kg
+      }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"t-us")){
         value = value * 907.18474  ;  // Convert short ton to kg
       }else if(0==strcmp(unit,"kg") && 0==strcmp_ic(string,"lb")){
         value = value * 0.45359237  ;  // Convert lb to kg
@@ -714,15 +727,25 @@ float  value = 1.0e9 ;        //  Something really large
         value = value*0.01 ;       // mm to m
       }else if(0==strcmp(unit,"N") && 0==strcmp_ic(string,"kN")){
         value = value * 1000.0  ;  // Convert kN to N
+      }else if(0==strcmp(unit,"N") && 0==strcmp_ic(string,"lbf")){
+        value = value * 0.138254954376  ;  // Convert lb ft/s^2 to N (Wikipedia)
       }else if(0==strcmp(unit,"N/m/s") && (   (0==strcmp_ic(string,"N/m/S")) ||
               (0==strcmp_ic(string,"N/m")) || (0==strcmp_ic(string,"N/m.S")) ) ){
         value = value ;            // Coding error ?
-      }else if(0==strcmp(unit,"m") && 0==strcmp_ic(string,"mm")){
-        value = value*0.01 ;       // mm to m
+      }else if(0==strcmp(unit,"m^2") && 0==strcmp_ic(string,"ft^2")){
+        value = value/(144.0 * 0.0254 * 0.0254)  ;   // ft^2 to m^2
+      }else if(0==strcmp(unit,"ft^2") && 0==strcmp_ic(string,"m^2")){
+        value = value* 144.0 * 0.0254 * 0.0254  ;   // m^2 to ft^2
+      }else if(0==strcmp(unit,"ft^3") && 0==strcmp_ic(string,"m^3")){
+        value = value* 1728.0 * 0.0254 * 0.0254 * 0.0254  ;   // m^3 to ft^3
       }else if(0==strcmp(unit,"psi") && 0==strcmp_ic(string,"inHg")){
         value = value*0.489771 ;   // inHg to psi (Wikipedia)
+      }else if(0==strcmp(unit,"psi") && 0==strcmp_ic(string,"cmHg")){
+        value = value*0.489771/2.54 ;
       }else if(0==strcmp(unit,"psi/s") && 0==strcmp_ic(string,"inHg/s")){
         value = value*0.489771 ;   // inHg to psi (Wikipedia)
+      }else if(0==strcmp(unit,"ft^3") && 0==strcmp_ic(string,"in^3")){
+        value = value/1728.0 ;   // cu in to cu ft
 
       }else{
         printf(" Conversion failed\n")    ;
@@ -732,6 +755,7 @@ float  value = 1.0e9 ;        //  Something really large
 //        value = 0./0. ;
         printf(" value = %f\n",value)     ;
       }
+      free(token) ;
       return (double)value ;
 }
 

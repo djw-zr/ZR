@@ -81,7 +81,7 @@ BTree  *btree_node   ;
           strcat(sdir_name,g_shape_dir)      ;
         }
         if(ip)printf(" Directory SHAPES = %s\n",sdir_name) ;
-        iret = zr_find_msfile2(sdir_name) ;
+        iret = zr_find_msfile2(&sdir_name) ;
         if(iret || sdir_name == NULL){
           printf(" Routine %s : ERROR : Unable to open SHAPES directory\n",
                                                                 my_name) ;
@@ -152,7 +152,10 @@ BTree  *btree_node   ;
             printf("  Dir contains shape file %s,  btree_node = %p\n", name, (void *)btree_node);
           }
 #endif
-          if(!btree_node)continue ;  //  Shape  is not needed
+          if(!btree_node){
+            free(namelist[i]) ;
+            continue ;  //  Shape  is not needed
+          }
 /*
  *  Initialise new ShapeNode if not initialised
  *  Otherwise process as normal
@@ -294,6 +297,8 @@ int  init_shape_node(ShapeNode *shape){
           shape->needed            = 0 ;  //  Needed for current scene
           shape->loaded            = 0 ;  //  Loaded in graphics card
           shape->nvolumes          = 0 ;
+          shape->flags1            = 0 ;
+          shape->flags2            = 0 ;
           shape->nshaders          = 0 ;
           shape->nfilters          = 0 ;
           shape->npoints           = 0 ;
@@ -329,11 +334,19 @@ int  init_shape_node(ShapeNode *shape){
           shape->vtx_state         = NULL ;
           shape->prim_state        = NULL ;
           shape->hierarchy         = NULL ;
+          shape->hierarchy_flag    = NULL ;
           shape->lod_control       = NULL ;
           shape->animation         = NULL ;
+
           shape->esd_detail_level          = 0 ;
           shape->esd_alternative_texture   = 0 ;
+          shape->esd_tunnel_length         = 0.0 ;
+          shape->esd_tunnel_f1             = 0.0 ;
+          shape->esd_tunnel_f2             = 0.0 ;
+          shape->esd_tunnel_i1             = 0 ;
+          shape->esd_tunnel_i2             = 0 ;
           shape->esd_no_visual_obstruction = 0 ;
+          shape->esd_snapable = 0 ;
           shape->esd_sound_file_name       = NULL ;
           shape->esd_bell_animation_fps    = 0.0 ;
           shape->esd_bounding_box_xmin     = 0.0 ;
@@ -342,6 +355,8 @@ int  init_shape_node(ShapeNode *shape){
           shape->esd_bounding_box_ymax     = 0.0 ;
           shape->esd_bounding_box_zmin     = 0.0 ;
           shape->esd_bounding_box_zmax     = 0.0 ;
+          shape->n_esd_complex_box         = 0 ;
+          shape->esd_complex_box           = NULL ;
 
           shape->no_culling         = 0 ;
 
@@ -386,7 +401,7 @@ int load_shape(ShapeNode *snode ) {
       if(ip)printf("  AA\n");
       zr_filename_MS2L(snode->s_file) ;          //  Convert '\' to '/'
       if(ip)printf("  Routine %s, snode->s_file = %s\n",my_name,snode->s_file) ;
-      iret = zr_find_msfile2(snode->s_file) ;
+      iret = zr_find_msfile2(&(snode->s_file)) ;
 /*
  *  If the shape is not found - print message and set name to NULL
  *  This shape is then skipped by the display routine
@@ -1583,9 +1598,18 @@ int  print_shape_file_data(ShapeNode *snode){
       }
       printf( "  n_textures         = %i\n",snode->n_textures ) ;
       for(i=0;i<snode->n_textures;i++){
-        printf("    image %i = %s\n",i,snode->texture_name[i]) ;
+        printf("    texture name %i = %s, pointer = %p\n",
+                          i,snode->texture_name[i],(void *)snode->texture[i]) ;
       }
       printf( "  n_texlevel_low     = %i\n",snode->n_texlevel_low ) ;
+      for(i=0;i<snode->n_texlevel_low;i++){
+TexLevelLow *tl_low;
+        tl_low = &(snode->texlevel_low[i]) ;
+        printf("    iImage        %i = %i\n",i,tl_low->iImage) ;
+        printf("    FilterMode    %i = %i\n",i,tl_low->FilterMode) ;
+        printf("    MipMapLODBias %i = %f\n",i,(double)tl_low->MipMapLODBias) ;
+        printf("    BorderColor   %i = %i\n",i,tl_low->BorderColor) ;
+      }
       printf( "  nlight_materials   = %i\n",snode->nlight_materials ) ;
       printf( "  nlight_model_cfgs  = %i\n",snode->nlight_model_cfgs ) ;
       printf( "  n_vtx_states       = %i\n",snode->n_vtx_states ) ;
@@ -1616,6 +1640,20 @@ int  print_shape_file_data(ShapeNode *snode){
       nn = snode->nsort_vectors ;
       for(i=0;i<(nn>20 ? 20 : nn);i++)
         printf( "  sort_vector   %4i = %10f  %10f %10f \n",i,snode->sort_vector[i].X,snode->sort_vector[i].Z,snode->sort_vector[i].Y ) ;
+
+      printf( "\n  nlight_model_cfgs      = %i\n",snode->nlight_model_cfgs ) ;
+      nn = snode->nlight_model_cfgs ;
+      for(i=0;i<(nn>20 ? 20 : nn);i++){
+        printf( "  light_model_cfg   %4i,  flags = %X, n_uv_ops = %i\n",
+                i,snode->light_model_cfg[0].flags,snode->light_model_cfg[0].n_uv_ops) ;
+        for(j=0; j<snode->light_model_cfg[0].n_uv_ops; j++){
+UVOps *uv_ops = &(snode->light_model_cfg[0].uv_ops[j]) ;
+          printf(" { %i, %i, %i, %f, %f } \n", uv_ops->type, uv_ops->tex_addr_mode, uv_ops->src_uv_idx, uv_ops->unknown_param_3, uv_ops->unknown_param_4 ) ;
+        }
+      }
+
+
+
 
       printf( "\n  n_vtx_states       = %i\n",snode->n_vtx_states ) ;
       nn = snode->n_vtx_states ;
@@ -1734,8 +1772,8 @@ SubObject *sub_object = &(dist_level->sub_object[k]) ;
             for(l=0;l<ll;l++){
 Vertex        *vertex = &(sub_object->vertex[l]) ;
               if(0 != vertex->n_vertex_uvs){
-                printf("   %3i      %3i      %4i       %4i    %8x    %8x        %2i      %3i\n",
-                         l, vertex->flags,vertex->ipoint,vertex->inormal,
+                printf("   { %3i, %4i, %4i, 0x%8x, 0x%8x, %2i, %3i},\n",
+                          vertex->flags,vertex->ipoint,vertex->inormal,
                           vertex->color1,vertex->color2,
                           vertex->n_vertex_uvs, vertex->vertex_uv[0] );
               }else{
@@ -1770,20 +1808,25 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
               printf(   "        n_vertex_idxs      %i     = %i\n",l,sub_object->tri_list[l].n_vertex_idxs ) ;
               if(ip){
                 for(m=0;m<sub_object->tri_list[l].n_vertex_idxs;m++){
-                  printf(" %i (%i %i %i),",m, sub_object->tri_list[l].vertex_idx[m].a,sub_object->tri_list[l].vertex_idx[m].b,sub_object->tri_list[l].vertex_idx[m].c) ;
+//                  printf(" %i (%i %i %i),",m, sub_object->tri_list[l].vertex_idx[m].a,sub_object->tri_list[l].vertex_idx[m].b,sub_object->tri_list[l].vertex_idx[m].c) ;
+                  printf(" {%i, %i, %i},", sub_object->tri_list[l].vertex_idx[m].a,sub_object->tri_list[l].vertex_idx[m].b,sub_object->tri_list[l].vertex_idx[m].c) ;
                 }
+                printf("\n") ;
               }
               printf(   "        n_normal_idxs      %i     = %i\n",l,sub_object->tri_list[l].n_normal_idxs     ) ;
               if(ip){
                 for(m=0;m<sub_object->tri_list[l].n_normal_idxs;m++){
-                  printf(" %i (%i),",m, sub_object->tri_list[l].normal_idx[m]) ;
+//                  printf(" %i (%i),",m, sub_object->tri_list[l].normal_idx[m]) ;
+                  printf(" %i,", sub_object->tri_list[l].normal_idx[m]) ;
                 }
+                printf("\n") ;
               }
               printf(   "        n_flags            %i     = %i\n",l,sub_object->tri_list[l].n_flags     ) ;
               if(ip){
                 for(m=0;m<sub_object->tri_list[l].n_vertex_idxs;m++){
-                  printf(" %i (%i),",m, (int)sub_object->tri_list[l].flag[m]) ;
+                  printf(" %i,",(int)sub_object->tri_list[l].flag[m]) ;
                 }
+                printf("\n") ;
               }
             }
           }

@@ -146,6 +146,7 @@ int  init_tsec_db(){
 
 int     ip = 0              ;     // Debug printing
 int     idir, i, l, n, iret ;
+int     ts_error = 0        ;     // TrackSection/TrackShape error
 FILE    *fp                 ;
 MSfile  msfile0             ;
 MSfile  *msfile = &msfile0  ;
@@ -202,7 +203,7 @@ int          *section       = NULL ;
         strcat(string,base_name) ;
         if(ip)printf("     Full filename = %s\n",string) ;
 // Check file exists
-        iret = zr_find_msfile2(string) ;
+        iret = zr_find_msfile2(&string) ;
         if(iret){
           if(idir == 0){
             printf("    Routine %s.  Top level 'tsection.dat' file not found\n",
@@ -239,6 +240,7 @@ int          *section       = NULL ;
  *  route directory
  */
         if(2==idir){
+          if(ip)printf("  Call routine read_route_tsection_dat\n") ;
           read_route_tsection_dat(msfile) ;
           close_msfile(msfile) ;
           free(string) ;
@@ -280,6 +282,7 @@ int          *section       = NULL ;
                     track_section = new_track_section() ;
                     skip_lbr(msfile) ;
                     track_section->index = itoken(msfile) ;
+                    if(ip)printf("  Track Section : %i\n",track_section->index) ;
                     for(;;){
                       if(token3 != NULL){free(token3) ; token3 = NULL ;}
                       token3 = ctoken(msfile) ;
@@ -311,10 +314,24 @@ int          *section       = NULL ;
                           track_section->water_scoop  = 1  ;
                           skip_rbr(msfile) ;
                           break ;
+/*
+ *  Some versions of the tsection.dat file have TrackSection which are
+ *  be mixtures of TrackSection and TrackShape sub-items.  In this case
+ *  the TrackShape variables are just ignored.
+ */
+                        CASE("FileName")
+                        CASE("Filename")
+                        CASE("NumPaths")
+                        CASE("SectionIdx")
+                          skip_lbr(msfile) ;
+                          skippast_rbr(msfile) ;
+                          break ;
                         DEFAULT
                           printf("  ERROR  Routine %s, \n",my_name) ;
                           printf("         Level 3 processing TrackSection\n") ;
                           printf("         Token not recognised.  Token = %s\n",token3);
+                          printf("         Input file = %s\n",string) ;
+                          printf("         Index      = %i\n",track_shape->index) ;
                           exit(1) ;
                       END // Switch(token3)
                     }
@@ -324,7 +341,7 @@ int          *section       = NULL ;
                     printf("  ERROR  Routine %s, \n",my_name) ;
                     printf("         Level 2 processing TackSections\n") ;
                     printf("         Token not recognised.  Token = %s\n",token2);
-                    exit(1) ;
+                    printf("         Input file = %s\n",string) ;
                     exit(1) ;
                 END // Switch(token2)
               }
@@ -404,9 +421,9 @@ int          *section       = NULL ;
                           section_idx->section      = section ;
 
                           section_idx->east_x       = dtoken(msfile) ;
-                          section_idx->height_y       = dtoken(msfile) ;
-                          section_idx->north_z       = dtoken(msfile) ;
-                          section_idx->angle       = dtoken(msfile) ;
+                          section_idx->height_y     = dtoken(msfile) ;
+                          section_idx->north_z      = dtoken(msfile) ;
+                          section_idx->angle        = dtoken(msfile) ;
 
                           for(i=0;i<n;i++){
                             section[i] = itoken(msfile) ;
@@ -434,6 +451,8 @@ int          *section       = NULL ;
                           printf("  ERROR  Routine %s, \n",my_name) ;
                           printf("         Level 3 processing TrackShape\n") ;
                           printf("         Token not recognised.  Token = %s\n",token3);
+                          printf("         Input file = %s\n",string) ;
+                          printf("         Index      = %i\n",track_shape->index) ;
                           exit(1) ;
                       END // Switch(token3)
                     }
@@ -443,6 +462,7 @@ int          *section       = NULL ;
                     printf("  ERROR  Routine %s, \n",my_name) ;
                     printf("         Level 2 processing TackShape2\n") ;
                     printf("         Token not recognised.  Token = %s\n",token2);
+                    printf("         Input file = %s\n",string) ;
                     exit(1) ;
                 END // Switch(token2)
               }
@@ -452,6 +472,7 @@ int          *section       = NULL ;
               printf("  ERROR  Routine %s, \n",my_name) ;
               printf("         Level 1 Top level\n") ;
               printf("         Token not recognised.  Token = %s\n",token1);
+              printf("         Input file = %s\n",string) ;
               exit(1) ;
           END
         }  // End of main loop
@@ -478,7 +499,7 @@ TrackShape   *track_shape   = NULL ;
 SectionIdx   *section_idx   = NULL ;
 Vector3      *xover         = NULL ;
 int          *section       = NULL ;
-char    my_name[]   = "init_tsec_db" ;
+char    my_name[]   = "read_route_tsection_dat" ;
 
       if(ip)printf(" Enter routine %s\n",my_name) ;
 /*

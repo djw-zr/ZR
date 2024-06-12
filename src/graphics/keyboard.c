@@ -123,7 +123,8 @@ char    *my_name="keyboard" ;
             display_info_height = display_info_height*1.3 ;
             break ;
           case 'n':
-            display_info = !display_info ;
+            display_info++ ;
+            if(display_info > 3) display_info = 0 ;
             break ;
           case 'm':
             if(display_info){
@@ -185,8 +186,10 @@ char    *my_name="keyboard" ;
             turntable_rotating = rotate_tt_anticlockwise() ;
             break ;
 /*
- *  Switches under keyboard control
+ *==============================================================================
+ *  Alt-Switches under keyboard control
  *  For the moment may be used to debug code
+ *==============================================================================
  *  Alt-'0' : read lookat position from file ~/.zr/lookat.txt
  */
           case '0':
@@ -217,11 +220,13 @@ char    *my_name="keyboard" ;
 #endif
         }
 /*
+ *==============================================================================
  *   Modifier keys not used
+ *==============================================================================
  */
       }else{
         switch (key) {
-//  Break or Increase speed backwards
+//  Brake or Increase speed backwards
           case 'a':
             if(player_train->motor){
               if(player_train->speed< 0.2){ player_train->speed -= 0.1 ; }
@@ -229,7 +234,18 @@ char    *my_name="keyboard" ;
               if(fabs(player_train->speed) < 0.1)player_train->speed = 0.0 ;
             }
             break ;
-//  Break or Increase speed
+//  Bell
+          case 'b':
+          case 'B':
+            if(player_train->motor->bell_on){
+              add_trigger_to_motor(player_train,11) ;
+              player_train->motor->bell_on = 0 ;
+            }else{
+              add_trigger_to_motor(player_train,10) ;
+              player_train->motor->bell_on = 1 ;
+            }
+            break ;
+//  Increase speed forwards
           case 'd':
               if(player_train->speed>-0.2){ player_train->speed += 0.1 ; }
               else                        { player_train->speed += 0.2 ; }
@@ -249,24 +265,21 @@ char    *my_name="keyboard" ;
             change_rearward_switch_for_player_train() ;
             clear_track_beyond_previous_switch() ;
             break ;
-//  Toggle mirrors out or in
-          case 'P':
-            if(player_train && player_train->motor
-                            && player_train->motor->has_mirrors){
-              player_train->motor->mirrors_out =
-                        !player_train->motor->mirrors_out ;
-            }
-            break ;
 //  Toggle pantographs up or down
           case 'p':
+          case 'P':
             if(player_train && player_train->motor
                             && player_train->motor->has_pantographs){
               player_train->motor->pantographs_up =
                          !player_train->motor->pantographs_up ;
+              if(player_train->motor->pantographs_up)
+                add_trigger_to_motor(player_train,45) ;
+              else
+                add_trigger_to_motor(player_train,46) ;
             }
             break ;
-//  Toggle wipers on or off
-          case 'V':
+//  Toggle wipers on or off (v - visibility)
+          case 'v':
             if(player_train && player_train->motor
                             && player_train->motor->has_wipers){
               if(player_train->motor->wipers_on){
@@ -274,6 +287,19 @@ char    *my_name="keyboard" ;
               }else{
                 player_train->motor->wipers_on  = 1 ;
               }
+             if(player_train->motor->wipers_on){
+                add_trigger_to_motor(player_train,6) ;
+              }else{
+                add_trigger_to_motor(player_train,7) ;
+              }
+            }
+            break ;
+//  Toggle mirrors out or in
+          case 'V':
+            if(player_train && player_train->motor
+                            && player_train->motor->has_mirrors){
+              player_train->motor->mirrors_out =
+                        !player_train->motor->mirrors_out ;
             }
             break ;
 //  Trigger Water Column for Steam Trains
@@ -286,9 +312,27 @@ char    *my_name="keyboard" ;
             glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
             start_transfer() ;
             break ;
+//  Sander
+          case 'x':
+          case 'X':
+            if(player_train->motor->sander_on){
+              add_trigger_to_motor(player_train,5) ;
+              player_train->motor->sander_on = 0 ;
+            }else{
+              add_trigger_to_motor(player_train,4) ;
+              player_train->motor->sander_on = 1 ;
+            }
+            break ;
 //  Switch frame rate on/off
           case 'Z':
             l_fps = !l_fps ;
+            break ;
+/*
+ *  Space - Horn
+ */
+          case ' ':
+            add_trigger_to_motor(player_train,8) ;
+            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
             break ;
 //  Switch to camera "n"
           case '1':
@@ -417,6 +461,15 @@ char *my_name="keyboard_up" ;
             break ;
         }
         glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+      }else{
+        switch (key) {
+          case ' ':
+            add_trigger_to_motor(player_train,9) ;
+            glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+            break ;
+          default:
+            break ;
+        }
       }
       return ;
 }
@@ -596,6 +649,15 @@ void  specialkey(int key, int ixm, int iym)
           offset_center_z =   0.1*scalei ;
         }
 #endif
+/*
+ *   Head-Out Camera Positions
+ */
+      }else if(key == GLUT_KEY_HOME || key == GLUT_KEY_END){
+        camera_last    = current_camera ;
+        current_camera = (key == GLUT_KEY_HOME) ? 9 : 10 ;
+        camera_changed = 1              ;
+        camera_new_position()           ;
+        return ;
       }else if(key == GLUT_KEY_F1){
         display_help_on = !display_help_on ;
         return ;
@@ -616,6 +678,7 @@ void  specialkey(int key, int ixm, int iym)
             player_train = player_train->next ;
           }
         }while(!player_train->motor) ; //  Skip 'trains' without engines
+        update_camera_offsets(player_train) ;
 
         current_camera = 1    ;
         camera_changed = 1    ;

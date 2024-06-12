@@ -22,7 +22,8 @@
 # Define interface: SDL2 or (default) GLUT
 # This does not work if # follows SDL2
 #IFACE=SDL2
-#SOUND=OPENAL
+SOUND=OPENAL
+#SOUND=
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
@@ -85,7 +86,8 @@ else
 endif
 ifeq ($(SOUND),OPENAL)
   CFLAGS  += -DOPENAL
-  LIBGL   += -lopenal -lalut
+#  LIBGL   += -lopenal -lalut
+  LIBGL   += -lopenal
 endif
 
 LIBGL   += -lfreetype

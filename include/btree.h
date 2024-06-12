@@ -17,6 +17,7 @@ typedef struct btree {
 struct btree *left  ;        //    Left node
 struct btree *right ;        //    Right node
 char         *index ;        //    Name used to find node
+int          *type  ;        //
 void         *data  ;        //    Pointer to data structure
 int          height ;        //    Height of node
 } BTree ;
@@ -27,3 +28,5 @@ BTree    *root ;
 
 BTree *insert_node(BTree *root_node, char *index, void *data) ;
 BTree *find_btree(BTree *root_node, char *string) ;
+void   dump_btree(BTree *n, int i, char *lr) ;
+void   print_btree(BTree *n, int i, char *lr) ;

@@ -411,7 +411,7 @@ int setup_signals(void){
           if(witem->worldtype != SIGNAL_ALT) continue ;
           snode      = witem->snode ;
           sig_object = &(witem->u.signal_obj) ;
-//          ip = 1930 == witem->uid ;
+//          ip =  1930 == witem->uid ;
           if(ip){
             printf("\n ****************************************************\n") ;
             printf("\n  World Item.  Index = %i, Type = %i : %s\n",

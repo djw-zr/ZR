@@ -29,9 +29,10 @@ int init_turntable(TurnTable *tt) ;
 
 /*
  *  If it exists, the OpenRail turntable file "turntables.dat" is placed in
- *  the current route directory.  It should start with a blank line followed by
- *  a line with an integer giving the number of turntables.  The file then
-  * follows the standard MSTS file format.
+ *  directory <route/OpenRails/ where <route> is the current route directory.
+ *  The file should start with a blank line followed by a line containing
+ *  one integer giving the number of turntables.  The file then follows the
+ *  standard Kuju/MSTS UTF-16 file format.
  */
 
 int read_turntable_file(void){

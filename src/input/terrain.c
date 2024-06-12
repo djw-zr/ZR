@@ -693,7 +693,7 @@ int read_elevations(TileListNode *tlnode){
 /*
  *   Look for file allowing for uppercase/lowercase confision
  */
-      iret = zr_find_msfile2(full_name) ;
+      iret = zr_find_msfile2(&full_name) ;
 /*
  *   Open topography files (*_y.raw)
  *   These are binary files.  The Windows' C runtime routine fread

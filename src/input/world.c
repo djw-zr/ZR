@@ -60,7 +60,7 @@ int load_world_filenames() {
       strcat(wdir_name,world1_dir)     ;
       if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
 #if 1
-      iret = zr_find_msfile2(wdir_name);
+      iret = zr_find_msfile2(&wdir_name);
       if(iret){
         printf(" Unable to find world directory\n") ;
         printf(" Program stopping ... \n") ;
@@ -418,17 +418,60 @@ int  load_world(WorldNode *wnode){
             world_item->u.car_spawn_obj.car_frequency      =  5.0 ;
             world_item->u.car_spawn_obj.car_av_speed       = 20.0 ;
             world_item->u.car_spawn_obj.list_name          = NULL ;
+          }else if(itoken == FOREST) {
+            world_item->u.forest_obj.tree_texture    = NULL    ;
+            world_item->u.forest_obj.scale_range_min = 0.0 ;
+            world_item->u.forest_obj.scale_range_max = 0.0 ;
+            world_item->u.forest_obj.X               = 0   ;
+            world_item->u.forest_obj.Y               = 0   ;
+            world_item->u.forest_obj.population      = 0   ;
+            world_item->u.forest_obj.width           = 0.0 ;
+            world_item->u.forest_obj.height          = 0.0 ;
+          }else if(itoken == LEVELCR) {
+            world_item->u.levelcr_obj.n_tracks       = 0    ;
+            world_item->u.levelcr_obj.track_id       = NULL ;
+            world_item->u.levelcr_obj.track_dist     = NULL ;
+            world_item->u.levelcr_obj.n_roads        = 0    ;
+            world_item->u.levelcr_obj.road_id        = NULL ;
+            world_item->u.levelcr_obj.road_dist      = NULL ;
+            world_item->u.levelcr_obj.should_be_open = 1    ;
+            world_item->u.levelcr_obj.gate_position  = 1.0  ;
+          }else if(itoken == PICKUP_ALT || itoken == 359 || PICKUP2 == itoken) {
+            world_item->u.pickup_obj.collide_flags         = 0   ;
+            world_item->u.pickup_obj.min_mps               = 0.0 ;
+            world_item->u.pickup_obj.max_mps               = 0.0 ;
+            world_item->u.pickup_obj.pickuptype            = 0   ;
+            world_item->u.pickup_obj.pickuptype_2          = 0   ;
+            world_item->u.pickup_obj.pickup_options        = 0   ;
+            world_item->u.pickup_obj.animation_speed       = 0.0 ;
+            world_item->u.pickup_obj.quantity_available_kg = 0.0 ;
+            world_item->u.pickup_obj.feed_rate_kgps        = 0.0 ;
+          }else if(itoken == PLATFORM_ALT) {
+            world_item->u.platform_obj.platform_data   = 0 ;
+          }else if(itoken == SIDING_ALT || itoken == 361 || itoken == SIDING2) {
+            world_item->u.siding_obj.siding_data       = 0 ;
+          }else if(itoken == SIGNAL_ALT) {
+            world_item->u.signal_obj.signal_sub_object = 0 ;
+            world_item->u.signal_obj.n_signal_units    = 0 ;
+            world_item->u.signal_obj.sub_object        = NULL ;
+            world_item->u.signal_obj.u_data1           = NULL ;
+            world_item->u.signal_obj.tr_item           = NULL ;
+            world_item->u.signal_obj.signal            = NULL ;
+            world_item->u.signal_obj.n_matrices        = 0    ;
+            world_item->u.signal_obj.sm_skip           = NULL ;
+            world_item->u.signal_obj.sm_signal         = NULL ;
+            world_item->u.signal_obj.skip              = NULL ;
           }else if(itoken == STATIC || COLLIDEOBJECT == itoken){
             world_item->u.static_obj.no_direct_light  = 0 ;
-          }else if(itoken == LEVELCR) {
-            world_item->u.levelcr_obj.n_tracks    = 0    ;
-            world_item->u.levelcr_obj.track_id    = NULL ;
-            world_item->u.levelcr_obj.track_dist  = NULL ;
-            world_item->u.levelcr_obj.n_roads     = 0    ;
-            world_item->u.levelcr_obj.road_id     = NULL ;
-            world_item->u.levelcr_obj.road_dist   = NULL ;
-            world_item->u.levelcr_obj.should_be_open = 1   ;
-            world_item->u.levelcr_obj.gate_position  = 1.0 ;
+          }else if(itoken == SPEEDPOST) {
+            world_item->u.speed_post_obj.speed_digit_tex = NULL ;
+            world_item->u.speed_post_obj.shapes_info     = NULL ;
+            world_item->u.speed_post_obj.size            = 0.0  ;
+            world_item->u.speed_post_obj.dx              = 0    ;
+            world_item->u.speed_post_obj.dy              = 0    ;
+          }else if(itoken == TRANSFER   || itoken == 363) {
+            world_item->u.transfer_obj.width          = 0.0 ;
+            world_item->u.transfer_obj.height         = 0.0 ;
           }
 /*
  *=====================================================================================
@@ -925,15 +968,18 @@ int i ;
       world_item->collide_flags = 0    ;
       world_item->X             = 0.0  ;
       world_item->Y             = 0.0  ;
-      world_item->Z             = 0.0  ;
+      world_item->Z             = 1.0  ;   //  height : MSTS Y Coordinate
       world_item->A             = 0.0  ;
       world_item->B             = 0.0  ;
       world_item->C             = 0.0  ;
       world_item->D             = 0.0  ;
       world_item->AX            = 0.0  ;
-      world_item->AY            = 0.0  ;
+      world_item->AY            = 1.0  ;
       world_item->AZ            = 0.0  ;
       world_item->ANG           = 0.0  ;
+      world_item->SX            = 1.0  ;
+      world_item->SY            = 1.0  ;
+      world_item->SZ            = 1.0  ;
       world_item->anim_value    = 0.0  ;
       world_item->vdb_id        = 0    ;
       world_item->iz_off        = 0    ;
@@ -1248,12 +1294,15 @@ int  load_world_soundfile(WorldNode *w){
   FILE    *fp ;
   MSfile  msfile0 ;
   MSfile  *msfile = &msfile0 ;
-  SoundSourceNode *ss_node ;
+  SoundObjectNode *so_node ;
   SoundRegionNode *sr_node ;
 
   char *my_name = "load_world_soundfile" ;
 
-      if(ip)printf("  Enter routine '%s'\n",my_name) ;
+      if(ip){
+        printf("  Enter routine '%s'\n",my_name) ;
+        printf("  Tile = %i :: %i\n",w->tile_x, w->tile_y) ;
+      }
 
       n = strlen(w->wfile) ;
       s_file = (char *)malloc(n+2) ;
@@ -1278,7 +1327,6 @@ int  load_world_soundfile(WorldNode *w){
       }
       if(ip)printf("    Routine %s.  MSTS file opened\n",my_name) ;
 
-
       token1 = ctoken(msfile) ;
       if(strcmp(token1,"Tr_Worldsoundfile")!= 0){
         printf("\n   ERROR in routine %s: \n",my_name);
@@ -1295,7 +1343,19 @@ int  load_world_soundfile(WorldNode *w){
         SWITCH(token2)
           CASE("Soundsource")
             skip_lbr(msfile) ;
-            ss_node = (SoundSourceNode *)malloc(sizeof(SoundSourceNode)) ;
+            so_node = (SoundObjectNode *)malloc(sizeof(SoundObjectNode)) ;
+            so_node->uid            = 0 ;
+            so_node->source_set     = 0 ;
+            so_node->sms_file       = NULL ;
+            so_node->sms_node       = NULL ;
+            so_node->priority_level = 0 ;
+            so_node->n_streams      = 0 ;
+            so_node->stream_status  = NULL ;
+            so_node->source         = NULL ;
+            so_node->sound_on       = NULL ;
+            so_node->source_on      = NULL ;
+            so_node->last_file      = NULL ;
+            so_node->distance_on    = 0 ;
             for(;;){
               if(token3)free(token3) ;
               token3 = ctoken(msfile) ;  // NOTE use before skip_lbr
@@ -1303,43 +1363,63 @@ int  load_world_soundfile(WorldNode *w){
               SWITCH(token3)
                 CASE("Position")
                   skip_lbr(msfile) ;
-                  ss_node->X = dtoken(msfile) ;
-                  ss_node->Y = dtoken(msfile) ;
-                  ss_node->Z = dtoken(msfile) ;
+                  so_node->X = dtoken(msfile) ;
+                  so_node->Z = dtoken(msfile) ;
+                  so_node->Y = dtoken(msfile) ;
                   skip_rbr(msfile);
                   break ;
                 CASE("FileName")
                   skip_lbr(msfile) ;
-                  ss_node->filename = ctoken(msfile) ;
+                  so_node->sms_file = ctoken(msfile) ;
                   skip_rbr(msfile) ;
                   break ;
                 CASE("UiD")
                   skip_lbr(msfile) ;
-                  new_tmp_token(msfile) ;
+                  so_node->uid = itoken(msfile) ;
                   skip_rbr(msfile) ;
                   break ;
                 DEFAULT
                   printf("\n   ERROR in routine %s: \n",my_name);
                   printf("     Unrecodnised level 3 token.\n");
                   printf("     Token = '%s'\n",token3);
-                  free(ss_node) ;
-                  ss_node = NULL ;
+                  printf("     File  = '%s'\n",s_file);
+                  free(so_node) ;
+                  so_node = NULL ;
                   close_msfile(msfile) ;
                   return 2 ;
               END
             }
             free(token3) ; token3 = NULL ;
+           if(ip)printf("    Sound Source.  Filename = %s\n",so_node->sms_file) ;
 /*
  *  Add at front of list
  */
-            if(ss_node != NULL){
-              ss_node->next = w->sound_source ;
-              w->sound_source = ss_node ;
+            if(so_node != NULL){
+              so_node->next = w->sound_source ;
+              w->sound_source = so_node ;
             }
             break ;
           CASE("Soundregion")
             skip_lbr(msfile) ;
             sr_node = (SoundRegionNode *)malloc(sizeof(SoundRegionNode)) ;
+
+            sr_node->uid          = 0 ;
+            sr_node->trk_item_id0 = 0 ;
+            sr_node->trk_item_id  = 0 ;
+            sr_node->snd_trk_type = 0 ;
+            sr_node->flags        = 0 ;
+            sr_node->detail_level = 0 ;
+            sr_node->vdbid        = 0 ;
+            sr_node->roty         = 0.0  ;
+            sr_node->X            = 0.0  ;
+            sr_node->Y            = 0.0  ;
+            sr_node->Z            = 0.0  ;
+            sr_node->Q0           = 0.0  ;
+            sr_node->QX           = 0.0  ;
+            sr_node->QY           = 0.0  ;
+            sr_node->QZ           = 0.0  ;
+            sr_node->filename     = NULL ;
+
             for(;;){
               if(token3)free(token3)   ;
               token3 = ctoken(msfile)  ;
@@ -1396,10 +1476,16 @@ int  load_world_soundfile(WorldNode *w){
                   sr_node->filename = ctoken(msfile) ;
                   skip_rbr(msfile) ;
                   break ;
+                CASE("StaticDetailLevel")
+                  skip_lbr(msfile) ;
+                  sr_node->detail_level = itoken(msfile) ;
+                  skip_rbr(msfile) ;
+                  break ;
                 DEFAULT
                   printf("\n   ERROR in routine %s: \n",my_name);
-                  printf("     Unrecodnised level 3 token.\n");
+                  printf("     Unrecognised level 3 token.\n");
                   printf("     Token = '%s'\n",token3);
+                  printf("     File  = '%s'\n",s_file);
                   free(sr_node) ;
                   sr_node = NULL ;
                   close_msfile(msfile) ;
@@ -1407,6 +1493,7 @@ int  load_world_soundfile(WorldNode *w){
               END
             }
             free(token3) ; token3 = NULL ;
+            if(ip)printf("    Sound Region.  Trk type = %i\n",sr_node->snd_trk_type) ;
 /*
  *  Add at front of list
  */
@@ -1419,6 +1506,7 @@ int  load_world_soundfile(WorldNode *w){
             printf("\n   ERROR in routine %s: \n",my_name);
             printf("     Unrecodnised level 2 token.\n");
             printf("     Token = '%s'\n",token2);
+            printf("     File  = '%s'\n",s_file);
             close_msfile(msfile) ;
             return 2 ;
         END

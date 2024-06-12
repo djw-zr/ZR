@@ -27,7 +27,7 @@ static char string[4096] ;
 
 int read_raw_wagon_file(RawWagonNode *w){
 
-int      i, l, n, cdir_len ;
+int      i, l, n, cdir_len, iret ;
 int      ip = 0 ;  //Debug
 float    temp   ;
 int      n_msfile = 0         ;
@@ -35,9 +35,10 @@ MSfile   msfile0[5]            ;
 MSfile   *msfile = &msfile0[0] ;
 char     my_name[] = "read_raw_wagon_file" ;
 char     *string = NULL,
-         *token = NULL ,
-         *cdir  = NULL ,             //  Current wagon directory
-         *cext  = NULL ,             //  File extension
+         *token1 = NULL ,
+         *token2 = NULL ,
+         *cdir   = NULL ,             //  Current wagon directory
+         *cext   = NULL ,             //  File extension
          *no_type        = "No Type",
          *no_description = "No Description",
          *inc_file = NULL;
@@ -70,10 +71,25 @@ char     ffname[] = "__FILE__"  ;
 /*
  * Check for 'Wagon' token
  */
-      token = new_tmp_token(msfile) ;  // Temporaty token !!
-      string = (char *)"Wagon" ;
-      if(ip)printf("    Token = %s :: %s\n",token,string) ;
-      if(0 != strcmp(token,string))error2(my_name,ffname,w->file,string);
+      token1 = new_tmp_token(msfile) ;  // Temporaty token !!
+      while(strcmp(token1,"Wagon")){
+        if(ip)printf("  Looking for token 'Wagon', found : %s\n",token1) ;
+        SWITCH(token1)
+          CASE("Comment")
+          CASE("Comments")
+          CASE("comment")
+          CASE("Coimment")
+            skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
+          CASE("(")                //  Probably forgot to include Comment
+            skippast_rbr(msfile) ;
+            break ;
+          DEFAULT
+            break ;
+        END
+        token1 = new_tmp_token(msfile) ;
+      }
       skip_lbr(msfile) ;           // skip left bracket
 /*
  *  Read wagon name
@@ -124,13 +140,13 @@ char     ffname[] = "__FILE__"  ;
  */
       for(;;){
         if(ip)printf(" AAAA\n") ;
-        token = new_tmp_token(msfile);
-        if(ip)printf(" AA Token = :%s:\n",token) ;
-        if(is_rbr(token)) break ;  // End of Wagon data
+        token1 = new_tmp_token(msfile);
+        if(ip)printf(" AA Token = :%s:\n",token1) ;
+        if(is_rbr(token1)) break ;  // End of Wagon data
 /*
  *  Handle EOF of an Include file
  */
-        if(is_eof(token)){
+        if(is_eof(token1)){
           if(n_msfile > 0){
             close_msfile(msfile) ;
             msfile = &msfile0[--n_msfile] ;
@@ -146,29 +162,33 @@ char     ffname[] = "__FILE__"  ;
 /*
  *  Handle normal wagon tokens
  */
-        SWITCH(token)
+        SWITCH(token1)
           CASE("Comment")
           CASE("Comments")
           CASE("comment")
           CASE("Coimment")
+          CASE("CComment")
             skip_lbr(msfile) ;
+            skippast_rbr(msfile) ;
+            break ;
+          CASE("(")                //  Probably forgot to include Comment
             skippast_rbr(msfile) ;
             break ;
           CASE("Include")
 //            printf(" == Include file === \n") ;
             skip_lbr(msfile) ;
-            token = ctoken(msfile);
-//            printf("    Include file = %s \n",token) ;
-            token = strip_quotes(token) ;
-            token = convert_dir_markers(token) ;
-//            printf("    Include file = %s \n",token) ;
+            token1 = ctoken(msfile);
+//            printf("    Include file = %s \n",token1) ;
+            token1 = strip_quotes(token1) ;
+            token1 = convert_dir_markers(token1) ;
+//            printf("    Include file = %s \n",token1) ;
             string = zr_full_parentdir(msfile->filename) ;
             if(inc_file)free(inc_file) ;
-            inc_file = (char *)malloc(strlen(token)+strlen(string)+2) ;
+            inc_file = (char *)malloc(strlen(token1)+strlen(string)+2) ;
             strcpy(inc_file,string) ;
             strcat(inc_file,"/") ;
-            strcat(inc_file,token) ;
-            free(token)  ;
+            strcat(inc_file,token1) ;
+            free(token1)  ;
             free(string) ;
 
             if(ip)printf("  Routine %s.  Wagon        = %s\n",my_name,w->name) ;
@@ -201,19 +221,19 @@ char     ffname[] = "__FILE__"  ;
             skip_lbr(msfile) ;
 //            if(NULL != w->s_file) free(w->s_file) ;
             free(w->s_file) ;
-//            token = new_tmp_token(msfile) ;
-            token = ctoken(msfile) ;
-            token = strip_quotes(token) ;
-            w->s_file = (char *)malloc((strlen(token)+cdir_len+2)
+//            token1 = new_tmp_token(msfile) ;
+            token1 = ctoken(msfile) ;
+            token1 = strip_quotes(token1) ;
+            w->s_file = (char *)malloc((strlen(token1)+cdir_len+2)
                                                      *sizeof(char)) ;
             strcpy(w->s_file,cdir) ;
             strcat(w->s_file,"/") ;
-            strcat(w->s_file,token) ;
+            strcat(w->s_file,token1) ;
             if(ip)printf("  WagonShape :: Name: %s :: Token %s :: Shape: %s\n",
-                          w->name,token,w->s_file) ;
+                          w->name,token1,w->s_file) ;
 //            w->s_file = ctoken(msfile) ;
             if(ip)printf("    Shape file = :%s:\n",w->s_file) ;
-            free(token) ;
+            free(token1) ;
             skip_rbr(msfile) ;
             break ;
           CASE("Name")
@@ -222,32 +242,45 @@ char     ffname[] = "__FILE__"  ;
             w->full_name = strip_quotes(w->full_name) ;
             if(ip)printf("    Full Name = :%s:\n",
                                               w->full_name) ;
-            skip_rbr(msfile) ;
+            iret = skip_rbr_1(msfile) ;
+            while(iret){
+              token1 = ctoken(msfile) ;
+              n = strlen(token1) + strlen(w->full_name) + 2 ;
+              string = (char *)malloc(n*sizeof(char)) ;
+              strcpy(string, w->full_name) ;
+              strcat(string," ") ;
+              strcat(string,token1) ;
+              free(string) ;
+              free(w->full_name);
+              w->full_name = string ;
+              iret = skip_rbr_1(msfile) ;
+            }
             break ;
           CASE("FreightAnim")
+          CASE("Freightanim")
             if(ip)printf("  Enter FreightAnim\n") ;
             skip_lbr(msfile) ;
             free(w->fs_file) ;
-            token = ctoken(msfile) ;
-            token = strip_quotes(token) ;
-            if(ip)printf(" AA Token = %s\n",token) ;
-            w->fs_file = (char *)malloc((strlen(token)+cdir_len+2)
+            token1 = ctoken(msfile) ;
+            token1 = strip_quotes(token1) ;
+            if(ip)printf(" AA Token = %s\n",token1) ;
+            w->fs_file = (char *)malloc((strlen(token1)+cdir_len+2)
                                                      *sizeof(char)) ;
             strcpy(w->fs_file,cdir) ;
             strcat(w->fs_file,"/") ;
-            strcat(w->fs_file,token) ;
-            free(token) ;
-            token = new_tmp_token(msfile) ;
-            if(!is_rbr(token)){
-              if(ip)printf(" BB Token = ::%s::\n",token) ;
-              w->f_max_level  = convert_unit(token,"m") ;
-              token = new_tmp_token(msfile) ;
-              if(ip)printf(" CC Token = %s\n",token) ;
-              w->f_min_level  = convert_unit(token,"m") ;
-              token = new_tmp_token(msfile) ;
-              if(!is_rbr(token)){
-                if(ip)printf(" DD Token = %s\n",token) ;
-                temp  = convert_unit(token,"m") ;
+            strcat(w->fs_file,token1) ;
+            free(token1) ;
+            token1 = new_tmp_token(msfile) ;
+            if(!is_rbr(token1)){
+              if(ip)printf(" BB Token = ::%s::\n",token1) ;
+              w->f_max_level  = convert_unit(token1,"m") ;
+              token1 = new_tmp_token(msfile) ;
+              if(ip)printf(" CC Token = %s\n",token1) ;
+              w->f_min_level  = convert_unit(token1,"m") ;
+              token1 = new_tmp_token(msfile) ;
+              if(!is_rbr(token1)){
+                if(ip)printf(" DD Token = %s\n",token1) ;
+                temp  = convert_unit(token1,"m") ;
                 w->f_anim_flag = (temp != 0.0) ;
                 skip_rbr(msfile) ;
               }
@@ -257,19 +290,19 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("Size")
             skip_lbr(msfile) ;
-            token = read_scaled_token(msfile) ;
-            w->width  = convert_unit(token,"m") ;
-            token = read_scaled_token(msfile) ;
-            w->height = convert_unit(token,"m") ;
-            token = read_scaled_token(msfile) ;
-            w->length = convert_unit(token,"m") ;
+            token1 = read_scaled_token(msfile) ;
+            w->width  = convert_unit(token1,"m") ;
+            token1 = read_scaled_token(msfile) ;
+            w->height = convert_unit(token1,"m") ;
+            token1 = read_scaled_token(msfile) ;
+            w->length = convert_unit(token1,"m") ;
             skippast_rbr(msfile) ;
             break ;
           CASE("Mass")
             skip_lbr(msfile) ;
-            token = read_scaled_token(msfile) ;
-            if(ip)printf("  Mass = %s\n",token) ;
-            w->mass  = convert_unit(token,"kg") ;
+            token1 = read_scaled_token(msfile) ;
+            if(ip)printf("  Mass = %s\n",token1) ;
+            w->mass  = convert_unit(token1,"kg") ;
             if(ip)printf("  Mass = %f\n",w->mass) ;
             skippast_rbr(msfile) ;
             break ;
@@ -287,8 +320,8 @@ char     ffname[] = "__FILE__"  ;
  */
           CASE("WheelRadius")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->wheelradius  = convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            w->wheelradius  = convert_unit(token1,"m") ;
             if(w->wheelradius < 0.25)w->wheelradius = 0.5 ; // Error?
             w->driverwheelradius = w->wheelradius ;
             w->inv_wheelradius = 1.0/w->wheelradius ;
@@ -309,10 +342,10 @@ char     ffname[] = "__FILE__"  ;
               exit(1) ;
             }
             for(;;){
-              token = new_tmp_token(msfile);
-              if(ip)printf("    Token 1 = :%s:\n",token) ;
-              if(is_rbr(token)) break ;  // End of Coupling data
-              SWITCH(token)
+              token1 = new_tmp_token(msfile);
+              if(ip)printf("    Token 1 = :%s:\n",token1) ;
+              if(is_rbr(token1)) break ;  // End of Coupling data
+              SWITCH(token1)
                 CASE("Type")
                   skip_lbr(msfile) ;
                     w->couplingtype2 = ctoken(msfile) ;
@@ -321,52 +354,59 @@ char     ffname[] = "__FILE__"  ;
                 CASE("Spring")
                   skip_lbr(msfile) ;
                   for(;;){
-                    token = new_tmp_token(msfile);
-                    if(ip)printf("    Sprint Token 2 = :%s:\n",token) ;
-                    if(is_rbr(token)) break ;  // End of Spring data
-                    SWITCH(token)
+                    token1 = new_tmp_token(msfile);
+                    if(ip)printf("    Spring Token 2 = :%s:\n",token1) ;
+                    if(is_rbr(token1)) break ;  // End of Spring data
+                    SWITCH(token1)
                       CASE("Stiffness")
                         skip_lbr(msfile) ;
-                        token = new_tmp_token(msfile) ;
-                        w->stiffness21  = convert_unit(token,"N/m") ;
-                        token = new_tmp_token(msfile) ;
-                        w->stiffness22  = convert_unit(token,"N/m") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->stiffness21  = convert_unit(token1,"N/m") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->stiffness22  = convert_unit(token1,"N/m") ;
                         skip_rbr(msfile) ;
                         break ;
                       CASE("Damping")
                         skip_lbr(msfile) ;
-                        token = new_tmp_token(msfile) ;
-                        w->damping21  = convert_unit(token,"N/m/s") ;
-                        token = new_tmp_token(msfile) ;
-                        w->damping22  = convert_unit(token,"N/m/s") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->damping21  = convert_unit(token1,"N/m/s") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->damping22  = convert_unit(token1,"N/m/s") ;
                         skip_rbr(msfile) ;
                         break ;
                       CASE("Break")
                         skip_lbr(msfile) ;
-                        token = new_tmp_token(msfile) ;
-                        w->break21  = convert_unit(token,"N") ;
-                        token = new_tmp_token(msfile) ;
-                        w->break22  = convert_unit(token,"N") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->break21  = convert_unit(token1,"N") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->break22  = convert_unit(token1,"N") ;
                         skip_rbr(msfile) ;
                         break ;
                       CASE("r0")
                         skip_lbr(msfile) ;
-                        token = new_tmp_token(msfile) ;
-                        w->r021  = convert_unit(token,"m") ;
-                        token = new_tmp_token(msfile) ;
-                        w->r022  = convert_unit(token,"m") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->r021  = convert_unit(token1,"m") ;
+                        token1 = new_tmp_token(msfile) ;
+                        w->r022  = convert_unit(token1,"m") ;
                         skippast_rbr(msfile) ;            //  Cheat for MECoast route
                         break ;
                       CASE("Comment")
                       CASE("comment")
                       CASE("Velocity")
-//                      CASE("comment")
+                      CASE("ORTSTensionStiffness")
+                      CASE("ORTSTensionR0")
+                      CASE("ORTSTensionSlack")
+                      CASE("ORTSCompressionStiffness")
+                      CASE("ORTSCompressionR0")
+                      CASE("ORTSCompressionlack")
+                      CASE("ORTSCompressionSlack")
+                      CASE("ORTSBreak")
                         skip_lbr(msfile) ;
                         skippast_rbr(msfile) ;
                         break ;
                       DEFAULT
                          printf("     Routine %s. Wagon %s. Spring token not recognised.  Token = %s\n",
-                                      my_name,w->name,token);
+                                      my_name,w->name,token1);
 
                         exit(1) ;
                     END
@@ -381,12 +421,21 @@ char     ffname[] = "__FILE__"  ;
                 CASE("comment")
                 CASE("Velocity")
                 CASE("CouplingUniqueType")
+
+                CASE("FrontCouplerAnim")
+                CASE("FrontCouplerOpenAnim")
+                CASE("FrontAirHoseAnim")
+                CASE("FrontAirHoseDisconnectedAnim")
+                CASE("RearCouplerAnim")
+                CASE("RearCouplerOpenAnim")
+                CASE("RearAirHoseAnim")
+                CASE("RearAirHoseDisconnectedAnim")
                   skip_lbr(msfile) ;
                   skippast_rbr(msfile) ;
                   break ;
                 DEFAULT
                   printf("     Routine %s. Wagon %s. Coupling token not recognised.  Token = %s\n",
-                  my_name,w->name,token);
+                  my_name,w->name,token1);
                   skip_lbr(msfile)   ;
                   skippast_rbr(msfile) ;
 
@@ -429,16 +478,16 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("MaxBrakeForce")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->maxbrakeforce  = convert_unit(token,"N") ;
+            token1 = new_tmp_token(msfile) ;
+            w->maxbrakeforce  = convert_unit(token1,"N") ;
             if(ip)printf("    MaxBrakeForce = :%f:\n",
                                                w->maxbrakeforce) ;
             skip_rbr(msfile) ;
             break ;
           CASE("MaxHandbrakeForce")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->maxhandbrakeforce  = convert_unit(token,"N") ;
+            token1 = new_tmp_token(msfile) ;
+            w->maxhandbrakeforce  = convert_unit(token1,"N") ;
             if(ip)printf("    MaxHandbrakeForce = :%f:\n",
                                                w->maxhandbrakeforce) ;
             skip_rbr(msfile) ;
@@ -459,56 +508,56 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("MaxReleaseRate")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->maxreleaserate  = convert_unit(token,"psi/s") ;
+            token1 = new_tmp_token(msfile) ;
+            w->maxreleaserate  = convert_unit(token1,"psi/s") ;
             if(ip)printf("    MaxReleaseRate = :%f:\n",
                                                w->maxreleaserate) ;
             skip_rbr(msfile) ;
             break ;
           CASE("MaxApplicationRate")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->maxapplicationrate  = convert_unit(token,"psi/s") ;
+            token1 = new_tmp_token(msfile) ;
+            w->maxapplicationrate  = convert_unit(token1,"psi/s") ;
             if(ip)printf("    MaxApplicationRate = :%f:\n",
                                                w->maxapplicationrate) ;
             skip_rbr(msfile) ;
             break ;
           CASE("MaxAuxilaryChargingRate")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->maxauxilarychargingrate  = convert_unit(token,"psi/s") ;
+            token1 = new_tmp_token(msfile) ;
+            w->maxauxilarychargingrate  = convert_unit(token1,"psi/s") ;
             if(ip)printf("    MaxAuxilaryChargingRate = :%f:\n",
                                                w->maxauxilarychargingrate) ;
             skip_rbr(msfile) ;
             break ;
           CASE("EmergencyResChargingRate")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->emergencyreschargingrate  = convert_unit(token,"psi/s") ;
+            token1 = new_tmp_token(msfile) ;
+            w->emergencyreschargingrate  = convert_unit(token1,"psi/s") ;
             if(ip)printf("    EmergencyResChargingRate = :%f:\n",
                                                w->emergencyreschargingrate) ;
             skip_rbr(msfile) ;
             break ;
           CASE("EmergencyResCapacity")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->emergencyrescapacity  = convert_unit(token,"ft^3") ;
+            token1 = new_tmp_token(msfile) ;
+            w->emergencyrescapacity  = convert_unit(token1,"ft^3") ;
             if(ip)printf("    EmergencyResCapacity = :%f:\n",
                                                w->emergencyrescapacity) ;
             skip_rbr(msfile) ;
             break ;
           CASE("BrakeCylinderPressureForMaxBrakeBrakeForce")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->brakecylinderpressureformaxbrakebrakeforce  = convert_unit(token,"psi") ;
+            token1 = new_tmp_token(msfile) ;
+            w->brakecylinderpressureformaxbrakebrakeforce  = convert_unit(token1,"psi") ;
             if(ip)printf("    BrakeCylinderPressureForMaxBrakeBrakeForce = :%f:\n",
                                 w->brakecylinderpressureformaxbrakebrakeforce) ;
             skip_rbr(msfile) ;
             break ;
           CASE("BrakePipeVolume")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->brakepipevolume  = convert_unit(token,"ft^3") ;
+            token1 = new_tmp_token(msfile) ;
+            w->brakepipevolume  = convert_unit(token1,"ft^3") ;
             if(ip)printf("    BrakePipeVolume = :%f:\n",
                                                w->brakepipevolume) ;
             skip_rbr(msfile) ;
@@ -517,8 +566,8 @@ char     ffname[] = "__FILE__"  ;
             skip_lbr(msfile) ;
             n = 0 ;
             for(;;){
-              token = new_tmp_token(msfile) ;
-              if(is_rbr(token))break ;
+              token1 = new_tmp_token(msfile) ;
+              if(is_rbr(token1))break ;
               if(n == 0){
                 w->ortsbrakefriction1 = (double *)malloc(sizeof(double)) ;
                 w->ortsbrakefriction2 = (double *)malloc(sizeof(double)) ;
@@ -528,7 +577,7 @@ char     ffname[] = "__FILE__"  ;
                 w->ortsbrakefriction2 = (double *)realloc(w->ortsbrakefriction2,
                                                   (n+1)*sizeof(double)) ;
               }
-              w->ortsbrakefriction1[n] = atof(token)    ;
+              w->ortsbrakefriction1[n] = atof(token1)    ;
               w->ortsbrakefriction2[n] = dtoken(msfile) ;
               n++ ;
             }
@@ -567,8 +616,8 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("ORTSWagonFrontalArea")
             skip_lbr(msfile) ;
-            token = read_scaled_token(msfile) ;
-            w->ortswagonfrontalarea = convert_unit(token,"ft^2") ;
+            token1 = read_scaled_token(msfile) ;
+            w->ortswagonfrontalarea = convert_unit(token1,"ft^2") ;
             if(ip)printf("    ORTSWagonFrontalArea = :%f:\n",
                                                w->ortswagonfrontalarea) ;
             skip_rbr(msfile) ;
@@ -583,8 +632,8 @@ char     ffname[] = "__FILE__"  ;
           CASE("CentreOfGravity")
             skip_lbr(msfile) ;
             for(i=0;i<3;i++){
-              token = new_tmp_token(msfile) ;
-              w->centreofgravity[i] = convert_unit(token,"m") ;
+              token1 = new_tmp_token(msfile) ;
+              w->centreofgravity[i] = convert_unit(token1,"m") ;
               if(ip)printf("    CentreOfGravity = :%f:\n",
                                                w->centreofgravity[i]) ;
             }
@@ -592,34 +641,34 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("ORTSTrackGauge")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->ortstrackgauge= convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            w->ortstrackgauge= convert_unit(token1,"m") ;
             if(ip)printf("    ORTSTrackGauge = :%f:\n",
                                               w->ortstrackgauge) ;
-            token = new_tmp_token(msfile) ;
-            if(is_rbr(token))break ;
-            w->ortstrackgauge += convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            if(is_rbr(token1))break ;
+            w->ortstrackgauge += convert_unit(token1,"m") ;
             if(ip)printf("    ORTSTrackGauge = :%f:\n",
                                               w->ortstrackgauge) ;
             skip_rbr(msfile) ;
             break ;
           CASE("ORTSRigidWheelbase")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->ortsrigidwheelbase= convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            w->ortsrigidwheelbase= convert_unit(token1,"m") ;
             if(ip)printf("    ORTSRigidWheelbase = :%f:\n",
                                               w->ortsrigidwheelbase) ;
-            token = new_tmp_token(msfile) ;
-            if(is_rbr(token))break ;
-            w->ortsrigidwheelbase += convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            if(is_rbr(token1))break ;
+            w->ortsrigidwheelbase += convert_unit(token1,"m") ;
             if(ip)printf("    ORTSRigidWheelbase = :%f:\n",
                                               w->ortsrigidwheelbase) ;
             skip_rbr(msfile) ;
             break ;
           CASE("ORTSUnbalancedSuperelevation")
             skip_lbr(msfile) ;
-            token = new_tmp_token(msfile) ;
-            w->ortsunbalancedsuperelevation = convert_unit(token,"m") ;
+            token1 = new_tmp_token(msfile) ;
+            w->ortsunbalancedsuperelevation = convert_unit(token1,"m") ;
             if(ip)printf("    ORTSUnbalancedSuperelevation = :%f:\n",
                                      w->ortsunbalancedsuperelevation) ;
             skip_rbr(msfile) ;
@@ -627,10 +676,10 @@ char     ffname[] = "__FILE__"  ;
           CASE("Inside")
             skip_lbr(msfile) ;
             for(;;){
-              token = new_tmp_token(msfile);
-              if(ip)printf("    Token 1 = :%s:\n",token) ;
-              if(is_rbr(token)) break ;  // End of Coupling data
-              SWITCH(token)
+              token1 = new_tmp_token(msfile);
+              if(ip)printf("    Token 1 = :%s:\n",token1) ;
+              if(is_rbr(token1)) break ;  // End of Coupling data
+              SWITCH(token1)
                 CASE("PassengerCabinFile")
                   skip_lbr(msfile) ;
                   w->passengercabinfile = ctoken(msfile) ;
@@ -670,7 +719,7 @@ char     ffname[] = "__FILE__"  ;
                   break ;
                 DEFAULT
                   printf("     Routine %s. Wagon %s. Inside token not recognised.  Token = %s\n",
-                   my_name,w->name,token);
+                   my_name,w->name,token1);
                   skip_lbr(msfile)   ;
                   skippast_rbr(msfile) ;
               END
@@ -680,24 +729,21 @@ char     ffname[] = "__FILE__"  ;
           CASE("Sound")
             skip_lbr(msfile) ;
             w->sound_file = ctoken(msfile) ;
-            if(ip)printf("    Sound = :%s:\n",
-                                              w->sound_file) ;
+            if(ip)printf("    Sound = :%s:\n", w->sound_file) ;
             skip_rbr(msfile) ;
             break ;
           CASE("Pantograph")
-//            init_rawenginenode(w) ;
             w->has_pantographs = 1;
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
             break ;
           CASE("Wiper")
-//            init_rawenginenode(w) ;
             w->has_wipers = 1;
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
+            if(ip)printf(" ++++  WAGON %s has wipers\n",w->name) ;
             break ;
           CASE("Mirror")
-//            init_rawenginenode(w) ;
             w->has_mirrors = 1;
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
@@ -817,19 +863,80 @@ char     ffname[] = "__FILE__"  ;
           CASE("ORTSNumberBogies")
           CASE("ORTSWagonSpecialType")
           CASE("ORTSExternalSoundPassedThroughPercent")
+          CASE("ORTSWheelBrakeSlideProtection")
+          CASE("ORTSWheelBrakesSlideProtectionLimitDisable")
+          CASE("ORTSWheelBrakesSlideProtectionLimitDisable")
+          CASE("ORTSHeatingBoilerWaterTankCapacity")
+          CASE("ORTSHeatingBoilerFuelTankCapacity")
+          CASE("ORTSHeatingBoilerWaterUsage")
+          CASE("ORTSHeatingBoilerFuelUsage")
+          CASE("ORTSAdhesion")
+          CASE("MaxEmergencyChargingRate")
+          CASE("ORTSAcceleratedApplicationFactor")
+          CASE("ORTSAcceleratedApplicationMaxVentRate")
+          CASE("ORTSEmergencyResQuickRelease")
+          CASE("ORTSBrakeRelayRatio")
+          CASE("ORTSBrakeRelayValveRatio")
+          CASE("ORTSEngineBrakeRelayValveRatio")
+          CASE("ORTSBrakeRelayValveApplicationRate")
+          CASE("ORTSBrakeRelayValveReleaseRate")
+          CASE("ORTSMaxTripleValveCylinderPressure")
+          CASE("ORTSUniformChargingRatio")
+          CASE("ORTSBrakeShoeType")
+          CASE("ORTSNumberCarBrakeShoes")
+          CASE("ORTSBrakeCylinderVolume")
+          CASE("ORTSCylinderSpringPressure")
+          CASE("ORTSWheelFlangeLength")
+          CASE("ORTSMaximumWheelFlangeAngle")
+          CASE("ORTSMaxServiceCylinderPressure")
+          CASE("ORTSEmergencyValveActuationRate")
+          CASE("ORTSEmergencyDumpValveRate")
+          CASE("ORTSEmergencyDumpValveTimer")
+          CASE("ORTSQuickServiceLimit")
+          CASE("ORTSQuickServiceApplicationRate")
+          CASE("ORTSQuickServiceVentRate")
+          CASE("ORTSUniformChargingThreshold")
+          CASE("ORTSUniformChargingRatio")
+          CASE("ORTSBrakeShoeType")
+          CASE("ORTSNumberCarBrakeShoes")
+          CASE("ORTSBrakeCylinderVolume")
+          CASE("ORTSCylinderSpringPressure")
+          CASE("ORTSMaxBrakeShoeForce")
+
+          CASE("ORTSTrackSoundPassedThroughPercent")
+          CASE("ORTSNumAxles")
+          CASE("ORTSNumBogies")
+          CASE("ORTSNumberDriveAxles")
+
+          CASE("ORTSLengthAirHose")
+          CASE("ORTSDistanceAirHose")
+
+          CASE("ORTSStandstillFriction")
+          CASE("ORTSMergeSpeed")
+          CASE("ORTSBrakeInsensitivity")
+          CASE("ORTSInitialApplicationThreshold")
+
+          CASE("MaxSteamHeatingPressure")
+          CASE("ORTSAuxTenderWaterMass")
+          CASE("ORTSSlipWarningThreshold")
+          CASE("RTSWagonFrontalArea")
+
             skip_lbr(msfile) ;
             skippast_rbr(msfile) ;
             break ;
 
           DEFAULT
             printf("     Routine %s. Wagon %s. File %s\n", my_name, w->name, msfile->filename) ;
-            printf("     ERROR.  Token not recognised.  Token = :%s:\n",token);
-//            for(i=0;i<(int)strlen(token);i++) printf("      token[%i] = %x\n",i, token[i]) ;
-            if((token[0] & 0xFF) == 0xA0)printf(" First character of token is non-breaking space\n") ;
+            printf("     ERROR.  Token not recognised.  Token = :%s:\n",token1);
+//            for(i=0;i<(int)strlen(token1);i++) printf("      token1[%i] = %x\n",i, token1[i]) ;
+            if((token1[0] & 0xFF) == 0xA0)printf(" First character of token is non-breaking space\n") ;
             skip_lbr(msfile)   ;
             skippast_rbr(msfile) ;
         END
         if(ip)printf(" ZZZZ\n") ;
+
+      }
+      if(w->sound_file){
 
       }
 /*
@@ -840,16 +947,16 @@ char     ffname[] = "__FILE__"  ;
  * Check for 'Engine' token
  */
         for(;;){
-          token = new_tmp_token(msfile) ;  // Temporaty token !!
-          if(!strcmp(token,"Comment")){
+          token1 = new_tmp_token(msfile) ;  // Temporaty token !!
+          if(!strcmp(token1,"Comment")){
             skip_lbr(msfile)   ;
             skippast_rbr(msfile) ;
-          }else if(!strcmp(token,"Engine")) {
+          }else if(!strcmp(token1,"Engine")) {
             skip_lbr(msfile) ;           // skip left bracket
             break ;
           }else{
             printf("     Routine %s. Engine %s. Token '%s' not recognised while "
-                   " searching for Engine section.  \n",my_name,w->name,token) ;
+                   " searching for Engine section.  \n",my_name,w->name,token1) ;
             skip_lbr(msfile)   ;
             skippast_rbr(msfile) ;
           }
@@ -862,8 +969,10 @@ char     ffname[] = "__FILE__"  ;
         e->name        = NULL ;
         e->description = NULL ;
         e->sound       = NULL ;
-        e->num_wheels = 0     ;
-        for(i=0;i<3;i++)e->head_out[i] = 0.0 ;
+        e->num_wheels  = 0     ;
+        e->head_out[0] = -1.5  ;  //  Default distance right
+        e->head_out[1] = -4.5  ;  //  Default distance up
+        e->head_out[2] =  3.2  ;  //  Default distance forward
 /*
  *  Read engine name
  */
@@ -884,13 +993,13 @@ char     ffname[] = "__FILE__"  ;
  */
         for(;;){
           if(ip)printf(" EEEE\n") ;
-          token = new_tmp_token(msfile);
-          if(ip)printf(" EE Token = :%s:\n",token) ;
-          if(is_rbr(token)) break ;  // End of Engine data
+          token1 = new_tmp_token(msfile);
+          if(ip)printf(" EE Token = :%s:\n",token1) ;
+          if(is_rbr(token1)) break ;  // End of Engine data
 /*
  *  Handle EOF of an Include file
  */
-          if(is_eof(token)){
+          if(is_eof(token1)){
             if(n_msfile > 0){
               close_msfile(msfile) ;
               msfile = &msfile0[--n_msfile] ;
@@ -905,8 +1014,9 @@ char     ffname[] = "__FILE__"  ;
 /*
  *  Process normal tokens
  */
-          SWITCH(token)
+          SWITCH(token1)
             CASE("Comment")
+            CASE("Comments")
             CASE("comment")
               skip_lbr(msfile) ;
               skippast_rbr(msfile) ;
@@ -914,18 +1024,18 @@ char     ffname[] = "__FILE__"  ;
             CASE("Include")
 //            printf(" == Include file === \n") ;
               skip_lbr(msfile) ;
-              token = ctoken(msfile);
-//            printf("    Include file = %s \n",token) ;
-              token = strip_quotes(token) ;
-              token = convert_dir_markers(token) ;
-//            printf("    Include file = %s \n",token) ;
+              token1 = ctoken(msfile);
+//            printf("    Include file = %s \n",token1) ;
+              token1 = strip_quotes(token1) ;
+              token1 = convert_dir_markers(token1) ;
+//            printf("    Include file = %s \n",token1) ;
               string = zr_full_parentdir(msfile->filename) ;
               if(inc_file)free(inc_file) ;
-              inc_file = (char *)malloc(strlen(token)+strlen(string)+2) ;
+              inc_file = (char *)malloc(strlen(token1)+strlen(string)+2) ;
               strcpy(inc_file,string) ;
               strcat(inc_file,"/") ;
-              strcat(inc_file,token) ;
-              free(token)  ;
+              strcat(inc_file,token1) ;
+              free(token1)  ;
               free(string) ;
 
 //              printf("  Routine %s.  Engine       = %s\n",my_name,e->name) ;
@@ -968,8 +1078,8 @@ char     ffname[] = "__FILE__"  ;
               break ;
             CASE("WheelRadius")
               skip_lbr(msfile) ;
-              token = new_tmp_token(msfile) ;
-              e->wheel_radius  = convert_unit(token,"m") ;
+              token1 = new_tmp_token(msfile) ;
+              e->wheel_radius  = convert_unit(token1,"m") ;
               if(e->wheel_radius < 0.25)e->wheel_radius = 0.5 ; // Error?
               w->driverwheelradius = e->wheel_radius ;
               w->inv_driverwheelradius = 1.0/e->wheel_radius ;
@@ -983,13 +1093,47 @@ char     ffname[] = "__FILE__"  ;
               if(ip)printf("    Sound = :%s:\n",e->sound) ;
               skip_rbr(msfile) ;
               break ;
+/*
+ *  HeadOut offsets
+ *  Wagon coordinates are usually define around the centre at track level.
+ *  The probable order is  width, height, length
+ */
             CASE("HeadOut")
+            CASE("Headout")
               skip_lbr(msfile) ;
-              for(i=0;i<3;i++)e->head_out[i] = dtoken(msfile) ;
+              e->head_out[0] = dtoken(msfile) ;  // Distance right
+              e->head_out[2] = dtoken(msfile) ;  // Distance forward
+              e->head_out[1] = dtoken(msfile) ;  // Distance up
               if(ip)printf("    Head Out = :%f %f %f:\n",
                               e->head_out[0],e->head_out[1],e->head_out[2]) ;
               skip_rbr(msfile) ;
               break ;
+            CASE("EngineControllers")
+              skip_lbr(msfile) ;
+              for(;;){
+                if(token2)free(token2) ;
+                token2 = ctoken(msfile) ;
+                if(is_rbr(token2)) break ;
+                SWITCH(token2)
+                  CASE("Wipers")
+                    skip_lbr(msfile) ;
+                    w->has_wipers = 1 ;
+                    skippast_rbr(msfile) ;
+                    break ;
+                  CASE("PantographToggle1")
+                    skip_lbr(msfile) ;
+                    w->has_pantographs = 1 ;
+                    skippast_rbr(msfile) ;
+                    break ;
+                  DEFAULT
+                    skip_lbr(msfile) ;
+                    skippast_rbr(msfile) ;
+                    break ;
+                END
+              }
+              break ;
+
+
 /*
  *  Unused Engine tokens
  */
@@ -1201,7 +1345,6 @@ char     ffname[] = "__FILE__"  ;
             CASE("EngineBrakesControllerEmergencyApplicationRate")
             CASE("EngineBrakesControllerFullServicePressureDrop")
             CASE("EngineBrakesControllerMinPressureReduction")
-            CASE("EngineControllers")
             CASE("EngineVariables")
 
             CASE("SteamWaterScoopMinPickupSpeed")
@@ -1247,6 +1390,57 @@ char     ffname[] = "__FILE__"  ;
             CASE("xORTSBoilerEvaporationRate")
             CASE("xORTSBrakePipeTimeFactor")
             CASE("ORTSTractiveEffortFactor")
+
+            CASE("ORTSMaxTrackSanderBoxCapacity")
+            CASE("ORTSMaxTrackSanderSandConsumptionForward")
+            CASE("ORTSMaxTrackSanderAirConsumptionForward")
+            CASE("ORTSWheelCrankAngleDifference")
+
+            CASE("ORTSSteamEngines")
+            CASE("SteamFiremanIsMechanicalStoker")
+            CASE("ORTSEngineBrakeReleaseRate")
+            CASE("ORTSEngineBrakeApplicationRate")
+
+            CASE("ORTSSteamGearType")
+            CASE("ORTSSteamGearRatio")
+            CASE("ORTSSteamMaxGearPistonRate")
+            CASE("ORTSGearedTractiveEffortFactor")
+
+            CASE("ORTSElectricTrainSupply")
+            CASE("ORTSMaxTrackSanderSandConsumption")
+            CASE("ORTS")
+            CASE("ORTSSpeedOfMaxContinuousForce")
+            CASE("ORTSTractionMotorType")
+            CASE("AntiSlip")
+            CASE("ORTSCompressorIsMuControlled")
+            CASE("AirBrakeMaxMainResPipePressure")
+            CASE("ORTSDynamicBrakeForceCurves")
+
+            CASE("ORTSDynamicBrakeForceCurves")
+            CASE("LPNumCylinders")
+            CASE("LPCylinderStroke")
+
+            CASE("ORTSLocomotiveDriveWheelOnlyBraking")
+            CASE("ORTSTrainBrakesControllerMaxOverchargePressure")
+            CASE("ORTSMaxSpeedGearLocomotive")
+            CASE("SandingSystemType")
+            CASE("BrakeCutsPowerAtBrakeCylinderPrssure")
+            CASE("ORTSDoesBrakeCutPower")
+            CASE("ORTSDieselTransmissionType")
+            CASE("ORTSGearBoxType")
+            CASE("ORTSMainClutchType")
+            CASE("ORTSDieselEngineGovernorRpM")
+            CASE("ORTSDieselEngineGovenorRpM")
+            CASE("ORTSGearBoxFreeWheel")
+            CASE("ORTSGearBoxTractiveForceatSpeed")
+            CASE("ORTSSteamFiremanMaxPossibleFiringRate")
+            CASE("LPCylinderDiameter")
+            CASE("LPCylinderDiameter")
+            CASE("LPCylinderDiameter")
+            CASE("LPCylinderDiameter")
+            CASE("LPCylinderDiameter")
+            CASE("LPCylinderDiameter")
+
               skip_lbr(msfile) ;
               skippast_rbr(msfile) ;
               break ;
@@ -1257,7 +1451,7 @@ char     ffname[] = "__FILE__"  ;
               break ;
             DEFAULT
               printf("     Routine %s. Engine %s. Token not recognised.  Token = %s\n",
-                    my_name,w->name,token);
+                    my_name,w->name,token1);
               skip_lbr(msfile)   ;
               skippast_rbr(msfile) ;
           END

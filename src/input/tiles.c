@@ -288,7 +288,7 @@ int tilelist_init2(){
       strcpy(tdir_name,ORroutedir)     ;
       strcat(tdir_name,tiles_dir)       ;
       if(ip)printf(" Trying directory TILES = %s\n",tdir_name) ;
-      iret = zr_find_msfile2(tdir_name) ;
+      iret = zr_find_msfile2(&tdir_name) ;
       if(!iret)tdir = opendir(tdir_name) ;
       if(iret || tdir == NULL){
         printf(" Routine %s : ERROR : Unable to open TILES directory\n",
@@ -353,15 +353,17 @@ int tilelist_init2(){
 /*
  *  Fill tile array
  */
-      len1 = (tile_east - tile_west + 1)*(tile_north - tile_south + 1) ;
+      tile_array_nx = tile_east  - tile_west  + 1 ;
+      tile_array_ny = tile_north - tile_south + 1 ;
+      len1 = tile_array_nx*tile_array_ny ;
       tile_array = (TileListNode **)malloc(len1*sizeof(TileListNode *)) ;
       tile_array_num = len1 ;
 
       for(i=1;i<len1;i++) tile_array[i] = NULL ;
 
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
-        k = (tl_node->tiley-tile_south)*(tile_east - tile_west + 1)
-            + tl_node->tilex-tile_west ;
+        k = (tl_node->tiley - tile_south)*tile_array_nx
+           + tl_node->tilex - tile_west ;
         tile_array[k] = tl_node ;
       }
 

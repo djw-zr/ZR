@@ -13,23 +13,21 @@
  *==============================================================================
  */
 
+SMS_Node *smsnode_init(char *name) ;
+
 /*
- *  Routine to collect the required sounds
- *  It scans the world tiles looking for required sounds and placing them in
- *  a standard list
+ *  Routine to link the world sound sources and sound regions
+ *  to the required SoundManagementSystem node
  */
 
-SoundNode *soundnode_init(char *name) ;
+int link_world_sounds_to_sms_nodes(void){
 
-
-int collect_sounds(void){
-
-  int  ip = 1 ;
+  int  ip = 0 ;
   WorldNode       *w_node ;
-  SoundSourceNode *ss_node ;
+  SoundObjectNode *so_node ;
   SoundRegionNode *sr_node ;
-  SoundNode       *s_node ;
-  char            *my_name = "collect_sounds" ;
+  SMS_Node        *sms_node ;
+  char            *my_name = "link_world_sounds_to_sms_nodes" ;
 
       if(ip)printf("  Enter routine '%s'\n",my_name) ;
 /*
@@ -37,57 +35,93 @@ int collect_sounds(void){
  *  to the sound nodes
  */
       for(w_node = worldlist_beg; w_node != NULL; w_node = w_node->next){
-        for( ss_node = w_node->sound_source; ss_node != NULL;
-                                             ss_node = ss_node->next){
-          ss_node->sound = soundnode_init(ss_node->sms_filename) ;
+        for( so_node = w_node->sound_source; so_node != NULL;
+                                             so_node = so_node->next){
+          so_node->sms_node = smsnode_init(so_node->sms_file) ;
         }
+#if 0
         for( sr_node = w_node->sound_region; sr_node != NULL;
                                              sr_node = sr_node->next){
           sr_node->sound = soundnode_init(sr_node->sms_filename) ;
         }
-      }
-#if 1
-      for(s_node = soundlist_beg; s_node != NULL; s_node = s_node->next){
-        printf("  Sound file = '%s'\n",s_node->sms_filename) ;
-      }
 #endif
+      }
+      if(ip){
+        for(sms_node = sms_list_beg; sms_node != NULL; sms_node = sms_node->next){
+          printf("  Sound = %s :: file = %s\n",sms_node->name, sms_node->sms_file) ;
+        }
+      }
       return  0 ;
 }
 
 /*
  *  Given a filename this routine searches for the corresponding
- *  SoundNode.  If one does not exist it creates a new one.
+ *  SMS_Node representing a sound management system sound.
+ *  If one does not exist it creates a new one.
  */
 
-SoundNode *soundnode_init(char *sms_filename){
+SMS_Node *smsnode_init(char *sms_file){
 
-  int  ip = 1 ;
-  SoundNode  *s_node ;
+  int  ip = 0 ;
+  int  i;
+  SMS_Node   *sms_node ;
+  SmsGrpNode *sndpri_node ;
+  char      *name, *extn ;
+  BTree     *btree ;
 
-  char *my_name = "sound_init" ;
+  char *my_name = "smsnode_init" ;
 
       if(ip)printf("  Enter routine '%s'\n",my_name) ;
 
-      for(s_node = soundlist_beg; s_node != NULL; s_node = s_node->next){
-        if(strcmp(s_node->sms_filename,sms_filename) == 0)break ;
+      name = zr_corename(sms_file) ;
+      str2lc(name) ;
+      btree = find_btree(sms_master, name) ;
+      if(btree) return (SMS_Node *) btree->data ;
+
+      extn = zr_extension_lc(sms_file) ;
+      if(strcmp(extn,"sms")){
+        free(extn)  ;
+        return NULL ;
       }
-      if(s_node)return s_node ;
+      free(extn) ;
 /*
  *  Create a new sound node
  */
-      s_node = (SoundNode *)malloc(sizeof(SoundNode)) ;
-      s_node->next = NULL ;
-      s_node->sms_filename  = sms_filename ;
-      s_node->sms_fullfilename = NULL ;
-      s_node->needed = 0 ;
-      s_node->loaded = 0 ;
+      sms_node = (SMS_Node *)malloc(sizeof(SMS_Node)) ;
+      sms_node->next = NULL ;
+      sms_node->name = name ;
+      sms_node->sms_file = sms_file ;
+      sms_node->sms_fullfilename = NULL ;
+      sms_node->needed = 0 ;
+      sms_node->loaded = 0 ;
+      for(i=0;i<4;i++){
+        sndpri_node = &(sms_node->smsgrp_node[i]) ;
+        sndpri_node->active.cab_cam = 0 ;
+        sndpri_node->active.ext_cam = 0 ;
+        sndpri_node->active.pas_cam = 0 ;
+        sndpri_node->active.dist    = 0.0 ;
+        sndpri_node->deacti.cab_cam = 0 ;
+        sndpri_node->deacti.ext_cam = 0 ;
+        sndpri_node->deacti.pas_cam = 0 ;
+        sndpri_node->deacti.dist    = 0.0 ;
 
-      if(soundlist_beg == NULL){
-        soundlist_beg = s_node ;
-      }else{
-        soundlist_end->next = s_node ;
+        sndpri_node->volume         = 1.0 ;
+        sndpri_node->stereo         = 0 ;
+        sndpri_node->loadall_waves  = 0 ;
+        sndpri_node->n_streams      = 0 ;
+        sndpri_node->snd_stream     = NULL ;
       }
-      soundlist_end = s_node ;
-      return s_node ;
+
+      if(sms_list_beg == NULL){
+        sms_list_beg = sms_node ;
+      }else{
+        sms_list_end->next = sms_node ;
+      }
+      sms_list_end = sms_node ;
+      sms_master = insert_node(sms_master, name, (void *)sms_node) ;
+      if(ip)printf("  SMS_MASTER - ADD NAME %s\n",name) ;
+      return sms_node ;
 }
+
+
 

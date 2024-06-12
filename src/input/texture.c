@@ -48,9 +48,9 @@ int load_texture_filenames() {
   struct dirent *f_entry   = NULL ;
   struct dirent **namelist = NULL ;
   TextureNode *texture     = NULL ;
-  char        *texture_dir   = "/TEXTURES/" ;
-  char        *terrtex_dir   = "/TerrTex/" ;
-  char        *g_texture_dir = "/Global/Textures/" ;
+  char        *texture_dir   = "/TEXTURES" ;
+  char        *terrtex_dir   = "/TerrTex" ;
+  char        *g_texture_dir = "/Global/Textures" ;
   char        my_name[] = "load_texture_filenames" ;
 
 /*
@@ -83,7 +83,7 @@ int load_texture_filenames() {
         tdir_name = current_dir ;
         len1 = strlen(tdir_name) + 1 ;
 #endif
-        iret = zr_find_msfile2(tdir_name) ;
+        iret = zr_find_msfile2(&tdir_name) ;
         if(iret){
           printf(" Routine %s : ERROR : Unable to open TEXTURES directory\n",
                                                                 my_name) ;
@@ -158,9 +158,9 @@ int load_texture_filenames() {
 /*
  *  Save full name of texture file
  */
-          texture->filename = (char *)malloc(len1 + len2 ) ;
+          texture->filename = (char *)malloc(len1 + len2 + 2) ;
           strcpy(texture->filename,tdir_name) ;
-//          strcat(texture->filename,f_entry->d_name);
+          strcat(texture->filename,"/") ;
           strcat(texture->filename,namelist[i]->d_name);
           if(namelist[i])free(namelist[i]) ;
         }
@@ -605,14 +605,18 @@ int   w = width, nb, h, nwords ;
 //  calloc = malloc with memory set to zero.
           tnode->texture[i] = (GLubyte *)calloc(nb*nwords,sizeof(GLubyte));
           maskp             = (GLubyte *)calloc(nwords,sizeof(GLubyte));
+#if 0
           if(ip)printf("  Memory for image %i, nb = %i, w = %i, h = %i,"
                   " nwords = %i, size = %i, texture[i] = %p\n",
                   i,nb,w,h,nwords, nb*nwords,tnode->texture[i]);
+#endif
 /*
  *  Loop over the scan rows
  */
           for(j=0;j<h;j++){
+#if 0
             if(ip)printf("  Read image %i, row %i, channel ",i,j);
+#endif
 /*
  *  Initialise alpha channel (for 0x0e ony??)
  */
@@ -827,5 +831,115 @@ char *my_name="sort_textures" ;
       }
       free(ta) ;
 
+      return 0 ;
+}
+
+int  mark_needed_wagon_textures(ShapeNode *snode){
+
+  int  ip = 0 ;
+  int  i, n_textures ;
+  int  it = 0 ;
+
+  TextureNode *tx_node ;
+  TextureNode *tx_prev ;
+  char        *tx_name = NULL ;
+  char        *my_name="mark_needed_wagon_textures" ;
+
+
+      if(ip){
+        printf("  Routine %s  ENTER\n",my_name) ;
+        printf("    shape = %s\n",snode->name) ;
+      }
+      n_textures = snode->n_textures ;
+      if(n_textures){
+        for(i=0; i<n_textures; i++){
+          if(tx_name)free(tx_name) ;
+          tx_name = zr_corename(snode->texture_name[i]) ;
+          if(ip)printf("    texture %i = %s\n", i, tx_name) ;
+/*
+ *  Search for tx_name in texturelist and wtexture list
+ */
+          for(tx_node = wtexturelist_beg; tx_node!= NULL; tx_node=tx_node->next){
+            if(ip)printf("      wtexturelist texture = %s\n", tx_node->name) ;
+            if(!strcmp(tx_node->name, tx_name)) break ;
+          }
+          if(tx_node){
+            snode->texture[i] = tx_node ;
+            if(ip)printf("      texture found in wtexturelist.  needed = %i\n",
+                                tx_node->needed) ;
+            tx_node->needed = 1;
+            continue ;
+          }
+          if(ip)printf("      texture not found in wtexturelist\n") ;
+/*
+ * Search in main texture list
+ */
+          tx_prev = NULL ;
+          for(tx_node = texturelist_beg; tx_node!= NULL; tx_node=tx_node->next){
+            if(ip)printf("      texturelist texture = %s\n", tx_node->name) ;
+            if(!strcmp(tx_node->name, tx_name)) break ;
+            tx_prev = tx_node ;
+          }
+/*
+ *  If unsuccesssful try again with case independent comparison
+ */
+          if(tx_node == NULL){
+            for(tx_node = wtexturelist_beg; tx_node!= NULL; tx_node=tx_node->next){
+              if(ip)printf("      wtexturelist texture = %s\n", tx_node->name) ;
+              if(!strcmp_ic(tx_node->name, tx_name)) break ;
+            }
+            if(tx_node){
+              snode->texture[i] = tx_node ;
+              if(ip)printf("      texture found in wtexturelist.  needed = %i\n",
+                                  tx_node->needed) ;
+              tx_node->needed = 1;
+              continue ;
+            }
+            if(ip)printf("      (case independent) texture not found in wtexturelist\n") ;
+            tx_prev = NULL ;
+            for(tx_node = texturelist_beg; tx_node!= NULL; tx_node=tx_node->next){
+              if(ip)printf("      texturelist texture = %s\n", tx_node->name) ;
+              if(!strcmp_ic(tx_node->name, tx_name)) break ;
+              tx_prev = tx_node ;
+            }
+          }
+/*
+ *  Failure
+ *   If this point is reached
+ *   Try again looking for lower case comparison
+ *      strcmp_ic
+ */
+          if(tx_node == NULL){
+            if(ip)printf("  Routine %s unable to find texture %s for wagon %s\n",
+                         my_name, tx_name, snode->name) ;
+            continue ;
+          }
+/*
+ * Success and already loaded
+ */
+          snode->texture[i] = tx_node ;
+          if(ip)printf("      texture found in wtexturelist.  needed = %i\n",
+                              tx_node->needed) ;
+          if(tx_node->needed)  continue ;
+/*
+ *  Success but not loaded
+ *    Move to wagon texture list and mark as needed
+ */
+          if(tx_node == texturelist_beg){
+            texturelist_beg = tx_node->next ;
+          }else{
+            tx_prev->next = tx_node->next ;
+          }
+          if(tx_node == texturelist_end){
+            texturelist_end = tx_prev ;
+          }
+          wtexturelist_end->next = tx_node;
+          tx_node->next = NULL ;
+          wtexturelist_end = tx_node ;
+          tx_node->needed = 1 ;
+        }
+      }
+      if(tx_name)free(tx_name) ;
+      if(ip)printf("  Routine %s  EXIT\n",my_name) ;
       return 0 ;
 }
