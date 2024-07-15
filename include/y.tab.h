@@ -102,7 +102,8 @@ extern int yydebug;
     SC_ILE = 312,
     SC_IEQ = 313,
     SC_INE = 314,
-    SC_POW = 315
+    SC_PLUS = 315,
+    SC_POW = 316
   };
 #endif
 /* Tokens.  */
@@ -163,7 +164,8 @@ extern int yydebug;
 #define SC_ILE 312
 #define SC_IEQ 313
 #define SC_INE 314
-#define SC_POW 315
+#define SC_PLUS 315
+#define SC_POW 316
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -178,7 +180,7 @@ char  *sValue ;    /* Value of string */
 char  sIndex  ;    /* symbol table index */
 nodeType *nPtr;    /* node pointer */
 
-#line 182 "y.tab.h" /* yacc.c:1909  */
+#line 184 "y.tab.h" /* yacc.c:1909  */
 };
 
 typedef union YYSTYPE YYSTYPE;

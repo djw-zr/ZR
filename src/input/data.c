@@ -97,7 +97,7 @@ char           my_name[] = "init_data_structures" ;
         free(pdb_file) ;
         pdb_file = find_trk_file() ;
         if(!pdb_file){
-          printf("   pdb_file not found.  File = %s\n",pdb_file) ;
+          printf("   Track file (*.trk) for route not found.\n") ;
           exit(0) ;
         }
       }

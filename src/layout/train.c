@@ -982,7 +982,7 @@ TrainNode *consist_init(WagonNode *wagon, char *name){
 
       c = (TrainNode *)malloc(sizeof(TrainNode)) ;
       c->next       = NULL ;
-      c->name       = (char *)malloc(strlen(name)*sizeof(char)) ;
+      c->name       = (char *)malloc(strlen(name)+1) ;
       strcpy(c->name,name)  ;
       c->speed      = 0.0   ;
       c->last_speed = 0.0   ;

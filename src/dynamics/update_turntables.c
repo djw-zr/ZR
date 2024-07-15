@@ -413,7 +413,7 @@ int  move_train_to_tt_track(TurnTable *tt){
 /*
  *  Add train to list of trains on turntable
  */
-          tt_list = (TT_List *)malloc(sizeof(TT_List *)) ;
+          tt_list = (TT_List *)malloc(sizeof(TT_List)) ;
           tt_list->next  = tt->tt_list ;
           tt_list->train = tr     ;
           tt->tt_list   = tt_list ;

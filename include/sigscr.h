@@ -1,5 +1,5 @@
 /*
- * File sigsdc.h
+ * File sigscr.h
  *
  *   This file contains data structures used to store signal script
  *   programs.
@@ -40,12 +40,19 @@ char    *name;      /* Pointer to name */
 } strNodeType;
 
 /* operators */
+/*
+ *   ZR needs 3 operands at most.  In principal I might
+ *   be able to define *op[1] here and in practice allocate
+ *   memory for only the required operands.  Here by always
+ *   overspecifying the memory, the resulting code should
+ *   keep the compilers happy.
+ */
 
 typedef struct {
 nodeEnum type;      /* type of node */
 int oper;           /* operator */
 int nops;           /* number of operands */
-union nodeTypeTag *op[1];  /* operands (expandable) */
+union nodeTypeTag *op[3];  /* operands (expandable) */
 } oprNodeType;
 
 typedef union nodeTypeTag {

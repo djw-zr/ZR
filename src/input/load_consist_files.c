@@ -92,7 +92,6 @@ int load_consist_files(void){
           close_system() ;
         }
       }
-      free(cpy_name) ;  cpy_name = NULL ;
 /*
  *  Open Consists directory
  */
@@ -107,6 +106,7 @@ int load_consist_files(void){
         free(dir_name) ;
         close_system() ;
       }
+      free(cpy_name) ;  cpy_name = NULL ;
 /*
  *  Loop through files
  */

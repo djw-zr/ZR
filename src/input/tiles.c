@@ -198,7 +198,7 @@ char *TileToFileName(int tilex, int tiley, int zoom)
       if (zoom % 2 == 1) name[ic++]= hex[bit4 <<= 2] ;  // Shift to allow for missing 2-bit
       name[ic] = '\0' ;                      //  Add '\0' to denote end of string
 
-      string = (char *)malloc(strlen(name)); //  New memory to contain filename
+      string = (char *)malloc(1+strlen(name)); //  New memory to contain filename
       return strcpy(string,name) ;
 }
 

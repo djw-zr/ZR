@@ -38,7 +38,7 @@
 extern int yydebug ;
 extern nodeType *sTree;
 
-FILE   *yyin, *yyout ;
+extern FILE *yyin, *yyout ;
 
 int    yyparse(nodeType **sTree) ;
 void   yyset_in(FILE *sfile)     ;
@@ -86,7 +86,7 @@ static char *token[] = {
     "XE",
     "DE",
     "IASD",
-    "IMD",
+    "AMD",
     "IFX",
     "BB",
     "NO_OP",
@@ -110,6 +110,7 @@ static char *token[] = {
     "ILE",
     "IEQ",
     "INE",
+    "PLUS",
     "POW"
 } ;
 
@@ -323,6 +324,7 @@ int i, n, nops, oper, type ;
 /*
  *  Return if end of list
  */
+
         if(p1 == NULL) return 0 ;
         oper = p1->opr.oper ;
 /*
@@ -430,7 +432,7 @@ int  ip = 0 ;
 int  i, n, nops, oper, type ;
 nodeType *p1, *p2 ;
 char *my_name = "replace_var_names1" ;
-char *name1, name2[10] ;
+char *name1, name2[16] ;
 static int ivar ;
 
       if(ip)printf("  Enter routine %s  :: %p\n",my_name, (void *)p) ;

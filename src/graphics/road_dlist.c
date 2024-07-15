@@ -137,13 +137,13 @@ TextureNode    *tnode        ;
                 xoff = (tv0->tile_east_x  - tile_x0 - 0.5)*tile_size ;
                 yoff = (tv0->tile_north_z - tile_y0 - 0.5)*tile_size ;
                 if(ip)printf("  Posn: i = %i m = %i,  n_sub_nodes = %i \n",i,m,tv0->n_sub_nodes)  ;
+                xl = yl = zl = 0 ;               //Keep gc-13 happy!
                 for(n=0;n<tv0->n_sub_nodes;n++){
                   x0 = tv0->track_centre[n].X + xoff  ;
                   y0 = tv0->track_centre[n].Y + yoff  ;
                   z0 = tv0->track_centre[n].Z -plot_scale + 0.5  ;
                   xt = tv0->tangent_vector[n].X ;
                   yt = tv0->tangent_vector[n].Y ;
-
 
                   if(n>1)u0 = u0 + sqrt((x0-xl)*(x0-xl) + (y0-yl)*(y0-yl) + (z0-zl)*(z0-zl)) ;
                   xl = x0; yl = y0; zl = z0 ;

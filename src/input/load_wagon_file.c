@@ -242,6 +242,8 @@ char     ffname[] = "__FILE__"  ;
             w->full_name = strip_quotes(w->full_name) ;
             if(ip)printf("    Full Name = :%s:\n",
                                               w->full_name) ;
+// If right bracket not immediately found
+//   add extra tokens to name
             iret = skip_rbr_1(msfile) ;
             while(iret){
               token1 = ctoken(msfile) ;
@@ -250,9 +252,9 @@ char     ffname[] = "__FILE__"  ;
               strcpy(string, w->full_name) ;
               strcat(string," ") ;
               strcat(string,token1) ;
-              free(string) ;
               free(w->full_name);
               w->full_name = string ;
+              string = NULL ;   // So full_name isn't freed by mistake
               iret = skip_rbr_1(msfile) ;
             }
             break ;
