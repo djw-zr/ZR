@@ -6,7 +6,23 @@ Commit 0.6.4
     some of which being due to errors in the route files which OpenRails
     sidesteps.  This commit includes a number of bug fixes of both kinds.
     
-    The commit includes an option to geenrate a movie (as yet without a
+    OpenAL, which as used for sound, usually the limits the number of sound
+    sources (i.e *,wav) files which can be loaded at once.  The default is 
+    256, sufficient for small routes (i.e. the Zig-Zag route, but insufficient
+    for some of the MSTS routes  This results in a series of errors when 
+    the -DSOUND compiler option is used.
+    
+    The enclosed file 'alsoft.conf' includes the line 'sources=1023'.  This
+    increases the number of sources sufficient for the MSTS routes, but at 
+    the cost of an increased overhead.  A planned development of the code
+    will allow sounds to be loaded when needed and released when no longer
+    required.  In the meantime the configuration file can be placed either 
+    in the users home directory or in the system directory:
+      $HOME/.config/alsoft.conf
+      /etc/openal/alsoft.conf
+    
+    
+    The commit includes an option to generate a movie (as yet without a
     sound channel) either be generating a set of png images or by using
     the ffmpeg library.
     
