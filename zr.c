@@ -120,6 +120,7 @@ GLfloat  v4[4] ;
 char my_name[] = "zr" ;
 
       printf("  Program %s starting ...\n",my_name);
+
 #ifdef SDL2
       printf("    Flag SDL2 is set\n") ;
 #endif
@@ -127,7 +128,12 @@ char my_name[] = "zr" ;
 
       clock_gettime(CLOCK_MONOTONIC, &run_clock0) ; //  Run clock
       start_seconds = clock()/CLOCKS_PER_SEC ;
-      process_defaults() ;
+      process_defaults() ;                          //  Determine route directory etc.
+/*
+ *    load basic data - i.e. trains/consists/platforms and sidings
+ *      used to initialise the system
+ */
+      load_splash_screen() ;
 /*
  *  Start sound
  */
@@ -136,10 +142,18 @@ char my_name[] = "zr" ;
 //      alutInit(&argc, argv) ;   //  Sets up OpenAL as well (I think).
 #endif
 
-      init_system() ;
+      init_system() ;                               //  Initialise clocks
       printf("  BB ORdir   = %s\n",ORdir) ;
       printf("  ORroute    = %s\n",ORroute) ;
       printf("  ORroutedir = %s\n",ORroutedir) ;
+/*
+ *  Here I need to call init data structues
+ *   in a separate thread, using the pthread library
+ *   NOTE:  I could do with specifying trains/consists/platforms and sidings first.
+ *  Then start the splash screen etc
+ *   then once the thread has finished
+ *  Replace the splash screen by the main program
+ */
       init_data_structures() ;
 /*
  *  Exit if plotting not required
@@ -180,7 +194,7 @@ int  iret ;
  *   Open window
  */
       WindowFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE ;
-# ifdef _MultiSample
+# ifndef _NoMultiSample
       SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
       SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 4);
 # endif
@@ -227,7 +241,7 @@ const char title[] = "ZR" ;
         printf(" a non-zero LOD bias will be used instead\n");
       }
 
-#ifdef _MultiSample
+#ifndef _NoMultiSample
       glEnable(GL_MULTISAMPLE_ARB);
 GLint  isbuf, isnum;
       glGetIntegerv(GL_SAMPLE_BUFFERS, &isbuf);
@@ -246,11 +260,14 @@ GLint  isbuf, isnum;
 
       zr_setp4(v4,light0_altde,light0_polar) ;
       glLightfv(GL_LIGHT0,GL_POSITION,v4) ;
-
-      glLightfv(GL_LIGHT0, GL_AMBIENT,  mat_amb) ;
-      glLightfv(GL_LIGHT0, GL_DIFFUSE,  mat_dif) ;
-      glLightfv(GL_LIGHT0, GL_SPECULAR, mat_spc) ;
-
+/*
+ *  Light0 materials are  set by graphics init
+ */
+      if(0){
+        glLightfv(GL_LIGHT0, GL_AMBIENT,  mat_amb) ;
+        glLightfv(GL_LIGHT0, GL_DIFFUSE,  mat_dif) ;
+        glLightfv(GL_LIGHT0, GL_SPECULAR, mat_spc) ;
+      }
       glEnable(GL_LIGHTING);
       glEnable(GL_LIGHT0);
 
@@ -347,11 +364,17 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
       }
 #else
 /*
+ *  The movie code needs the Pixel pack alignment defined.
+ *  The code may only work with glut but it should only depend
+ *  OpenGL
+ */
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+/*
  *  Use GLUT Interface
  */
       glutInit(&argc, argv);
       glutInitDisplayMode(GLUT_DOUBLE
-#ifdef _MultiSample
+#ifndef _NoMultiSample
                         | GLUT_MULTISAMPLE
 #endif
                         | GLUT_RGBA | GLUT_DEPTH );
@@ -360,7 +383,9 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
       main_window = glutCreateWindow(argv[0]);
 
       graphics_init() ;               //  File graphics.c
-
+#ifdef SHADERS
+      shaders_init();
+#endif
       glutDisplayFunc(display)    ;
       glutIdleFunc(glut_idle)     ;
       glutKeyboardFunc(keyboard)  ;
@@ -388,7 +413,7 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
 //        printf("  GL_EXT_texture_compression_s3tc = %i\n",GL_EXT_texture_compression_s3tc);
 //        printf("  GL_COMPRESSED_RGBA_S3TC_DXT1_EXT = %i\n",GL_COMPRESSED_RGBA_S3TC_DXT1_EXT);
 
-#ifdef _MultiSample
+#ifndef _NoMultiSample
       glutSetOption(GLUT_MULTISAMPLE, 4);     //  Available with freeglut, not glut
       glEnable(GL_MULTISAMPLE_ARB);
       glEnable(GL_MULTISAMPLE);
@@ -406,6 +431,11 @@ GLfloat ansio, ansio_ext    ;
       glGetFloatv(GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT,&ansio_ext) ;
       printf("  Maximum anistrophy_ext is %f\n", ansio_ext);
       glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, 4.0);
+
+/*
+ *  Pixel allignment used for movie output
+ */
+      glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
 /*
  *   GLUT wondow fram buffer capabilities cannot be changed
@@ -530,6 +560,7 @@ int  ip = 0 ;
 #include "make_texture_resident.c"
 #include "graphics_init.c"
 #include "graphics.c"
+#include "load_splash_screen.c"
 #include "clip.c"
 #include "display_info.c"
 #include "display.c"
@@ -607,4 +638,13 @@ int  ip = 0 ;
 
 #if defined GLUT || defined USE_ZRGLUT
 #  include "zr_glut.c"
+#endif
+
+//#if defined FFMPEG || defined LIBPNG || defined PPM
+#  include "movie.c"
+//#endif
+
+
+#ifdef SHADERS
+#include "shaders.c"
 #endif

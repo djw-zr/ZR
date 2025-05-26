@@ -17,7 +17,7 @@
 */
 
 
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
 
 int display_tile_vertex_array(TileListNode *tnode){
 
@@ -41,9 +41,9 @@ int            nv, iv ;
 VANode         *va_node ;
 TerrainData    *terrain ;
 
-GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
-GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
-GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
+GLfloat  mat_amb_land[] = {0.5, 0.5, 0.5, 1.0};
+GLfloat  mat_dif_land[] = {0.7, 0.7, 0.7, 1.0};
+GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
 
 
       if(ip)printf(" Enter routine %s : %i %i : %i \n",
@@ -72,7 +72,7 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       glMaterialfv(GL_FRONT,GL_SPECULAR,mat_spc_land) ;
 
       glBindTexture(GL_TEXTURE_2D, land_texture->gl_tex_ref_no) ;
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
 #if 0
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;

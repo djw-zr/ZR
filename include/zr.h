@@ -119,6 +119,14 @@ typedef u_int uint ;
 #include "sound.h"
 #endif
 
+#if defined FFMPEG || defined LIBPNG || defined PPM
+#include "movie.h"
+#endif
+
+#ifdef SHADERS
+#include "shaders.h"
+#endif
+
 #include "functions.h"    //  Call this last
 
 #ifndef SDL2
@@ -241,10 +249,10 @@ BTree         *dir_master   = NULL ;  // BTree with links to directories
 // Tiles
 
 TileListNode  *tilelist_head = NULL ;  // Linked list of World Tile nodes
-TileListNode  **tile_array          ;  // 2-D array of pointers to nodes : indexed (east, north)
-int           tile_array_num        ;  // Number of nodes in array
-int           tile_array_nx         ;  // Number of nodes east-west
-int           tile_array_ny         ;  // Number of nodes north-south
+TileListNode  **tile_array = NULL   ;  // 2-D array of pointers to nodes : indexed (east, north)
+int           tile_array_num = 0    ;  // Number of nodes in array
+int           tile_array_nx  = 0    ;  // Number of nodes east-west
+int           tile_array_ny  = 0    ;  // Number of nodes north-south
 char          **tile_mask_array = NULL ;  // Mask used to prevent frest trees overlapping other objects
 
 //Shapes
@@ -269,6 +277,7 @@ SMS_Node     *wsmslist_beg     = NULL ;
 SMS_Node     *wsmslist_end     = NULL ;
 TextureNode  *wtexturelist_beg = NULL ;
 TextureNode  *wtexturelist_end = NULL ;
+TextureNode  *splash_node      = NULL ;  // Splash screen texture node
 ConsistNode  *consistlist_beg  = NULL ;  // Pointer to first node in list of consists
 ConsistNode  *consistlist_end  = NULL ;  // Pointer to last node
 

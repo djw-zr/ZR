@@ -144,7 +144,6 @@ char        my_name[] = "keyboard_sdl" ;
  */
       if(l_alt){
         switch (sym) {
-#ifdef kb_dev
 //  Change intensity of ambient, diffusive and specular light0
           case 'a':
           case 'A':
@@ -236,7 +235,6 @@ char        my_name[] = "keyboard_sdl" ;
           case 't':
             if(++display_track_info_on >3) display_track_info_on = 0;
             break ;
-#endif
           case SDLK_F7:
             if(ip)printf("  Skip to next train\n") ;
             do{
@@ -639,20 +637,12 @@ char   *my_name="SDL2_kbd_change_view" ;
       l_shift = mod & KMOD_SHIFT ;
       l_ctrl  = mod & KMOD_CTRL  ;
       l_alt   = mod & KMOD_ALT   ;
-#ifdef kb_dev
-//#if 1
-// Increment values for while developing code
-        del_d = 32.0*scalei ;     //  Step 32 m
-        del_a = 1.0 ;             //  Step 1 degrees
-        if(l_shift){ del_d *= 32.0 ; del_a  = 30.0 ; }
-        if(l_alt)    del_d /= 32.0 ;
-#else
-//  MSS values ?
-        del_d = 1.0*scalei ;      //  Step 1 m
-        del_a = 0.1 ;             //  Step 0.1 degree
-        if(l_shift){ del_d *= 10.0 ; del_a  = 10.0 ; }
-#endif
-        if(ip)printf("  del_d = %f, del_a = %f\n",del_d,del_a) ;
+
+      del_d = 32.0*scalei ;     //  Step 32 m
+      del_a = 1.0 ;             //  Step 1 degrees
+      if(l_shift){ del_d *= 32.0 ; del_a  = 30.0 ; }
+      if(l_alt)    del_d /= 32.0 ;
+      if(ip)printf("  del_d = %f, del_a = %f\n",del_d,del_a) ;
 /*
  *==============================================================================
  *    Code to change camera direction
@@ -743,15 +733,7 @@ float c_dist ;  // i.e. 200 m away
             case SDLK_PAGEDOWN:
               offset_eye_z    -= del_d    ;
               offset_center_z -= del_d    ;
-#ifndef kb_dev
-// Stop the viewpoint dropping too far
-//   This should be just above the local land surface level
-              if(offset_eye_z < 0.0){
-                offset_eye_z    =   0.1*scalei ;  // 0.1 m above baseline
-                offset_center_z =   0.1*scalei ;
-              }
-#endif
-               break ;
+              break ;
             default:
               break ;
           }
@@ -765,7 +747,6 @@ float c_dist ;  // i.e. 200 m away
  *  i.e the x, y and z coordinates relative to the central position
  *  of the local tile.
  */
-#ifdef kb_dev
   int     tile_e, tile_n ;
   double  e, n, h        ;
        if(display_info || ip){
@@ -779,7 +760,6 @@ float c_dist ;  // i.e. 200 m away
                   tile_e, tile_n, e, n, h, angle_to_north, angle_to_up) ;
           l_pp = 1 ;     //  Flag new position for debug statements
        }
-#endif
 /*
  *  Generate new OpenGL Projection and Modelview matrices
  */

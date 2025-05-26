@@ -11,54 +11,6 @@
  *   Routine to initialise system and top level variables MSTSDir, ORdir,
  *   ORroutedir etc.  See zr.h.
  *
-
-In windows you can view all environment variables available on your device using
-the Powershell command
- Get-ChildItem Env: | Sort Name
-
-
-Name                           Value
-----                           -----
-ALLUSERSPROFILE                C:\ProgramData
-APPDATA                        C:\Users\David\AppData\Roaming
-CommonProgramFiles             C:\Program Files\Common Files
-CommonProgramFiles(x86)        C:\Program Files (x86)\Common Files
-CommonProgramW6432             C:\Program Files\Common Files
-COMPUTERNAME                   IDEALPAD
-ComSpec                        C:\Windows\system32\cmd.exe
-DriverData                     C:\Windows\System32\Drivers\DriverData
-FPS_BROWSER_APP_PROFILE_STRING Internet Explorer
-FPS_BROWSER_USER_PROFILE_ST... Default
-HOMEDRIVE                      C:
-HOMEPATH                       \Users\David
-LOCALAPPDATA                   C:\Users\David\AppData\Local
-LOGONSERVER                    \\IDEALPAD
-NUMBER_OF_PROCESSORS           2
-OneDrive                       C:\Users\David\OneDrive
-OS                             Windows_NT
-Path                           C:\Windows\system32;C:\Windows;C:\Windows\System32\Wbem;C:\Windows\System32\WindowsPo...
-PATHEXT                        .COM;.EXE;.BAT;.CMD;.VBS;.VBE;.JS;.JSE;.WSF;.WSH;.MSC;.CPL
-PROCESSOR_ARCHITECTURE         AMD64
-PROCESSOR_IDENTIFIER           Intel64 Family 6 Model 76 Stepping 4, GenuineIntel
-PROCESSOR_LEVEL                6
-PROCESSOR_REVISION             4c04
-ProgramData                    C:\ProgramData
-ProgramFiles                   C:\Program Files
-ProgramFiles(x86)              C:\Program Files (x86)
-ProgramW6432                   C:\Program Files
-PSModulePath                   C:\Users\David\Documents\WindowsPowerShell\Modules;C:\Program Files\WindowsPowerShell...
-PUBLIC                         C:\Users\Public
-SESSIONNAME                    Console
-SystemDrive                    C:
-SystemRoot                     C:\Windows
-TEMP                           C:\Users\David\AppData\Local\Temp
-TMP                            C:\Users\David\AppData\Local\Temp
-USERDOMAIN                     IDEALPAD
-USERDOMAIN_ROAMINGPROFILE      IDEALPAD
-USERNAME                       David
-USERPROFILE                    C:\Users\David
-windir                         C:\Windows
- *
  *==============================================================================
  */
 
@@ -71,21 +23,22 @@ void process_defaults(){
 int    i, n, n_dirs  ;
 int    ip = 0        ;     // 0 = no printing
 size_t slen, nread, ll=128 ;
-char   *home         ;     // Full name of user's home directory
-char   *dotdir       ;     // Full name of .zr directory
-char   *config       ;     // Full name of config file
-char   *fonts        ;     // Full name of fonts file
-char   *routes_dir   ;
-char   *line = NULL  ;
-char   *token_a[3]   ;
-char   *token        ;
-char   *string1, *string2 ;
-FILE   *fptr = NULL  ;     // Pointer to config file
-DIR    *dotzr        ;     // DIR pointer to .zr directory
-DIR    *fontdir      ;     // DIR pointer to fonts directory
-BTree  *ORdirs = NULL ;    // BTree with list of directories
-BTree  *bt_node      ;
-BTree  *bt_dirs      ;
+char   *home       = NULL  ;     // Full name of user's home directory
+char   *dotdir     = NULL  ;     // Full name of .zr directory
+char   *config     = NULL  ;     // Full name of config file
+char   *fonts      = NULL  ;     // Full name of fonts file
+char   *routes_dir = NULL  ;
+char   *line       = NULL  ;
+char   *token_a[3] ;
+char   *token      = NULL  ;
+char   *string1    = NULL  ;
+char   *string2    = NULL  ;
+FILE   *fptr       = NULL  ;     // Pointer to config file
+DIR    *dotzr      = NULL  ;     // DIR pointer to .zr directory
+DIR    *fontdir    = NULL  ;     // DIR pointer to fonts directory
+BTree  *ORdirs     = NULL  ;    // BTree with list of directories
+BTree  *bt_node    = NULL  ;
+BTree  *bt_dirs    = NULL  ;
 char   *routes = "/Routes"    ;
 char *my_name = "process_defaults" ;
 
@@ -249,7 +202,7 @@ char *my_name = "process_defaults" ;
           ORdir = token_a[2];
           token_a[2] = NULL ;               //  Remove link to string
 /*
- *  Find basename of directory
+ *  Find Basename of Directory
  */
           string1 = strdup(ORdir) ;
           string2 = zr_basename(string1) ;
@@ -259,13 +212,14 @@ char *my_name = "process_defaults" ;
           }
 /*
  *  Add top level directory to Btree if it is new
+ *  The Basenames are stored in alphabetical order
  */
           if(!find_btree(ORdirs,string2)){
             ORdirs = insert_node(ORdirs,strdup(string2),strdup(ORdir)) ;
             increment_bt_count((void *)ORdirs) ;
           }
-          free(string1) ;
-          free(string2) ;
+          free(string1) ;  string1 = NULL ;
+          free(string2) ;  string2 = NULL ;
         }else if(!strcmp(token_a[0],"ORroutedir")){
           free(ORroutedir);
           ORroutedir = token_a[2];
@@ -290,7 +244,7 @@ char *my_name = "process_defaults" ;
       print_bt_nodes_with_count_and_index(ORdirs) ;
 
       if(n_dirs > 1){
-#ifndef DEBUG1
+#if ! defined Basic_Test && ! defined DEBUG1
         n = 0 ;
         while(n<1 || n>n_dirs){
           printf("  Enter index of top level directory to use (0 to exit):\n") ;
@@ -298,7 +252,7 @@ char *my_name = "process_defaults" ;
           if(n<1) exit(0) ;
         }
 #else
-        n = 4 ;
+        n = 9 ;
 #endif
       }else if(1==n_dirs){
         n = 1 ;
@@ -329,7 +283,7 @@ char *my_name = "process_defaults" ;
         printf("    List of routes:\n") ;
         print_bt_nodes_with_count_and_index(bt_dirs) ;
         if(n_dirs > 1){
-#ifndef DEBUG1
+#if ! defined Basic_Test && ! defined DEBUG1
           n = 0 ;
           while(n<1 || n>n_dirs){
             printf("  Enter index of route to use (0 to exit):\n") ;
@@ -337,7 +291,7 @@ char *my_name = "process_defaults" ;
             if(n<1) exit(0) ;
           }
 #else
-          n = 7 ;
+          n = 2 ;
 #endif
           bt_node = find_bt_node_with_index(bt_dirs,n) ;
         }else if(n_dirs == 1){
@@ -380,11 +334,20 @@ char *my_name = "process_defaults" ;
 /*
  *  Free malloc storage
  */
+#if 0
+//      if(home)   free(home)   ;
+      if(dotdir) free(dotdir) ;
+      if(config) free(config) ;
+      if(fonts)  free(fonts)  ;
+      if(routes_dir) free(routes_dir) ;
+      if(line)   free(line)   ;
+      for(i=0;i<3;i++)if(token_a[i])free(token_a[i]);
+//      if(token)  free(token)  ;
+      if(string1) free(string1) ;
+      if(string2) free(string2) ;
+#endif
+
       gclose(fptr) ;
-      free(dotdir) ;
-      free(config) ;
-      free(line)   ;
-      for(i=0;i<3;i++)free(token_a[i]);
 
       printf("  AA ORdir   = %s\n",ORdir) ;
       printf("  ORroute    = %s\n",ORroute) ;
@@ -393,6 +356,12 @@ char *my_name = "process_defaults" ;
         printf("   ORdir      = %s\n",ORdir);
         printf("   ORroutedir = %s\n",ORroutedir);
       }
+/*
+ *  Free Btree
+ */
+      bt_walk_b2t(ORdirs,free) ;
+//      if(ORdirs)free(ORdirs) ;
+
 #ifdef ROUTE_MSTS
       printf("   Program ZR will use MSTS route %s\n",msts_route) ;
       free(ORdir) ;
@@ -400,11 +369,13 @@ char *my_name = "process_defaults" ;
       free(ORroutedir) ;
       ORroutedir = malloc(strlen(ORdir)+strlen(msts_route)+10) ;
       strcpy(ORroutedir,ORdir) ;
-      strcat(ORroutedir,"ROUTES/") ;
+      strcat(ORroutedir,"/ROUTES/") ;
       strcat(ORroutedir,msts_route) ;
       strcat(ORroutedir,"/") ;
       printf("   Home directory  = %s\n",ORdir);
       printf("   Route directory = %s\n",ORroutedir);
 #endif
+
+
       return ;
 }

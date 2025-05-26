@@ -21,6 +21,8 @@
  *  5.  Search Top Sound directory
  *  6.  Search MSTS sound directory
  */
+#ifdef OPENAL
+
 #include <errno.h>
 #include <sys/stat.h>
 #include <ftw.h>
@@ -47,6 +49,7 @@ char *find_wagon_wave_file(RawWagonNode *rw, char *wav_file){
       if(ip)printf("  Enter routine %s\n",my_name) ;
       if(ip)printf("    Wagon       = %s\n",rw->name) ;
       if(ip)printf("    Wagon File  = %s\n",rw->file) ;
+
       if(ip)printf("    SMS   File  = %s\n",rw->sms_node->sms_fullfilename) ;
       if(ip)printf("    Sound File  = %s\n",wav_file) ;
 /*
@@ -146,6 +149,7 @@ char *find_wagon_wave_file(RawWagonNode *rw, char *wav_file){
         printf("  Routine %s error\n",my_name) ;
         printf("    Unable to find wagon sound file\n") ;
       }
+
       return NULL ;
 }
 
@@ -176,6 +180,9 @@ int check_nftw_file(const char *fpath,
                                    my_name, level, base, fpath) ;
       return 1 ;                                //  File found
 }
+
+
+#endif
 
 char *make_filename_3(char *name1, char *name2, char *name3){
 
@@ -215,3 +222,5 @@ char *make_filename_5(char *name1, char *name2, char *name3, char *name4, char *
       strcat(name,name5) ;
       return name ;
 }
+
+

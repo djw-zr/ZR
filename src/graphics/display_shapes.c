@@ -322,7 +322,7 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
                                 (void *)texture,gl_tex_ref_no) ;
             }
 
-            if(texture == NULL && ierror++<20){
+            if(!texture && ierror++<20){
 //  Used to debug but causes continuous errors with MSTS Route Japan 2.
               printf(" **********************%s*********************************\n",
                      my_name);
@@ -340,7 +340,7 @@ uint i ;
               if(ierror<3)print_shape_file_data(snode) ;
               printf(" ******************************************************************\n");
               break ;
-            }else{
+            }else if(texture){
               if(GL_TRUE != glIsTexture( texture->gl_tex_ref_no) && ierror++<20){
               printf(" **********************shape_dlist*********************************\n");
               printf("  Routine: %s.  Image unloaded !\n",my_name);
@@ -1028,7 +1028,8 @@ uint  k;
   //  GL_BLEND    - Odd
   //  GL_ADD      - Black region of decal is green - rest white
   //  GL_COMBINE  - Lines are black - rest is green - Correct??
-                glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_COMBINE) ;
+
+                glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE) ;
                 glColor4fv(light_tab->colour) ;   //  Red, Green, Blue, Alpha
   #if 0
                 glBegin(GL_TRIANGLE_FAN) ;

@@ -41,7 +41,9 @@ double interpolate_array(int nn, double xx, double *xa, double *ya) ;
 
 
 int  process_args(int argc, char **argv) ;
-void process_defaults(void)                  ;
+void process_defaults(void)              ;
+int  load_splash_screen(void) ;
+int  init_texture_node(TextureNode *texture) ;
 int  init_system(void) ;
 int  init_data_structures(void) ;
 int  init_pdb(char *filename) ;
@@ -185,8 +187,9 @@ void  join_trains(TrainNode *t0, TrainNode *t1, int i_collide) ;
 int   create_wagon_shape_node(RawWagonNode *w) ;
 int   scan_for_wagon_files(void) ;
 int   initialise_wagon_openal_variables() ;
-// Sounds
 
+// Sounds
+#ifdef OPENAL
 int   link_world_sounds_to_sms_nodes(void) ;
 int   load_sound_files(void) ;
 int   load_sound_sms_file(SMS_Node *sms_node, char *filename) ;
@@ -200,7 +203,6 @@ int   load_wave_file(char* filename, char **data, ALenum *format, ALsizei *size,
 int   print_sms_node(RawWagonNode *rw) ;
 int   set_sms_group(RawWagonNode *rw) ;
 
-#ifdef OPENAL
 int  setup_train_sms_nodes(void) ;
 int  initial_train_sounds(void) ;
 int  update_train_sounds(void) ;
@@ -346,3 +348,9 @@ int    freetype_init(void) ;
 #ifdef OPENAL
 int  setup_openal(int argc, char **argv) ;
 #endif
+
+#ifdef SHADERS
+int      shaders_init();
+#endif
+
+

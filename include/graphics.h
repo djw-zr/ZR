@@ -102,11 +102,13 @@ GLfloat  gl_offset2 = -2.0    ;
  *
  */
 
-int   main_window_width  = 1500 ;
+int   main_window_width  = 1500 ;   //  Initial dimension of the viewport
 int   main_window_height = 1000 ;
 int   main_window_x0     =  100 ;
 int   main_window_y0     =  100 ;
-
+/*
+ *  When the window is resized the viewport variables are updated
+ */
 GLsizei  viewport_width  = 1500 ;   // = main_window_width
 GLsizei  viewport_height = 1000 ;   // = main_window_height
 GLsizei  viewport_x0     =  100 ;   // = main_window_x0
@@ -536,7 +538,7 @@ GLfloat   light0_polar = 150.0 ;      //  Polar angle of light0 (North = 0)
 GLfloat   light0_ambi  =   0.7 ;      //  Intensity of 'ambient' white light0
 GLfloat   light0_diff  =   1.0 ;      //  Intensity of 'diffusive' white light0
 GLfloat   light0_spec  =   0.2 ;      //  Intensity of 'specular' white light0
-GLfloat   light0_shin  =   0.5 ;      //  Shininess
+GLfloat   shininess  = 100.0 ;      //  Intensity of 'specular' white light0
 
 
 

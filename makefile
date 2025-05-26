@@ -32,9 +32,9 @@ SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout src/setup
 #  Specify Compiler and Compiler Options
 CC       = gcc
 LD       = gcc
-CFLAGS   = -m64 -march=native -mcmodel=large
-CFLAGS  += -O3 #         Level 3 compiler optimisation
-#CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
+CFLAGS   = -m64 -march=native -mcmodel=medium
+#CFLAGS  += -O3 #         Level 3 compiler optimisation
+CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable
@@ -43,38 +43,43 @@ CFLAGS  += $(foreach dir, $(INC_DIR), $(addprefix -I, $(dir)))
 CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 
 #  Specify pre-processor options
+#CFLAGS += -DBasic_Test # Set default test values for route, consists etc.
 #CFLAGS  += -Dsketch_tracks_and_roads #  Plot outline of roads/tracks
 #CFLAGS  += -Dgrid_lines #          Outline tiles
 #CFLAGS  += -Dfull_topog #          Plot all topography
-CFLAGS  += -Dkb_dev #              Keyboard with modified 'flying' keys
 #CFLAGS  += -Dgeo_coord #           Use x=east, y=north, z=up for shapes
 #CFLAGS  += -D_Display_Shapes #
 #CFLAGS  += -D_Display_Wagons  #
 #CFLAGS  += -D_Display_Textures #
-CFLAGS  += -Duse_vertex_arrays
+#CFLAGS  += -Dno_vertex_arrays
 #CFLAGS  += -Dtexture_short
 #CFLAGS  += -Dnormal_byte
-CFLAGS += -Dculling_off_for_wagons
-CFLAGS += -D_MultiSample
-#CFLAGS += -Dzr_freetype #    -Dfreetype would rename directory
-#CFLAGS += -DMinGW #          Use system_alt.c routines
-#CFLAGS += -DOPENAL #         Setup OpenAL system (in development)
-#CFLAGS += -DROUTE_USA1 #     Northeast Corridor
-#CFLAGS += -DROUTE_USA2 #     Marias Pass
-#CFLAGS += -DROUTE_EUROPE1 #  Settle line
-#CFLAGS += -DROUTE_EUROPE2 #  Innsbruck - St Anton
-#CFLAGS += -DROUTE_JAPAN1 #   Tokyo - Hakone
-#CFLAGS += -DROUTE_JAPAN2 #   Hisatsu Line             Segmentation
+#CFLAGS += -Dculling_on_for_wagons  #  Some wagons need back face culling off
+#CFLAGS += -D_NoMultiSample #  MultiSampling turned off
+#CFLAGS += -Dzr_freetype #     -Dfreetype would rename directory
+#CFLAGS += -DMinGW #           Use system_alt.c routines
+#CFLAGS += -DOPENAL #          Setup OpenAL system (in development)
+#CFLAGS += -DROUTE_USA1 #      Northeast Corridor
+#CFLAGS += -DROUTE_USA2 #      Marias Pass
+#CFLAGS += -DROUTE_EUROPE1 #   Settle line
+#CFLAGS += -DROUTE_EUROPE2 #   Innsbruck - St Anton
+#CFLAGS += -DROUTE_JAPAN1 #    Tokyo - Hakone
+#CFLAGS += -DROUTE_JAPAN2 #    Hisatsu Line             Segmentation
 #CFLAGS += -DROUTE_TUTORIAL
 #CFLAGS += -DROUTE_AU_NSW_SW_SS
 #CFLAGS += -DROUTE_NEW_FOREST
 CFLAGS += -DNO_ROUTE_DEF
+CFLAGS += -DSHADERS
 #CFLAGS += -DDISPLAY_5_SECONDS # Used for remote tests over a slow network
 #
 #   Option to circumvent linker error with OpenAL functions.  See:
 # https://maskray.me/blog/2021-01-09-copy-relocations-canonical-plt-entries-and-protected
 
 CFLAGS += -fpie -fopenmp
+
+#  Movie Options  FFMPEG or LIBPNG or PPM
+#MOVIE = FFMPEG
+#
 
 #  Conditionals
 
@@ -88,6 +93,14 @@ ifeq ($(SOUND),OPENAL)
   CFLAGS  += -DOPENAL
 #  LIBGL   += -lopenal -lalut
   LIBGL   += -lopenal
+endif
+ifeq ($(MOVIE),FFMPEG)
+  CFLAGS += -DFFMPEG
+  LIBGL += -lavcodec -lavutil -lswscale
+endif
+ifeq ($(MOVIE),LIBPNG)
+  CFLAGS += -DLIBPNG
+  LIBGL += -lpng
 endif
 
 LIBGL   += -lfreetype

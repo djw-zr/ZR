@@ -20,7 +20,6 @@
 TextureNode *new_texture_struct(int width, int height,
                                GLenum mem_format, GLenum mem_packing,
                                char *filename, char *full_filename) ;
-int  init_texture_node(TextureNode *texture)            ;
 int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja) ;
 
 

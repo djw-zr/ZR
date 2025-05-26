@@ -441,27 +441,92 @@ ConsistNode *c ;
       return consist ;
 }
 
+/*
+ *  The WagonData tokens in the consist files consist of:
+ *    1. The name of a wagon directory plus
+ *    2. The name of a wagon
+ *  This routine searches for a match.  If not found it
+ *    1. Sees if a wagon shape in the directory has the right name
+ *    2. Sees if any wagon has the right name
+ *    2. Sees if any wagon shape has the right name
+ */
+
 int add_wagon_to_consist(ConsistNode *consist, char *wagon_name, char *directory){
 
   int           ip = 0 ;
   RawWagonNode  *rw    ;
   RawWagonNode  *raw_wagon = NULL ;
   DLPointerNode *new_node ;
+  char  *core_name = NULL ;
   char  *my_name = "add_wagon_to_consist" ;
 
       if(ip)printf("  Enter routine '%s'\n",my_name) ;
 
       for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next) {
         if(strcmp(rw->name, wagon_name))continue;
+        if(strcmp(rw->parent_dir, directory )) continue;
         raw_wagon = rw ;
         break ;
       }
+/*
+ *  Check shapes in the same directory
+ */
+      if(raw_wagon == NULL){
+        for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next) {
+          if(core_name)free(core_name) ;
+          core_name = zr_basename2(rw->file) ;
+#if 0
+          printf(" BB  wagon     = $%s$\n",wagon_name) ;
+          printf("     file      = $%s$\n",file) ;
+          printf("     directory = $%s$\n",directory);
+          printf("     parent    = $%s$\n",rw->parent_dir);
+          printf("     test 1  = $%i$\n",strcmp_ic(core_name, wagon_name));
+          printf("     test 2  = $%i$\n",strcmp_ic(rw->parent_dir, directory ));
+#endif
+          if(strcmp_ic(core_name, wagon_name))continue;
+          if(strcmp(rw->parent_dir, directory )) continue;
+          raw_wagon = rw ;
+          break ;
+        }
+      }
+/*
+ *  Check if any wagon has the right name
+ */
+      if(raw_wagon == NULL){
+        for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next) {
+          if(strcmp(rw->name, wagon_name))continue;
+          raw_wagon = rw ;
+          break ;
+        }
+      }
+/*
+ *  Check if any wagon shape has the right name
+ */
+      if(raw_wagon == NULL){
+        for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next) {
+          if(core_name)free(core_name) ;
+          core_name = zr_basename2(rw->file) ;
+          if(strcmp_ic(core_name, wagon_name))continue;
+          raw_wagon = rw ;
+          break ;
+        }
+      }
+      if(core_name)free(core_name) ;
+/*
+ *  Error
+ */
       if(raw_wagon == NULL){
         printf("  Routine '%s' error.  Unable to find wagon.\n", my_name) ;
         printf("    Consist name = %s\n",consist->name) ;
         printf("    Description  = %s\n",consist->description) ;
         printf("    Wagon name   = %s\n",wagon_name) ;
         printf("    Directory    = %s\n",directory)  ;
+        printf("    List of wagons in directory:\n") ;
+        for(rw = rawwagonlist_beg; rw != NULL; rw = rw->next) {
+          printf("      Wagon name = %s\n",rw->name) ;
+          printf("           Shape = %s\n",rw->s_file) ;
+          raw_wagon = rw ;
+        }
         return 1 ;
       }
 /*

@@ -71,7 +71,9 @@ int update_signals(void){
 int update_signal(SignalDB *signal, int icount){
 
   int  ip = 0;
-  int  i, j, k, uid, wuid, ifound;
+  int  i, j, k, kk, uid, wuid ;
+  int  draw_alt[8][8] = {{1, -1}, {0, -1}, {3,4,5,6,7,-1}, {4,5,2,6,7,-1},
+                         {5,3,2,6,7,-1}, {4,3,2,6,7,-1}, {7,-1}, {6,-1}} ;
   static int   ecount = 0  ;
   SignalObj    *sig_object ;
   RawSignalDB  *raw_signal ;
@@ -88,21 +90,63 @@ int update_signal(SignalDB *signal, int icount){
 //      ip = (1570 == signal->uid) ;
 //      ip = (n_sig1 == uid)  ;   // n_sig defined in zr.c
 //      ip = (n_sig1 == uid) && l_time_5s  ;   // n_sig defined in zr.c
+//      ip =  wuid == 696 || wuid == 699 ;
       if(ip){
         printf("====================================================\n") ;
         printf("  Enter routine %s.  Signal = %i\n",my_name,signal->uid) ;
       }
 /*
  *  Catch errors
+ *  Some signals scrips ask for signal aspects which are not available.
+ *  The following code searches for a plausible alternative.  If an alternative
+ *  cannot be found the flag 'sig_draw_ia' is changed from the default '-1' to '-2'
+ *  and the signal skipped.
  */
       k = signal->state ;
-      ifound = 0 ;
-/*
- *  Some signals, i.e. Theatre displays in the MECoast route have no aspects
- *  As these cannot be handled yet they are skipped.
- */
       if(sig_type->n_sig_aspects == 0) return 0 ;
-
+      if(sig_type->sig_draw_ia[k] < 0){
+        if(sig_type->sig_draw_ia[k] == -2) return 0 ;
+        kk = k ;
+        for(i=0;(i<8 && draw_alt[k][i]>=0);i++){
+          if(sig_type->sig_draw_ia[draw_alt[k][i]] >= 0){
+            kk = draw_alt[k][i] ;
+            break ;
+          }
+        }
+/*
+ *  If a match is found, copy it position k in the arrays
+ */
+        if(k != kk){
+          if(ip){
+            printf("  Routine %s.  Signal type = %s\n", my_name, signal->sig_type->name);
+            printf("      Aspect %i (%s) not supported.\n", k, token_signal_aspect[k] ) ;
+            printf("      Replaced by aspect %i (%s).\n", kk, token_signal_aspect[kk]) ;
+          }
+          sig_type->sig_draw_ia[k] = sig_type->sig_draw_ia[kk];
+          sig_type->sig_draw[k]    = sig_type->sig_draw[kk];
+          sig_type->sig_aspect_ia[k] = sig_type->sig_aspect_ia[kk];
+          sig_type->sig_aspect[k]    = sig_type->sig_aspect[kk];
+        }else{
+/*
+ *  Otherwise print an error message and set the indices index to -2 to prevent
+ *  further messages.
+ */
+          printf("  ++++++++++++++++++ SIGNAL ERROR ++++++++++++++++++++++\n") ;
+          printf("  Routine %s.  Aspect %i (%s) of signal type %s is not suported.\n",
+                    my_name, k, token_signal_aspect[k], signal->sig_type->name) ;
+          printf("    Signal draw array   = ") ;
+          for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_draw_ia[j],
+                                    (void *)sig_type->sig_draw_a[j] ) ;
+          printf("\n") ;
+          printf("    Signal aspect array = ") ;
+          for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_aspect_ia[j],
+                                    (void *)sig_type->sig_aspect_a[j] ) ;
+          printf("\n") ;
+          sig_type->sig_draw_ia[k]   = -2 ;
+          sig_type->sig_aspect_ia[k] = -2 ;
+        }
+      }
+#if 0
       if(sig_type->sig_draw_ia[k] == -1 && ecount++ < 4){
         printf("  ++++++++++++++++++ SIGNAL ERROR ++++++++++++++++++++++\n") ;
         printf("  Routine %s entered.  Signal = %i %s.  State = %i\n",
@@ -132,6 +176,7 @@ int update_signal(SignalDB *signal, int icount){
         }
         printf("  Routine %s : state set to %i\n", my_name, signal->state) ;
       }
+#endif
 /*
  * Debug print statements
  */

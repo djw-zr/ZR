@@ -108,6 +108,7 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
 /*
  * Trigger uncoupling sounds triggers 61, 62 and 63
  */
+#ifdef OPENAL
       add_snd_trigger_to_list(&(first_wagon->snd_trigger), 61 ) ;
       add_snd_trigger_to_list(&(first_wagon->snd_trigger), 62 ) ;
       add_snd_trigger_to_list(&(first_wagon->snd_trigger), 63 ) ;
@@ -115,6 +116,7 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
       add_snd_trigger_to_list(&(last_wagon->snd_trigger), 61 ) ;
       add_snd_trigger_to_list(&(last_wagon->snd_trigger), 62 ) ;
       add_snd_trigger_to_list(&(last_wagon->snd_trigger), 63 ) ;
+#endif
 
       if(ip){
         if(ip)printf(" ZZ GG\n") ;
@@ -270,6 +272,7 @@ void join_trains(TrainNode *t0, TrainNode *t1, int i_collide) {
 /*
  * Trigger coupling sounds : triggers 58, 59 and 60
  */
+#ifdef OPENAL
       add_snd_trigger_to_list(&(w0->snd_trigger), 58 ) ;
       add_snd_trigger_to_list(&(w0->snd_trigger), 59 ) ;
       add_snd_trigger_to_list(&(w0->snd_trigger), 60 ) ;
@@ -277,6 +280,7 @@ void join_trains(TrainNode *t0, TrainNode *t1, int i_collide) {
       add_snd_trigger_to_list(&(w1->snd_trigger), 58 ) ;
       add_snd_trigger_to_list(&(w1->snd_trigger), 59 ) ;
       add_snd_trigger_to_list(&(w1->snd_trigger), 60 ) ;
+#endif
 
 
       if(ip){

@@ -1,0 +1,18 @@
+Commit 0.6.4
+============
+
+    ZR was initially developed using the Australian Zig-zag route and the
+    standard MSTS routes.  Tests with other routes showed a number of bugs,
+    some of which being due to errors in the route files which OpenRails
+    sidesteps.  This commit includes a number of bug fixes of both kinds.
+    
+    The commit includes an option to geenrate a movie (as yet without a
+    sound channel) either be generating a set of png images or by using
+    the ffmpeg library.
+    
+    It also includes an initial trial of a shader which is used for the 
+    parts of the display which do not need the lighting calculations or
+    the use of textures.
+    
+    Bothe of the new options can be included by setting the corresponding
+    flags in the makefile.

@@ -703,7 +703,7 @@ int read_elevations(TileListNode *tlnode){
  */
       if(!iret)fp = gopen(full_name,"rb");
       if(iret || NULL == fp){
-        printf(" Routine %s,   file not found : %s\n",myname,name);
+        printf("   Routine %s,   file not found : %s\n",myname,name);
         free(full_name);
         return 1 ;
       }else{

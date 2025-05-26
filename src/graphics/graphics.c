@@ -370,9 +370,19 @@ void makeCheckImages(void)
  *==============================================================================
  */
 double tile_height(int tile_x, int tile_y, int i, int j, int len){
-  int          nn, nt;
+  int ip = 0 ;
+  int nn, nt ;
   TileListNode *tile_node ;
+  char *my_name = "tile_height" ;
 
+      ip = ip && tile_x == 1373 && tile_y == 10261 ;
+      if(ip){
+        printf("  Routine %s\n",my_name) ;
+        printf("    tile_x = %i, tile_y = %i, i = %i, j = %i, len = %i\n",
+                               tile_x, tile_y, i, j, len) ;
+        printf("    tile_west = %i, tile_east = %i, tile_south = %i, tile_north = %i\n",
+                    tile_west, tile_east, tile_south, tile_north) ;
+      }
       if(i<0){
         tile_x = tile_x - 1 ;  i = i + len  ;
       }else if(i>len-1){
@@ -389,8 +399,20 @@ double tile_height(int tile_x, int tile_y, int i, int j, int len){
       nn = (tile_y-tile_south)*nt + tile_x - tile_west ;
       tile_node = tile_array[nn] ;
 
-      if(tile_node == NULL || tile_node->t_found == 0) return 0.0 ;
-
+      if(ip){
+        printf("    nt = %i, nn = %i, tile_node = %p\n", nt, nn, (void *)tile_node) ;
+        if(tile_node)printf("    tile_node->t_found = %i\n",tile_node->t_found) ;
+      }
+      if(tile_node == NULL || tile_node->t_found == 0
+                           || tile_node->terrain_data.elevations == NULL) return 0.0 ;
+      if(ip){
+        printf("    tile_x = %i, tile_y = %i, i = %i, j = %i, len = %i\n",
+                               tile_x, tile_y, i, j, len) ;
+        printf("    floor = %f,  scale = %f, array = %p\n",
+               tile_node->terrain_data.terrain_sample_floor,
+               tile_node->terrain_data.terrain_sample_scale,
+               (void *) tile_node->terrain_data.elevations) ;
+      }
       return tile_node->terrain_data.terrain_sample_floor
            + tile_node->terrain_data.terrain_sample_scale
            * tile_node->terrain_data.elevations[j*len + i] ;

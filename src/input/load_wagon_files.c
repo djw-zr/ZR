@@ -200,15 +200,16 @@ int  ip = 0 ;
 int   n               ;
 FILE  *fp             ;
 char  *file_name,           //  Full filename
-        *base_name,           //  Base name inc extension
-        *core_name,           //  Base name without extension
-        *extension,           //  Extension
-        *s_file,              //  File name of shape
-        *string = NULL  ;     //  Used with malloc to construct filenames
-                              //     ... freed when name not needed later
-char *my_name = "create_new_wagon_node" ;
+      *parent_dir,          //  Directory containing wagon
+      *base_name,           //  Base name inc extension
+      *core_name,           //  Base name without extension
+      *extension,           //  Extension
+      *s_file,              //  File name of shape
+      *string = NULL  ;     //  Used with malloc to construct filenames
+                            //     ... freed when name not needed later
 RawWagonNode *wagon_node, *rw ;
 ShapeNode    *shape_node   ;
+char *my_name = "create_new_wagon_node" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -216,14 +217,15 @@ ShapeNode    *shape_node   ;
  *  Malloc variables need to be used permanently or freed.
  */
 #ifdef MinGW
-      file_name = realpath1(fname, NULL)     ;  // malloc
+      file_name  = realpath1(fname, NULL)     ;  // malloc
 #else
-      file_name = realpath(fname, NULL)     ;  // malloc
+      file_name  = realpath(fname, NULL)      ;  // malloc
 #endif
-      base_name = zr_basename(file_name)     ;  // malloc
-      str2lc(base_name)                      ;  // keep names lower case
-      core_name = zr_corename(base_name)     ;  // malloc
-      extension = zr_extension(base_name)    ;  // malloc
+      str2lc(file_name)                       ;  // keep names lower case
+      parent_dir = zr_parentdir(file_name)    ;  // malloc
+      base_name  = zr_basename(file_name)     ;  // malloc
+      core_name  = zr_corename(base_name)     ;  // malloc
+      extension  = zr_extension(base_name)    ;  // malloc
       if(ip)printf("  Name of engine or wagon : %s\n",core_name) ;
       if(ip)printf("  Found wagon file        : %s\n",file_name) ;
 /*
@@ -246,11 +248,10 @@ ShapeNode    *shape_node   ;
 /*
  *  Check this is not below directory named OpenRails (used for extra OR data)
  */
-      string = zr_parentdir(file_name) ;       // malloc
-      if(strcmp(string,"OpenRails")==0){
+      if(strcmp(parent_dir,"OpenRails")==0){
         if(ip)printf("  Exit because of parent\n") ;
         free(file_name) ;
-        free(string)    ;
+        free(parent_dir) ;
         free(base_name) ;
         free(core_name) ;
         free(extension) ;
@@ -271,6 +272,7 @@ ShapeNode    *shape_node   ;
       init_raw_wagon_node(wagon_node)                  ;
       wagon_node->file = file_name                     ;
       wagon_node->name = core_name                     ;
+      wagon_node->parent_dir = parent_dir              ;
       wagon_node->is_engine = !strcmp(extension,"eng") ;
 /*
  *  Unset strings
@@ -780,8 +782,10 @@ int init_raw_wagon_node(RawWagonNode *rw){
       rw->shape      = NULL ;
       rw->f_shape    = NULL ;
       rw->tender     = NULL ;
+#ifdef OPENAL
       rw->sound_file = NULL ;
       rw->sms_node   = NULL ;
+#endif
       rw->full_name  = NULL ;
       rw->type       = NULL ;
 

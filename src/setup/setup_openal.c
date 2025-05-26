@@ -68,8 +68,11 @@ int  setup_openal(int argc, char **argv){
       alGetError();
 /*
  *  Create context
+ *  In practice the maximum number of sources appears to be fixed at 256
  */
-      al_context = alcCreateContext(al_device, NULL);
+ALCint attributes[] = { ALC_MONO_SOURCES, 512, ALC_STEREO_SOURCES, 512 /* end of list */ } ;
+
+      al_context = alcCreateContext(al_device, attributes) ;
       if (!alcMakeContextCurrent(al_context)) {
         fprintf(stderr, "  failed to make default context\n");
         return -1;

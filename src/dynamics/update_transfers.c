@@ -8,7 +8,7 @@
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
- *   Routines used to initialise and update transfers - of water, coal adn oil
+ *   Routines used to initialise and update transfers - of water, coal and oil
  *   to engines and other goods to wagons.
  *
  *==============================================================================

@@ -53,14 +53,39 @@ char        string[2048] ;
       xx = (xc - ((int)xc) - 0.5)*tile_size ;
       yy = (yc - ((int)yc) - 0.5)*tile_size ;
       zz = tile_h0 + zc*tile_size ;
-      glBegin(GL_LINES) ;
+/*
+ *  Display unit sphere with lighting
+ */
+      if((display_info & 4) && 1){
+  GLfloat  mat_amb[]  = {0.1, 0.1, 0.1, 1.0} ;  //  Value in shadow
+  GLfloat  mat_dif[]  = {0.0, 0.0, 0.0, 1.0} ;  //  Value lighted
+  GLfloat  mat_spc[]  = {1.0, 1.0, 1.0, 1.0} ;  //  Highlights
+  GLfloat  mid_shi[]  = {  50.0 };
+
+        glMaterialfv(GL_FRONT,GL_SPECULAR, mat_spc) ;
+        glMaterialfv(GL_FRONT,GL_SHININESS, mid_shi) ;
+
+        glColor3f((GLfloat) 1.0, (GLfloat) 1.0, (GLfloat) 1.0) ; //White
+        glEnable(GL_LIGHTING) ;
+        glEnable(GL_LIGHT0) ;
+        glPushMatrix() ;
+        glTranslatef(xc, yc, zc) ;
+        glutSolidSphere(m2d, 20, 16) ;
+        glPopMatrix() ;
+        glDisable(GL_LIGHTING) ;
+/*
+ *  else display crossed line at look-at point
+ */
+      }else{
+        glBegin(GL_LINES) ;
         glVertex3d(xc-1.0*m2d, yc, zc) ;
         glVertex3d(xc+1.0*m2d, yc, zc) ;
         glVertex3d(xc, yc-1.0*m2d, zc) ;
         glVertex3d(xc, yc+1.0*m2d, zc) ;
         glVertex3d(xc, yc, zc-1.0*m2d) ;
         glVertex3d(xc, yc, zc+1.0*m2d) ;
-      glEnd() ;
+        glEnd() ;
+      }
 #endif
       glColor3f((GLfloat)1.0,(GLfloat)1.0,(GLfloat)1.0) ;
       sprintf(string," - Lookat Point :: %f %f %f :: %i %i : %f %f %f\n",

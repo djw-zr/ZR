@@ -76,6 +76,7 @@ MSfile msfile  ;
  *  Check for 'TrackNodes' token
  * *****************************************************************************
  */
+      i = 0 ;
       token = new_tmp_token(&msfile) ;    // Temporaty token !!
       string = (char *)"TrackNodes" ;
       if(0 != strcmp(token,string)) error2(myname,ffname,datafile,string);
@@ -85,7 +86,7 @@ MSfile msfile  ;
  */
       track_db.trk_sections_array_size = itoken(&msfile) ;
       track_db.trk_sections_array = (TrkSector *)
-              malloc(track_db.trk_sections_array_size*sizeof(TrkSector));
+      malloc(track_db.trk_sections_array_size*sizeof(TrkSector));
 /*
  *   Cycle over the set of track sections
  */

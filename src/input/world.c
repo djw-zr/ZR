@@ -176,7 +176,7 @@ int  load_world(WorldNode *wnode){
 
 
 //      ip1 = wnode->tile_x == -6074 && wnode->tile_y == 14922 ;
-//      ip1 = wnode->tile_x == -6074 && wnode->tile_y == 14922 ;
+//      ip1 = wnode->tile_x == 1611 && wnode->tile_y == 10582 ;
       ip = ip1 ;
 
       if(ip1)printf("\n  Enter routine : %s\n",my_name);
@@ -247,6 +247,7 @@ int  load_world(WorldNode *wnode){
           close_msfile(msfile) ;
           free(parent_dir) ;
           free(full_parent_dir) ;
+          if(ip)printf(" Routine %s.  At normal exit/return\n",my_name);
           return 1;
         }
         if(istoken == -2){
@@ -367,8 +368,9 @@ int  load_world(WorldNode *wnode){
           wnode->tr_watermark = read_int32_a(msfile) ;
 /*
  *  Unknown token
+ *  301 :  Has contained Copyright comments.  (in Tweed River route)
  */
-        }else if(309 == itoken || 300 == itoken){
+        }else if(309 == itoken || 300 == itoken || 301 == itoken){
           skip_to_bblock_end_a(msfile,msblock1) ;
 
 /*
@@ -497,7 +499,7 @@ int  load_world(WorldNode *wnode){
               itoken2,token_idc[itoken2], msblock2->length-msblock2->l_label-9) ;
             if(UID == itoken2){
               world_item->uid = read_uint32_a(msfile) ;
-              ip = ip1 & (2542 == world_item->uid || 2544 == world_item->uid) ;
+//              ip = ip1 & (2542 == world_item->uid || 2544 == world_item->uid) ;
               if(ip)printf("      world_item->uid         = %i\n",world_item->uid);
 /*
  *  Process shape filename
@@ -930,13 +932,25 @@ DynTrackSect *dyn_trk_sect ;
  */
         }else{
           printf(" Level 1 token not recognised.\n   Token = %i %X :: %s"
-                 " :: block data length = %i %X\n",
+                 " :: block data length = %i %X.   File = %s\n",
            itoken,itoken,token_idc[itoken], msblock1->length-msblock1->l_label-9,
-                                            msblock1->length-msblock1->l_label-9) ;
+                                            msblock1->length-msblock1->l_label-9,
+                                            zr_basename(wnode->wfile) ) ;
           if(is_binary){
-            for(i=ftell(fp);i<msblock1->byte_end;i++){
-              fgetc(fp) ;
+            int j, n = msblock1->byte_end - ftell(fp) + 1;
+            char *string ;
+            string = (char *)malloc(n) ;
+            for(i=ftell(fp), j=0;i<msblock1->byte_end;i++,j++){
+              string[j] = fgetc(fp) ;
             }
+            string[j] = '\0' ;
+            printf("  Data in hexadecimal\n");
+            for(j=0; j<n; j++)printf("%2X ",string[j]) ;
+            printf("\n") ;
+            printf("  Data in ascii\n") ;
+            for(j=0; j<n; j++)printf("%c",isalnum(string[j]) ? string[j] : '.') ;
+            printf("\n") ;
+            free(string) ;
           }
         }
         if(ip)printf("  Level 1 : world.c : token_unused = %s\n",msfile->token_unused) ;
@@ -1339,7 +1353,9 @@ int  load_world_soundfile(WorldNode *w){
       for(;;){
         if(token2)free(token2) ;
         token2 = ctoken(msfile);
-        if(is_rbr(token2)) break ;
+        if(ip)printf("      Level 2 AA :: token2 = %s \n",token2) ;
+        if(is_rbr(token2)) break ;  // Level 1 end bracket
+        if(ip)printf("      Level 2 BB :: token2 = %s \n",token2) ;
         SWITCH(token2)
           CASE("Soundsource")
             skip_lbr(msfile) ;
@@ -1359,7 +1375,9 @@ int  load_world_soundfile(WorldNode *w){
             for(;;){
               if(token3)free(token3) ;
               token3 = ctoken(msfile) ;  // NOTE use before skip_lbr
-              if(is_rbr(token3)) break ;
+              if(ip)printf("      Level 3 AA :: token3 = %s \n",token3) ;
+              if(is_rbr(token3)) break ; // Level 2 end bracket
+              if(ip)printf("      Level 3 BB :: token3 = %s \n",token3) ;
               SWITCH(token3)
                 CASE("Position")
                   skip_lbr(msfile) ;
@@ -1424,6 +1442,7 @@ int  load_world_soundfile(WorldNode *w){
               if(token3)free(token3)   ;
               token3 = ctoken(msfile)  ;
               if(is_rbr(token3)) break ;
+              if(ip)printf("      Level 3 :: token3 = %s \n",token3) ;
               SWITCH(token3)
                 CASE("UiD")
                   skip_lbr(msfile) ;
@@ -1511,7 +1530,7 @@ int  load_world_soundfile(WorldNode *w){
             return 2 ;
         END
       }
-      skip_rbr(msfile) ;
+//      skip_rbr(msfile) ;
       if(token3)free(token3) ;
       if(token2)free(token2) ;
       if(token1)free(token1) ;

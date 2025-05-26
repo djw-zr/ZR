@@ -86,25 +86,31 @@ int init_road_db(char * filename)
 /*
  * *****************************************************************************
  *  Check for 'TrItemTable' token
+ *  Sometimes there may be no
  * *****************************************************************************
  */
     token = new_tmp_token(&msfile) ;    // Temporaty token !!
     string = (char *)"TrItemTable" ;
-    if(0 != strcmp(token,string)) error2(myname,ffname,datafile,string);
-    skip_lbr(&msfile) ;           // skip left bracket
+    if(0 != strcmp(token,string)){
+      printf("  Road database contains no track item table\n") ;
+      return_token(token, &msfile) ;
+    }else{
+      skip_lbr(&msfile) ;           // skip left bracket
 //    printf("\n  New TrItemTable list\n");
 /*
  *  Read and store number of track items
  */
-    road_db.trk_items_array_size = itoken(&msfile) ;
+      road_db.trk_items_array_size = itoken(&msfile) ;
 //    printf("  road_item_array_size = %i\n",road_db.trk_items_array_size);
-    road_db.trk_items_array = (TrkItem *)
+      road_db.trk_items_array = (TrkItem *)
                   malloc(road_db.trk_items_array_size*sizeof(TrkItem));
 /*
  *   Cycle over the track items
  */
-    for(i=0;i<(int)road_db.trk_items_array_size;i++){
-      read_road_item(&road_db.trk_items_array[i],&msfile) ;
+      for(i=0;i<(int)road_db.trk_items_array_size;i++){
+        read_road_item(&road_db.trk_items_array[i],&msfile) ;
+      }
+      skip_rbr(&msfile) ;
     }
 /*
  * *****************************************************************************

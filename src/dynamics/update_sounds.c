@@ -64,6 +64,7 @@ int update_sounds(void){
   int ip = 0 ;
   int i, nn, mm, ip1 ;
   static int first_pass = 1;
+  static int snd_buf_errors = 0;
   int n_streams,  i_stream  ;
   int n_triggers, i_trigger ;
   int tile_x, tile_y ;
@@ -346,8 +347,11 @@ ALuint     source ;
                   if(ip1)printf("    Create buffer %i using alutCreateBufferHelloWorld."
                          "Alut Error = %s\n", source, alutGetErrorString(alutGetError())) ;
 #else
-                  printf("  Routine %s.  Buffer missing for SMS %s, Stream %i, Trigger %i, wav file %s\n",
+                  if(snd_buf_errors<30){
+                    snd_buf_errors++ ;;
+                    printf("  Routine %s.  Buffer missing for SMS %s, Stream %i, Trigger %i, wav file %s\n",
                          my_name, sndobj_node->sms_file, i_stream, i, smsfil_node->wav_file) ;
+                  }
                   continue ;
 #endif
                 }

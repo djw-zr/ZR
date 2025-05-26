@@ -29,27 +29,6 @@ int init_data_structures(){
  *  Define route files - [Eventually these should be searched for]
  */
 
-#if defined ROUTE_MSTS  || defined ROUTE_AU_NSW_SW_SS
-  char *pdb_file0 = msts_pdb_file ;
-  char *tdb_file0 = msts_tdb_file ;
-  char *rdb_file0 = msts_rdb_file ;
-#elif defined ROUTE_NEW_FOREST
-// Project file : Name, Description, Route start
-  char pdb_file0[] = "Watersnake.trk" ;
-// Track data base : nodes, crossings etc.
-  char tdb_file0[] = "Watersnake.tdb" ;
-// Road data base  : nodes etc.
-  char rdb_file0[] = "Watersnake.rdb" ;
-#else
-// Project file : Name, Description, Route start
-  char pdb_file0[] = "au_great_zig_zag.trk" ;
-// Track data base : nodes, crossings etc.
-  char tdb_file0[] = "au_great_zig_zag.tdb" ;
-// Road data base  : nodes etc.
-  char rdb_file0[] = "au_great_zig_zag.rdb" ;
-// Splash Image
-//  char spl_file[] = "au_great_zig_zag.ace" ;
-#endif
   char spl_file[] = "au_great_zig_zag.ace" ;
 
 char *pdb_file ;
@@ -81,17 +60,10 @@ char           my_name[] = "init_data_structures" ;
       printf("  ORroutedir = %s\n",ORroutedir) ;
       printf("  MSTSdir    = %s\n",MSTSdir) ;
 
-#if 0
-      pdb_file = pdb_file0 ;
-      tdb_file = tdb_file0 ;
-      rdb_file = rdb_file0 ;
-#else
-      printf("  Construct names.  ORroute = %s\n",ORroute) ;
       n = strlen(ORroute) + 5 ;
       pdb_file = (char *)malloc(n) ;
       strcpy(pdb_file,ORroute) ;
       strcat(pdb_file,".trk") ;
-#endif
       iret = zr_find_msfile2(&pdb_file) ;
       if(iret){
         free(pdb_file) ;
@@ -106,13 +78,30 @@ char           my_name[] = "init_data_structures" ;
 #endif
 /*
  * *****************************************************************************
+ *  At this point the user has chosen the top level directory and the route.
+ *  In OpenRails the next stage involves a start up screen whenre the user
+ *  chooses the activity or timetable.
+ *
+ *  If an activity is chosen, there are then choices for 'Locomotive',
+ *  'Consist', 'Starting at' and 'Ending at'.  The user can then 'start' the
+ *  program after which a splash screen is shown while the remaining files
+ *  are loaded.
+ *
+ *  This version of ZR does not support timetable mode.  The only activity
+ *  supported is a simple one of driving one or more trains.  For the start
+ *  up screen the needs the names of the consists and locomotives.  It also
+ *  needs some start and end points.
+  *
+ * *****************************************************************************
  *  First read the project files in the route directory. In the
  *  great zig-zag set of tiles this is directory
  *       Routes/au_great_zig_zag
  * *****************************************************************************
  *  The project files are:
  *  1.  The project data base file (*.trk).
- *      The data is stored in a PdbNode structure, the first node
+ *      Unfortunately teh is also a track database file '*.tdb' so to
+ *      prevent confusion the *.trk data is read into a project
+ *      database 'PdbNode' strcture.  This is the first node
  *      in a linked list pointed to by 'pdb_beg' (zr.h).
  */
       printf("***********************************************************\n") ;
@@ -143,7 +132,7 @@ char           my_name[] = "init_data_structures" ;
 /*
  *  3.  The road database (*.rdb)
  *      The data is stored in road_db (zr.h), a structure of
- *      type TrkDataBase.  Contains 1-D arras of road sections
+ *      type TrkDataBase.  Contains 1-D arrays of road sections
  *      and road items
  */
       printf("   Read road database file\n");
@@ -1314,6 +1303,9 @@ char *my_name = "find_trk_file" ;
         trk_file = strdup(f_entry->d_name) ;
         if(ip)printf("    Track file name = %s\n", trk_file);
       }
+      closedir(wdir) ;
+      free(route_dir) ;
+
       return trk_file ;
 }
 

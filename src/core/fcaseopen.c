@@ -37,7 +37,7 @@ static int casepath(char const *path, char *r){
       }
 
       l = strlen(path)  ;
-      p = alloca(l + 1) ;
+      p = alloca(l + 1) ;  // alloca releases mamory when routine returns
       strcpy(p, path)   ;
 
       if (p[0] == '/'){
@@ -68,7 +68,7 @@ static int casepath(char const *path, char *r){
 
         e = readdir(d);
         while (e){
-          if(ip)printf("      Directory e = %s\n",e->d_name) ;
+          if(ip)printf("      Directory e = %s :: %s\n",c,e->d_name) ;
           if (strcasecmp(c, e->d_name) == 0){
             strcpy(r + rl, e->d_name);
             rl += strlen(e->d_name);
@@ -84,6 +84,12 @@ static int casepath(char const *path, char *r){
           strcpy(r + rl, c);
           rl += strlen(c);
           last = 1;
+        }
+        if(p){
+          while(p[0]=='/'){
+            if(ip)printf(" routine %s.  Extra '/' found in filename.\n",my_name) ;
+            p++;  // Skip extra '/'
+          }
         }
         c = strsep(&p, "/");
       }
@@ -109,6 +115,7 @@ char *r = NULL ;;
 #if !defined(_WIN32)
       if (!fp){
         r = alloca(strlen(path) + 3);
+        r[0] = '\0' ;
         if (casepath(path, r)){
           fp = fopen(r, mode);
           if(ip)printf(" fcaseopen : 2.  final path = %s, fp = %p\n",r,(void *)fp) ;

@@ -68,11 +68,12 @@ char    *my_name="keyboard" ;
  */
       if(l_alt){
         switch (key) {
-#ifdef kb_dev
 //  Change intensity of ambient, diffusive and specular light0
+//  The effect of the light on a sphere at the look-at point
+//  can be seen at the end of the Alt-'n' sequence.
           case 'a':
           case 'A':
-            light0_ambi = zr_fclip(light0_ambi +isign * 0.1, 0.0, 1.0) ;
+            light0_ambi = zr_fclip(light0_ambi + isign * 0.1, 0.0, 1.0) ;
             zr_setv4(v4,light0_ambi,light0_ambi,light0_ambi,1.0) ;
             printf("  Light_0 ambient intensity = %f\n",(double)light0_ambi) ;
             glLightfv(GL_LIGHT0,GL_AMBIENT,v4);
@@ -82,7 +83,7 @@ char    *my_name="keyboard" ;
             light0_diff = zr_fclip(light0_diff +isign * 0.1, 0.0, 1.0) ;
             zr_setv4(v4,light0_diff,light0_diff,light0_diff,1.0) ;
             printf("  Light_0 diffusive intensity = %f\n",(double)light0_diff) ;
-            glLightfv(GL_LIGHT0,GL_SPECULAR,v4);
+            glLightfv(GL_LIGHT0,GL_DIFFUSE,v4);
             break ;
           case 's':
           case 'S':
@@ -91,9 +92,16 @@ char    *my_name="keyboard" ;
             zr_setv4(v4,light0_spec,light0_spec,light0_spec,1.0) ;
             glLightfv(GL_LIGHT0,GL_SPECULAR,v4);
             break ;
+          case 'h':
+          case 'H':
+            shininess = zr_fclip(shininess +isign, 0.0, 128.0) ;
+            printf("  Default Material shininess = %f\n",shininess) ;
+            zr_setv4(v4,shininess,shininess,shininess,1.0) ;
+            glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, v4) ;
+            break ;
 //  Change position of light0
-          case 'q':
-          case 'Q':
+          case 'e':
+          case 'E':
             light0_altde = zr_fclip(light0_altde +isign * 10.0, 0.0, 90.0) ;
             printf("  Light_0 altitude = %f\n",(double)light0_altde)    ;
             zr_setp4(v4,light0_altde,light0_polar) ;
@@ -124,7 +132,7 @@ char    *my_name="keyboard" ;
             break ;
           case 'n':
             display_info++ ;
-            if(display_info > 3) display_info = 0 ;
+            if(display_info > 4) display_info = 0 ;
             break ;
           case 'm':
             if(display_info){
@@ -148,20 +156,6 @@ char    *my_name="keyboard" ;
           case 't':
             if(++display_track_info_on >3) display_track_info_on = 0;
             break ;
-#if 0
-/*
- *  Debug display of engines and trucks
- */
-          case 'z':
-            id_shape-- ;
-            break ;
-          case 'x':
-            id_shape = -1 ;
-            break ;
-          case 'c':
-            id_shape++ ;
-            break ;
-#endif
 /*
  *  glutIgnoreKeyRepeat appears to turn it off permanently
  */
@@ -217,7 +211,6 @@ char    *my_name="keyboard" ;
             i_zrt = !i_zrt ;
             if(ip || 1)printf(" Toggle i_zrt = %i\n",i_zrt) ;
             break ;
-#endif
         }
 /*
  *==============================================================================
@@ -235,6 +228,7 @@ char    *my_name="keyboard" ;
             }
             break ;
 //  Bell
+#ifdef OPENAL
           case 'b':
           case 'B':
             if(player_train->motor->bell_on){
@@ -245,6 +239,7 @@ char    *my_name="keyboard" ;
               player_train->motor->bell_on = 1 ;
             }
             break ;
+#endif
 //  Increase speed forwards
           case 'd':
               if(player_train->speed>-0.2){ player_train->speed += 0.1 ; }
@@ -272,10 +267,12 @@ char    *my_name="keyboard" ;
                             && player_train->motor->has_pantographs){
               player_train->motor->pantographs_up =
                          !player_train->motor->pantographs_up ;
+#ifdef OPENAL
               if(player_train->motor->pantographs_up)
                 add_trigger_to_motor(player_train,45) ;
               else
                 add_trigger_to_motor(player_train,46) ;
+#endif
             }
             break ;
 //  Toggle wipers on or off (v - visibility)
@@ -287,11 +284,13 @@ char    *my_name="keyboard" ;
               }else{
                 player_train->motor->wipers_on  = 1 ;
               }
+#ifdef OPENAL
              if(player_train->motor->wipers_on){
                 add_trigger_to_motor(player_train,6) ;
               }else{
                 add_trigger_to_motor(player_train,7) ;
               }
+#endif
             }
             break ;
 //  Toggle mirrors out or in
@@ -315,6 +314,7 @@ char    *my_name="keyboard" ;
 //  Sander
           case 'x':
           case 'X':
+#ifdef OPENAL
             if(player_train->motor->sander_on){
               add_trigger_to_motor(player_train,5) ;
               player_train->motor->sander_on = 0 ;
@@ -322,6 +322,7 @@ char    *my_name="keyboard" ;
               add_trigger_to_motor(player_train,4) ;
               player_train->motor->sander_on = 1 ;
             }
+#endif
             break ;
 //  Switch frame rate on/off
           case 'Z':
@@ -331,8 +332,10 @@ char    *my_name="keyboard" ;
  *  Space - Horn
  */
           case ' ':
+#ifdef OPENAL
             add_trigger_to_motor(player_train,8) ;
             glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
+#endif
             break ;
 //  Switch to camera "n"
           case '1':
@@ -464,8 +467,10 @@ char *my_name="keyboard_up" ;
       }else{
         switch (key) {
           case ' ':
+#ifdef OPENAL
             add_trigger_to_motor(player_train,9) ;
             glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+#endif
             break ;
           default:
             break ;
@@ -519,10 +524,6 @@ void  specialkey(int key, int ixm, int iym)
           del_a ;                       // delta angle (degrees)
   GLfloat v4[4] ;
   double  scalei = 1.0/plot_scale ;
-#ifndef kb_dev
-  double  cu, su ;
-#endif
-
 
       if(ip>1){
         printf("\n") ;
@@ -547,23 +548,14 @@ void  specialkey(int key, int ixm, int iym)
                angle_to_north, angle_to_up);
       }
 
-//      if(current_camera>0 && current_camera<8)scalei = 1.0 ;
-
       l_ctrl  = imod & GLUT_ACTIVE_CTRL  ;
       l_shift = imod & GLUT_ACTIVE_SHIFT ;
-#ifdef kb_dev
       l_alt   = imod & GLUT_ACTIVE_ALT   ;
-// Values for while developing code
+
       del_d = 32.0*scalei ;     //  Step 32 m
       del_a = 1.0 ;             //  Step 1 degrees
       if(l_shift){ del_d *= 32.0 ; del_a  = 30.0 ; }
       if(l_alt)    del_d /= 32.0 ;
-#else
-//  MSS values ?
-      del_d = 1.0*scalei ;      //  Step 1 m
-      del_a = 0.1 ;             //  Step 0.1 degree
-      if(l_shift){ del_d *= 10.0 ; del_a  = 10.0 ; }
-#endif
 /*
  *==============================================================================
  *    Code for Projective (natural) projection
@@ -572,10 +564,6 @@ void  specialkey(int key, int ixm, int iym)
       if(!l_ctrl){
         c = cos(radian_to_north) ;
         s = sin(radian_to_north) ;
-#ifndef kb_dev
-       cu = cos(radian_to_up) ;
-       su = sin(radian_to_up) ;
-#endif
       }
 /*
  *   Text keys
@@ -603,37 +591,19 @@ void  specialkey(int key, int ixm, int iym)
         if(l_ctrl){
           angle_to_up = angle_to_up - del_a ;
         }else{
-#ifdef kb_dev
           offset_eye_x    = offset_eye_x    + del_d*s ;
           offset_center_x = offset_center_x + del_d*s ;
           offset_eye_y    = offset_eye_y    + del_d*c ;
           offset_center_y = offset_center_y + del_d*c ;
-#else
-          offset_eye_x    = offset_eye_x    + del_d*s*su ;
-          offset_center_x = offset_center_x + del_d*s*su ;
-          offset_eye_y    = offset_eye_y    + del_d*c*su ;
-          offset_center_y = offset_center_y + del_d*c*su ;
-          offset_eye_z    = offset_eye_z    + del_d*cu ;
-          offset_center_z = offset_center_z + del_d*cu ;
-#endif
         }
       }else if(key == GLUT_KEY_DOWN){
         if(l_ctrl){
           angle_to_up = angle_to_up + del_a ;
         }else{
-#ifdef kb_dev
           offset_eye_x    = offset_eye_x    - del_d*s ;
           offset_center_x = offset_center_x - del_d*s ;
           offset_eye_y    = offset_eye_y    - del_d*c ;
           offset_center_y = offset_center_y - del_d*c ;
-#else
-          offset_eye_x    = offset_eye_x    - del_d*s*su ;
-          offset_center_x = offset_center_x - del_d*s*su ;
-          offset_eye_y    = offset_eye_y    - del_d*c*su ;
-          offset_center_y = offset_center_y - del_d*c*su ;
-          offset_eye_z    = offset_eye_z    - del_d*cu ;
-          offset_center_z = offset_center_z - del_d*cu ;
-#endif
         }
       }else if(key == GLUT_KEY_PAGE_UP){
         offset_eye_z    = offset_eye_z    + del_d*0.25 ;
@@ -641,14 +611,6 @@ void  specialkey(int key, int ixm, int iym)
       }else if(key == GLUT_KEY_PAGE_DOWN){
         offset_eye_z    = offset_eye_z    - del_d*0.25 ;
         offset_center_z = offset_center_z - del_d*0.25 ;
-#ifndef kb_dev
-// Stop the viewpoint dropping too far
-//   This should be just above the local land surface level
-        if(offset_eye_z < 0.0){
-          offset_eye_z    =   0.1*scalei ;  // 0.1 m above baseline
-          offset_center_z =   0.1*scalei ;
-        }
-#endif
 /*
  *   Head-Out Camera Positions
  */
@@ -744,7 +706,6 @@ void  specialkey(int key, int ixm, int iym)
  *  i.e the x, y and z coordinates relative to the central position
  *  of the local tile.
  */
-#ifdef kb_dev
   int     tile_e, tile_n ;
   double  e, n, h        ;
        if(display_info || ip){
@@ -763,7 +724,6 @@ void  specialkey(int key, int ixm, int iym)
                   (tile_n-tile_south) + offset_center_y, offset_center_z) ;
           l_pp = 1 ;     //  Flag new position for debug statements
        }
-#endif
 /*
  *  Generate new OpenGL Projection and Modelview matrices
  */
@@ -782,26 +742,11 @@ void  specialkey(int key, int ixm, int iym)
       glMatrixMode(GL_PROJECTION);
       glLoadIdentity();
       gluPerspective(viewport_fovy,viewport_aspect,viewport_near,viewport_far);
-#if 0
-      glMatrixMode(GL_MODELVIEW);
-      glLoadIdentity();
-      gluLookAt(offset_eye_x,offset_eye_y,offset_eye_z,
-               offset_center_x,offset_center_y,offset_center_z,
-               offset_up_x,offset_up_y,offset_up_z) ;
-//  REQUIRED after MODELVIEW CHANGE
-      zr_setp4(v4,light0_altde,light0_polar) ;
-      glLightfv(GL_LIGHT0, GL_POSITION, v4);
-
-      initialise_eye_vectors() ;
-      initialise_clip_planes(clip_a) ;
-//    if(ip) check_clip_planes() ;
-#else
       camera_changed = 1 ;
       camera_new_position() ;
-#endif
 //  Trigger graphics_cull checks (myGlutIdle in graphics.c)
       new_viewpoint = 1 ;
-#if 1
+#if 0
       sprintf(string," - Lookat Point :: %f %f %f :: %f %f %f ",
                          lookat_eye_x, lookat_eye_y, lookat_eye_z,
                          lookat_center_x, lookat_center_y, lookat_center_z);

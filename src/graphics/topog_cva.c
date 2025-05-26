@@ -39,7 +39,7 @@
  *==============================================================================
 */
 
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
 
 int make_tile_vertex_arrays(){
 
@@ -123,6 +123,12 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       scale      = tl_node->terrain_data.terrain_sample_scale ;
       elevations = tl_node->terrain_data.elevations           ;
       nht        = tl_node->terrain_data.terrain_nsamples     ;
+      if(!elevations){
+        printf("  Routine %s. ERROR.\n",my_name) ;
+        printf("    elevations array unset.\n") ;
+        printf("    tile_x = %i, tile_y = %i\n",tl_node->tilex, tl_node->tiley) ;
+        return 0 ;
+      }
 
       dx_topog = 1.0/nht               ;  // Spacing in tile units
       dm_topog = tile_size/nht         ;  // Spacing in m
@@ -481,8 +487,9 @@ int ii, jj, kk ;
 int check_topographic_blocks(){
 
 int          ip = 0   ;  // Debug
-int          ix, iy   ;
+int          n, k, ix, iy   ;
 TileListNode *tl_node ;
+VANode       *va_node ;
 char         my_name[] = "check_topographic_blocks" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
@@ -495,7 +502,7 @@ char         my_name[] = "check_topographic_blocks" ;
                 tile_eye_x0, tile_x0, tile_eye_y0, tile_y0, tile_cull_r, tl_node->name);
         if(!use_tile(ix,iy)) continue ;     // Tile topography not needed
         tl_node->needed = 1     ;
-#ifdef use_vertex_arays
+#ifndef no_vertex_arrays
         if(ip)printf(" name = %s, nbx = %i, nby = %i\n",tl_node->name,
                tl_node->terrain_data.nbx,
                tl_node->terrain_data.nby ) ;

@@ -318,6 +318,7 @@ int route_set(SignalDB *signal){
         printf("  signal direction   =  %i\n", idirect) ;
         printf("  signal sig_jn_link =  %i :: %i %i %i %i\n",signal->uid,
              jn_link, jn_chk, jn_branch, trk_item->signal_dirs[0][3]) ;
+        printf("  sig_subobj jn_link =  %i\n",signal->sig_subobj->sig_jn_link) ;
 
         printf("\n") ;
         printf("  track section      =  %i\n", trk_item->track_section) ;

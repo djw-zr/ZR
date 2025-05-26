@@ -119,7 +119,7 @@ int is_string_alnum(char *s){
 
 int i ;
 
-      for(i=1;i<(int)strlen(s);i++){
+      for(i=0;i<(int)strlen(s);i++){
         if(!isalnum(s[i]))return 1 ;
       }
       return 0;
@@ -221,7 +221,7 @@ void put_utf8(int32_t c, int *l){
 char *new_token(MSfile *msfile){
 
   int   ip = 0 ;
-  int32_t   l, c, lastc;
+  int32_t   l = 0, c, lastc;
   int   utf16le, compress, text, binary ;
   FILE  *fp ;
   char  my_name[] = "new_token" ;

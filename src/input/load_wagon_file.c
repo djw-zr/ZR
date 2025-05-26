@@ -144,7 +144,11 @@ char     ffname[] = "__FILE__"  ;
         if(ip)printf(" AA Token = :%s:\n",token1) ;
         if(is_rbr(token1)) break ;  // End of Wagon data
 /*
- *  Handle EOF of an Include file
+ *  Handle End of Files
+ *  Wagon include files often (always?) reach an end of file. Some wagons
+ *  files also 'forget' to add the final closing bracket.  This error is
+ *  flagged and ignored.
+ *
  */
         if(is_eof(token1)){
           if(n_msfile > 0){
@@ -153,10 +157,10 @@ char     ffname[] = "__FILE__"  ;
 //            printf(" +++ Switch back to msfile0 %i\n",n_msfile) ;
             continue ;
           }else{
-            printf("  Routine %s error.\n"
+            printf("  Routine %s.  ERROR.\n"
             "  End of file found while parsing wagon tokens\n",my_name) ;
             printf("    msfile file     = %s\n",w->file);
-            exit(1) ;
+            return 0 ;
           }
         }
 /*
@@ -730,8 +734,12 @@ char     ffname[] = "__FILE__"  ;
             break ;
           CASE("Sound")
             skip_lbr(msfile) ;
-            w->sound_file = ctoken(msfile) ;
+            if(string) free(string) ;
+            string = new_tmp_token(msfile) ;
+#ifdef OPENAL
+            w->sound_file = strdup(string) ;
             if(ip)printf("    Sound = :%s:\n", w->sound_file) ;
+#endif
             skip_rbr(msfile) ;
             break ;
           CASE("Pantograph")
@@ -936,9 +944,6 @@ char     ffname[] = "__FILE__"  ;
             skippast_rbr(msfile) ;
         END
         if(ip)printf(" ZZZZ\n") ;
-
-      }
-      if(w->sound_file){
 
       }
 /*

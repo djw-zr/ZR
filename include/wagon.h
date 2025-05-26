@@ -66,21 +66,22 @@ int             type      ;
 
 typedef struct rawwagonnode {
 struct rawwagonnode *next    ;
-int              is_engine   ;      //  True if engine
+int              is_engine   ;    //  True if engine
 int              is_needed   ;
 int              is_loaded   ;
 char             *name       ;
-char             *file       ;      // *.eng or *.wag file
-char             *s_file     ;      // Shape file
-char             *sd_file    ;      // Additional information file
-char             *fs_file    ;      // Freight shape file
-char             *image      ;      // Silhouette image file (*.jpg)
-ShapeNode        *shape      ;      // Corresponding shape node
-ShapeNode        *f_shape    ;      // Corresponding freight shape
+char             *file       ;    // *.eng or *.wag file
+char             *parent_dir ;    // Parent directory  containing file
+char             *s_file     ;    // Shape file
+char             *sd_file    ;    // Additional information file
+char             *fs_file    ;    // Freight shape file
+char             *image      ;    // Silhouette image file (*.jpg)
+ShapeNode        *shape      ;    // Corresponding shape node
+ShapeNode        *f_shape    ;    // Corresponding freight shape
 
 // Properites defined in *.wag files
 
-char             *type       ;      //  Carriage etc
+char             *type       ;    //  Carriage etc
 int              has_wipers  ;
 int              has_mirrors ;
 int              has_pantographs ;
@@ -162,10 +163,12 @@ double           startdirection[3]   ;
 double           rotationlimit[3]    ;
 
 // Misc
-
+#ifdef OPENAL
 char             *sound_file         ;
 SMS_Node         *sms_node           ;
 ALuint           *sources            ;    //  Array of sound sources
+#endif
+
 char             *full_name          ;
 
 RawEngineNode    *raw_engine         ;

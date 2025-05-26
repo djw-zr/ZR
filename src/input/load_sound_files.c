@@ -47,6 +47,7 @@ int load_sound_files(void){
  *  At each level process sound management system files
  *==============================================================================
  */
+      if(ip)printf("  ======  Process sound management system (*.sms) files:\n") ;
       for(i=0; i<2; i++){
 /*
  *==============================================================================
@@ -136,6 +137,7 @@ int load_sound_files(void){
  *  At each level process sound (*.wav) files
  *==============================================================================
  */
+      if(ip)printf("  ======  Process sound (*.wav) files:\n") ;
       for(i=0; i<2; i++){
 /*
  *==============================================================================
@@ -297,6 +299,7 @@ SmsTrgNode *smstrg_node ;
 SmsFilNode *smsfil_node ;
 char       *wav_file ;
 
+      if(ip)printf("  ======  Initialise SmsFilNode soundfile pointers:\n") ;
       for(sms_list = sms_list_beg; sms_list != NULL; sms_list = sms_list->next){
         if(ip)printf("  Routine %s ::  PROCESS SMS FILE %s\n",my_name, sms_list->name) ;
         for(i=0; i<4; i++){
@@ -319,7 +322,7 @@ char       *wav_file ;
                 if(ip)printf("      File = %i.  Node = %p.  File = %s\n",
                                              k, (void *)smsfil_node, wav_file) ;
                 btree = find_btree(wav_master,wav_file) ;
-                if(btree){
+                if(btree && btree->data){
                   smsfil_node->soundfile = (SoundFile *)btree->data ;
                   smsfil_node->buffer    = smsfil_node->soundfile->buffer ;
                 }else{
@@ -344,8 +347,10 @@ WorldNode       *wnode ;
 SoundObjectNode *sndobj_node ;
 int             tile_x, tile_y ;
 int             n_sources ;
+int             tot_sources = 0 ;
 double          X, Y, Z ;
 
+      if(ip)printf("  ======  Initialise world sound sources:\n") ;
       for(wnode = worldlist_beg; wnode != NULL; wnode = wnode->next){
         tile_x = wnode->tile_x ;
         tile_y = wnode->tile_y ;
@@ -387,7 +392,11 @@ double          X, Y, Z ;
           sndobj_node->delay         = (double *)malloc(n_sources*sizeof(double)) ;
           sndobj_node->distance_on   = 1 ;
 /*
- *  Initialise
+ *  Initialise    1519, 10360, 100015, birdsswamp
+ *  This fails if more than 256 sources are requested.
+ *  The code needsto be chnged so that like textures these sources are
+ *  only loaded when required - i.e. for the furrent and neighbouring tiles.
+ *  Train noises also need handling.
  */
           for(i=0; i<n_sources; i++){
             sndobj_node->stream_status[i] = 0 ;
@@ -398,18 +407,19 @@ double          X, Y, Z ;
             sndobj_node->delay[i]         = 0.0 ;
 
             alGenSources(1, &(sndobj_node->source[i])) ;
+            tot_sources++ ;
 
             iret = alGetError() ;
-            if(ip)printf("      Stream %i.  Source = %i. alError = %i %s\n",
-                    i,sndobj_node->source[i], iret, al_error_code(iret)) ;
+            if(ip)printf("      Stream %i.  Source = %i.  Tot Sources = %i.  alError = %i %s\n",
+                    i,sndobj_node->source[i], tot_sources, iret, al_error_code(iret)) ;
             if(iret != AL_NO_ERROR){
               printf("  ERROR in routine: %s\n",my_name) ;
               printf("      sms_file = %s\n", sndobj_node->sms_file) ;
               printf("      alGetErrer non zero.  %i  %s\n",
                                                    iret, al_error_code(iret)) ;
-             printf("      Stream %i.  Source = %i. \n",
-                                                    i,sndobj_node->source[i]) ;
-             printf("      error in file %s, at line %i\n",__FILE__,__LINE__) ;
+              printf("      Stream %i.  Source = %i. Total sources requested = %i\n",
+                                        i,sndobj_node->source[i],tot_sources) ;
+              printf("      error in file %s, at line %i\n",__FILE__,__LINE__) ;
               continue ;
             }
             alSourcef(sndobj_node->source[i], AL_PITCH, 1.0f);
@@ -453,6 +463,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
   SmsVolNode  *smsvol_node   ;
   SmsFrqNode  *smsfrq_node   ;
   SmsFilNode  *smsfil_node   ;
+  double      dtemp ;
   char *token1 = NULL,
        *token2 = NULL,
        *token3 = NULL,
@@ -485,7 +496,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
       if(iret){
         printf("  Routine '%s' error\n", my_name) ;
         printf("    Unable to open Microsoft/Kuju style file\n") ;
-        printf("    File name = %s\n",file_name) ;
+        printf("    SMS File name = %s\n",file_name) ;
         printf("    Program stopping ... \n") ;
         close_system() ;
       }
@@ -534,6 +545,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                   else {
                     printf("  ERROR.  Routine %s.  Faulty ScalabilityGroup\n",my_name) ;
                     printf("          ScalabilityGroup = %i\n",isg) ;
+                    printf("   SMS file name = %s\n",file_name) ;
                     return 1  ;
                   }
 /*
@@ -589,6 +601,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                             DEFAULT
                               printf("  Routine '%s' error\n",my_name) ;
                               printf("  Unrecognised level 4 token.  Token = '%s'\n",token4) ;
+                              printf("   SMS file name = %s\n",file_name) ;
                               skip_lbr(msfile)   ;
                               skippast_rbr(msfile) ;
                               break ;
@@ -635,6 +648,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                             DEFAULT
                               printf("  Routine '%s' error\n",my_name) ;
                               printf("  Unrecognised level 4 token.  Token = '%s'\n",token4) ;
+                              printf("   SMS file name = %s\n",file_name) ;
                               skip_lbr(msfile)   ;
                               skippast_rbr(msfile) ;
                           END
@@ -728,7 +742,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                 smsstr_node = &(smsgrp_node->snd_stream[i_stream++]) ;
                               }else{
                                 printf("  Routine '%s' error\n",my_name) ;
-                                printf("  To many sound streams  File = '%s'\n",file_name) ;
+                                printf("  To many sound streams. SMS  File = '%s'\n",file_name) ;
                                 close_system()  ;
                               }
 /*
@@ -817,6 +831,21 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                           skip_lbr(msfile);
                                           skippast_rbr(msfile) ;
                                           break ;
+//  In the Manning Valley Breakwater  Baldwin Tram #103 ENG file,
+//   a Volume with value 0.2 it set prior to definign triggers.  .
+//   However when sound is set in the triggers it is set with an integer value>
+//   Here each of the trigger sound are set my multiplying the
+//   value by 256.
+                                        CASE("Volume")
+                                          skip_lbr(msfile) ;
+                                          dtemp = dtoken(msfile) ;
+                                          skip_rbr(msfile) ;
+                                          for(i=0;i<n_triggers;i++){
+                                            smstrg_node = &(smsstr_node->smstrg_node[i]) ;
+                                            smstrg_node->stream_vol = dtemp*255 ;
+                                          }
+                                          break ;
+
 /*
  *  Level 7 Initial_Trigger
  */
@@ -843,6 +872,12 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 smstrg_node->start_loop_release = 1 ;
                                                 read_files_section(smstrg_node, msfile) ;
                                                 break ;
+                                              CASE("EnableTrigger")
+                                                smstrg_node->enable_trigger  = 1 ;
+                                                skip_lbr(msfile) ;
+                                                smstrg_node->a_discrete_trigger = itoken(msfile) ;
+                                                skip_rbr(msfile) ;
+                                                break ;
                                               CASE("DisableTrigger")
                                                 smstrg_node->disable_trigger = 1 ;
                                                 skip_lbr(msfile) ;
@@ -856,7 +891,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 break ;
                                               DEFAULT
                                                 printf("  Routine '%s' error\n",my_name) ;
-                                                printf("  Unrecognised level 7 token.  Token = '%s'\n",token7) ;
+                                                printf("  Unrecognised level 7 Initial_Trigger token.  Token = '%s'\n",token7) ;
+                                                printf("   SMS file name = %s\n",file_name) ;
                                                 skip_lbr(msfile)   ;
                                                 skippast_rbr(msfile) ;
                                             END
@@ -921,6 +957,12 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 smstrg_node->variable3_dec_past = 1 ;
                                                 smstrg_node->var_value = dtoken(msfile) ;
                                                 break ;
+                                              CASE("BrakeCyl_Inc_Past")   //  Do-nothing statement for Manning River Breakwater
+                                              CASE("BrakeCyl_Dec_Past")
+                                                smstrg_node->trigger_disabled = 1 ;
+                                                smstrg_node->disable_trigger  = 1 ;
+                                                smstrg_node->var_value = dtoken(msfile) ;
+                                                break ;
                                               CASE("SetStreamVolume")
                                               CASE("setstreamvolume")
                                                 skip_lbr(msfile) ;
@@ -970,7 +1012,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 break ;
                                               DEFAULT
                                                 printf("  Routine '%s' error\n",my_name) ;
-                                                printf("  Unrecognised level 7 token.  Token = '%s'\n",token7) ;
+                                                printf("  Unrecognised level 7 Variable_Trigger token.  Token = '%s'\n",token7) ;
+                                                printf("   SMS file name = %s\n",file_name) ;
                                                 skip_lbr(msfile)   ;
                                                 skippast_rbr(msfile) ;
                                             END
@@ -1023,7 +1066,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 break ;
                                               DEFAULT
                                                 printf("  Routine '%s' error\n",my_name) ;
-                                                printf("  Unrecognised level 7 token.  Token = '%s'\n",token7) ;
+                                                printf("  Unrecognised level 7 Random_Trigger token.  Token = '%s'\n",token7) ;
+                                                printf("   SMS file name = %s\n",file_name) ;
                                                 skip_lbr(msfile)   ;
                                                 skippast_rbr(msfile) ;
                                             END
@@ -1088,7 +1132,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 break ;
                                               DEFAULT
                                                 printf("  Routine '%s' error\n",my_name) ;
-                                                printf("  Unrecognised level 7 token.  Token = '%s'\n",token7) ;
+                                                printf("  Unrecognised level 7 Discrete_Trigger token.  Token = '%s'\n",token7) ;
+                                                printf("   SMS file name = %s\n",file_name) ;
                                                 skip_lbr(msfile)   ;
                                                 skippast_rbr(msfile) ;
                                             END
@@ -1152,7 +1197,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                                 break ;
                                               DEFAULT
                                                 printf("  Routine '%s' error\n",my_name) ;
-                                                printf("  Unrecognised level 7 token.  Token = '%s'\n",token7) ;
+                                                printf("  Unrecognised level 7 Dist_Travelled_Trigger token.  Token = '%s'\n",token7) ;
+                                                printf("   SMS file name = %s\n",file_name) ;
                                                 skip_lbr(msfile)   ;
                                                 skippast_rbr(msfile) ;
                                             END
@@ -1162,7 +1208,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
 
                                         DEFAULT
                                           printf("  Routine '%s' error\n",my_name) ;
-                                          printf("  Unrecognised level 6 token.  Token = '%s'\n",token6) ;
+                                          printf("  Unrecognised level 6 Triggers token.  Token = '%s'\n",token6) ;
                                           skip_lbr(msfile)   ;
                                           skippast_rbr(msfile) ;
                                       END
@@ -1200,6 +1246,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                         CASE("Variable3Controlled")
                                           smsvol_node->var3_control = 1 ;
                                           break ;
+                                        CASE("CurveForceControlled")
+                                          break ;
                                         CASE("Granularity")
                                           skip_lbr(msfile) ;
                                           smsvol_node->granuality = dtoken(msfile) ; ;
@@ -1220,7 +1268,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                           break ;
                                         DEFAULT
                                           printf("  Routine '%s' error\n",my_name) ;
-                                          printf("  Unrecognised level 6 token.  Token = '%s'\n",token6) ;
+                                          printf("  Unrecognised level 6 VolumeCurve token.  Token = '%s'\n",token6) ;
+                                          printf("  SMS file name = %s\n",file_name) ;
                                           skip_lbr(msfile)   ;
                                           skippast_rbr(msfile) ;
                                       END
@@ -1279,7 +1328,8 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                           break ;
                                         DEFAULT
                                           printf("  Routine '%s' error\n",my_name) ;
-                                          printf("  Unrecognised level 6 token.  Token = '%s'\n",token5) ;
+                                          printf("  Unrecognised level 6 FrequencyCurve token.  Token = '%s'\n",token5) ;
+                                          printf("  SMS file name = %s\n",file_name) ;
                                           skip_lbr(msfile)   ;
                                           skippast_rbr(msfile) ;
                                       END
@@ -1289,6 +1339,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                                   DEFAULT
                                     printf("  Routine '%s' error\n",my_name) ;
                                     printf("  Unrecognised level 5 token.  Token = '%s'\n",token5) ;
+                                    printf("   SMS file name = %s\n",file_name) ;
                                     skip_lbr(msfile)   ;
                                     skippast_rbr(msfile) ;
                                 END
@@ -1298,6 +1349,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                             DEFAULT
                               printf("  Routine '%s' error\n",my_name) ;
                               printf("  Unrecognised level 4 token.  Token = '%s'\n",token4) ;
+                              printf("  SMS file name = %s\n",file_name) ;
                               skip_lbr(msfile)   ;
                               skippast_rbr(msfile) ;
                           END
@@ -1307,6 +1359,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                       DEFAULT
                       printf("  Routine '%s' error\n",my_name) ;
                       printf("  Unrecognised level 3 token.  Token = '%s'\n",token3) ;
+                      printf("   SMS file name = %s\n",file_name) ;
                       skip_lbr(msfile)   ;
                       skippast_rbr(msfile) ;
                     END
@@ -1320,6 +1373,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
                   }
                   printf("  Routine '%s' error\n",my_name) ;
                   printf("  Unrecognised level 2 token.  Token = '%s'\n",token2) ;
+                  printf("  SMS file name = %s\n",file_name) ;
                   skip_lbr(msfile)   ;
                   skippast_rbr(msfile) ;
                   break ;
@@ -1334,6 +1388,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
             }
             printf("  Routine '%s' error\n",my_name) ;
             printf("  Unrecognised level 1 token.  Token = '%s'\n",token1) ;
+            printf("   SMS file name = %s\n",file_name) ;
             skip_lbr(msfile)   ;
             skippast_rbr(msfile) ;
             break ;

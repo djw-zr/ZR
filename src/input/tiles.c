@@ -118,7 +118,7 @@ static TileListNode *tiledata_new(int i, int j)
       tiledata->terrain_data.tile_shader                    = NULL ;
       tiledata->terrain_data.tile_patchset                  = NULL ;
       tiledata->terrain_data.elevations                     = NULL ;
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
       tiledata->terrain_data.va_vertex  = NULL ;
       tiledata->terrain_data.va_normal  = NULL ;
       tiledata->terrain_data.va_texture = NULL ;
@@ -330,6 +330,15 @@ int tilelist_init2(){
         tl_node->next    = tilelist_head ;
         tilelist_head    = tl_node ;
       }
+      if(!tilelist_head){
+        printf("======================================================================\n") ;
+        printf("=   Fatal error:\n") ;
+        printf("=   Routine %s found no tile files in 'tiles' directory\n",my_name) ;
+        printf("=   Tiles directory is: %s\n",tdir_name) ;
+        printf("=   Program stopping ...\n") ;
+        printf("======================================================================\n") ;
+        close_system() ;
+      }
       tile_west  =  16384 ;
       tile_east  = -16384 ;
       tile_south =  16384 ;
@@ -355,11 +364,9 @@ int tilelist_init2(){
  */
       tile_array_nx = tile_east  - tile_west  + 1 ;
       tile_array_ny = tile_north - tile_south + 1 ;
-      len1 = tile_array_nx*tile_array_ny ;
+      len1 =  tile_array_num = tile_array_nx*tile_array_ny ;
       tile_array = (TileListNode **)malloc(len1*sizeof(TileListNode *)) ;
-      tile_array_num = len1 ;
-
-      for(i=1;i<len1;i++) tile_array[i] = NULL ;
+      for(i=0;i<len1;i++) tile_array[i] = NULL ;
 
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
         k = (tl_node->tiley - tile_south)*tile_array_nx

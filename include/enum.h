@@ -144,7 +144,7 @@ const char *token_signal_function[8] = {
 } ;
 
 /*
- *  The size of this enum should be the same as the dimensions of
+ *  The size of this enum is one more than the dimensions of
  *  the array 'sig_draw_a' in structure 'sigtype' in file 'signals.h'.
  */
 enum signal_aspect_enum {
@@ -155,7 +155,7 @@ enum signal_aspect_enum {
       SIG_APPROACH_2,        //               approach 2
       SIG_APPROACH_3,        //               approach 3
       SIG_CLEAR_1,           //               clear 1
-      SIG_CLEAR_2,            //              clear 2
+      SIG_CLEAR_2,           //               clear 2
       SIG_UNDEFINED
 } ;
 const char *token_signal_aspect[9] = {

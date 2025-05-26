@@ -290,15 +290,16 @@ int  init_shape_node(ShapeNode *shape){
 
 
           shape->name              = NULL ;
+          shape->next              = NULL ;
           shape->s_file            = NULL ;
           shape->sd_file           = NULL ;
 //          shape->gl_display_list   = 0 ;  // not a valid display list number
           shape->basic             = 0 ;  //  = 1 always needed
           shape->needed            = 0 ;  //  Needed for current scene
           shape->loaded            = 0 ;  //  Loaded in graphics card
-          shape->nvolumes          = 0 ;
           shape->flags1            = 0 ;
           shape->flags2            = 0 ;
+          shape->nvolumes          = 0 ;
           shape->nshaders          = 0 ;
           shape->nfilters          = 0 ;
           shape->npoints           = 0 ;
@@ -308,6 +309,7 @@ int  init_shape_node(ShapeNode *shape){
           shape->ncolors           = 0 ;
           shape->nmatrices         = 0 ;
           shape->n_textures        = 0 ;
+          shape->use_texture       = 0 ;
           shape->n_texlevel_low    = 0 ;
           shape->nlight_materials  = 0 ;
           shape->nlight_model_cfgs = 0 ;

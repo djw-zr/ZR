@@ -950,10 +950,12 @@ int   trains_init(void){
 /*
  *  Initialise wagon SMS nodes, sound (*.wav) files and OpenAL
  */
+#ifdef OPENAL
       if(ip)printf(" ++++++++++ Call setup_train_sms_nodes\n") ;
       setup_train_sms_nodes() ;
       if(ip)printf(" ++++++++++ Call initialise_wagon_openal_variables\n") ;
       initialise_wagon_openal_variables() ;
+#endif
 /*
  *  Update trains
  */
@@ -1654,10 +1656,12 @@ int trains_setup_by_user(){
 
 int  ip = 0 ;
 int  i, n, m, itrain, idirn, iret ;
+#if ! defined Basic_Test && ! defined DEBUG1
 int    n_engines   ;
 int    n_tenders   ;
 int    n_carriages ;
 int    n_wagons    ;
+#endif
 int    n_consists  ;
 int    n_platforms ;
 int    n_sidings   ;
@@ -1698,11 +1702,12 @@ char  *my_name = "trains_setup_by_user" ;
           printf("  Type unknown:  %s :: %s\n",rw->type, rw->name) ;
         }
       }
+#if ! defined Basic_Test && ! defined DEBUG1
       n_engines   = count_bt_nodes(engines)   ;
       n_tenders   = count_bt_nodes(tenders)   ;
       n_carriages = count_bt_nodes(carriages) ;
       n_wagons    = count_bt_nodes(wagons)    ;
-
+#endif
       printf("  PROCESS CONSISTS\n") ;
 
       for(consist = consistlist_beg; consist != NULL ; consist = consist->next){
@@ -1734,31 +1739,22 @@ char  *my_name = "trains_setup_by_user" ;
         printf("\n  ENGINES\n\n");
         print_bt_nodes_with_count_and_index(engines) ;
         n = 0 ;
-
+#if ! defined Basic_Test && ! defined DEBUG1
         while(n<1 || n>n_engines){
           printf("  Enter index of engine (or 0 to skip):\n") ;
-#ifdef  DEBUG1
-          n = 9 ;
-          found = find_bt_node_with_index(engines,n) ;
-          rw = (RawWagonNode *)found->data ;
-          add_wagon_to_train(rw->name,1) ;
-          printf("  Engine added.  Name = %s\n",rw->name) ;
-          break ;
-#else
           scanf("%i",&n) ;
           if(n>n_engines)continue ;
           if(n<1) break ;
           found = find_bt_node_with_index(engines,n) ;
-#endif
           rw = (RawWagonNode *)found->data ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Engine added.  Name = %s\n",rw->name) ;
         }
-
-#ifndef DEBUG1
+#endif
         printf("\n  TENDERS\n\n");
         print_bt_nodes_with_count_and_index(tenders) ;
         n = 0 ;
+#if ! defined Basic_Test && ! defined DEBUG1
         while(n<1 || n>n_tenders){
           printf("  Enter index of tender (or 0 to skip):\n") ;
           scanf("%i",&n) ;
@@ -1769,9 +1765,11 @@ char  *my_name = "trains_setup_by_user" ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Tender added.  Name = %s\n",rw->name) ;
         }
+#endif
         printf("\n  CARRIAGES\n\n");
         print_bt_nodes_with_count_and_index(carriages) ;
         n = 0 ;
+#if ! defined Basic_Test && ! defined DEBUG1
         while(n<1 || n>n_carriages){
           printf("  Enter index of carriage (or 0 to skip):\n") ;
           scanf("%i",&n) ;
@@ -1782,10 +1780,11 @@ char  *my_name = "trains_setup_by_user" ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Carriage added.  Name = %s\n",rw->name) ;
         }
-
+#endif
         printf("\n  FREIGHT\n\n");
         print_bt_nodes_with_count_and_index(wagons) ;
         n = 0 ;
+#if ! defined Basic_Test && ! defined DEBUG1
         while(n<1 || n>n_wagons){
           printf("  Enter index of wagon (or 0 to skip):\n") ;
           scanf("%i",&n) ;
@@ -1796,22 +1795,24 @@ char  *my_name = "trains_setup_by_user" ;
           add_wagon_to_train(rw->name,1) ;
           printf("  Wagon added.  Name = %s\n",rw->name) ;
         }
-
+#endif
         printf("\n  CONSISTS\n\n");
         print_bt_nodes_with_count_and_index(consists) ;
         n = 0 ;
         while(n<1 || n>n_consists){
           printf("  Enter index of consist (or 0 to skip):\n") ;
+#if ! defined Basic_Test && ! defined DEBUG1
           scanf("%i",&n) ;
           if(n>n_consists)continue ;
           if(n<1) break ;
+#else
+          n = 53 ;
+#endif
           found = find_bt_node_with_index(consists,n) ;
           consist = (ConsistNode *)found->data ;
           add_consist_to_train(consist->name) ;
           printf("  Consist added.  Name = %s\n",consist->name) ;
         }
-#endif
-
 
         m = 0 ;
         printf("\n  PLATFORMS\n\n");
@@ -1819,14 +1820,15 @@ char  *my_name = "trains_setup_by_user" ;
         n = 0 ;
         while(n<1 || n>n_platforms){
           printf("  Enter index of platform (or 0 to skip):\n") ;
-#ifdef  DEBUG1
-          n = 39 ;
-#else
+#if ! defined Basic_Test && ! defined DEBUG1
           scanf("%i",&n) ;
           idirn = (n>=0) ? 1 : 0 ;
           n = abs(n) ;
           if(n>n_platforms) continue ;
           if(n<1) break ;
+#else
+          n = 3 ;
+          idirn = 1 ;
 #endif
           found = find_bt_node_with_index(platform_list,n) ;
           ti = (TrkItem *)found->data ;
@@ -1852,7 +1854,7 @@ char  *my_name = "trains_setup_by_user" ;
             printf("  Position at siding.  Name = %s\n",ti->siding_name) ;
           }
         }
-#ifndef DEBUG1
+#if ! defined Basic_Test && ! defined DEBUG1
         printf(" Enter 1 for additional train or 0 to continue:\n");
         iret = 0 ;
         scanf("%i",&iret) ;

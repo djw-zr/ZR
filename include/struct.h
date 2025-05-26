@@ -677,7 +677,7 @@ typedef struct terraindata{
   TileShader        *tile_shader                   ;  // Array
   TilePatchSet      *tile_patchset                 ;  // Array
   unsigned short    *elevations                    ;  // Array of heights (Y file)
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
 //  Vertex array pointers
   GLfloat             *va_vertex                   ;
  #ifdef normal_byte

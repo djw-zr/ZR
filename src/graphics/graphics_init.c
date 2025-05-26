@@ -135,8 +135,16 @@ char     my_name[] = "graphics_init" ;
       glLightfv(GL_LIGHT0, GL_DIFFUSE,  l0_dif) ;
       glLightfv(GL_LIGHT0, GL_SPECULAR, l0_spc) ;
 
+      printf(" graphics_init.  Define GL_LIGHT0\n") ;
+
       glEnable(GL_LIGHTING);
       glEnable(GL_LIGHT0);
+/*
+ *  The movie code needs the Pixel pack alignment defined.
+ *  The code may only work with glut but it should only depend
+ *  OpenGL
+ */
+      glPixelStorei(GL_PACK_ALIGNMENT, 1);
 
       glEnable(GL_DEPTH_TEST);
       glShadeModel(GL_SMOOTH) ;
@@ -180,7 +188,7 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 #ifdef _Display_Normal
       if(ip)printf("   Make tile display lists\n");
 //      make_tile_topog_display_lists() ;
-# ifdef use_vertex_arrays
+# ifndef no_vertex_arrays
       make_tile_vertex_arrays()       ;
 # else
       load_topography_display_lists() ;
@@ -525,7 +533,7 @@ TerrainData  *tl_data ;
       if(ip)printf("   Enter cull_topography_display_lists\n");
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
         if(0 == tl_node->needed)continue ;
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
         tl_data = &(tl_node->terrain_data) ;
 //        printf("   tile = %s  : vertex = %p :: %p\n",
 //               tl_node->name, (void *)tl_data, (void *)tl_data->va_vertex) ;
@@ -536,7 +544,7 @@ TerrainData  *tl_data ;
         ix = tl_node->tilex ;
         iy = tl_node->tiley ;
         if(use_tile(ix,iy)) continue ;
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
 # ifdef cull_vertex_arrays
         free(tl_data->va_vertex)  ; tl_data->va_vertex  = NULL ;
         free(tl_data->va_normal)  ; tl_data->va_normal  = NULL ;
@@ -577,7 +585,7 @@ VANode       * va_node ;
            ix,iy,use_tile(ix,iy),(void *)tl_node->terrain_data.va_vertex) ;
         if((iy < 10261 || iy > 10265) && !use_tile(ix,iy)) continue ;     // Tile topography not needed
         tl_node->needed = 1 ;
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
         if(NULL == tl_node->terrain_data.va_vertex){
           make_tile_vertex_array(tl_node) ;
         }else{

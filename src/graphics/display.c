@@ -159,10 +159,14 @@ GLfloat  v4[4] ;
       update_sounds()  ;
       update_train_sounds() ;
  #endif
+/*
+ *  Update water towers and other transfer points
+ */
  #ifndef ROUTE_NEW_FOREST
       update_transfer() ;
  #endif
-/* Breakpoint between drawing land and shapes  ...
+/*
+ * Breakpoint between drawing land and shapes  ...
  *    ... and drawing wagons
  */
 #endif
@@ -209,7 +213,7 @@ GLfloat  v4[4] ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,mat_amb)  ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,mat_dif)  ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_spc) ;
-      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, mid_shininess) ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, high_shininess) ;
 /*
  *==============================================================================
  * Draw Outline of Tiles
@@ -273,14 +277,14 @@ GLfloat  v4[4] ;
       glEnable(GL_LIGHTING);
 
       glCullFace(GL_BACK) ;
-      glDisable(GL_CULL_FACE) ;  //  Needed for some AU_NSW Routes !!
+//      glDisable(GL_CULL_FACE) ;  //  Needed for some AU_NSW Routes !!
 //      glEnable(GL_CULL_FACE) ;
 
       glEnable(GL_TEXTURE_2D) ;
 //      glEnable(GL_BLEND) ;
       glDisable(GL_BLEND) ;
 
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
 #if 0
 //      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP) ;  // X-dirn
 //      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP) ;  // Y-dirn
@@ -292,7 +296,7 @@ GLfloat  v4[4] ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_NEAREST) ;
 #endif
 
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
 /*
  *   Enable Vertex Arrays
  */
@@ -309,7 +313,7 @@ GLfloat  v4[4] ;
                tl_node->tilex, tl_node->tiley, tl_node->t_found, tl_node->loaded,
                tl_node->needed,(void *) tl_node->terrain_data.elevations ) ;
         display_topog_water(tl_node) ;
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
         display_tile_vertex_array(tl_node) ;
 #else
         glCallList((GLuint) tl_node->gl_display_list) ;
@@ -319,7 +323,7 @@ GLfloat  v4[4] ;
 /*
  *   Disable Client States.  Reset Lights and Material Properties
  */
-#ifdef use_vertex_arrays
+#ifndef no_vertex_arrays
       glDisableClientState(GL_VERTEX_ARRAY) ;
       glDisableClientState(GL_NORMAL_ARRAY) ;
       glDisableClientState(GL_TEXTURE_COORD_ARRAY) ;
@@ -331,7 +335,7 @@ GLfloat  v4[4] ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,mat_amb)  ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,mat_dif)  ;
       glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_spc) ;
-      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, mid_shininess) ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, high_shininess) ;
 #endif
       tile_t_end   = clock() ;
       if(0 && l_pp)printf(" PLOT TOPOGRAPHY.  Tiles plotted = %i\n",n_tiles_plotted) ;
@@ -370,7 +374,7 @@ GLfloat  v4[4] ;
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
       glAlphaFunc(GL_GREATER,0.5);
 
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;  // Default
 #if 0
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;  // X-dirn
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;  // Y-dirn
@@ -668,6 +672,16 @@ double      radius, sx, sy, sz, ssx, ssy, ssz, ttx, tty, ttz ;
  *==============================================================================
  */
 #if 1
+/*
+ *  Reset defaults
+ */
+      zr_setp4(v4,light0_altde,light0_polar) ;
+      glLightfv(GL_LIGHT0, GL_POSITION, v4);
+      glMaterialfv(GL_FRONT_AND_BACK,GL_AMBIENT,mat_amb)  ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_DIFFUSE,mat_dif)  ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SPECULAR,mat_spc) ;
+      glMaterialfv(GL_FRONT_AND_BACK,GL_SHININESS, high_shininess) ;
+
       dtrack_t_beg = clock() ;
       display_dynamic_tracks() ;
       dtrack_t_end   = clock() ;
@@ -707,12 +721,11 @@ int     it1 = 0,  //  Debug traveller
       it = it1 && l_disp1 ;
 
       glPolygonOffset(0.0,0.0) ;
-
-#ifdef culling_off_for_wagons
-      glDisable(GL_CULL_FACE) ;
-#else
+#ifdef culling_on_for_wagons
       glCullFace(GL_BACK) ;
       glEnable(GL_CULL_FACE) ;
+#else
+      glDisable(GL_CULL_FACE) ;
 #endif
       glFrontFace(GL_CW) ;
 
@@ -721,7 +734,7 @@ int     it1 = 0,  //  Debug traveller
       glEnable(GL_ALPHA_TEST) ;
       glAlphaFunc(GL_GREATER,0.1);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
 #if 0
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1005,7 +1018,13 @@ TrkSector *trk_sec_node   ;
  *  observer
  */
 #if 1
+#ifdef SHADERS
+      glUseProgram(shader_00) ;
       display_extra_data() ;   //  display_info.c
+      glUseProgram(0) ;
+#else
+      display_extra_data() ;   //  display_info.c
+#endif
 //      printf("  End display of extra info\n") ;
 #endif
 
@@ -1018,6 +1037,9 @@ TrkSector *trk_sec_node   ;
  *  This is scaled so that one unit equals one pixel
  *==============================================================================
  */
+#ifdef SHADERS
+      glUseProgram(shader_00) ;
+#endif
 #ifdef _Display_Normal
 #if 1
 {
@@ -1100,8 +1122,8 @@ GLfloat h = viewport_height ;
         glColor3f(1.0,1.0,1.0) ;
         print_string_in_window((GLfloat)20.0,(GLfloat)20.0,string) ;
 
-        sprintf(string,"Run time = %9.0f     Speed = %7.2f",
-                           run_seconds, player_train->speed );
+        sprintf(string,"Run time = %9.0f     Speed = %7.2f m/s     %7.2f mph",
+                           run_seconds, player_train->speed, 2.236936*player_train->speed );
         print_string_in_window((GLfloat)20.0,(GLfloat)40.0,string) ;
 double  t[4] ;
         zr_clock_gettime(zr_clock_2) ;
@@ -1131,6 +1153,9 @@ double  t[4] ;
  */
 #if 1
       display_error() ;
+#endif
+#ifdef SHADERS
+      glUseProgram(0) ;
 #endif
 
 #endif
@@ -1504,7 +1529,7 @@ char       string[128];
         glAlphaFunc(GL_GREATER,0.5);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
 #if 0
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1580,12 +1605,11 @@ char       *my_name = "display_wagons" ;
 
 
       glEnable(GL_LIGHTING) ;
-
-#ifdef culling_off_for_wagons
-      glDisable(GL_CULL_FACE) ;
-#else
+#ifdef culling_on_for_wagons
       glCullFace(GL_BACK) ;
       glEnable(GL_CULL_FACE) ;
+#else
+      glDisable(GL_CULL_FACE) ;
 #endif
       glFrontFace(GL_CW) ;
 
@@ -1593,8 +1617,10 @@ char       *my_name = "display_wagons" ;
       glEnable(GL_ALPHA_TEST) ;
       glAlphaFunc(GL_GREATER,0.5);
       glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-      glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+//
+//  When displaying all the wagons, light modulation is not used
+//
+      glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
 #if 0
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1753,7 +1779,10 @@ TextureNode  *tx_node ;
         if(ip)printf(" tx_node = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
                      " %f %f :: %i\n",(void *)tx_node,i,j,
                                         x1,y1,x2,y2,tx_node->gl_tex_ref_no);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+/*
+ * When displaying textures light source now wanted
+ */
+        glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
 #if 0
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
@@ -1805,15 +1834,6 @@ TextureNode  *tx_node ;
         if(ip)printf(" tx_node = %p, i,j = %i %i,  x1, y1 = %f %f, x2, y2 ="
                      " %f %f :: %i\n",(void *)tx_node,i,j,
                                         x1,y1,x2,y2,tx_node->gl_tex_ref_no);
-
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
-#if 0
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST) ;
-#endif
-
         glBegin(GL_QUADS) ;
           glTexCoord2f((GLfloat) 0.0,(GLfloat) 0.0) ;
           glVertex3f(x1,y1,(GLfloat) 0.001) ;
@@ -1876,7 +1896,7 @@ int     k, l ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, j) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL,  j) ;
 #if 0
-          glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+          glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
@@ -1912,7 +1932,7 @@ int     k, l ;
 #endif
 
 #if 0
-          glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
+          glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
           glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;

@@ -38,8 +38,10 @@ char  *my_name = "read_files_section";
                           strip_quotes(smstrg_node->smsfil_node[i].wav_file) ;
 
             string = zr_corename(smstrg_node->smsfil_node[i].wav_file) ;
+            if(ip)printf("  Routine %s.  Wave file = %s\n",my_name, string) ;
             if(!find_btree(wav_master,string)){
               wav_master = insert_node(wav_master,string,NULL );
+              if(ip)printf("    ... added to btree wav_master\n") ;
             }
             skip_rbr(msfile) ;
             i++ ;
