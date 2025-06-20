@@ -30,5 +30,5 @@ Commit 0.6.4
     parts of the display which do not need the lighting calculations or
     the use of textures.
     
-    Bothe of the new options can be included by setting the corresponding
+    Both of the new options can be included by setting the corresponding
     flags in the makefile.

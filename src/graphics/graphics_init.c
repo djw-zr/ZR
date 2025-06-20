@@ -135,7 +135,7 @@ char     my_name[] = "graphics_init" ;
       glLightfv(GL_LIGHT0, GL_DIFFUSE,  l0_dif) ;
       glLightfv(GL_LIGHT0, GL_SPECULAR, l0_spc) ;
 
-      printf(" graphics_init.  Define GL_LIGHT0\n") ;
+      printf("   Routine %s.  Define GL_LIGHT0\n",my_name) ;
 
       glEnable(GL_LIGHTING);
       glEnable(GL_LIGHT0);
@@ -212,10 +212,16 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       if(ip)printf("   Make dynamic track display lists\n");
       make_dynamic_display_lists();
 #endif
+/*
+ *  Initialise Movie
+ */
+#ifdef MOVIE
+      movie_init();
+#endif
 
       if(ip){
         printf("  Exit graphics_init\n");
-        printf("***********************************************************\n") ;
+        printf("***********************************************************\n\n") ;
       }
 
       return  ;

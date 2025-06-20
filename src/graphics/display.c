@@ -1176,6 +1176,12 @@ double  t[4] ;
 #ifndef SDL2
       glutSwapBuffers();
 #endif
+/*
+ *  Process Movie Shot
+ */
+#ifdef MOVIE
+      movie_new_frame() ;
+#endif
 
       {
 double t[4] ;

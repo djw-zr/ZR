@@ -35,6 +35,19 @@ static unsigned int output_formats = PPM_BIT | LIBPNG_BIT | FFMPEG_BIT;
 static double angle;
 static double delta_angle;
 
+double  zr_run_time(void){
+
+struct timespec clock ;
+double time ;
+
+    clock_gettime(CLOCK_MONOTONIC_COARSE, &clock );
+    time = (clock.tv_sec - run_clock0.tv_sec)
+           + (clock.tv_nsec - run_clock0.tv_nsec)*0.000000001 ;
+    return time ;
+}
+
+
+
 #if PPM
 /* Take screenshot with glReadPixels and save to a file in PPM format.
  *
@@ -48,8 +61,11 @@ static double delta_angle;
 static void screenshot_ppm(const char *filename, unsigned int width,
         unsigned int height, GLubyte **pixels) {
     size_t i, j, cur;
+    int  ip = 0 ;
     const size_t format_nchannels = 3;
     FILE *f = fopen(filename, "w");
+
+    if(ip)printf("  PPM AA time = %f\n", zr_run_time()) ;
     fprintf(f, "P3\n%d %d\n%d\n", width, height, 255);
     *pixels = realloc(*pixels, format_nchannels * sizeof(GLubyte) * width * height);
     glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE, *pixels);
@@ -61,6 +77,7 @@ static void screenshot_ppm(const char *filename, unsigned int width,
         fprintf(f, "\n");
     }
     fclose(f);
+    if(ip)printf("  PPM ZZ time = %f\n", zr_run_time()) ;
 }
 #endif
 
@@ -70,9 +87,11 @@ static png_byte *png_bytes = NULL;
 static png_byte **png_rows = NULL;
 static void screenshot_png(const char *filename, unsigned int width, unsigned int height,
         GLubyte **pixels, png_byte **png_bytes, png_byte ***png_rows) {
+    int ip = 0 ;
     size_t i, nvals;
     const size_t format_nchannels = 4;
     FILE *f = fopen(filename, "wb");
+
     nvals = format_nchannels * width * height;
     *pixels = realloc(*pixels, nvals * sizeof(GLubyte));
     *png_bytes = realloc(*png_bytes, nvals * sizeof(png_byte));
@@ -99,6 +118,7 @@ static void screenshot_png(const char *filename, unsigned int width, unsigned in
         PNG_COMPRESSION_TYPE_DEFAULT,
         PNG_FILTER_TYPE_DEFAULT
     );
+    png_set_compression_level(png,0) ;
     png_write_info(png, info);
     png_write_image(png, *png_rows);
     png_write_end(png, NULL);
@@ -149,13 +169,51 @@ void ffmpeg_encoder_start(const char *filename, int codec_id, int fps, int width
     c->time_base.den = fps;
     c->gop_size = 10;
     c->max_b_frames = 1;
+/*
+ *  Pixel Format
+ *
+ *  The pixel format is the format used in the final video.
+ *    See '/usr/include/ffmpeg/libavutil/pixfmt.h'.
+ *  Each codec only supports a limited number of pixel formats.
+ *  Those for H264 can be listed with the command
+ *     ffmpeg -h encoder=h264
+ *     ffmpeg -h encoder=mpeg1video
+ *  Both of these support YUV420P, neither supports RGB24 etc.
+ *
+ *  The standard AV_PIX_FMT_YUV420P is designed for TV transmission>
+ *    This uses uses 12 bits per pixel   (1 Cr & Cb sample per 2x2 Y samples)
+ *  There are anumber of RGB standards AV_PIX_FMT_NAME, where 'NAME' is
+ *    RGB24, BGR21 :: 24 bits per pixel (8,8,8)
+ *    RGB8, BGR8   :: 8 bits per pixel (3,3,2)
+ *    RGB565BE,RGB565LE :: 16 bits per pixel (big endian or little endian(intel))
+ */
     c->pix_fmt = AV_PIX_FMT_YUV420P;
-    if (codec_id == AV_CODEC_ID_H264)
-        av_opt_set(c->priv_data, "preset", "slow", 0);
+/*
+ *  Codec
+ *
+ *  There is a wide range of possible codecs.  These are listed in:
+ *    '/usr/include/ffmpeg/libavcodec/codec_id.h'.
+ *  If available a recommended one is H264 (or the later H265/H266?).
+ *  Altenatively use MPEG1VIDEO
+ */
+
+/*
+ *  The H264 presets can be seen with the comand
+ *    x264 -fullhelp
+ *  This usually means installing the x264 package.
+ */
+
+    if (codec_id == AV_CODEC_ID_H264){
+//        av_opt_set(c->priv_data, "preset", "slow", 0);  //  Smaller file preset
+        av_opt_set(c->priv_data, "preset", "fast", 0) ;   //  File size preset
+        av_opt_set(c->priv_data, "crf","22", 0) ;         //  Image quality preset
+        av_opt_set(c->priv_data, "movflags","+faststart", 0) ;
+    }
     if (avcodec_open2(c, codec, NULL) < 0) {
         fprintf(stderr, "Could not open codec\n");
         exit(1);
     }
+
     file = fopen(filename, "wb");
     if (!file) {
         fprintf(stderr, "Could not open %s\n", filename);
@@ -219,7 +277,6 @@ void ffmpeg_encoder_encode_frame(uint8_t *rgb) {
  */
       do{
         ret = avcodec_receive_packet(c, &pkt);
-//        printf(" AA iret = %i :: %i\n",ret, AVERROR(EAGAIN)) ;
         if(!ret){
           fwrite(pkt.data, 1, pkt.size, file) ;
         }else if(ret != AVERROR(EAGAIN)){
@@ -227,7 +284,6 @@ void ffmpeg_encoder_encode_frame(uint8_t *rgb) {
             exit(1);
         }
         ret = avcodec_send_frame(c,frame) ;
-//        printf(" BB iret = %i :: %i %i %i\n",ret, AVERROR(EAGAIN), AVERROR_EOF, AVERROR(EINVAL)) ;
         if(ret && ret != AVERROR(EAGAIN)){
             printf(" Routine %s returned error %i\n","avcodec_send_frame",ret );
             exit(1);
@@ -235,14 +291,21 @@ void ffmpeg_encoder_encode_frame(uint8_t *rgb) {
       }while (ret) ;
 }
 
+/*
+ *  This routine requires glReadPixels to use GL_BGRA to generate pixels with the
+ *  correct format for ffmpeg.
+ */
 void ffmpeg_encoder_glread_rgb(uint8_t **rgb, GLubyte **pixels, unsigned int width, unsigned int height) {
     size_t i, j, k, cur_gl, cur_rgb, nvals;
     const size_t format_nchannels = 4;
-    nvals = format_nchannels * width * height;
+
+     nvals = format_nchannels * width * height;
     *pixels = realloc(*pixels, nvals * sizeof(GLubyte));
     *rgb = realloc(*rgb, nvals * sizeof(uint8_t));
-    /* Get RGBA to align to 32 bits instead of just 24 for RGB. May be faster for FFmpeg. */
-    glReadPixels(0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, *pixels);
+
+/* Get RGBA to align to 32 bits instead of just 24 for RGB. May be faster for FFmpeg. */
+
+    glReadPixels(0, 0, width, height, GL_BGRA, GL_UNSIGNED_BYTE, *pixels);
     for (i = 0; i < height; i++) {
         for (j = 0; j < width; j++) {
             cur_gl  = format_nchannels * (width * (height - i - 1) + j);
@@ -255,4 +318,116 @@ void ffmpeg_encoder_glread_rgb(uint8_t **rgb, GLubyte **pixels, unsigned int wid
 
 #endif
 
+/*
+ *  Routine to initialise movie making.
+ *  1.  Search for MOVIE directory
+ *      If not present create one
+ *  2.  In the
+ */
+#ifdef MOVIE_ERROR
+int movie_init(void){
+      printf("  Movie error\n") ;
+      printf("  More than one movie option defined\n") ;
+      printf("  Program stopping ...\n");
+      exit(0) ;
+}
+#elif ! defined MOVIE
+int movie_init(void){
 
+      return 0 ;
+}
+#else
+int movie_init(void){
+
+  int ierr = 0;
+  DIR  *movie_dir ;
+  char *dir_name = NULL ;
+
+      movie_dir = opendir("./MOVIE") ;
+      printf("   Search for ./MOVIE.  Result = %p\n",(void *)movie_dir) ;
+      if(movie_dir){
+        closedir(movie_dir);
+      }else{
+        mkdir("./MOVIE",0755) ;
+      }
+
+      return 0 ;
+}
+/*
+ *  Routine to generate one movie frame
+ */
+int movie_new_frame(void){
+
+double shot_length ;
+char filename[SCREENSHOT_MAX_FILENAME];
+
+/*
+ *  Process start of shot
+ */
+      if(movie_on && !movie_stat){
+        movie_shot ++ ;
+        movie_frame = 0 ;
+        movie_stat  = 1 ;
+        shot_start  = run_seconds ;
+        printf("  Movie : Start of Shot %i.  Start time = %f s.\n",
+                 movie_shot, shot_start) ;
+#if FFMPEG
+        snprintf(filename, SCREENSHOT_MAX_FILENAME, "MOVIE/movie_%03i.mpeg",
+               movie_shot);
+        printf("   movie filename = %s\n",filename) ;
+//      ffmpeg_encoder_start(filename, AV_CODEC_ID_MPEG1VIDEO, 25, viewport_width, viewport_height);
+        ffmpeg_encoder_start(filename, AV_CODEC_ID_H264, 25, viewport_width, viewport_height);
+#endif
+/*
+ *  Process end of shot
+ */
+      }else if(movie_stat && !movie_on){
+        movie_stat = 0 ;
+        shot_length = run_seconds - shot_start ;
+        printf("  Movie : End of Shot %i.    Stop time = %f s.\n",
+                 movie_shot, run_seconds) ;
+        printf("        : Number of frames = %i.  Length of shot = %f s.\n",
+                 movie_frame, shot_length) ;
+        printf("        : Frames per second = %f\n", movie_frame/shot_length) ;
+#ifdef FFMPEG
+        ffmpeg_encoder_finish();
+        free(rgb);
+        rgb = NULL ;
+#endif
+        return 0 ;
+      }
+      if(!movie_on)return 0 ;
+/*
+ *  Check timings
+ */
+      shot_length = run_seconds - shot_start ;
+      shot_length = shot_length - movie_frame/30 ;
+//      shot_length = shot_length - movie_frame ;
+      if(shot_length < 0.0) return 0 ;
+/*
+ *  Process New Frame
+ */
+      movie_frame++ ;
+#ifdef PPM
+      snprintf(filename, SCREENSHOT_MAX_FILENAME, "MOVIE/movie_%03i_%04i.ppm",
+               movie_shot,movie_frame);
+//      printf("   movie filename = %s\n",filename) ;
+      screenshot_ppm(filename, viewport_width, viewport_height, &pixels);
+#endif
+
+#ifdef LIBPNG
+      snprintf(filename, SCREENSHOT_MAX_FILENAME, "MOVIE/movie_%03i_%04i.png",
+               movie_shot,movie_frame);
+      printf("   movie filename = %s\n",filename) ;
+      screenshot_png(filename, viewport_width, viewport_height,
+                                             &pixels, &png_bytes, &png_rows);
+#endif
+
+#ifdef FFMPEG
+      frame->pts = movie_frame ;
+      ffmpeg_encoder_glread_rgb(&rgb, &pixels, viewport_width, viewport_height);
+      ffmpeg_encoder_encode_frame(rgb);
+#endif
+      return 0 ;
+}
+#endif

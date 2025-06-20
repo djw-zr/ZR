@@ -350,7 +350,10 @@ int  setup_openal(int argc, char **argv) ;
 #endif
 
 #ifdef SHADERS
-int      shaders_init();
+int  shaders_init(void) ;
 #endif
 
-
+#if defined FFMPEG || defined LIBPNG || defined  PPM
+int  movie_init(void) ;
+int  movie_new_frame(void) ;
+#endif

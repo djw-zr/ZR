@@ -114,6 +114,16 @@ GLsizei  viewport_height = 1000 ;   // = main_window_height
 GLsizei  viewport_x0     =  100 ;   // = main_window_x0
 GLsizei  viewport_y0     =  100 ;   // = main_window_y0
 
+GLsizei  svga_width      =  800 ;   // = main_window_width
+GLsizei  svga_height     =  600 ;   // = main_window_height
+GLsizei  xga_width       = 1024 ;   // = main_window_width
+GLsizei  xga_height      =  768 ;   // = main_window_height
+GLsizei  fwxga_width     = 1366 ;   // = main_window_width
+GLsizei  fwxga_height    =  768 ;   // = main_window_height
+GLsizei  full_hd_width   = 1920 ;   // = main_window_width
+GLsizei  full_hd_height  = 1080 ;   // = main_window_height
+
+
 GLdouble viewport_fovy   = 30.0 ;
 GLdouble viewport_aspect =  1.0 ;
 GLdouble viewport_near_m =  1.0 ;    // Nearest point displayed 1 m(m)

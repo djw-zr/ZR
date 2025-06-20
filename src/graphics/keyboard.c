@@ -21,7 +21,8 @@ static double key_release_seconds = 0.0 ;
  *==============================================================================
  *   Routine Keyboard
  *   See routine 'specialkey' for F1 type keys and the arrow keys used with ZR
- *   to move the viewpoint
+ *   to move the viewpoint.
+ *   Note Ctrl generates a control type character so Ctrl-m = hexadecimal 'd'.
  *==============================================================================
  */
 void keyboard(unsigned char key, int x, int y){
@@ -58,7 +59,7 @@ char    *my_name="keyboard" ;
       if(l_shift) isign = -1 ;
 
       if(ip){
-        printf("    Routine keyboard.  Key : 0x%x  :%c: C=%i S=%i A=%i\n",
+        printf("    Routine keyboard.  Key : %x  :%c: C=%i S=%i A=%i\n",
                key,key, l_ctrl, l_shift, l_alt);
         fflush(NULL);
         if(l_ctrl){i = x && y ; }            // Keep the compiler happy
@@ -210,6 +211,16 @@ char    *my_name="keyboard" ;
           case '9':
             i_zrt = !i_zrt ;
             if(ip || 1)printf(" Toggle i_zrt = %i\n",i_zrt) ;
+            break ;
+/*
+ *  Movie Capture Alt-Shift-m
+ */
+#ifdef MOVIE
+          case 'M':
+            movie_on = !movie_on ;    //  Toggle movie capture on/off
+            break ;
+#endif
+          default:
             break ;
         }
 /*
@@ -381,9 +392,9 @@ char    *my_name="keyboard" ;
             printf("  d_rotate = %f\n",d_rotate) ;
 //#endif
             break ;
-  /*
-  *   'Esc' ends program
-  */
+/*
+ *   'Esc' ends program
+ */
           case 27:
             close_system() ;
           default:
