@@ -38,7 +38,7 @@ int   trains_init(void){
 /*
  *  Initialise one or more trains
  */
-#if   defined NO_ROUTE_DEF
+#if defined NO_ROUTE_DEF
       printf("***************************************\n") ;
       printf(" Call trains_setup_by_user\n") ;
       printf("***************************************\n") ;

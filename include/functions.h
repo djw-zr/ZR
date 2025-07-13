@@ -295,6 +295,7 @@ int   print_shape_file_data(ShapeNode *snode) ;
 int   add_shape_pointers_to_world_items(void) ;
 void  add_world_shapes_to_master(void *b) ;
 int   correct_shape(ShapeNode *snode) ;
+int   sort_shapes(ShapeNode **shapelist_beg) ;
 
 int   generate_shape_display_list(ShapeNode *snode) ;
 

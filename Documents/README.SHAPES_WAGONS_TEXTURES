@@ -1,0 +1,35 @@
+README.SHAPES_WAGONS_TEXTURES
+=============================
+
+1.  The full set of shapes, wagons and textures packaged with
+    each route can be displayed by compiling the program
+    with suitable command line parameters.
+
+    This is most easily done through the makefile by uncommenting
+    i.e. removing the '#' character, from the start of the corresponding
+    line of the makefile
+
+    To Display        Command line parameter
+
+    Shapes            -D_Display_Shapes
+    Wagons            -D_Display_Wagons
+    Textures          -D_Display_Textures
+
+    Before compiling ensure that all the 'ROUTE' option lines are
+    commented out, with a '#' at the start of the line.
+
+2.  When the program starts, it goes through the standard sequence
+    of choosing the top directory and one of the routes (although
+    the program will display the shapes etc. for all the routes
+    under the top directory).
+
+3.  When the shapes and wagons are displayed, they are laid out on
+    a flat plane, a few metres below the viewpoint, on a grid
+    extending into the distance.  The normal controls can be used
+    to move the viewpoint and change the direction of view.
+
+    When textures are displayed, they are laid out in a similar
+    manner but the view looks vertically downwards at the shape
+    textures.  The textures used by wagons are placed in a second
+    block placed a short distance to the right.  Again the normal
+    controls can be used to change the viewpoint.

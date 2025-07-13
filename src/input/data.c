@@ -443,9 +443,9 @@ char           my_name[] = "init_data_structures" ;
  * *****************************************************************************
  */
       if(0){
-        printf("***********************************************************\n") ;
+        printf("**********************************************************\n") ;
         printf("   Create default track shapes\n") ;
-        printf("***********************************************************\n") ;
+        printf("**********************************************************\n") ;
         make_track_shapes() ;
         make_road_shapes()  ;
         if(n_open_files>0)printf("    n_open_files = %i\n",n_open_files) ;
@@ -572,7 +572,9 @@ char           my_name[] = "init_data_structures" ;
  *      and flag needed wagons
  * *****************************************************************************
  */
+#ifdef _Display_Normal
       trains_init() ;
+#endif
 /*
  * *****************************************************************************
  *   5.  Load the Shape (*.s) and Additional data (*.sd) files
@@ -580,9 +582,13 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load wagon shape files\n");
       for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
+#ifdef _Display_Wagons
+        snode->needed = 1 ;
+#endif
         if(ip){
           printf(" Call load_shape :: shape name = %s\n",snode->name) ;
           printf(" Call load_shape :: shape      = %p\n",(void *)snode) ;
+          printf(" Call load_shape :: needed     = %i\n",snode->needed) ;
         }
         if(!snode->needed) continue ;
         load_shape(snode) ;
@@ -613,8 +619,9 @@ char           my_name[] = "init_data_structures" ;
  */
       printf("   Read and load wagon texture files\n");
       for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-//        if(!strncmp(tx_node->name,"JP2concwarehse",14))continue ;    //  USA1
+#ifndef  _Display_Textures
         if(!(tx_node->needed)) continue ;
+#endif
         load_texture(tx_node)    ;
         convert_texture(tx_node) ;
         if(ip)printf(" Texture name = %s\n",tx_node->name) ;

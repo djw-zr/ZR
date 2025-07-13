@@ -204,6 +204,10 @@ BTree  *btree_node   ;
           strcpy(shape->s_file,sdir_name) ;
           strcat(shape->s_file,namelist[i]->d_name);
 
+//          printf("  Length of filename :: %i :: %i\n",
+//                            len1+len2,(int)strlen(shape->s_file));
+//          printf("  s_file :: %s\n",shape->s_file) ;
+
           f=gopen(shape->s_file,"r") ;
           if(f!=NULL ){
             if(ip)printf(" File opened: \n") ;
@@ -214,9 +218,12 @@ BTree  *btree_node   ;
 /*
  *  Save full name of sd file if present or NULL
  */
-          len3 = len1 + len2 + 1 ;
+          len3 = strlen(shape->s_file) + 2 ;
           shape->sd_file = (char *)malloc(len3) ;
           strncpy(shape->sd_file, shape->s_file, len3) ;
+//          printf("  Trailing characters are %c : %c : %c : %c :\n",
+//                 shape->sd_file[len3-4], shape->sd_file[len3-3],
+//                 shape->sd_file[len3-2], shape->sd_file[len3-1]) ;
 //          shape->sd_file[len3-3] = 's' ;
           if(shape->sd_file[len3-3]=='s'){
             shape->sd_file[len3-2] = 'd' ;
@@ -224,6 +231,9 @@ BTree  *btree_node   ;
             shape->sd_file[len3-2] = 'D' ;
           }
           shape->sd_file[len3-1] = '\0' ;
+//          printf("  Trailing characters are %c : %c : %c : %c\n",
+//                 shape->sd_file[len3-4], shape->sd_file[len3-3],
+//                 shape->sd_file[len3-2], shape->sd_file[len3-1]) ;
           if(ip)printf("  AA  Full name of sd file : %s\n",shape->sd_file) ;
 /*
  *  Check that sd file exists
@@ -387,9 +397,9 @@ int load_shape(ShapeNode *snode ) {
   char    *string ;
   char    my_name[] = "load_shape" ;
 
-//      ip = ip && !strcmp_ic(snode->name,test_shape) ;
+      ip = ip && !strcmp_ic(snode->name,test_shape) ;
 //      ip = !strncmp(snode->name,"mm_",3) || !strncmp(snode->name,"MM_",3) ;
-      if(ip || 0){
+      if(ip){
         printf("\n  Enter routine : %s : %i\n",my_name, ip);
         printf("    Shape name = %s\n",snode->name);
         printf("    File       = %s\n",snode->s_file);
@@ -2003,6 +2013,70 @@ SubObject *so =  &(snode->lod_control[0].dist_level[0].sub_object[1]) ;
         if(ip)printf("  Routine %s.  Shape = %s\n",my_name,name1) ;
       }
 
+
+      return 0 ;
+}
+
+/*
+ *  Routine to sort the shapes
+ */
+
+static int  compare_sx_names(const void *p1, const void *p2){
+
+ShapeNode **s1, **s2, *t1, *t2 ;
+
+      s1 = (ShapeNode **)p1 ;
+      s2 = (ShapeNode **)p2 ;
+      t1 = (ShapeNode *)*s1 ;
+      t2 = (ShapeNode *)*s2 ;
+
+//      printf("  compare  %p %p :: %p %p:: %p %p :: %s %s\n",p1,p2,(void *)s1,(void *)s2,
+//             (void *)t1, (void *)t2,t1->name,t2->name) ;
+
+      return strcmp(t1->name, t2->name) ;
+}
+
+int sort_shapes(ShapeNode **shapelist_beg){
+
+int       ip = 0      ;
+int       n_shapes, i ;
+ShapeNode *sx,  **sa  ;
+char *my_name="sort_shapes" ;
+
+      if(ip){
+        printf("  Enter routine %s\n",my_name) ;
+        printf("    shapelist_beg = %p\n",(void *)shapelist_beg) ;
+        fflush(NULL) ;
+      }
+      sx = *shapelist_beg;
+      if(sx==NULL) return 0 ;
+/*
+ *  Count shapes
+ */
+      n_shapes = 0 ;
+      for(sx = *shapelist_beg; sx != NULL; sx = sx->next){
+        n_shapes++ ;
+      }
+
+      sa = (ShapeNode **)malloc(n_shapes*sizeof(ShapeNode *)) ;
+      for(sx = *shapelist_beg, i=0; sx != NULL; sx = sx->next, i++) sa[i] = sx ;
+
+      if(ip)for(i=0;i<n_shapes;i++){
+        printf(" CC %p sa = %p,  name = %s\n",(void *)sa,(void *)sa[i], sa[i]->name) ;
+      }
+
+      qsort(sa, n_shapes, sizeof(ShapeNode *), compare_sx_names) ;
+
+      *shapelist_beg = sa[0] ;
+      for(i=1;i<n_shapes;i++) sa[i-1]->next = sa[i] ;
+      sa[n_shapes-1]->next = NULL ;
+
+      if(ip){
+        printf(" n_shapes = %i\n",n_shapes) ;
+        for(sx = *shapelist_beg,i=0; sx != NULL; sx = sx->next,i++)
+          printf(" %i  Tx = %p  ::  Texture = %s\n",i,(void *)sx,sx->name) ;
+      }
+      free(sa) ;
 
       return 0 ;
 }

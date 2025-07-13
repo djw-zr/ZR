@@ -362,8 +362,16 @@ char *my_name = "process_defaults" ;
       bt_walk_b2t(ORdirs,free) ;
 //      if(ORdirs)free(ORdirs) ;
 
+/*
+ *  The original MSTS compiler flags, i.e. -DROUTE_USA2 can be used
+ *  with the new (above) scheme for choosing the route, but will need
+ *  the correct choice of directory and route.
+ */
+
 #ifdef ROUTE_MSTS
       printf("   Program ZR will use MSTS route %s\n",msts_route) ;
+      printf("   Home directory was:  %s\n",ORdir);
+      printf("   Route directory was: %s\n",ORroutedir);
       free(ORdir) ;
       ORdir = MSTSdir ;
       free(ORroutedir) ;
@@ -372,10 +380,11 @@ char *my_name = "process_defaults" ;
       strcat(ORroutedir,"/ROUTES/") ;
       strcat(ORroutedir,msts_route) ;
       strcat(ORroutedir,"/") ;
-      printf("   Home directory  = %s\n",ORdir);
-      printf("   Route directory = %s\n",ORroutedir);
+      printf("   Home directory is:   %s\n",ORdir);
+      printf("   Route directory is:  %s\n",ORroutedir);
+#else
+      printf("   ROUTE_MSTS not defined.\n") ;
 #endif
-
 
       return ;
 }

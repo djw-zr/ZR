@@ -296,6 +296,7 @@ char *my_name = "create_new_wagon_node" ;
 }
 
 int create_wagon_shape_node(RawWagonNode *wagon_node){
+
 int  ip = 0 ;
 int   n               ;
 FILE  *fp             ;
@@ -336,7 +337,7 @@ ShapeNode    *shape_node   ;
         }
       }
       if(wagon_node->shape == NULL){
-        if(ip)printf("  Shape not loaded\n") ;
+        if(ip)printf("  Shape not already loaded\n") ;
       }else{
         if(ip)printf("  Shape already loaded\n") ;
       }
@@ -372,6 +373,7 @@ ShapeNode    *shape_node   ;
         string = (char *)malloc(sizeof(char)*(n+2)) ;
         strcpy(string,s_file) ;
         strcat(string,"d")    ;
+        find_msstyle_file(&string) ;
 
         if((fp = gopen(string,"r"))!= NULL){
           if(ip)printf("  Found *.sd file         : %s\n",string) ;

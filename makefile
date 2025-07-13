@@ -69,7 +69,7 @@ CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 #CFLAGS += -DROUTE_AU_NSW_SW_SS
 #CFLAGS += -DROUTE_NEW_FOREST
 CFLAGS += -DNO_ROUTE_DEF
-CFLAGS += -DSHADERS
+#CFLAGS += -DSHADERS
 #CFLAGS += -DDISPLAY_5_SECONDS # Used for remote tests over a slow network
 #
 #   Option to circumvent linker error with OpenAL functions.  See:

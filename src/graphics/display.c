@@ -1501,6 +1501,8 @@ char       string[128];
 //      printf(" PLOTTING  SHAPES :: Routine display_shapes\n") ;
       glEnable(GL_LIGHTING) ;
 
+      sort_shapes(&shapelist_beg) ;
+
       for(snode=shapelist_beg, i=0, j=0; snode!=NULL; snode=snode->next, i++){
         if(100==i){
           j = j + 1;

@@ -66,6 +66,7 @@ int load_shape_d(ShapeNode *snode){
         printf("\n\n  ERROR : Routine open_msfile failed to open file\n\n");
         exit(1) ;
       }
+      if(ip)printf("  File opened by open_msfile\n") ;
 /*
  *  Check for top level 'Shape' token
  */
