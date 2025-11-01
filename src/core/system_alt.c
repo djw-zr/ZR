@@ -23,20 +23,21 @@
  *   Minimal replacement for routine 'realpath'.
  *   The version makes no changes to the filename.
  */
-#if 1
 char *realpath1(const char *path, char *resolved_path){
 
   char my_name[] = "REALPATH" ;
   char *new_path ;
   int  n ;
+
 //  If using MinGW under linux use the real 'realpath()' to handle
 //  the /sys directory pointers
+
 #ifndef WINDOWS
       if(!strncmp(path,"/sys",4)){
         return realpath(path,resolved_path) ;
       }
 #endif
-//
+
       new_path = strdup(path) ;
       if(resolved_path == NULL){
         return new_path ;
@@ -47,7 +48,7 @@ char *realpath1(const char *path, char *resolved_path){
       free(new_path) ;
       return resolved_path ;
 }
-#endif
+
 /*
  *   Routines using struct dirent.
  *     Defined in /usr/include/bits/dirent.h
@@ -106,16 +107,16 @@ struct dirnode{               //  Linked list of dirent
    struct dirent  dir_entry ;
 } ;
 
-DIR             *root_dir     ;  // Pointer to a directory (DIR) structure
-struct dirent   *dir_point    ;  // Pointer to structure dirent
-struct dirent  **dir_array    ;  // Pointer to array of pointers
-struct stat      sb           ;
+  DIR             *root_dir     ;  // Pointer to a directory (DIR) structure
+  struct dirent   *dir_point    ;  // Pointer to structure dirent
+  struct dirent  **dir_array    ;  // Pointer to array of pointers
+  struct stat      sb           ;
 
-struct dirnode  *d_node_first ;  // Pointer to d_node structure
-struct dirnode  *d_node_last  ;
-struct dirnode  *d_node       ;
-struct dirnode  *d_node_array ;  // Pointer to array of pointers
-char my_name[] = "scandir (zr version)" ;
+  struct dirnode  *d_node_first ;  // Pointer to d_node structure
+  struct dirnode  *d_node_last  ;
+  struct dirnode  *d_node       ;
+  struct dirnode  *d_node_array ;  // Pointer to array of pointers
+  char my_name[] = "scandir (zr version)" ;
 
       if(ip)printf("  Enter %s\n",my_name );
       d_node_first = NULL ;

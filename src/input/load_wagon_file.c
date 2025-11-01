@@ -1,4 +1,4 @@
- /*
+/*
  * *****************************************************************************
  * 45678901234567890123456789012345678901234567890123456789012345678901234567890
  *
@@ -27,24 +27,25 @@ static char string[4096] ;
 
 int read_raw_wagon_file(RawWagonNode *w){
 
-int      i, l, n, cdir_len, iret ;
-int      ip = 0 ;  //Debug
-float    temp   ;
-int      n_msfile = 0         ;
-MSfile   msfile0[5]            ;
-MSfile   *msfile = &msfile0[0] ;
-char     my_name[] = "read_raw_wagon_file" ;
-char     *string = NULL,
-         *token1 = NULL ,
-         *token2 = NULL ,
-         *cdir   = NULL ,             //  Current wagon directory
-         *cext   = NULL ,             //  File extension
-         *no_type        = "No Type",
-         *no_description = "No Description",
-         *inc_file = NULL;
-RawEngineNode *e ;
-WagonIntake   *intake ;
-char     ffname[] = "__FILE__"  ;
+  int      i, l, n, cdir_len, iret ;
+  int      ip = 0 ;  //Debug
+  float    temp   ;
+  int      n_msfile = 0         ;
+  MSfile   msfile0[5]            ;
+  MSfile   *msfile = &msfile0[0] ;
+  char     *string = NULL,
+          *token1 = NULL ,
+          *token2 = NULL ,
+          *cdir   = NULL ,             //  Current wagon directory
+          *cext   = NULL ,             //  File extension
+          *no_type        = "No Type",
+          *no_description = "No Description",
+          *inc_file = NULL;
+  RawEngineNode *e ;
+  WagonIntake   *intake ;
+  char     ffname[] = "__FILE__"  ;
+
+  char     my_name[] = "read_raw_wagon_file" ;
 
       if(ip){
         printf("  Enter %s\n",my_name) ;
@@ -1500,6 +1501,7 @@ char     ffname[] = "__FILE__"  ;
  */
 
 char *read_scaled_token(MSfile *msfile){
+
   uint l, n ;
   char *token ;
 
@@ -1538,20 +1540,20 @@ char *read_scaled_token(MSfile *msfile){
 
 int  check_wheel_radii(RawWagonNode *w){
 
-ShapeNode  *shape  ;
-Matrix4x3  *matrix ;
-LodControl *lod_control ;
-DistLevel  *dist_level  ;
-int        *hierarchy   ;   ///  Can be -1
+  uint    ip = 0 ;   // DEBUG
+  uint    i, j ;
+  uint    nmatrices    ;
+  uint    n_hierarchy ;
+  int     *hierarchy   ;   ///  Can be -1
+  double radius ;
+  char       *name ;
 
-uint        nmatrices    ;
-uint        n_hierarchy ;
-char       *name ;
-char       *myname = "check_wheel_radii" ;
+  ShapeNode  *shape  ;
+  Matrix4x3  *matrix ;
+  LodControl *lod_control ;
+  DistLevel  *dist_level  ;
 
-uint    ip = 0 ;   // DEBUG
-uint    i, j ;
-double radius ;
+  char       *myname = "check_wheel_radii" ;
 
       printf("  ENTER %s\n",myname) ;
       fflush(NULL) ;
@@ -1593,9 +1595,6 @@ double radius ;
       fflush(NULL) ;
       printf("  ENTER %s %p\n",myname,(void *)matrix) ;
       fflush(NULL) ;
-
-
-
 
       fflush(NULL) ;
       printf("  ENTER %s nmatrices = %i\n",myname,nmatrices) ;
@@ -1641,15 +1640,4 @@ double radius ;
       }
       return 0;
 }
-
-#if 0
-int  init_rawenginenode(RawWagonNode *w){
-
-      if(!w->raw_engine)w->raw_engine = (RawEngineNode *)malloc(sizeof(RawEngineNode)) ;
-      w->raw_engine->has_wipers      = 0 ;
-      w->raw_engine->has_mirrors     = 0 ;
-      w->raw_engine->has_pantographs = 0 ;
-      return 0;
-}
-#endif
 

@@ -100,7 +100,7 @@ int update_level_crossings(void){
           ti_tile_east  = ti_node->tile_east_x ;
           ti_tile_north = ti_node->tile_north_z ;
 
-          global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+          global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                             ti_node->tile_east_x, ti_node->tile_north_z,
                             ti_node->east_x, ti_node->north_z, ti_node->height_y,
                             &tx, &ty, &tz) ;
@@ -209,7 +209,6 @@ uint search_for_track_item(TravellerNode *t, LevelXSNode *lc, double distance, u
   uint     i, ip = 0   ;
   int      iret        ;
   uint     tr_index    ;    //  Current track index
-//  uint     tr_vect     ;    //  Current vector index
   uint     tr_dirn     ;    //  1/0, 1 if Vector Direction equals Train Direction
   double   dd_remain   ;    //  Distance remaining
   double   dd_move     ;    //  Distance to move

@@ -62,8 +62,6 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
         return 0 ;
       }
 
-//     ip = !ic && !strcmp(snode->name,"UKRoyalScot");
-//     ip = !ic && !strcmp(snode->name,"acelahhl") && (dist_level->dlevel_selection < 110.0) ;
 //     ip = !ic && !strcmp(snode->name,"1905-S654");
 //      if(strcmp(snode->name,name_control)== 0){      //  Allow control over items plotted
 //       ip = 0 ;
@@ -148,17 +146,18 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
       }else{
         n_anim_nodes = 0 ;
       }
-      if(ip)printf("  snode         = %p\n", (void *)snode) ;
-      if(ip)printf("  animation     = %p\n", (void *)animation) ;
-      if(ip)printf("  n_anim_nodes  = %i\n", n_anim_nodes) ;
+      if(ip){
+        printf("  snode         = %p\n", (void *)snode) ;
+        printf("  animation     = %p\n", (void *)animation) ;
+        printf("  n_anim_nodes  = %i\n", n_anim_nodes) ;
+        printf("  dist_level    = %p\n", (void *)dist_level) ;
+        printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
+      }
 /*
  *==============================================================================
  *  Loop oversub-objects
  *==============================================================================
  */
-      if(ip)printf("  dist_level    = %p\n", (void *)dist_level) ;
-      if(ip)printf("  n_sub_objects = %i\n", dist_level->n_sub_objects) ;
-
       for(k=0;k<dist_level->n_sub_objects;k++){
         if(ip)printf("  Start loop for sub-object %i\n",k) ;
         sub_object = &(dist_level->sub_object[k]) ;
@@ -299,23 +298,15 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
               printf("  Hierarchy AA  im = %i, ima[im] = %i,  Name = %s\n",
                         im,ima[im],matrix4x3->name) ;
             }
-#if 0
-            is_wheel = !strncmp_ic(matrix4x3->name,"wheels",6) ;
-            is_engine_wheel = is_wheel && 7 == strlen(matrix4x3->name) ;
-//            if(is_wheel)printf("   Matrix = %s, is_engine = %i, is_wheel = %i, is_engine_wheel = %i\n",
-//                    matrix4x3->name,is_engine,is_wheel,is_engine_wheel) ;
-            is_bogie = !strncmp_ic(matrix4x3->name,"bogie",5) ;
-            is_wiper = !strncmp_ic(matrix4x3->name,"wiper",5) ;
-            is_mirror     = !strncmp_ic(matrix4x3->name,"mirror",6) ;
-            is_pantograph = !strncmp_ic(matrix4x3->name,"pantograph",10) ;
-#else
-             is_engine_wheel = matrix4x3->anim == MAT_DRIVER_WHEEL ;
-             is_wheel        = matrix4x3->anim == MAT_WHEEL || is_engine_wheel ;
-             is_bogie        = matrix4x3->anim == MAT_BOGIE      ;
-             is_wiper        = matrix4x3->anim == MAT_WIPER      ;
-             is_mirror       = matrix4x3->anim == MAT_MIRROR     ;
-             is_pantograph   = matrix4x3->anim == MAT_PANTOGRAPH ;
+#ifdef _Display_Wagons
+            matrix4x3->anim = 0 ;
 #endif
+            is_engine_wheel = matrix4x3->anim == MAT_DRIVER_WHEEL ;
+            is_wheel        = matrix4x3->anim == MAT_WHEEL || is_engine_wheel ;
+            is_bogie        = matrix4x3->anim == MAT_BOGIE      ;
+            is_wiper        = matrix4x3->anim == MAT_WIPER      ;
+            is_mirror       = matrix4x3->anim == MAT_MIRROR     ;
+            is_pantograph   = matrix4x3->anim == MAT_PANTOGRAPH ;
 /*
  *  Animation for matrix im
  */
@@ -329,15 +320,14 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
             if(ip)printf("    n_controllers = %i\n",n_controllers) ;
 /*
  *  No animations (except possibly this is a wheel or bogie)
- *  For the moment mirrors and pantographs remain in the default poition (down or closed)
  */
             if(n_controllers == 0  || is_wheel){
-              if(ip)printf("    shape = %s, sub_object = %i, tri_list = %i\n"
+              if(ip){
+                printf("    shape = %s, sub_object = %i, tri_list = %i\n"
                            "                prim_state = %i, prim_state->name = %s,\n"
                            "                vertex_state = %i, hierarchy[vs] = %i, matrix_type = %i\n",
                           snode->name, k, l, prim_state_idx, prim_state->name, ivtx_state,
                           dist_level->hierarchy[ivtx_state],matrix4x3->type) ;
-              if(ip){
                 printf("    Matrix    name = %s\n",matrix4x3->name) ;
                 printf("    PrimState name = %s\n",prim_state->name) ;
               }
@@ -428,23 +418,18 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
                 dw = 0.0 ;
                 if(is_wiper){
                   if(ip)printf("    Set wiper angle\n") ;
-//                          printf("    wiper angle = %f, dw = %f, wa = %f\n",
-//                                 wagon->engine->wiper_ang,dw,wa) ;
-//                          dw = 1.0/(n_anim_keys - 1) ;
                   wa = 0.5*(1.0 + sin(radian*wagon->wipers_ang))*(n_anim_keys - 1) ;
                   i0 = wa ;
                   if(i0>n_anim_keys - 2)i0 = n_anim_keys - 2 ;
                   i1 = i0 + 1   ;
 //  Pantograph
                 }else if(is_pantograph){
-//                  printf("  Display pantographs : dist = %f\n", wagon->engine->pantographs_dist ) ;
                   wa = wagon->pantographs_dist*(n_anim_keys - 1) ;
                   i0 = (wa>=0) ? wa : 0 ;
                   if(i0>(n_anim_keys-2))i0 = n_anim_keys-2;
                   i1 = i0 + 1 ;
 //  Drivers mirrors
                 }else if(is_mirror){
-//                  printf("  Display mirrors : dist = %f\n", wagon->engine->mirrors_dist ) ;
                   wa = wagon->mirrors_dist*(n_anim_keys - 1) ;
                   i0 = (wa>=0) ? wa : 0 ;
                   if(i0>(n_anim_keys-2))i0 = n_anim_keys-2;
@@ -453,8 +438,6 @@ int display_wshape(WagonNode *wagon, ShapeNode *snode, DistLevel *dist_level){
                 }else{
                   if(ip)printf("    Set running gear angle\n") ;
                   dw = 360.0/(n_anim_keys-1) ;
-//                  wagon->wheel_angle = fmod(wagon->wheel_angle,360.0);
-//                  if(wagon->wheel_angle<0.0)wagon->wheel_angle += 360.0 ;
                   wa = wagon->driverwheel_angle/dw ;
                   i0 = (wa>=0) ? wa : 0 ;
                   if(i0>(n_anim_keys-1))i0 = n_anim_keys-1 ;
@@ -519,7 +502,7 @@ double qx, qy, qz, qw ;
                     a = -2.0*a*degree ;
                     glRotatef((GLfloat) a, (GLfloat) x,(GLfloat) y,(GLfloat) z) ;
                   }
-                  if(ip || 0){
+                  if(ip){
                     printf("      Animate 1: a, dw, wa : %f,  %f,  %f\n",
                                                       wagon->wheel_angle, dw, wa) ;
                     printf("      Animate 1: Weight    : %f,  %f,  %f\n",w0,w1, w0+w1) ;
@@ -605,12 +588,7 @@ double qx, qy, qz, qw ;
             col[0] = (col1 >> 16) & 0xff ;   //  Red ??
 //            col[3] = ((col1 >> 24) & 0xff) ;  // Alpha channel
             glColor3ubv(col)     ;
-#if 0
-            printf(" GL_CURRENT_COLOR (RGB)  = %x  %x  %x \n", col[0], col[1], col[2]) ;
-            glGetFloatv(GL_CURRENT_COLOR,cof) ;    //   In order R, G, B, A
-            printf(" GL_CURRENT_COLOR (RGBA) = %f  %f  %f  %f\n",(double) cof[0],
-                                (double) cof[1],(double) cof[2],(double) cof[3]) ;
-#endif
+
             glBegin(GL_TRIANGLES)    ;
             for(m=0;m<tri_list->n_vertex_idxs;m++){
               va[0] =    tri_list->vertex_idx[m].a ;     //  Index in
@@ -627,7 +605,7 @@ double qx, qy, qz, qw ;
                 nx = snode->normal[inormal].X ;
                 ny = snode->normal[inormal].Y ;
                 nz = snode->normal[inormal].Z ;
-                if(ip && 0)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
+                if(ip)printf("  display_wshape : %2i %2i %2i %2i :: %9f %9f %9f ::"
                         "%9f %9f %9f\n",
                                                     k,l,m,n, x,y,z, nx,ny,nz) ;
                 glNormal3f(nx, ny, nz) ;
@@ -648,14 +626,12 @@ double qx, qy, qz, qw ;
  */
       if(ip){
         printf("  End loop over k\n") ; fflush(NULL) ;
-      }
-      if(ip){
         ic-- ;
         if(0>=ic) ic=icc ;
         ip = 0 ;
-      if(ic==icc){
-        printf("  End loop over k\n") ; fflush(NULL) ;
-      }
+        if(ic==icc){
+          printf("  End loop over k\n") ; fflush(NULL) ;
+        }
       }
       return 0 ;
 }

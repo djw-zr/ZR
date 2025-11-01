@@ -244,4 +244,3 @@ int find_next_signal_mr(SignalDB *signal, int itype, int itype2){
       }
       exit(0) ; //  Should never be reached
 }
-

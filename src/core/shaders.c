@@ -15,8 +15,8 @@
 
 GLuint shader_program_init(const GLchar **vertex_shader, const GLchar **fragment_shader)
 {
-GLuint VertexShader, FragmentShader, glProgram ;
-GLint  glCompiled,   glLinked,       glValidated ;
+  GLuint VertexShader, FragmentShader, glProgram ;
+  GLint  glCompiled,   glLinked,       glValidated ;
 
 /*
  *  Create Vertex Shader

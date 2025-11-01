@@ -33,12 +33,12 @@ int   initialise_road_shape(ShapeNode *shapenode) ;
 
 int  make_default_road_profile(){
 
-int            ip = 0          ;                    // Debug printing
-DynProfile     *dyn_track  ;
-TrackDistLevel *dist_level ;
-TrackSubObject *sub_object    ;
-RailProfile    *profile    ;
-char            my_name[]="make_default_road_profile" ;
+  int            ip = 0          ;                    // Debug printing
+  DynProfile     *dyn_track  ;
+  TrackDistLevel *dist_level ;
+  TrackSubObject *sub_object    ;
+  RailProfile    *profile    ;
+  char            my_name[]="make_default_road_profile" ;
 
 /*
  * Initialise new Dynamic Track Node
@@ -143,11 +143,11 @@ char            my_name[]="make_default_road_profile" ;
  */
 
 int  make_road_shapes(){
-uint i ;
-int  ip = 0 ;                        // Debug printing = 1
-TrkSector   *road_node       ;  // Road section needing shape
-//DynProfile       *road_profile    ;  // Track Profile to use
-char             my_name[]="make_road_shapes" ;
+
+  int  ip = 0 ;                        // Debug printing = 1
+  uint i ;
+  TrkSector   *road_node       ;  // Road section needing shape
+  char             my_name[]="make_road_shapes" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
       if(zr_road_profile == NULL){
@@ -155,14 +155,16 @@ char             my_name[]="make_road_shapes" ;
         exit(0) ;
       }
 
-//      road_profile = dyntracklist_beg ;
       for(i=0;i<road_db.trk_sections_array_size;i++){
         if(ip)printf("    make_road_shapes i = %i\n",i) ;
         road_node = &(road_db.trk_sections_array[i]) ;
-        if(ip)printf("    make_road_shapes road_node    = %p\n",(void *)road_node) ;
-        if(ip)printf("    make_road_shapes road_profile = %p\n",(void *)zr_road_profile) ;
+        if(ip){
+          printf("    make_road_shapes road_node    = %p\n",(void *)road_node) ;
+          printf("    make_road_shapes road_profile = %p\n",(void *)zr_road_profile) ;
+        }
         add_sub_nodes_to_road(road_node, zr_road_profile) ;
       }
+
       return 0 ;
 }
 
@@ -172,35 +174,37 @@ char             my_name[]="make_road_shapes" ;
 
 int  add_sub_nodes_to_road(TrkSector *road_section, DynProfile *profile){
 
-uint          i, j, n   ;
-int           ip = 0 ;                                // Debug printing = 1
-double        x2, y2, r0, r1, a, b, w0, w1,
-              da, xn, yn, tmp  ;
-uint          n_road_nodes    ;   //  Number of vector nodes in section
-uint          n_sub_nodes     ;   //  Number of sub nodes in road node
-int           last_node = 0   ;   //  =1 if last node of section
-double        x0, y0, z0,         //  Position of current node relative to tile
-              xt0, yt0,           //  Tangent vector
-              xn0, yn0,           //  Normal vector (left of road)
-              x1, y1, z1,         //  Position of next node relative to tile
-              xt1, yt1,           //  Tangent vector
-              xn1, yn1,           //  Normal vector (left of road)
-              a0,                 //  Tangent angle of current node
-              a1,                 //  Tangent angle of next node
-              xc, yc,             //  Weighted centre of circle
-              aa ;
-double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
-              xc0  = 0.0, yc0  = 0.0,  //  Centre of circles
-              xc1  = 0.1, yc1  = 0.0  ;
-TrkVectorNode *tv0,               //  Current road vector node
-              *tv1  = NULL ;      //  Next road vector
-TrkSector *ts1 = NULL ;      //  Next road section
-char          *my_name="add_sub_nodes_to_road" ;
+  uint          i, j, n   ;
+  int           ip = 0 ;                                // Debug printing = 1
+  double        x2, y2, r0, r1, a, b, w0, w1,
+                da, xn, yn, tmp  ;
+  uint          n_road_nodes    ;   //  Number of vector nodes in section
+  uint          n_sub_nodes     ;   //  Number of sub nodes in road node
+  int           last_node = 0   ;   //  =1 if last node of section
+  double        x0, y0, z0,         //  Position of current node relative to tile
+                xt0, yt0,           //  Tangent vector
+                xn0, yn0,           //  Normal vector (left of road)
+                x1, y1, z1,         //  Position of next node relative to tile
+                xt1, yt1,           //  Tangent vector
+                xn1, yn1,           //  Normal vector (left of road)
+                a0,                 //  Tangent angle of current node
+                a1,                 //  Tangent angle of next node
+                xc, yc,             //  Weighted centre of circle
+                aa ;
+  double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
+                xc0  = 0.0, yc0  = 0.0,  //  Centre of circles
+                xc1  = 0.1, yc1  = 0.0  ;
+  TrkVectorNode *tv0,               //  Current road vector node
+                *tv1  = NULL ;      //  Next road vector
+  TrkSector *ts1 = NULL ;      //  Next road section
+  char          *my_name="add_sub_nodes_to_road" ;
 
-      if(ip)printf("\n    Enter routine %s\n",my_name) ;
-      if(ip)printf("\n             ip = %i\n",ip) ;
-      if(ip)printf("      Type of node = %i VECTOR =  %i END = %i.\n",
+      if(ip){
+        printf("\n    Enter routine %s\n",my_name) ;
+        printf("\n             ip = %i\n",ip) ;
+        printf("      Type of node = %i VECTOR =  %i END = %i.\n",
                  road_section->type_of_node,VECTOR_SECTION,END_SECTION);
+      }
 
 /*
  * Skip if not a vector node (i.e. Junction or End Node)
@@ -244,8 +248,6 @@ int ii, jj ;
 
         x1 = tv1->east_x   + ii * tile_size ;
         y1 = tv1->north_z  + jj * tile_size ;
-//        x1 = tv1->east_x   ;
-//        y1 = tv1->north_z  ;
         z1 = tv1->height_y ;
         a1 = tv1->a_height_y ;  // radians
 //        printf("  CC1  a0 = %f %f\n",a0,a0*degree) ;
@@ -404,6 +406,7 @@ int ii, jj ;
         }
         printf("\n") ;
       }
+
       return 0 ;
 }
 
@@ -413,10 +416,10 @@ int ii, jj ;
 
 TrkSector  *next_road_node(TrkSector *road_section){
 
-int             next_node_index, n ;
-int             ip = 0 ;                      // Dubug printing when ip == 1
-char            my_name[] = "next_road_node" ;
-TrkSector  *t              ;
+  int         ip = 0 ;                      // Dubug printing when ip == 1
+  int         next_node_index, n ;
+  TrkSector  *t              ;
+  char        my_name[] = "next_road_node" ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -462,15 +465,15 @@ TrkSector  *t              ;
 
 int   make_road_shape(TrkSector *tracknode, DynProfile *profile){
 
-int        i, n           ;
-int        ip = 0         ;  // Debug printing
-int        n_dist_levels  ;
-ShapeNode  *shapenode     ;
-LodControl *lod_control   ;
-DistLevel  *dist_level    ;
-TrackDistLevel *profile_dist_level      ;
-char       string256[256] ;   //  Working string
-char       my_name[]="make_road_shape" ;
+  int        ip = 0         ;  // Debug printing
+  int        i, n           ;
+  int        n_dist_levels  ;
+  ShapeNode  *shapenode     ;
+  LodControl *lod_control   ;
+  DistLevel  *dist_level    ;
+  TrackDistLevel *profile_dist_level      ;
+  char       string256[256] ;   //  Working string
+  char       my_name[]="make_road_shape" ;
 
       if(ip)printf(" Enter make_road_shape\n") ;
 
@@ -501,6 +504,7 @@ char       my_name[]="make_road_shape" ;
         dist_level->sub_object        = NULL ;
         dist_level->gl_display_list   = 0    ;
       }
+
       return 0 ;
 }
 
@@ -574,5 +578,3 @@ int   initialise_road_shape(ShapeNode *shapenode){
 
       return 0;
 }
-
-

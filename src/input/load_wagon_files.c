@@ -48,7 +48,8 @@ int scan_for_wagon_files(){
   RawWagonNode  *rw ;
   char  *trainset       ="/Trains/Trainset/" ;
   char  *trainset_inuse ="/Trains/Trainset_In_Use/" ;
-  char  my_name[] = "scan_for_wagon_files" ;
+
+  char  *my_name = "scan_for_wagon_files" ;
 
       l1      = strlen(ORdir) + strlen(trainset_inuse) + 1 ;
       top_dir1 = (char *)malloc(l1*sizeof(char)) ;
@@ -69,7 +70,6 @@ int scan_for_wagon_files(){
       }
       if(ip)printf(" Top trainset directory = %s\n",top_dir1) ;
 
-#if 1
 /*
  *  Open top directory and loop through
  */
@@ -134,30 +134,26 @@ int scan_for_wagon_files(){
           printf("    Directory name = %s\n", top_dir2) ;
         }
       }
-#else
-//  Use ftw to walk directory
 
-      if(!iret){
-        iret = nftw(top_dir, process_wagon_file, 5, 0) ;
-      }
-#endif
       if(top_dir1)free(top_dir1) ;
       if(top_dir2)free(top_dir2) ;
       if(fname)   free(fname) ;
 
       if(ip)printf(" Return from routine %s\n",my_name) ;
+
       return iret ;
 }
 
 
 void create_new_texture(char *fname){
 
-int  ip = 0 ;
-char *file_name,
-     *base_name,
-     *core_name ;
-char *my_name = "create_new_texture" ;
-TextureNode  *texture_node ;
+  int  ip = 0 ;
+  char *file_name,
+      *base_name,
+      *core_name ;
+  TextureNode  *texture_node ;
+
+  char *my_name = "create_new_texture" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -196,20 +192,23 @@ TextureNode  *texture_node ;
 }
 
 int create_new_wagon_node(char *fname){
-int  ip = 0 ;
-int   n               ;
-FILE  *fp             ;
-char  *file_name,           //  Full filename
-      *parent_dir,          //  Directory containing wagon
-      *base_name,           //  Base name inc extension
-      *core_name,           //  Base name without extension
-      *extension,           //  Extension
-      *s_file,              //  File name of shape
-      *string = NULL  ;     //  Used with malloc to construct filenames
-                            //     ... freed when name not needed later
-RawWagonNode *wagon_node, *rw ;
-ShapeNode    *shape_node   ;
-char *my_name = "create_new_wagon_node" ;
+
+  int  ip = 0 ;
+  int   n               ;
+  FILE  *fp             ;
+  char  *file_name,           //  Full filename
+        *parent_dir,          //  Directory containing wagon
+        *base_name,           //  Base name inc extension
+        *core_name,           //  Base name without extension
+        *extension,           //  Extension
+        *s_file,              //  File name of shape
+        *string = NULL  ;     //  Used with malloc to construct filenames
+                              //     ... freed when name not needed later
+
+  RawWagonNode *wagon_node, *rw ;
+  ShapeNode    *shape_node   ;
+
+  char *my_name = "create_new_wagon_node" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -297,19 +296,20 @@ char *my_name = "create_new_wagon_node" ;
 
 int create_wagon_shape_node(RawWagonNode *wagon_node){
 
-int  ip = 0 ;
-int   n               ;
-FILE  *fp             ;
-char  *file_name,           //  Full filename
-        *base_name,           //  Base name inc extension
-        *core_name,           //  Base name without extension
-        *extension,           //  Extension
-        *s_file,              //  File name of shape
-        *string = NULL  ;     //  Used with malloc to construct filenames
-                              //     ... freed when name not needed later
-char *my_name = "create_wagon_shape_node" ;
-RawWagonNode *rw ;
-ShapeNode    *shape_node   ;
+  int  ip = 0 ;
+  int   n               ;
+  FILE  *fp             ;
+  char  *file_name,           //  Full filename
+          *base_name,           //  Base name inc extension
+          *core_name,           //  Base name without extension
+          *extension,           //  Extension
+          *s_file,              //  File name of shape
+          *string = NULL  ;     //  Used with malloc to construct filenames
+                                //     ... freed when name not needed later
+  RawWagonNode *rw ;
+  ShapeNode    *shape_node   ;
+
+  char *my_name = "create_wagon_shape_node" ;
 
 /*
  *  Read wagon/engine (*.wag or *.eng) file
@@ -317,7 +317,6 @@ ShapeNode    *shape_node   ;
  */
       if(ip)printf(" Call read_raw_wagon for %s\n",wagon_node->name) ;
       read_raw_wagon_file(wagon_node) ;
-
 
 /*
  *  Check for shape
@@ -625,110 +624,19 @@ int process_wagon_file(const char *fpath,
             shape_node->name    = zr_basename2(s_file) ;
           }
         }
-#if 0
 /*
- *  Search for corresponding *.jpg file
+ * *****************************************************************************
+ *    Texture files in this directory
+ * *****************************************************************************
  */
-        string = strdup(file_name)   ;
-        n = strlen(string)           ;
-        string[n-4] = '\0'           ;
-        strcat(string,".jpg")        ;
-        if((fp = gopen(string,"r"))!= NULL){
-          wagon_node->image = string ;
-          gclose(fp)                 ;
-          if(ip)printf("  Found     *.jpg file    : %s\n",string) ;
-        }else{
-          if(ip)printf("  Not found *.jpg file    : %s\n",string) ;
-          free(string)               ;
-        }
-/*
- *  Search for corresponding *.s file
- *
- *  THis should be obtained from the *.wag file !!!!
- *  Some trucks share shape files - this needs to be allowed for ...
- */
-        string = strdup(file_name)   ;     // malloc but may be kept
-        n = strlen(string)           ;
-        string[n-4] = '\0'           ;
-        strcat(string,".s")          ;
-        if((fp = gopen(string,"r"))== NULL){
-          if(ip)printf("  Not found *.s file      : %s\n",string) ;
-          free(string)               ;     // not needed
-        }else{
-          if(ip)printf("  Found *.s file          : %s\n",string) ;
-/*
- *  Create new shape structure
- */
-          shape_node = (ShapeNode *)malloc(sizeof(ShapeNode)) ;
-          init_shape_node(shape_node)            ;
-          if(wshapelist_beg == NULL){
-            wshapelist_beg = shape_node          ;
-          }else{
-            wshapelist_end->next = shape_node    ;
-          }
-          wshapelist_end    = shape_node ;
-          shape_node->next  = NULL       ;
-
-          shape_node->s_file = string ;    // malloc kept
-          wagon_node->s_file = string ;
-          wagon_node->shape = shape_node         ;
-          shape_node->name  = strdup(core_name)  ;
-        }
-/*
- *  Sarch for corresponding *.sd file
- */
-        string = strdup(file_name)   ;
-        n = strlen(string)           ;
-        string[n-4] = '\0'           ;
-        strcat(string,".sd")         ;
-        if((fp = gopen(string,"r"))!= NULL){
-          if(ip)printf("  Found *.sd file         : %s\n",string) ;
-          shape_node->sd_file = string ;  // malloc used
-          wagon_node->sd_file = string ;
-          gclose(fp) ;
-        }else{
-          if(ip)printf("  Not found *.sd file     : %s\n",string) ;
-          free(string)               ;     // not needed
-        }
-/*
-* *****************************************************************************
-*    Texture files in this directory
-* *****************************************************************************
-*/
       }else if(!strcmp(extension,"ace")){
         if(ip)printf("  Found *.ace file        : %s\n",file_name) ;
 //        if(ip)printf("  base_name               : %s\n",base_name) ;
 //        if(ip)printf("  extension         : %s\n",extension) ;
         if(ip)printf("  Name of texture         : %s\n",core_name) ;
 /*
-*  Create new texture structure
-*/
-        texture_node = (TextureNode *)malloc(sizeof(TextureNode)) ;
-        if(wtexturelist_beg == NULL){
-          wtexturelist_beg = texture_node  ;
-        }else{
-          wtexturelist_end->next = texture_node ;
-        }
-        wtexturelist_end    = texture_node ;
-        texture_node->next  = NULL         ;
-        init_texture_node(texture_node)    ;
-
-        texture_node->filename = strdup(file_name) ;
-        texture_node->name     = strdup(core_name) ;
-#endif
-/*
-* *****************************************************************************
-*    Texture files in this directory
-* *****************************************************************************
-*/
-      }else if(!strcmp(extension,"ace")){
-        if(ip)printf("  Found *.ace file        : %s\n",file_name) ;
-//        if(ip)printf("  base_name               : %s\n",base_name) ;
-//        if(ip)printf("  extension         : %s\n",extension) ;
-        if(ip)printf("  Name of texture         : %s\n",core_name) ;
-/*
-*  Create new texture structure
-*/
+ *  Create new texture structure
+ */
         texture_node = (TextureNode *)malloc(sizeof(TextureNode)) ;
         if(wtexturelist_beg == NULL){
           wtexturelist_beg = texture_node  ;
@@ -749,25 +657,6 @@ int process_wagon_file(const char *fpath,
       if(ip)printf(" Return from routine %s\n",my_name) ;
       return 0 ;
 }
-
-
-
-#if 0
-          n = strlen(f_entry2->d_name) ;
-          free(name) ;
-          name = strdup(f_entry2->d_name) ;
-//          if(ip)printf(" File = %s :: %s\n",name,&name[n-4]) ;
-        }
-        closedir(wdir2)  ;
-        free(wdir2_name) ;
-      }
-      closedir(wdir1)  ;
-      free(wdir1_name) ;
-      free(name)       ;
-      free(file_name)  ;
-      return 0;
- }
-#endif
 
 /*
  *  Routine to initialise raw wagon structure to NULLs etc
@@ -815,27 +704,6 @@ int init_raw_wagon_node(RawWagonNode *rw){
       return 0;
 }
 
-/*
- *  Routine to add Shapes and basic WagonNodes to Raw WagonNodes
- */
-int init_raw_wagon_nodes(){
-
-  RawWagonNode  *raw  ;
-  WagonNode     *w    ;
-  ShapeNode     *s    ;
-
-        for(raw = rawwagonlist_beg; raw != NULL; raw = raw->next){
-            for(s = wshapelist_beg; s != NULL; s = s->next){
-
-
-            }
-
-
-        }
-
-
-      return 0 ;
-}
 
 /*
  *  On the basis of the OZZ datasets:
@@ -852,18 +720,13 @@ int init_raw_wagon_nodes(){
  */
 
 int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode){
-//  int  i, j, k, l ;
+
   uint  i, l    ;
   uint  ip = 0  ;   // 0 = no printing, -1 = error printing only
   uint  ace_error = 0 ;
   TextureNode  *tnode        ;
   char         *name  = NULL ;
-//  char         *tname = NULL ;
-//  char    *file_name  = NULL ,            //  Full filename
-//          *base_name  = NULL ,            //  Base name inc extension
-//          *core_name  = NULL ,            //  Base name without extension
-//          *extension  = NULL ,            //  Extension
-//          *string = NULL          ;       //  Temporary string
+
   char         my_name[] = "add_texture_pointers_to_wagon_shapes" ;
 
 //      printf("  Routine %s.  Shape = ::%s::\n",my_name,snode->name) ;
@@ -948,6 +811,7 @@ int  add_texture_pointers_to_wagon_shapes(ShapeNode *snode){
       }
       if(ip)printf("  ZZ ZZ i = %i :: %i \n",i,snode->n_textures) ;
       if(name != NULL)free(name) ;
+
       return 0;
 }
 
@@ -970,8 +834,8 @@ int check_wagon_textures(int k){
 
 ShapeNode *find_wagon(char *name){
 
-char       my_name[] = "find_wagon" ;
-ShapeNode  *shape ;
+  char       my_name[] = "find_wagon" ;
+  ShapeNode  *shape ;
 
       for(shape = wshapelist_beg; shape != NULL; shape = shape->next){
         if(strcmp(name,shape->name)==0)break ;
@@ -982,4 +846,3 @@ ShapeNode  *shape ;
       }
       return shape ;
 }
-

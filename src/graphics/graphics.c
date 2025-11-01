@@ -23,9 +23,6 @@
  */
 int  sdl2PrintString(char *string);
 
-//FT_Library ft;
-//FT_Face face;
-
 /*
  * *****************************************************************************
  *   Reshape - called when window size is changed
@@ -54,13 +51,12 @@ void reshape2(int w, int h)
 #else
 void reshape(int w, int h)
 {
-int tx, ty, tw, th   ;        //  Origin (x, y), with and height of viewport.
-int      ip = 0 ;             // 0 = no printing
-GLint   iparms[4] ;
+  int tx, ty, tw, th   ;        //  Origin (x, y), with and height of viewport.
+  int      ip = 0 ;             // 0 = no printing
+  GLint   iparms[4] ;
 
       if(l_pd  || ip)printf(" Enter reshape\n");
 
-//    GLUI_Master.get_viewport_area( &tx, &ty, &tw, &th) ;
       glGetIntegerv(GL_VIEWPORT,iparms);
       tx = iparms[0] ;
       ty = iparms[1] ;
@@ -117,8 +113,6 @@ int  print_string_in_window(GLfloat wx, GLfloat wy, char *string)
  *       GLUT_BITMAP_HELVETICA_12
  *       GLUT_BITMAP_HELVETICA_18
  */
-//char my_name[] = "print_string_in_window" ;
-//      printf("  Enter %s\n",my_name) ;
 
       glWindowPos2f(wx,wy) ;
       print_string_in_window_z(string, 18) ;
@@ -156,7 +150,8 @@ int print_string_in_window3(GLfloat wx, GLfloat wy, char *string, int font_size)
 
 int    print_string_in_window_z(char *string, int font_size){
 
-char my_name[] = "print_string_in_window_z" ;
+  char my_name[] = "print_string_in_window_z" ;
+
 #ifdef USE_FREETYPE
       render_text_as_greyscale(string, ft_verdana, font_size-2) ;  // Fixed space
 #elif defined USE_SDLTTF
@@ -181,7 +176,7 @@ char my_name[] = "print_string_in_window_z" ;
       }
       sdl2PrintString(string) ;
 #else
-void *font ;
+  void *font ;
       switch(font_size) {
         case 10:
           font = GLUT_BITMAP_HELVETICA_10 ;
@@ -206,14 +201,14 @@ void *font ;
 
 int  width_string_in_window(char *string, int font_size){
 
-char my_name[] = "width_string_in_window_z" ;
+  char my_name[] = "width_string_in_window" ;
 
 #ifdef USE_FREETYPE
       return strlen(string)*font_size*0.75 ;
 #elif defined USE_SDLTTF
       return strlen(string)*font_size*0.75 ;
 #else
-void *font ;
+  void *font ;
       switch(font_size) {
         case 10:
           font = GLUT_BITMAP_HELVETICA_10 ;
@@ -233,9 +228,10 @@ void *font ;
       return glutBitmapLength(font, (const unsigned char *)string) ;
 #endif
 }
+
 int  height_font_in_window(int font_size){
 
-char my_name[] = "width_string_in_window_z" ;
+  char my_name[] = "height_font_in_window" ;
 
 #ifdef USE_FREETYPE
       return font_size*0.75 ;
@@ -267,6 +263,7 @@ void *font ;
 
 #ifdef USE_SDLTTF
 int  sdl2PrintString(char *string){
+
   int     ip = 0   ;
   int     ired, igreen, iblue, ialpha ;
   Uint32  i, j, k, l ;
@@ -319,7 +316,7 @@ int  sdl2PrintString(char *string){
 #if defined GLUT || defined USE_ZRGLUT
 int glutPrintString(char *string, void *font){
 
-int len, i;
+  int len, i;
 
     len = (int) strlen(string);
     for (i = 0; i < len; i++) {
@@ -364,18 +361,19 @@ void makeCheckImages(void)
 
 /*
  *==============================================================================
- * Routine to return height of points within surrounding tiles
- *   Computationally uneconomic but the code is cleaner and easier to debug.
- *
+ *  Routine to return height of points within surrounding tiles
+ *  Computationally uneconomic but the code is cleaner and easier to debug.
  *==============================================================================
  */
 double tile_height(int tile_x, int tile_y, int i, int j, int len){
+
   int ip = 0 ;
+
   int nn, nt ;
   TileListNode *tile_node ;
   char *my_name = "tile_height" ;
 
-      ip = ip && tile_x == 1373 && tile_y == 10261 ;
+//      ip = ip && tile_x == 1373 && tile_y == 10261 ;
       if(ip){
         printf("  Routine %s\n",my_name) ;
         printf("    tile_x = %i, tile_y = %i, i = %i, j = %i, len = %i\n",
@@ -431,15 +429,17 @@ double tile_height(int tile_x, int tile_y, int i, int j, int len){
  */
 
 int  initialise_eye_vectors(){
-int       ip = 0 ;
-GLdouble  x, y, z, r3, r2 ;
-char      my_name[]="initialise_eye_vectors";
 
-      ipp = ip ;
+  int       ip = 0 ;
+  GLdouble  x, y, z, r3, r2 ;
+  char      my_name[]="initialise_eye_vectors";
 
-      if(ip)printf("\n  Enter %s\n",my_name) ;
-      if(ip)printf("  Lookat_Centre = %f %f %f\n",lookat_center_x,lookat_center_y,lookat_center_z) ;
-      if(ip)printf("  Lookat_Eye    = %f %f %f\n", lookat_eye_x, lookat_eye_y, lookat_eye_z) ;
+      if(ip){
+        printf("\n  Enter %s\n",my_name) ;
+        printf("  Lookat_Centre = %f %f %f\n",lookat_center_x,lookat_center_y,lookat_center_z) ;
+        printf("  Lookat_Eye    = %f %f %f\n", lookat_eye_x, lookat_eye_y, lookat_eye_z) ;
+      }
+
       x = lookat_center_x - lookat_eye_x ;
       y = lookat_center_y - lookat_eye_y ;
       z = lookat_center_z - lookat_eye_z ;
@@ -487,38 +487,49 @@ char      my_name[]="initialise_eye_vectors";
  *             1 if within range
  */
 
-int   check_in_scene(GLdouble x, GLdouble y, GLdouble z, GLdouble r){
+int   check_in_scene(GLdouble x, GLdouble y, GLdouble z, GLdouble r, int ip){
 
-int      k ;
-double  sum ;
-char      my_name[]="check_in_scene" ;
+  int      k ;
+  double  sum ;
+  double  ps  ;
+  char    *my_name = "check_in_scene" ;
+
+      if(ip){
+        printf("  Enter %s\n", my_name) ;
+        ps = plot_scale ;
+        printf("    Position : %10.2f  %10.2f  %10.2f  Radius %10.2f\n", x*ps, y*ps, z*ps, r*ps) ;
+      }
 
 /*
  *  Use clip planes
  */
       for(k=0;k<6;k++){
         sum = x*clip_a[k][0] + y*clip_a[k][1] + z*clip_a[k][2] + clip_a[k][3] ;
+        if(ip){
+          printf("    Check : %1i : %10.2f : %10.2f %10.2f %10.2f %10.2f \n", k, sum*ps,
+                 x*clip_a[k][0]*ps, y*clip_a[k][1]*ps, z*clip_a[k][2]*ps, clip_a[k][3]*ps ) ;
+        }
         if(sum + r < 0.0) return 0 ;
       }
+
       return 1 ;
 }
 
 
 int   check_topog_in_scene(TileListNode *tl_node){
 
-int     i, j, k, l ;
-double  xa[2], ya[2], x, y, z, sum ;
-char    my_name[]="check_topog_in_scene" ;
+  int     i, j, k, l ;
+  double  xa[2], ya[2], x, y, z, sum ;
+  char    my_name[]="check_topog_in_scene" ;
 
-      xa[0] = tl_node->tilex - tile_x0 ;  xa[1] = xa[0] + 1.0 ;
-      ya[0] = tl_node->tiley - tile_y0 ;  ya[1] = ya[0] + 1.0 ;
+      xa[0] = tl_node->tilex - tile_xl ;  xa[1] = xa[0] + 1.0 ;
+      ya[0] = tl_node->tiley - tile_yl ;  ya[1] = ya[0] + 1.0 ;
       z = lookat_eye_z ;
 /*
  *  Loop over clip planes
  *  To pass, every clip plane test must be satified by at least one
  *  of the limits of the tile
  */
-// Loop over tests
       for(k=0;k<6;k++){
         l = 0 ;
         for(i=0;i<2;i++){
@@ -532,19 +543,24 @@ char    my_name[]="check_topog_in_scene" ;
 // test l
         if(0==l)return 0;
       }
+
       return 1 ;
 }
+
 /*
  *   Routine to check if object cube is visible in viewport
  *   The cube will not be visible if all of the points fail one of
  *   the tests
  */
-int   check_topog_in_scene2(GLfloat xa[2], GLfloat ya[2], GLfloat za[2]){
+int   check_topog_in_scene2(TileListNode *tnode,
+                            GLfloat xa[2], GLfloat ya[2], GLfloat za[2]){
 
-int     i, j, k, l, m ;
-double  x, y, z, sum ;
-char    my_name[]="check_topog_in_scene2" ;
+  int     i, j, k, l, m, ix, jy ;
+  double  x, y, z, sum ;
+  char    my_name[]="check_topog_in_scene2" ;
 
+      ix = tnode->tilex - tile_xl ;
+      jy = tnode->tiley - tile_yl ;
 /*
  *  Loop over clip planes
  *  To pass every clip plane test must be satified by at least one
@@ -554,9 +570,9 @@ char    my_name[]="check_topog_in_scene2" ;
       for(l=0;l<6;l++){
         m = 0 ;
         for(i=0;i<2;i++){
-          x = xa[i] ;
+          x = xa[i] +ix ;
           for(j=0;j<2;j++){
-            y = ya[j] ;
+            y = ya[j] + jy ;
             for(k=0;k<2;k++){
               z = za[k] ;
               sum = x*clip_a[l][0] + y*clip_a[l][1] + z*clip_a[l][2] + clip_a[l][3] ;
@@ -567,6 +583,7 @@ char    my_name[]="check_topog_in_scene2" ;
 // test m
         if(0==m)return 0;  //  Failure
       }
+
       return 1 ;           // Success
 }
 
@@ -596,11 +613,12 @@ int  global2local(int tile_e0, int tile_n0, double h0, double size, double scale
                 int tile_e,  int tile_n,
                 double e,     double n,     double h,
                 double *x,    double *y,    double *z ){
-double  scalei = 1.0/scale ;
+  double  scalei = 1.0/scale ;
 
       *x = scalei*((tile_e - tile_e0 + 0.5)*size + e) ;
       *y = scalei*((tile_n - tile_n0 + 0.5)*size + n) ;
       *z = scalei*(h - h0) ;
+
       return 0 ;
 }
 
@@ -608,8 +626,9 @@ int  local2msts(int tile_e0, int tile_n0, double h0, double size, double scale,
                 double x,     double y,     double z,
                 int *tile_e, int *tile_n,
                 double *e,    double *n,    double *h){
-float xp, yp ;
-int   le, ln ;
+
+  int    le, ln ;
+  double xp, yp ;
 
       xp = x*scale ;                              //  Convert to metres
       yp = y*scale ;
@@ -620,15 +639,16 @@ int   le, ln ;
       *h = h0 + z*scale ;
       *tile_e = le + tile_e0 ;         // Add back origin of local tiles
       *tile_n = ln + tile_n0 ;
+
       return 0 ;
 }
 
 int test_transforms(){
 
-int   tile_e0 = 3000,   tile_n0 =  500  ;
-float size    = 2040.0, scale   = plot_scale, h0 = tile_h0 ;
-int   tile_e, tile_n ;
-double x, y, z, e, n, h ;
+  int    tile_e, tile_n ;
+  int    tile_e0 = 3000,   tile_n0 =  500  ;
+  double size    = 2040.0, scale   = plot_scale, h0 = tile_h0 ;
+  double x, y, z, e, n, h ;
 
       tile_e = 3010 ;
       tile_n =  520 ;
@@ -648,6 +668,7 @@ double x, y, z, e, n, h ;
       exit(0);
       return 0 ;
 }
+
 /*
  *   Transform a MSTS wagon coordinate to the corresponding local co-ordinate
  *   including the translation along the current track vector.  This mimics
@@ -701,7 +722,9 @@ double x1, y1, z1, x2, y2, z2, x3, y3, z3, x4, y4, z4, cc, ss;
  *  Routine to check for OpenGL error and print an error message
  */
 int  check_glerror(){
+
   GLenum  n ;
+
       n = glGetError() ;
       if(n == GL_NO_ERROR) return 0;
 
@@ -717,8 +740,11 @@ int  check_glerror(){
       if(n == GL_TABLE_TOO_LARGE)  printf(" OpenGL table too large\n") ;
       return n;
 }
+
 int  check_glerror2(char* string){
+
   GLenum  n ;
+
       n = glGetError() ;
       if(n == GL_NO_ERROR) return 0;
 
@@ -733,5 +759,6 @@ int  check_glerror2(char* string){
       if(n == GL_STACK_UNDERFLOW)  printf(" OpenGL stack underflow\n") ;
       if(n == GL_OUT_OF_MEMORY)    printf(" OpenGL out of memory\n") ;
       if(n == GL_TABLE_TOO_LARGE)  printf(" OpenGL table too large\n") ;
+
       return n;
 }

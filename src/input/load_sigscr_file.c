@@ -117,72 +117,6 @@ static char *token[] = {
 /*
  *  Routine to read signal script file and initialise the tree pointer sTree.
  */
-#if 0
-int read_sigscr_file(){
-
-int  ip = 0 ;
-int  iret ;
-
-      yydebug = 0 ;
-
-      yyin = fopen(file_in1, "r");
-      if(ip)printf("  File opened : %s\n",file_in1) ;
-      yyset_in(yyin) ;
-      iret = yyparse(&sTree);
-      if(ip)printf("  Close file \n") ;
-      fclose(yyin);
-      if(iret){
-        printf("  Unable to parse signal script file 1\n");
-        printf("  Error return value = %i\n",iret);
-        exit(0) ;
-      }
-/*
- *  Test for two script files
- */
-#if 1
-      yyin = fopen(file_in2, "r");
-      if(ip)printf("  File opened : %s\n",file_in2) ;
-      yyset_in(yyin) ;
-      iret = yyparse(&sTree);
-      if(ip)printf("  Close file \n") ;
-      fclose(yyin);
-      if(iret){
-        printf("  Unable to parse signal script file 2\n");
-        printf("  Error return value = %i\n",iret);
-        exit(0) ;
-      }
-#endif
-/*
- *  Test for three script files
- */
-#if 1
-      yyin = fopen(file_in3, "r");
-      if(ip)printf("  File opened : %s\n",file_in2) ;
-      yyset_in(yyin) ;
-      iret = yyparse(&sTree);
-      if(ip)printf("  Close file \n") ;
-      fclose(yyin);
-      if(iret){
-        printf("  Unable to parse signal script file 2\n");
-        printf("  Error return value = %i\n",iret);
-        exit(0) ;
-      }
-#endif
-      if(!ip) return 0 ;
-      printf("  sTree = %p\n",(void *)sTree) ;
-      printf("  sTree->type = %i\n",sTree->type) ;
-      printf("  sTree->opr.oper = %i\n",sTree->opr.oper) ;
-      printf("  sTree->opr.nops = %i\n",sTree->opr.nops) ;
-
-      printf("\n PRINT TREE\n") ;
-      print_sigscr_node(sTree) ;
-
-      printf("\n PRINT NAMES\n\n") ;
-      print_sigscr_names(sTree) ;
-
-      return 0 ;
-}
-#else
 int   replace_var_names(nodeType *p) ;
 
 int load_sigscr_file(char *or_route_dir, char *script_file){
@@ -254,11 +188,10 @@ int load_sigscr_file(char *or_route_dir, char *script_file){
 
       return 0 ;
 }
-#endif
 
 int print_sigscr_node(nodeType *p){
 
-int i, n, nops, oper, type ;
+  int i, n, nops, oper, type ;
 
       if(p == NULL) return 0 ;
       type = p->type ;
@@ -284,12 +217,13 @@ int i, n, nops, oper, type ;
         printf(" psn ::     type = %i\n",type) ;
         exit(0) ;
       }
+
       return 0 ;
 }
 
 int print_sigscr_tree(nodeType *p){
 
-int ip = 0 ;
+  int ip = 0 ;
 
       if(!p)return 0 ;
       if(ip){
@@ -307,8 +241,8 @@ int ip = 0 ;
 
 int print_sigscr_names(nodeType *p){
 
-nodeType *p1, *p2 ;
-int i, n, nops, oper, type ;
+  int i, n, nops, oper, type ;
+  nodeType *p1, *p2 ;
 
       if(p == NULL) return 0;
       p1 = p ;
@@ -376,11 +310,11 @@ int replace_var_names2(nodeType *p, char *s1, char *n2);
 
 int replace_var_names(nodeType *p){
 
-int  ip = 0 ;
-int  i, n, nops, oper, type ;
-nodeType *p1, *p2, *p3 ;
-char *my_name = "replace_var_names" ;
-char *name1 ;
+  int  ip = 0 ;
+  int  i, n, nops, oper, type ;
+  nodeType *p1, *p2, *p3 ;
+  char *name1 ;
+  char *my_name = "replace_var_names" ;
 
       if(ip)printf("  Enter routine %s  :: %p\n",my_name, (void *)p) ;
       if(p == NULL) return 0;
@@ -423,17 +357,19 @@ char *name1 ;
         }
         p1 = p1->opr.op[0] ;
       }
+
       return 0 ;
 }
 
 int replace_var_names1(nodeType *p, nodeType *script){
 
-int  ip = 0 ;
-int  i, n, nops, oper, type ;
-nodeType *p1, *p2 ;
-char *my_name = "replace_var_names1" ;
-char *name1, name2[16] ;
-static int ivar ;
+  int  ip = 0 ;
+  int  i, n, nops, oper, type ;
+  nodeType *p1, *p2 ;
+  char *name1, name2[16] ;
+  static int ivar ;
+
+  char *my_name = "replace_var_names1" ;
 
       if(ip)printf("  Enter routine %s  :: %p\n",my_name, (void *)p) ;
       if(p == NULL) return 0;
@@ -473,15 +409,17 @@ static int ivar ;
           }
         }
       }
+
       return 0 ;
 }
 
 int replace_var_names2(nodeType *p, char *name1, char *name2){
 
-int  ip = 0 ;
-int  i, n, nops, type ;
-nodeType *p1, *p2 ;
-char *my_name = "replace_var_names2" ;
+  int  ip = 0 ;
+  int  i, n, nops, type ;
+  nodeType *p1, *p2 ;
+
+  char *my_name = "replace_var_names2" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
       if(p == NULL) return 0;
@@ -503,5 +441,3 @@ char *my_name = "replace_var_names2" ;
       }
       return 0 ;
 }
-
-

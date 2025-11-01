@@ -15,22 +15,22 @@
 
 int display_dynamic_tracks(){
 
-int         i  ;
-int         ip = 0          ;  // debug printing
-int         id = 0          ;  // debug display
-int         gl_display_list ;
+  int         i  ;
+  int         ip = 0          ;  // debug printing
+  int         id = 0          ;  // debug display
+  int         gl_display_list ;
 
-int         tx, ty          ;
-double      x, y, z         ;
-GLfloat     a, b, c, d      ;
-GLfloat    scale = 1.0/plot_scale;
-WorldNode   *wnode          ;
-WorldItem   *witem          ;
-DynTrackObj *dyn_track_obj  ;
-char        string[256]     ;
-char        my_name[] = "display_dynamic_tracks" ;
+  int         tx, ty          ;
+  double      x, y, z         ;
+  GLfloat     a, b, c, d      ;
+  GLfloat    scale = 1.0/plot_scale;
+  WorldNode   *wnode          ;
+  WorldItem   *witem          ;
+  DynTrackObj *dyn_track_obj  ;
+  char        string[256]     ;
+  char        my_name[] = "display_dynamic_tracks" ;
 
-static int ifirst = 1 ;       //  Only print when routine is first entered
+  static int ifirst = 1 ;       //  Only print when routine is first entered
 
 //      if(ip)printf("  Enter routine %s\n",my_name) ;
       glEnable(GL_LIGHTING);
@@ -67,7 +67,7 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
           if(witem->worldtype != DYNTRACK && witem->worldtype != 306)continue ;
 //          if(witem->uid == 4505) continue ;
 
-          global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+          global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                        wnode->tile_x,wnode->tile_y,
                        witem->X, witem->Y, witem->Z, &x, &y, &z) ;
           if(ip)printf("  World item:  %i %i :: %.3f   %.3f   %.3f :: %.4f   %.4f   %.4f\n",
@@ -155,5 +155,3 @@ static int ifirst = 1 ;       //  Only print when routine is first entered
 
       return 0;
 }
-
-

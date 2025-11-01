@@ -17,12 +17,12 @@ void matmult(GLfloat *res, GLfloat *a, GLfloat *b) ;
 
 int  initialise_clip_planes(GLfloat clipv[6][4]){
 
-int     i, j, m ;
-int     ip = 0 ;         // Debug
-double  temp ;
-GLfloat modelview[16]  ;
-GLfloat projection[16] ;
-GLfloat prodmat[16]    ;
+  int     i, j, m ;
+  int     ip = 0 ;         // Debug
+  double  temp ;
+  GLfloat modelview[16]  ;
+  GLfloat projection[16] ;
+  GLfloat prodmat[16]    ;
 
       for(m=0;m<1;m++){
         glGetFloatv(GL_MODELVIEW_MATRIX, modelview)  ;
@@ -128,15 +128,17 @@ int i, j, k ;
       }
       return ;
 }
+
 /*
  *   Routine to check clipping planes
  *   The eye viewpoint should satisby the clipping equation
  *   The lookat point should give positive values
  */
+
 void  check_clip_planes(){
 
-int      k ;
-GLfloat  x, y, z, sum[6] ;
+  int      k ;
+  GLfloat  x, y, z, sum[6] ;
 
       x = lookat_eye_x ;
       y = lookat_eye_y ;
@@ -187,4 +189,3 @@ int zr_setp4(float *v4, float altde, float polar) {
       v4[3] = 0.0 ;
       return 0    ;
 }
-

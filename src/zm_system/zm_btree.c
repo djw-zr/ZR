@@ -1,0 +1,658 @@
+/*
+ *==============================================================================
+ *345678901234567890123456789012345678901234567890123456789012345678901234567890
+ *
+ *  File btree.c
+ *
+ *
+ *   This file is part of ZR. Released under licence GPL-3.0-or-later.
+ *   You should have received a copy of the GNU General Public License
+ *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *   These C routines are designed to initialise a balanced binary tree
+ *   in which the branch lengths differ at most by one node.  They
+ *   are based on "https://appliedgo.net/balancedtree"" where the code
+ *   is written for the 'go' language.
+ *
+ *   Each node of the tree contains its name, a (void) pointer to
+ *   a data structure and pointers to left and right sub-trees (NULL
+ *   if the sub-trees are not present).
+ *
+ *   The user routines are:
+ *
+ *   Btree insert_node(BTree *root_node, char *index, void *data)
+ *           Returns : new root node
+ *
+ *   Btree find_btree(BTree *root_node, char *string)
+ *           Returns : node corrresponding to index "string" or NULL
+ *
+ *         dump_btree(BTree *root_node, int i, char *str)
+ *           Prints out btree key (names) and pointer value
+ *           i is level (use zero).  'str' is a marker  (use "0")
+ *
+ *         print_btree(BTree *n, int i, char *lr)
+ *           Can be used instead of dump_btree when the data is a string
+ *
+ *         bt_walk_a2z(BTree *root_node, void f(void *n))
+ *         bt_walk_z2a(BTree *root_node, void f(void *n))
+ *         bt_walk_t2b(BTree *root_node, void f(void *n))
+ *         bt_walk_b2t(BTree *root_node, void f(void *n))
+ *
+ *           Routines to walk btree in order a to z (alhabetical order),
+ *           z to a, top to bottom or bottom to top,
+ *           applying function f(*node) to each node.
+ *
+ *   To compile and test routines:
+ *       gcc -o btree btree.c
+ *       ./btree
+ *
+ *==============================================================================
+ */
+
+BTree  *rebalance(BTree *n) ;
+static int bt_icount  ;                      // Used to count elements
+static int bt_icount_n ;
+static BTree *bt_found ;
+
+int  bt_max(int i, int j){
+    return (i>=j) ? i : j ;
+}
+
+int height(BTree *node){
+
+      if(!node) return 0 ;
+      return node->height ;
+}
+
+int bal(BTree *node){
+
+  int l ;
+
+      l = 0 ;
+      if(node->left)  l += node->left->height ;
+      if(node->right) l -= node->right->height ;
+      return l ;
+}
+/*
+ *   Routine to add an index (name) and data (pointer) to the btree.
+ *   Usually the name and data should only be deleted when
+ *   the node is deleted.
+ */
+
+BTree *insert_node(BTree *node, char *index, void *data){
+
+  BTree *b ;
+  int   n  ;
+
+//      printf("  Enter insert_node.            INDEX = %s,             data = %s\n",index,data) ;
+//      printf("  Node = %p\n",(void *)node) ;
+//      fflush(NULL) ;
+
+      if(node == NULL){
+        b = malloc(sizeof(BTree)) ;
+        b->left  = NULL ;
+        b->right = NULL ;
+        b->index = index ;
+        b->type  = 0     ;
+        b->data  = data  ;
+        b->height = 1 ;
+//        printf("  New node = %p\n",(void *)b) ;
+        return b ;
+      }
+
+      n = strcmp(index,node->index) ;
+      if(n>0){
+//        printf("  Call insert_node_left  :: %s :: %s\n",index,node->index) ;
+        node->left = insert_node(node->left,index,data) ;
+        node->height = 1 + node->left->height ;
+      }else{
+//        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
+        node->right = insert_node(node->right,index,data) ;
+        node->height = 1 + node->right->height ;
+      }
+      if(node->left && node->right)
+          node->height = bt_max(node->left->height, node->right->height) + 1 ;
+
+      return rebalance(node) ;
+}
+BTree *insert_node2(BTree *node, char *index, int type, void *data){
+
+  BTree *b ;
+  int   n  ;
+
+      if(node == NULL){
+        b = malloc(sizeof(BTree)) ;
+        b->left  = NULL ;
+        b->right = NULL ;
+        b->index = index ;
+        b->type  = 0     ;
+        b->data  = data  ;
+        b->height = 1 ;
+//        printf("  New node = %p\n",(void *)b) ;
+        return b ;
+      }
+
+      n = strcmp(index,node->index) ;
+      if(n>0){
+//        printf("  Call insert_node_left  :: %s :: %s\n",index,node->index) ;
+        node->left = insert_node2(node->left,index,type,data) ;
+        node->height = 1 + node->left->height ;
+      }else{
+//        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
+        node->right = insert_node2(node->right,index,type,data) ;
+        node->height = 1 + node->right->height ;
+      }
+      if(node->left && node->right)
+          node->height = bt_max(node->left->height, node->right->height) + 1 ;
+
+      return rebalance(node) ;
+}
+
+BTree *RotateLeft(BTree *n){
+
+  int   ll, rr ;
+  BTree *r ;
+
+      r        = n->right ;
+      n->right = r->left ;
+      r->left  = n ;
+
+      ll = rr = 0 ;
+      if(n->left)  ll = n->left->height ;
+      if(n->right) rr = n->right->height ;
+      n->height = 1 + ((ll >= rr) ? ll : rr) ;
+
+      ll = rr = 0 ;
+      if(r->left)  ll = r->left->height ;
+      if(r->right) rr = r->right->height ;
+      r->height = 1 + ((ll >= rr) ? ll : rr) ;
+
+      return r ;
+}
+
+BTree *RotateRight(BTree *n){
+
+  int  ll, rr ;
+  BTree *l ;
+
+      l        = n->left ;
+      n->left  = l->right;
+      l->right = n ;
+
+      ll = rr = 0 ;
+      if(n->left)  ll = n->left->height ;
+      if(n->right) rr = n->right->height ;
+      n->height = 1 + ((ll >= rr) ? ll : rr) ;
+
+      ll = rr = 0 ;
+      if(l->left)  ll = l->left->height ;
+      if(l->right) rr = l->right->height ;
+      l->height = 1 + ((ll >= rr) ? ll : rr) ;
+
+      return l ;
+}
+
+BTree *RotateRightLeft(BTree *n){
+
+      n->right  = RotateRight(n->right) ;
+      n         = RotateLeft(n)         ;
+      n->height = 1 + bt_max(height(n->left),height(n->right) ) ;
+      return n ;
+}
+
+BTree *RotateLeftRight(BTree *n){
+
+      n->left   = RotateLeft(n->left) ;
+      n         = RotateRight(n)      ;
+      n->height = 1 + bt_max(height(n->left),height(n->right) ) ;
+      return n ;
+}
+
+BTree *rebalance(BTree *n){
+
+      if(bal(n) > 1){
+        if(bal(n->left) >= 0){
+          return RotateRight(n) ;
+        }else{
+          return RotateLeftRight(n) ;
+        }
+      }else if(bal(n) < -1){
+        if(bal(n->right) <= 0){
+          return RotateLeft(n) ;
+        }else{
+          return RotateRightLeft(n) ;
+        }
+      }
+      return n ;
+}
+
+BTree *find_btree(BTree *n, char *string){
+
+  int  l     ;
+  char *my_name = "find_btree" ;
+
+      if(!n) return NULL ;
+
+      l = strcmp(n->index,string) ;
+
+      if(l == 0)return n ;
+      if(l <  0)return find_btree(n->left,string) ;
+      return find_btree(n->right,string) ;
+}
+
+BTree *find_btree_ic(BTree *n, char *string){
+
+  int  l ;
+
+      if(!n) return NULL ;
+
+      l = strcmp(n->index,string) ;
+
+      if(l == 0)return n ;
+      if(l <  0)return find_btree_ic(n->left,string) ;
+      return find_btree_ic(n->right,string) ;
+}
+
+void  dump_btree(BTree *n, int i, char *lr){
+
+  int  l;
+
+      fflush(NULL) ;
+      if(!n) return ;
+      for(l=0;l<i;l++){ printf("  ");}
+      printf(" %s + -- bal = %2i, height =  %2i, INDEX = %s,         data = %p\n",
+             lr,bal(n),n->height,n->index,n->data) ;
+      dump_btree(n->left,i+1,"L") ;
+      dump_btree(n->right,i+1,"R") ;
+      return ;
+}
+
+void  print_btree(BTree *n, int i, char *lr){
+
+  int  l;
+
+      fflush(NULL) ;
+      if(!n) return ;
+      for(l=0;l<i;l++){ printf("  ");}
+      printf(" %s + -- bal = %2i, height =  %2i, INDEX = %s, data = ::%s::\n",
+             lr,bal(n),n->height,n->index,(char *)n->data) ;
+      print_btree(n->left,i+1,"L") ;
+      print_btree(n->right,i+1,"R") ;
+      return ;
+}
+
+
+/*
+ *  Walk structure and apply function f() to each node
+ */
+void  bt_walk_a2z(BTree *n, void f(void *n)){
+
+      if(!n) return ;
+      bt_walk_a2z(n->left,f) ;
+      f((void *)n) ;
+      bt_walk_a2z(n->right,f) ;
+
+      return ;
+}
+
+void  bt_walk_z2a(BTree *n, void f(void *n)){
+
+  int ip = 0 ;
+  char *my_name = "bt_walk_z2a";
+
+      if(ip)printf("  Enter routine %s,  p = %p\n",my_name, (void *)n) ;
+      if(!n) return ;
+      if(ip)printf("  Try right\n") ;
+      bt_walk_z2a(n->right,f) ;
+      if(ip)printf("  Test\n") ;
+      f((void *)n) ;
+      if(ip)printf("  Try left\n") ;
+      bt_walk_z2a(n->left,f) ;
+
+      return ;
+}
+
+void  bt_walk_t2b(BTree *n, void f(void *n)){
+
+      if(!n) return ;
+      f((void *)n) ;
+      bt_walk_t2b(n->left,f) ;
+      bt_walk_t2b(n->right,f) ;
+
+      return ;
+}
+
+void  bt_walk_b2t(BTree *n, void f(void *n)){
+
+      if(!n) return ;
+      bt_walk_b2t(n->left,f) ;
+      bt_walk_b2t(n->right,f) ;
+      f((void *)n) ;
+
+      return ;
+}
+
+/*
+ *  Functions to count elements of btree
+ *  and print an ordered list
+ */
+int   reset_bt_count(){
+
+      bt_icount = 0 ;
+      return 0;
+}
+
+int   return_bt_count(){
+      return bt_icount ;
+}
+
+void increment_bt_count(void *n){
+
+     if(n)bt_icount++ ;
+     return ;
+}
+
+void print_bt_node_with_count_and_index(void *n){
+
+    BTree *p ;
+
+      p = (BTree *) n ;
+      printf("  %3i :: %s\n",++bt_icount,(char *)p->index) ;
+      return ;
+}
+
+void print_bt_nodes_with_count_and_index(BTree *p){
+
+      reset_bt_count() ;
+      bt_walk_z2a(p, print_bt_node_with_count_and_index) ;
+      return ;
+}
+
+int count_bt_nodes(BTree  *p){
+
+     reset_bt_count() ;
+     bt_walk_z2a(p,increment_bt_count) ;
+     return bt_icount ;
+}
+
+void  print_node(void *n){
+
+  BTree *p ;
+
+      p = (BTree *) n ;
+      printf("  Print : Node = %p,  Index = %s,     Value = %s\n",(void *)p, p->index, (char *)p->data) ;
+      return ;
+}
+
+void  find_bt_node_with_count_n(void *p){
+
+  int   ip = 0 ;
+  BTree *p1;
+  char  *my_name = "find_bt_node_with_count_n" ;
+
+      p1 = (BTree *)p ;
+      if(!p) return ;
+
+      bt_icount++ ;
+      if(ip)printf("     bt_count = %i, bt_count_n = %i\n",bt_icount, bt_icount_n) ;
+      if(bt_icount == bt_icount_n)bt_found = (BTree *)p;
+      if(ip)printf("     Node = %p,  Index = %s, bt_found = %p, Index = %s\n",
+                       (void *)p1, p1->index, (void *)bt_found,
+                        bt_found ? bt_found->index : "NULL") ;
+      return ;
+}
+
+BTree *find_bt_node_with_index(BTree *p, int n){
+
+  int   ip = 0 ;
+  char *my_name = "find_bt_node_with_index" ;
+
+      if(ip){
+        printf("  Enter routine %s\n",my_name) ;
+        printf("    BTree = %p\n", (void *) p) ;
+        printf("    index = %i\n", n) ;
+        print_bt_nodes_with_count_and_index(p);
+      }
+
+      bt_icount_n = n ;
+      bt_icount   = 0 ;
+      bt_found    = NULL ;
+      bt_walk_z2a(p,find_bt_node_with_count_n) ;
+      if(ip)printf("  Routine %s.  Found %p, index = %s\n",my_name,
+             (void *)bt_found, bt_found ? bt_found->index : "NULL" ) ;
+      return bt_found ;
+}
+
+/*
+ * The following two routines save malloc strings in
+ * fields index and data
+ */
+
+/*
+ *   Routine to save list of sub-directories in a b-tree
+ */
+
+BTree *bt_subdirectory_list(char *base_dir){
+
+  int    ip = 0    ;
+  int    len       ;
+  int    iret      ;
+  BTree  *b = NULL ;
+  BTree  *c = NULL ;
+  DIR    *cdir      ;
+  struct dirent *f_entry ;
+  char   *d_name  ;
+  char   *sub_dir ;
+
+  char   *my_name = "bt_subdirectory_list" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+/*
+ *  Open directory
+ */
+      cdir = opendir(base_dir) ;
+      iret = errno ;
+      if(cdir == NULL){
+        printf("  Routine %s error.\n", my_name) ;
+        printf("    Unable to open base directory.\n") ;
+        printf("    Base directory = %s\n",base_dir) ;
+        printf("    Error number = %i.  Error = %s\n",iret, strerror(iret)) ;
+        printf("    Program stopping ... \n") ;
+//        close_system() ;
+        exit(1) ;
+      }
+/*
+ *  Loop through files
+ */
+      while ((f_entry = readdir(cdir)) != NULL) {
+        if(f_entry->d_type != DT_DIR)continue ;
+        if(f_entry->d_name[0] == '.')continue ;
+        if(ip)printf("  Found directory = %s\n", f_entry->d_name)  ;
+/*
+ *  Check for duplicate
+ */
+        c = find_btree(b, f_entry->d_name) ;
+        if(c)continue ;
+        if(ip)printf("  Add directory = %s\n", f_entry->d_name)  ;
+/*
+ *  Add file to btree
+ */
+        d_name = strdup(f_entry->d_name) ;
+        sub_dir = (char *)malloc(strlen(base_dir)+strlen(d_name)+2) ;
+        strcpy(sub_dir,base_dir) ;
+        strcat(sub_dir,"/") ;
+        strcat(sub_dir,d_name) ;
+
+        b = insert_node(b, d_name, (void *) sub_dir) ;
+        increment_bt_count(b) ;
+      }
+      if(ip)dump_btree(b, 0, "O") ;
+      iret = closedir(cdir) ;
+      if(iret != 0){
+        printf("  Routine %s ERROR\n",my_name) ;
+        printf("    Directory not closed cleanly\n") ;
+        printf("    Directory name = %s\n", base_dir) ;
+      }
+      return b ;
+}
+/*
+ *  Routine to place list of files in a BTree
+ */
+
+BTree *bt_file_list(char *base_dir){
+
+  int    ip = 0    ;
+  int    len       ;
+  int    iret      ;
+  BTree  *b = NULL ;
+  BTree  *c = NULL ;
+  DIR    *cdir      ;
+  struct dirent *f_entry ;
+  char   *d_name   ;
+  char   *new_name ;
+
+  char   *my_name = "bt_file_list" ;
+
+      if(ip)printf("  Enter routine %s\n",my_name) ;
+/*
+ *  Open directory
+ */
+      cdir = opendir(base_dir) ;
+      iret = errno ;
+      if(cdir == NULL){
+        printf("  Routine %s error.\n", my_name) ;
+        printf("    Unable to open base directory.\n") ;
+        printf("    Base directory = %s\n",base_dir) ;
+        printf("    Error number = %i.  Error = %s\n",iret, strerror(iret)) ;
+        printf("    Program stopping ... \n") ;
+//        close_system() ;
+        exit(1) ;
+      }
+/*
+ *  Loop through files
+ */
+      while ((f_entry = readdir(cdir)) != NULL) {
+        if(f_entry->d_type != DT_REG)continue ;
+        if(f_entry->d_name[0] == '.')continue ;
+        if(ip)printf("  Found file = %s\n", f_entry->d_name)  ;
+/*
+ *  Check for duplicate
+ */
+        c = find_btree(b, f_entry->d_name) ;
+        if(c)continue ;
+        if(ip)printf("  Add file = %s\n", f_entry->d_name)  ;
+/*
+ *  Add file to btree
+ */
+        d_name = strdup(f_entry->d_name) ;
+        new_name = (char *)malloc(strlen(base_dir)+strlen(d_name)+2) ;
+        strcpy(new_name,base_dir) ;
+        strcat(new_name,"/") ;
+        strcat(new_name,d_name) ;
+
+        b = insert_node(b, d_name, (void *) new_name) ;
+        increment_bt_count(b) ;
+      }
+      if(ip)dump_btree(b, 0, "O") ;
+      iret = closedir(cdir) ;
+      if(iret != 0){
+        printf("  Routine %s ERROR\n",my_name) ;
+        printf("    Directory not closed cleanly\n") ;
+        printf("    Directory name = %s\n", base_dir) ;
+      }
+
+      return b ;
+}
+
+/*
+ *  Routine to clear a BTree in which all data elements are either NULL
+ *  or point to memory allocated by malloc and the allocated memory
+ *  contains no pointers to further malloc memory.
+ */
+
+int  bt_clear_malloc_data(BTree *b){
+
+  int   ip  = 0 ;
+  char *my_name = "bt_clear_malloc_data" ;
+
+      if(ip)printf("  Enter routine %s : %p : %p %p\n",my_name,
+            (void *) b,
+            b ? (void *) b->left : NULL,
+            b ? (void *) b->right : NULL) ;
+      if(!b) return 0 ;
+
+      if(b->left)  bt_clear_malloc_data(b->left)  ;
+      if(b->right) bt_clear_malloc_data(b->right) ;
+
+      if(b->index)free(b->index) ;
+      if(b->data) free(b->data)  ;
+      free(b) ;
+
+      return 0 ;
+}
+
+#if 0
+
+int main(int argc, char **argv){
+
+BTree  *bt = NULL ;
+BTree  *bp ;
+
+      bt = insert_node(bt,"z",(void *)"Data z") ;
+      printf(" ==================================\n") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"t",(void *)"Data t") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"m",(void *)"Data m") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"a",(void *)"Data a") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"p",(void *)"Data p") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"f",(void *)"Data f") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"n",(void *)"Data n") ;
+      dump_btree(bt,0,"X") ;
+      printf(" ==================================\n") ;
+      bt = insert_node(bt,"q",(void *)"Data q") ;
+
+      dump_btree(bt,0,"X") ;
+
+      bp = find_btree(bt,"p");
+      printf("  Found node = %p,  Index = %s,     Value = %s\n",(void *)bp, bp->index, (char *)bp->data) ;
+
+      printf("\n") ;
+      bt_walk_a2z(bt,(void *)print_node) ;
+      printf("\n") ;
+      bt_walk_z2a(bt,(void *)print_node) ;
+      printf("\n") ;
+      bt_walk_t2b(bt,(void *)print_node) ;
+      printf("\n") ;
+      bt_walk_b2t(bt,(void *)print_node) ;
+
+      return 0 ;
+}
+#endif
+
+/*
+ *   End of year thoughts ...
+ *
+ *   Uncle George and Auntie Mabel,
+ *     Fainted at the breakfast table.
+ *   Let this be an awful warning
+ *     Not to do it in the morning.
+ *   But Ovaltine has put them right,
+ *     Now they do it morn and night.
+ *   Uncle George is hoping soon,
+ *     To do it in the afternoon.
+ *   Hark! The Herald Angels sing,
+ *     Ovaltine's a damn good thing.
+ *
+ *   (London Times, p28.  31/12/2022)
+ */

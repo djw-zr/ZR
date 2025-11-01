@@ -103,6 +103,7 @@ typedef struct pdbnode {
   char   *RouteID              ;
   char   *Name                 ;
   char   *Description          ;
+  char   *Description2         ;  // Used by zm
   char   *Graphic              ;
   char   *LoadingScreen        ;
   char   *FileName             ;
@@ -994,7 +995,7 @@ typedef struct shapenode {
   uint               flags1    ;
   uint               flags2    ;
   uint               nvolumes  ;    // Number of shape volumes (1 per lod_control ??)
-  ShapeVolume        *shape_vol ;   // Array of shape volumes
+  ShapeVolume        *shape_vol ;   // Array of shape volumes - defines bounding sphere
   uint               nshaders  ;
   char               **shader  ;
   uint               nfilters  ;

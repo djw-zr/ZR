@@ -59,16 +59,16 @@
 
 
 typedef struct btree {
-struct btree *left  ;        //    Left node
-struct btree *right ;        //    Right node
-char         *index ;        //    Name used to find node
-int          *type  ;        //
-void         *data  ;        //    Pointer to data structure
-int          height ;        //    Height of node
+  struct btree *left  ;        //    Left node
+  struct btree *right ;        //    Right node
+  char         *index ;        //    Name used to find node
+  int          *type  ;        //
+  void         *data  ;        //    Pointer to data structure
+  int          height ;        //    Height of node
 } BTree ;
 
 typedef struct tree {
-BTree    *root ;
+  BTree    *root ;
 } Tree;
 
 #endif
@@ -106,9 +106,6 @@ BTree *insert_node(BTree *node, char *index, void *data){
 
 BTree *b ;
 int   n  ;
-//      printf("  Enter insert_node.            INDEX = %s,             data = %s\n",index,data) ;
-//      printf("  Node = %p\n",(void *)node) ;
-//      fflush(NULL) ;
 
       if(node == NULL){
         b = malloc(sizeof(BTree)) ;
@@ -118,17 +115,14 @@ int   n  ;
         b->type  = 0     ;
         b->data  = data  ;
         b->height = 1 ;
-//        printf("  New node = %p\n",(void *)b) ;
         return b ;
       }
 
       n = strcmp(index,node->index) ;
       if(n>0){
-//        printf("  Call insert_node_left  :: %s :: %s\n",index,node->index) ;
         node->left = insert_node(node->left,index,data) ;
         node->height = 1 + node->left->height ;
       }else{
-//        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
         node->right = insert_node(node->right,index,data) ;
         node->height = 1 + node->right->height ;
       }
@@ -149,17 +143,14 @@ BTree *insert_node2(BTree *node, char *index, int type, void *data){
         b->type  = 0     ;
         b->data  = data  ;
         b->height = 1 ;
-//        printf("  New node = %p\n",(void *)b) ;
         return b ;
       }
 
       n = strcmp(index,node->index) ;
       if(n>0){
-//        printf("  Call insert_node_left  :: %s :: %s\n",index,node->index) ;
         node->left = insert_node2(node->left,index,type,data) ;
         node->height = 1 + node->left->height ;
       }else{
-//        printf("  Call insert_node_right :: %s :: %s\n",index,node->index) ;
         node->right = insert_node2(node->right,index,type,data) ;
         node->height = 1 + node->right->height ;
       }
@@ -171,8 +162,8 @@ BTree *insert_node2(BTree *node, char *index, int type, void *data){
 
 BTree *RotateLeft(BTree *n){
 
-int   ll, rr ;
-BTree *r ;
+  int   ll, rr ;
+  BTree *r ;
 
       r        = n->right ;
       n->right = r->left ;
@@ -193,8 +184,8 @@ BTree *r ;
 
 BTree *RotateRight(BTree *n){
 
-int  ll, rr ;
-BTree *l ;
+  int  ll, rr ;
+  BTree *l ;
 
       l        = n->left ;
       n->left  = l->right;
@@ -249,9 +240,9 @@ BTree *rebalance(BTree *n){
 
 BTree *find_btree(BTree *n, char *string){
 
-int ip = 0 ;
-int  l     ;
-char *my_name = "find_btree" ;
+  int ip = 0 ;
+  int  l     ;
+  char *my_name = "find_btree" ;
 
       if(ip)printf(" Routine %s.  Btree = %p,  string = %s\n",my_name,(void *)n,string) ;
       if(!n) return NULL ;
@@ -265,7 +256,7 @@ char *my_name = "find_btree" ;
 
 BTree *find_btree_ic(BTree *n, char *string){
 
-int  l ;
+  int  l ;
 
       if(!n) return NULL ;
 
@@ -278,7 +269,7 @@ int  l ;
 
 void  dump_btree(BTree *n, int i, char *lr){
 
-int  l;
+  int  l;
 
       fflush(NULL) ;
       if(!n) return ;
@@ -292,7 +283,7 @@ int  l;
 
 void  print_btree(BTree *n, int i, char *lr){
 
-int  l;
+  int  l;
 
       fflush(NULL) ;
       if(!n) return ;
@@ -369,7 +360,7 @@ void increment_bt_count(void *n){
 }
 
 void print_bt_node_with_count_and_index(void *n){
-BTree *p ;
+  BTree *p ;
       p = (BTree *) n ;
       printf("  %3i :: %s\n",++bt_icount,(char *)p->index) ;
       return ;
@@ -389,7 +380,7 @@ int count_bt_nodes(BTree  *p){
 }
 
 void  print_node(void *n){
-BTree *p ;
+  BTree *p ;
       p = (BTree *) n ;
       printf("  Print : Node = %p,  Index = %s,     Value = %s\n",(void *)p, p->index, (char *)p->data) ;
       return ;
@@ -397,9 +388,9 @@ BTree *p ;
 
 void  find_bt_node_with_count_n(void *p){
 
-int   ip = 0 ;
-BTree *p1;
-char  *my_name = "find_bt_node_with_count_n" ;
+  int   ip = 0 ;
+  BTree *p1;
+  char  *my_name = "find_bt_node_with_count_n" ;
 
       p1 = (BTree *)p ;
 
@@ -416,8 +407,8 @@ char  *my_name = "find_bt_node_with_count_n" ;
 
 BTree *find_bt_node_with_index(BTree *p, int n){
 
-int   ip = 0 ;
-char *my_name = "find_bt_node_with_index" ;
+  int   ip = 0 ;
+  char *my_name = "find_bt_node_with_index" ;
 
       bt_icount_n = n ;
       bt_icount   = 0 ;
@@ -434,17 +425,16 @@ char *my_name = "find_bt_node_with_index" ;
 
 BTree *bt_subdirectory_list(char *base_dir){
 
-
-int    ip = 0    ;
-int    len       ;
-int    iret      ;
-BTree  *b = NULL ;
-BTree  *c = NULL ;
-DIR    *cdir      ;
-struct dirent *f_entry ;
-char   *d_name  ;
-char   *sub_dir ;
-char   *my_name = "bt_subdirectory" ;
+  int    ip = 0    ;
+  int    len       ;
+  int    iret      ;
+  BTree  *b = NULL ;
+  BTree  *c = NULL ;
+  DIR    *cdir      ;
+  struct dirent *f_entry ;
+  char   *d_name  ;
+  char   *sub_dir ;
+  char   *my_name = "bt_subdirectory" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -498,8 +488,8 @@ char   *my_name = "bt_subdirectory" ;
 
 int main(int argc, char **argv){
 
-BTree  *bt = NULL ;
-BTree  *bp ;
+  BTree  *bt = NULL ;
+  BTree  *bp ;
 
       bt = insert_node(bt,"z",(void *)"Data z") ;
       printf(" ==================================\n") ;

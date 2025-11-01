@@ -35,8 +35,6 @@ void init_tri_list(TriList *t)      ;
  *  Function to test a directory entry for ".s" filename extension
  *  (*.h, *.ace etc.)
  */
-
-
 int file_is_shape( const struct dirent *p){
 
   int len = strlen(p->d_name);
@@ -51,19 +49,21 @@ int file_is_shape( const struct dirent *p){
 
 int load_shape_filenames() {
 
+int    ip = 0 ;                    // 1 = DEBUG
 int    len1, len2, len3, idir, i, k, n, iret ;
-int    ip = 0 ;                    // 0 = no printing
 char   *name      = NULL ;
 char   *sdir_name = NULL ;
 DIR    *sdir      = NULL ;
 FILE   *f         = NULL ;
-char   my_name[] = "load_shape_filenames" ;
 struct dirent *f_entry   = NULL ;
 struct dirent **namelist = NULL ;
 ShapeNode *shape     ;
 char   *shape_dir   = "/SHAPES/" ;
 char   *g_shape_dir = "/Global/Shapes/" ;
 BTree  *btree_node   ;
+
+char   my_name[] = "load_shape_filenames" ;
+
 /*
  *   Process shape files in directories
  *      ROUTE/SHAPES and GLOBAL/SHAPES
@@ -94,35 +94,19 @@ BTree  *btree_node   ;
         if(sdir == NULL) error_s1(sdir_name) ;
         closedir(sdir) ;
 
-//        while ((f_entry = readdir(sdir)) != NULL) {
-//          len2 = strlen(f_entry->d_name) ;
-//          if(strcmp(".s",&(f_entry->d_name[len2-2]))!= 0 &&
-//            strcmp(".S",&(f_entry->d_name[len2-2]))!= 0) continue ;
 #ifdef MinGW
         n = scandir(sdir_name, &namelist, file_is_shape, NULL);
 #else
         n = scandir(sdir_name, &namelist, file_is_shape, versionsort);
 #endif
+
         if (n == -1) {
           perror("scandir");
           exit(EXIT_FAILURE);
         }
         printf("     Shapes from directory %s\n",sdir_name );
 //        printf("  n = %i, namelist = %p :: %p\n",n,(void *)namelist,(void *)namelist[0]) ;
-#if 0
-        if(ip){
-          for(i=0;i<n;i++){
-            char *string = namelist[i]->d_name ;
-            printf(" %s  name = %i,  %s\n",my_name,i,string) ;
-            printf(" Ascii = ") ;
-            for(k=0;k<(int)strlen(string);k++){
-              unsigned char c = string[k] ;
-              printf(" %c %x ",c,c) ;
-            }
-            printf("\n") ;
-          }
-        }
-#endif
+
 /*
  *  Process shape files
  */
@@ -135,23 +119,7 @@ BTree  *btree_node   ;
  *  Skip unless shape is needed
  */
           btree_node = find_btree(shape_master,name) ;
-//          if(0)printf("  Routine %s.  Btree node = %p.  Shape is %s\n",
-//                                                 my_name, (void *)btree_node, name) ;
-#if 0
-          if(btree_node){
-            if(btree_node->data){
-              shape = (ShapeNode *) btree_node->data ;
-              printf("  Dir contains shape file %s,  btree_node = %p, data = %p, name = %s, "
-                     "file = %s\n", name, (void *)btree_node,
-                     (void *)btree_node->data, shape->name, shape->s_file);
-            }else{
-              printf("  Dir contains shape file %s,  btree_node = %p, data = %p\n",
-                   name, (void *)btree_node, (void *)btree_node->data);
-            }
-          }else{
-            printf("  Dir contains shape file %s,  btree_node = %p\n", name, (void *)btree_node);
-          }
-#endif
+
           if(!btree_node){
             free(namelist[i]) ;
             continue ;  //  Shape  is not needed
@@ -175,7 +143,6 @@ BTree  *btree_node   ;
             }else{
               shapelist_end->next = shape ;
             }
-//         printf(" CC i = %i\n",i) ;
             shapelist_end = shape ;
             shape->next   = NULL ;
             if(ip)printf("  Routine %s.  shapelist_end name added = %s :: %s\n",
@@ -185,6 +152,12 @@ BTree  *btree_node   ;
             if(ip)printf("  Routine %s.  btree already contains   = %s :: %s\n",
                            my_name, name, namelist[i]->d_name);
           }
+/*
+ *  Free names if already allocated
+ *  or can the next two sections be skipped?
+ */
+          if(shape->name)   free(shape->name)  ;
+          if(shape->s_file) free(shape->s_file) ;
 /*
  *  Save name and filename
  */
@@ -221,19 +194,12 @@ BTree  *btree_node   ;
           len3 = strlen(shape->s_file) + 2 ;
           shape->sd_file = (char *)malloc(len3) ;
           strncpy(shape->sd_file, shape->s_file, len3) ;
-//          printf("  Trailing characters are %c : %c : %c : %c :\n",
-//                 shape->sd_file[len3-4], shape->sd_file[len3-3],
-//                 shape->sd_file[len3-2], shape->sd_file[len3-1]) ;
-//          shape->sd_file[len3-3] = 's' ;
           if(shape->sd_file[len3-3]=='s'){
             shape->sd_file[len3-2] = 'd' ;
           }else{
             shape->sd_file[len3-2] = 'D' ;
           }
           shape->sd_file[len3-1] = '\0' ;
-//          printf("  Trailing characters are %c : %c : %c : %c\n",
-//                 shape->sd_file[len3-4], shape->sd_file[len3-3],
-//                 shape->sd_file[len3-2], shape->sd_file[len3-1]) ;
           if(ip)printf("  AA  Full name of sd file : %s\n",shape->sd_file) ;
 /*
  *  Check that sd file exists
@@ -243,7 +209,7 @@ BTree  *btree_node   ;
  *  If sd file was not found, try using routine fcaseopen.
  *  This searches for the filename - ignoring the case of each character.
  */
-#if 1
+
             if((f=gcaseopen(shape->sd_file,"r"))==NULL ){
 /*
  *  If the file is still not found, skip MSTS track shapes as these do (may?) not
@@ -254,34 +220,9 @@ BTree  *btree_node   ;
                 printf("       Routine '%s'.  Unable to find sd file "
                   "corresponding to shape : %s\n",my_name, shape->name)   ;
               }
-//              printf("  shapefile *.s  = %s\n",shape->s_file) ;
-//              printf("  shapefile *.sd = %s\n",shape->sd_file) ;
               free(shape->sd_file);
               shape->sd_file = NULL ;
             }
-#else
-
-            shape->sd_file[len3-2] = 'D' ;
-            if((f=gopen(shape->sd_file,"r"))==NULL ){
-              shape->sd_file[len3-3] = 'S' ;
-              shape->sd_file[len3-2] = 'd' ;
-              if((f=gopen(shape->sd_file,"r"))==NULL ){
-                shape->sd_file[len3-2] = 'D' ;
-                if((f=gopen(shape->sd_file,"r"))==NULL ){
-//  Ignore MSTS track shapes
-                  if((shape->name[0] != 'a' && shape->name[0] != 'A') ||
-                     (shape->name[1] != '1' && shape->name[1] != '2')){
-                    printf("       Routine '%s'.  Unable to find sd file "
-                      "corresponding to shape : %s\n",my_name, shape->name)   ;
-//                  printf("   Full name of s  file : %s\n",   shape->s_file)  ;
-//                  printf("  Full name of sd file : %s\n",    shape->sd_file) ;
-                  }
-                  free(shape->sd_file);
-                  shape->sd_file = NULL ;
-                }
-              }
-            }
-#endif
           }
           if(f != NULL)gclose(f) ;
           free(namelist[i]) ;
@@ -290,6 +231,7 @@ BTree  *btree_node   ;
         if(sdir_name)free(sdir_name) ;
       }
       if(name)free(name) ;
+
       return 0;
 }
 
@@ -299,78 +241,78 @@ BTree  *btree_node   ;
 int  init_shape_node(ShapeNode *shape){
 
 
-          shape->name              = NULL ;
-          shape->next              = NULL ;
-          shape->s_file            = NULL ;
-          shape->sd_file           = NULL ;
+      shape->name              = NULL ;
+      shape->next              = NULL ;
+      shape->s_file            = NULL ;
+      shape->sd_file           = NULL ;
 //          shape->gl_display_list   = 0 ;  // not a valid display list number
-          shape->basic             = 0 ;  //  = 1 always needed
-          shape->needed            = 0 ;  //  Needed for current scene
-          shape->loaded            = 0 ;  //  Loaded in graphics card
-          shape->flags1            = 0 ;
-          shape->flags2            = 0 ;
-          shape->nvolumes          = 0 ;
-          shape->nshaders          = 0 ;
-          shape->nfilters          = 0 ;
-          shape->npoints           = 0 ;
-          shape->nnormals          = 0 ;
-          shape->nuvpoints         = 0 ;
-          shape->nsort_vectors     = 0 ;
-          shape->ncolors           = 0 ;
-          shape->nmatrices         = 0 ;
-          shape->n_textures        = 0 ;
-          shape->use_texture       = 0 ;
-          shape->n_texlevel_low    = 0 ;
-          shape->nlight_materials  = 0 ;
-          shape->nlight_model_cfgs = 0 ;
-          shape->n_vtx_states      = 0 ;
-          shape->n_prim_states     = 0 ;
-          shape->dlevel_selection  = 0 ;
-          shape->nhierarchy        = 0 ;
-          shape->n_lod_controls    = 0 ;
-          shape->n_animations      = 0 ;
-          shape->shape_vol         = NULL ;
-          shape->shader            = NULL ;
-          shape->filter            = NULL ;
-          shape->point             = NULL ;
-          shape->normal            = NULL ;
-          shape->uvpoint           = NULL ;
-          shape->sort_vector       = NULL ;
-          shape->color             = NULL ;
-          shape->matrix            = NULL ;
-          shape->texture_name      = NULL ;
-          shape->texture           = NULL ;
-          shape->texlevel_low      = NULL ;
-          shape->light_material    = NULL ;
-          shape->light_model_cfg   = NULL ;
-          shape->vtx_state         = NULL ;
-          shape->prim_state        = NULL ;
-          shape->hierarchy         = NULL ;
-          shape->hierarchy_flag    = NULL ;
-          shape->lod_control       = NULL ;
-          shape->animation         = NULL ;
+      shape->basic             = 0 ;  //  = 1 always needed
+      shape->needed            = 0 ;  //  Needed for current scene
+      shape->loaded            = 0 ;  //  Loaded in graphics card
+      shape->flags1            = 0 ;
+      shape->flags2            = 0 ;
+      shape->nvolumes          = 0 ;
+      shape->nshaders          = 0 ;
+      shape->nfilters          = 0 ;
+      shape->npoints           = 0 ;
+      shape->nnormals          = 0 ;
+      shape->nuvpoints         = 0 ;
+      shape->nsort_vectors     = 0 ;
+      shape->ncolors           = 0 ;
+      shape->nmatrices         = 0 ;
+      shape->n_textures        = 0 ;
+      shape->use_texture       = 0 ;
+      shape->n_texlevel_low    = 0 ;
+      shape->nlight_materials  = 0 ;
+      shape->nlight_model_cfgs = 0 ;
+      shape->n_vtx_states      = 0 ;
+      shape->n_prim_states     = 0 ;
+      shape->dlevel_selection  = 0 ;
+      shape->nhierarchy        = 0 ;
+      shape->n_lod_controls    = 0 ;
+      shape->n_animations      = 0 ;
+      shape->shape_vol         = NULL ;
+      shape->shader            = NULL ;
+      shape->filter            = NULL ;
+      shape->point             = NULL ;
+      shape->normal            = NULL ;
+      shape->uvpoint           = NULL ;
+      shape->sort_vector       = NULL ;
+      shape->color             = NULL ;
+      shape->matrix            = NULL ;
+      shape->texture_name      = NULL ;
+      shape->texture           = NULL ;
+      shape->texlevel_low      = NULL ;
+      shape->light_material    = NULL ;
+      shape->light_model_cfg   = NULL ;
+      shape->vtx_state         = NULL ;
+      shape->prim_state        = NULL ;
+      shape->hierarchy         = NULL ;
+      shape->hierarchy_flag    = NULL ;
+      shape->lod_control       = NULL ;
+      shape->animation         = NULL ;
 
-          shape->esd_detail_level          = 0 ;
-          shape->esd_alternative_texture   = 0 ;
-          shape->esd_tunnel_length         = 0.0 ;
-          shape->esd_tunnel_f1             = 0.0 ;
-          shape->esd_tunnel_f2             = 0.0 ;
-          shape->esd_tunnel_i1             = 0 ;
-          shape->esd_tunnel_i2             = 0 ;
-          shape->esd_no_visual_obstruction = 0 ;
-          shape->esd_snapable = 0 ;
-          shape->esd_sound_file_name       = NULL ;
-          shape->esd_bell_animation_fps    = 0.0 ;
-          shape->esd_bounding_box_xmin     = 0.0 ;
-          shape->esd_bounding_box_xmax     = 0.0 ;
-          shape->esd_bounding_box_ymin     = 0.0 ;
-          shape->esd_bounding_box_ymax     = 0.0 ;
-          shape->esd_bounding_box_zmin     = 0.0 ;
-          shape->esd_bounding_box_zmax     = 0.0 ;
-          shape->n_esd_complex_box         = 0 ;
-          shape->esd_complex_box           = NULL ;
+      shape->esd_detail_level          = 0 ;
+      shape->esd_alternative_texture   = 0 ;
+      shape->esd_tunnel_length         = 0.0 ;
+      shape->esd_tunnel_f1             = 0.0 ;
+      shape->esd_tunnel_f2             = 0.0 ;
+      shape->esd_tunnel_i1             = 0 ;
+      shape->esd_tunnel_i2             = 0 ;
+      shape->esd_no_visual_obstruction = 0 ;
+      shape->esd_snapable = 0 ;
+      shape->esd_sound_file_name       = NULL ;
+      shape->esd_bell_animation_fps    = 0.0 ;
+      shape->esd_bounding_box_xmin     = 0.0 ;
+      shape->esd_bounding_box_xmax     = 0.0 ;
+      shape->esd_bounding_box_ymin     = 0.0 ;
+      shape->esd_bounding_box_ymax     = 0.0 ;
+      shape->esd_bounding_box_zmin     = 0.0 ;
+      shape->esd_bounding_box_zmax     = 0.0 ;
+      shape->n_esd_complex_box         = 0 ;
+      shape->esd_complex_box           = NULL ;
 
-          shape->no_culling         = 0 ;
+      shape->no_culling         = 0 ;
 
       return 0;
 }
@@ -388,7 +330,7 @@ int  init_shape_node(ShapeNode *shape){
 
 int load_shape(ShapeNode *snode ) {
 
-  uint    ip = 0 ;                  //  Debug printing when ip == 1
+  uint    ip = 1 ;                  //  Debug printing when ip == 1
   uint    i, j, k, l, m, n, itoken;
   int     iret ;
   MSfile  msfile0 ;
@@ -1664,9 +1606,6 @@ UVOps *uv_ops = &(snode->light_model_cfg[0].uv_ops[j]) ;
         }
       }
 
-
-
-
       printf( "\n  n_vtx_states       = %i\n",snode->n_vtx_states ) ;
       nn = snode->n_vtx_states ;
       for(i=0;i<(nn>40 ? 40 : nn);i++){
@@ -1714,7 +1653,7 @@ UVOps *uv_ops = &(snode->light_model_cfg[0].uv_ops[j]) ;
         printf( "    dlev_bias          = %i\n",snode->lod_control[i].dlev_bias ) ;
         printf( "      n_dist_levels      = %i\n",snode->lod_control[i].n_dist_levels ) ;
         for(j=0;j<snode->lod_control[i].n_dist_levels;j++){
-DistLevel *dist_level = &(snode->lod_control[i].dist_level[j]) ;
+  DistLevel *dist_level = &(snode->lod_control[i].dist_level[j]) ;
         printf("==============================================================================\n");
         printf("=======  Start dist_level                 ====================================\n");
         printf("==============================================================================\n");
@@ -1733,7 +1672,7 @@ DistLevel *dist_level = &(snode->lod_control[i].dist_level[j]) ;
           printf( "      Number of Sub-Objects = %i\n", dist_level->n_sub_objects) ;
 
           for(k=0;k<dist_level->n_sub_objects;k++){
-SubObject *sub_object = &(dist_level->sub_object[k]) ;
+  SubObject *sub_object = &(dist_level->sub_object[k]) ;
             printf("==============================================================================\n");
             printf("=========  Start New SubObject            ====================================\n");
             printf("==============================================================================\n");
@@ -1768,18 +1707,7 @@ SubObject *sub_object = &(dist_level->sub_object[k]) ;
             printf( "      n_vertices            = %i\n",sub_object->n_vertices ) ;
 
             ll = (300<sub_object->n_vertices ? 300 : sub_object->n_vertices);
-#if 0
-            for(l=0;l<ll;l++){
-              printf( "          flags         %i     = %x\n",l,sub_object->vertex[l].flags ) ;
-              printf( "          ipoint        %i     = %i\n",l,sub_object->vertex[l].ipoint ) ;
-              printf( "          inormal       %i     = %i\n",l,sub_object->vertex[l].inormal ) ;
-              printf( "          color1        %i     = %x\n",l,sub_object->vertex[l].color1 ) ;
-              printf( "          color2        %i     = %x\n",l,sub_object->vertex[l].color2 ) ;
-              printf( "          n_vertex_uvs  %i     = %i\n",l,sub_object->vertex[l].n_vertex_uvs ) ;
-              for(m=0;m<sub_object->vertex[l].n_vertex_uvs;m++)
-              printf( "            vertex_uv   %i     = %i\n",m,sub_object->vertex[l].vertex_uv[m] ) ;
-            }
-#else
+
             printf("     l    flags    ipoint    inormal     color1      color2   n_vertexuvs   [0]\n");
             for(l=0;l<ll;l++){
 Vertex        *vertex = &(sub_object->vertex[l]) ;
@@ -1794,8 +1722,6 @@ Vertex        *vertex = &(sub_object->vertex[l]) ;
                           vertex->color1,vertex->color2);
               }
             }
-#endif
-
 
             printf( "      n_vertex_sets         = %i\n",sub_object->n_vertex_sets ) ;
             ll = (30<sub_object->n_vertex_sets ? 30 : sub_object->n_vertex_sets);
@@ -1979,7 +1905,8 @@ void init_tri_list(TriList *t){
       t->normal_idx         = NULL ;
       t->n_flags            = 0 ;
       t->flag               = NULL ;
-  return ;
+
+      return ;
 }
 
 /*
@@ -1998,7 +1925,7 @@ int correct_shape(ShapeNode *snode){
   char *my_name = "correct_shape" ;
 
       if(!strcmp_nqic(snode->name,name1)){
-SubObject *so =  &(snode->lod_control[0].dist_level[0].sub_object[1]) ;
+  SubObject *so =  &(snode->lod_control[0].dist_level[0].sub_object[1]) ;
 // First free malloc memory in sub-object
         if(so->geom_node) free(so->geom_node) ;
         if(so->node_map)  free(so->node_map) ;
@@ -2023,7 +1950,7 @@ SubObject *so =  &(snode->lod_control[0].dist_level[0].sub_object[1]) ;
 
 static int  compare_sx_names(const void *p1, const void *p2){
 
-ShapeNode **s1, **s2, *t1, *t2 ;
+  ShapeNode **s1, **s2, *t1, *t2 ;
 
       s1 = (ShapeNode **)p1 ;
       s2 = (ShapeNode **)p2 ;
@@ -2038,10 +1965,10 @@ ShapeNode **s1, **s2, *t1, *t2 ;
 
 int sort_shapes(ShapeNode **shapelist_beg){
 
-int       ip = 0      ;
-int       n_shapes, i ;
-ShapeNode *sx,  **sa  ;
-char *my_name="sort_shapes" ;
+  int       ip = 0      ;
+  int       n_shapes, i ;
+  ShapeNode *sx,  **sa  ;
+  char *my_name="sort_shapes" ;
 
       if(ip){
         printf("  Enter routine %s\n",my_name) ;

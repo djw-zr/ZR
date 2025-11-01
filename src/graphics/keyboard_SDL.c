@@ -88,30 +88,31 @@ static double key_release_seconds = 0.0 ;
 
 int keyboard_sdl(SDL_Event *event){
 
-int  ip = 0                      ;  // 0 = no printing
-int  isign = 1                    ;
-int  imod, l_shift, l_ctrl, l_alt ;
-int  i, n  ;
-int  new_camera = 0 ;
-double scalei = 1.0/plot_scale     ;
-double del_d, del_a, cn, sn        ;
-TravellerNode *tr_node  ;
-TrkSector   *tn1, *tn ;
-GLfloat       v4[4]     ;
+  int  ip = 0                      ;  // 0 = no printing
+  int  isign = 1                    ;
+  int  imod, l_shift, l_ctrl, l_alt ;
+  int  i, n  ;
+  int  new_camera = 0 ;
+  double scalei = 1.0/plot_scale     ;
+  double del_d, del_a, cn, sn        ;
+  TravellerNode *tr_node  ;
+  TrkSector   *tn1, *tn ;
+  GLfloat       v4[4]     ;
 
-SDL_Keycode sym ;  //  Part of SDL_Keysym
-Uint16      mod ;  //  Ditto
-char        my_name[] = "keyboard_sdl" ;
+  SDL_Keycode sym ;  //  Part of SDL_Keysym
+  Uint16      mod ;  //  Ditto
+  char        my_name[] = "keyboard_sdl" ;
+
 /*
  *==============================================================================
  *  Keyboard should only be entered on SDL_KEYDOWN
  *==============================================================================
  */
-      if(ip)printf(" Enter routine %s\n",my_name) ;
       if(ip){
-        printf("   Routine %s.  type = %i %i\n",my_name,event->type, SDL_KEYUP) ;
-        printf("                sym  = %i\n", event->key.keysym.sym) ;
-        printf("                mod  = %i\n", event->key.keysym.mod) ;
+        printf(" Enter routine %s\n",my_name) ;
+        printf("       type = %i %i\n",event->type, SDL_KEYUP) ;
+        printf("       sym  = %i\n", event->key.keysym.sym) ;
+        printf("       mod  = %i\n", event->key.keysym.mod) ;
 
       }
       if(SDL_KEYUP == event->type){
@@ -475,16 +476,17 @@ char        my_name[] = "keyboard_sdl" ;
           new_viewpoint  = 1              ;
         }
       }
+
       return 0 ;
 }
 
 int  SDL2_keyboard_up(SDL_Event *event){
 
-int         ip = 2 ;
-SDL_Keycode sym ;  //  Part of SDL_Keysym
-Uint16      mod ;  //  Ditto
-char        my_name[] = "SGL2_keyboard_up" ;
-int  imod, l_shift, l_ctrl, l_alt ;
+  int         ip = 0 ;
+  int         imod, l_shift, l_ctrl, l_alt ;
+  SDL_Keycode sym ;  //  Part of SDL_Keysym
+  Uint16      mod ;  //  Ditto
+  char        my_name[] = "SGL2_keyboard_up" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 
@@ -539,7 +541,7 @@ int  imod, l_shift, l_ctrl, l_alt ;
  */
 void PrintKeyInfo( SDL_KeyboardEvent *key ){
 
-char *my_name="PrintKeyInfo" ;
+  char *my_name="PrintKeyInfo" ;
 
       printf("  Enter routine %s\n",my_name) ;
 
@@ -584,7 +586,7 @@ char *my_name="PrintKeyInfo" ;
  */
 void PrintModifiers( Uint16 mod ){
 
-char *my_name="PrintModifiers" ;
+  char *my_name="PrintModifiers" ;
 
       printf("  Enter routine %s\n",my_name) ;
 
@@ -618,14 +620,14 @@ char *my_name="PrintModifiers" ;
 
 int  SDL2_KBD_change_view(SDL_Event *event){
 
-int      ip = 0                       ;  // 0 = no printing
-int      imod, l_shift, l_ctrl, l_alt ;
-double   scalei = 1.0/plot_scale      ;
-double   del_d, del_a, cn, sn         ;
-GLfloat  v4[4]                        ;
-SDL_Keycode sym                       ;  //  SDL Keyboard Symbol
-Uint16      mod                       ;  //  SDL Keyboard Modifier
-char   *my_name="SDL2_kbd_change_view" ;
+  int      ip = 0                       ;  // 0 = no printing
+  int      imod, l_shift, l_ctrl, l_alt ;
+  double   scalei = 1.0/plot_scale      ;
+  double   del_d, del_a, cn, sn         ;
+  GLfloat  v4[4]                        ;
+  SDL_Keycode sym                       ;  //  SDL Keyboard Symbol
+  Uint16      mod                       ;  //  SDL Keyboard Modifier
+  char   *my_name="SDL2_kbd_change_view" ;
 
       if(ip){
         printf("  Enter routine %s\n", my_name) ;
@@ -668,7 +670,7 @@ char   *my_name="SDL2_kbd_change_view" ;
             default:
               break ;
           }
-float c_dist ;  // i.e. 200 m away
+  float c_dist ;  // i.e. 200 m away
           c_dist = sqrt((offset_center_x - offset_eye_x)
                                   *(offset_center_x - offset_eye_x)
                   + (offset_center_y - offset_eye_y)

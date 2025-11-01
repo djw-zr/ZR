@@ -51,10 +51,6 @@ int generate_shape_display_list(ShapeNode *snode){
       if(ip)printf(" Generate display list for : %s\n",snode->name) ;
 
 //     ip = !strcmp(snode->name,"Vduct_1Arch-1Track");
-//     ip = !strcmp(snode->name,"AU_Cedar_20m");
-//      ip = !strcmp(snode->name,"AU_Ash_20m");
-//      ip = !strcmp(snode->name,"underground_marker");
-//      ip = !strcmp(snode->name,"1905-KL");
 //     ip = !strcmp(snode->name,"BBS-HomesteadC");
 //      if(strcmp(snode->name,name_control)== 0){      //  Allow control over items plotted
 //       ip = 0 ;
@@ -300,11 +296,12 @@ int generate_shape_display_list(ShapeNode *snode){
 }
 
 int  add_texture_pointers_to_shape_items(ShapeNode *snode){
-  uint  i       ;
-  uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
-  TextureNode  *tnode        ;
-  char         *name  = NULL ;
-  char         my_name[] = "add_texture_pointers_to_shape_items" ;
+
+  uint        ip = 0  ;   // 0 = no printing, 1 = error printing only
+  uint        i       ;
+  TextureNode *tnode        ;
+  char        *name  = NULL ;
+  char        my_name[] = "add_texture_pointers_to_shape_items" ;
 
       if(!snode->name){
         printf("  Routine %s error\n", my_name) ;
@@ -364,7 +361,6 @@ int  add_texture_pointers_to_shape_items(ShapeNode *snode){
       }
 
       free(name) ;
+
       return 0;
 }
-
-

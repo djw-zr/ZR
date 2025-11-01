@@ -28,14 +28,15 @@ static int find_potential_world_items(TrkSector *ts0,int uid0,
  */
 
 int init_track_db(char * filename){
-int    i, j, n, ip = 0 ;
-char   *datafile ;
-char   *token    ;
-char   *string   ;
-char   myname[] = "init_track_db" ;
-char   ffname[] = "trk_sec_db.c"      ;
 
-MSfile msfile  ;
+  int    i, j, n, ip = 0 ;
+  char   *datafile ;
+  char   *token    ;
+  char   *string   ;
+  char   ffname[] = "trk_sec_db.c"      ;
+  MSfile msfile  ;
+
+  char   myname[] = "init_track_db" ;
 
       if(ip)printf("  Enter routine %s\n",myname) ;
 /*
@@ -131,11 +132,11 @@ MSfile msfile  ;
  *
  * *****************************************************************************
  */
-uint            ie = 0, iw = 0, in = 0, is = 0 ;
-double          de = 0, dw = 0, dn = 0, ds = 0 ,
-                 h0 = 100000.0, h1 = 0.0 ;;
-TrkSector   *trk_path_node ;
-TrkVectorNode *vec          ;
+  uint          ie = 0, iw = 0, in = 0, is = 0 ;
+  double        de = 0, dw = 0, dn = 0, ds = 0 ,
+                h0 = 100000.0, h1 = 0.0 ;;
+  TrkSector     *trk_path_node ;
+  TrkVectorNode *vec          ;
 
       for(i=0;i<(int)track_db.trk_sections_array_size;i++){
         trk_path_node = &track_db.trk_sections_array[i];
@@ -255,11 +256,12 @@ int init_track_section(TrkSector *tsect){
 
 void read_track_path(TrkSector *trk_path, MSfile *msfile){
 
-int    j, n ;             // loop integers
-char   *token    ;
-char   myname[] = "read_track_path" ;
-char   ffname[] = "__FILE__"      ;
-TrkVectorNode  *trk_vec_node ;
+  int    j, n ;             // loop integers
+  char   *token    ;
+  char   ffname[] = "__FILE__"      ;
+  TrkVectorNode  *trk_vec_node ;
+
+  char   myname[] = "read_track_path" ;
 /*
  * Check header
  */
@@ -447,7 +449,8 @@ TrkVectorNode  *trk_vec_node ;
 }
 
 void init_track_path(TrkSector *track_path){
-int  i;
+
+  int  i;
 
       track_path->uid    = 0;
       track_path->type_of_node     = 0 ;
@@ -486,11 +489,12 @@ void error2(char *routine, char *file, char *datafile, char *string)
 
 int list_track_section(TrkSector *tnode){
 
-uint          i      ;
-TrkVectorNode *vnode ;
-WorldNode     *wn    ;
-WorldItem     *wi    ;
-char          *my_name = "list_track_section";
+  uint          i      ;
+  TrkVectorNode *vnode ;
+  WorldNode     *wn    ;
+  WorldItem     *wi    ;
+
+  char          *my_name = "list_track_section";
 
       printf("  Track section.  Index = %i\n",tnode->uid);
       printf("  Type = %i :: %s\n",tnode->type_of_node,
@@ -560,16 +564,17 @@ char          *my_name = "list_track_section";
 
 int add_world_item_pointers_to_track_vectors(TrkSector *tnnode) {
 
-int            ip = 0 ;  // Debug
-int            iret = 0 ;
-int            ifound  ;
-uint           nvec ;
-int            wtile_x, wtile_y ;
-int           w_uid ;
-TrkVectorNode  *vec, *vec0 = NULL  ;  // Vector and previous vector
-WorldNode      *wnode  ;
-WorldItem      *witem  ;
-char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
+  int            ip = 0 ;  // Debug
+  int            iret = 0 ;
+  int            ifound  ;
+  uint           nvec ;
+  int            wtile_x, wtile_y ;
+  int           w_uid ;
+  TrkVectorNode  *vec, *vec0 = NULL  ;  // Vector and previous vector
+  WorldNode      *wnode  ;
+  WorldItem      *witem  ;
+
+  char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
 /*
  *  Loop over track vector array.  Note Junction and End node UID data is stored
  *  in a track vector array of length 1.
@@ -613,37 +618,15 @@ char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
           if(witem->uid == w_uid){ifound = 1 ; break ;}
           if(ip)printf("  cycle : %p",(void *)witem->next) ;
         }
+// Not found
         if(!ifound){
           printf("  ERROR.  Routine %s cannot find world item\n"
                  "          track section = %i, vector = %i, world item = %i, "
                            "world/location tile = %i %i / %i %i, vec x, y, z = %7.2f %7.2f %7.2f\n",
                  my_name, tnnode->uid, nvec, w_uid, wtile_x, wtile_y,
                  vec->tile_east_x, vec->tile_north_z, vec->east_x, vec->north_z, vec->height_y) ;
-#if 0
-          find_potential_world_items(tnnode, w_uid, &wtile_x, &wtile_y, &ifound) ;
-/*
- *  If found try again
- */
-          if(ifound){
-            vec->wfname_east_x  = wtile_x ;
-            vec->wfname_north_z = wtile_y ;
-            for(wnode=worldlist_beg;wnode!=NULL;wnode=wnode->next){
-              if(ip)printf("    wnode X = %i, Y = %i, World node = %p, First world_item = %p\n",
-                  wnode->tile_x,wnode->tile_y, (void *)wnode, (void *)wnode->world_item) ;
-              if(wnode->tile_x == wtile_x && wnode->tile_y == wtile_y)break ;
-            }
-            ifound = 0 ;
-            for(witem=wnode->world_item; witem!=NULL; witem=witem->next){
-              if(ip)printf("  uid = %i %i %s\n",w_uid, witem->uid,wnode->name) ;
-              if(witem->uid == w_uid){ifound = 1 ; break ;}
-              if(ip)printf("  cycle : %p",(void *)witem->next) ;
-            }
-          }else{
-              printf("  World Item still not found !!\n") ;
-          }
-#endif
-        }
-        if(ifound){
+// found ...
+        }else{
 /*
  *  Save pointer to world item in vector structure
  */
@@ -655,7 +638,6 @@ char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
 /*
  *  Save pointer to vector in world item structure
  */
-
           if(witem->worldtype == TRACKOBJ || witem->worldtype == 306){
             witem->u.track_obj.track_vec = vec ;
             witem->iz_off = 1                  ;  // All track items set to 1
@@ -692,21 +674,22 @@ char           my_name[] = "add_world_item_pointers_to_track_vectors" ;
 
 int  add_distances_to_track_vectors(TrkVectorNode *v, TrkSector *t, int nvec){
 
-int  ip = 0 ;
-int  k, kk ;
-int  flag1  = v->flag1 ;
-int  flag2  = v->flag2 ;
-int  is_normal = 0 ;
-uint ns     = v->tsec_section_index ;
+  int  ip = 0 ;
+  int  k, kk ;
+  int  flag1  = v->flag1 ;
+  int  flag2  = v->flag2 ;
+  int  is_normal = 0 ;
+  uint ns     = v->tsec_section_index ;
 
-TrackSection   *ts ;
-WorldItem      *w=v->world_item ;
-DynTrackObj    *dto ;
+  TrackSection   *ts ;
+  WorldItem      *w=v->world_item ;
+  DynTrackObj    *dto ;
 
-static int ndt = 0 ;  //  Number of dynamic track sections to process
-static int idt = 0 ;  //  Current dynamic track section being processed
-static WorldItem  *ws = NULL ;
-char my_name[] = "add_distances_to_track_vectors" ;
+  static int ndt = 0 ;  //  Number of dynamic track sections to process
+  static int idt = 0 ;  //  Current dynamic track section being processed
+  static WorldItem  *ws = NULL ;
+
+  char my_name[] = "add_distances_to_track_vectors" ;
 
       k = 0 ;
 //      ip = (t->uid == 3139) ;
@@ -751,7 +734,6 @@ char my_name[] = "add_distances_to_track_vectors" ;
 /*
  *  Case flag1 ==2 and flag2 == 0 comes from zig-zag track section 565
  */
-#if 1
         v->length = ts->length ;
         v->radius = ts->radius ;
         v->angle  = ts->angle  ;
@@ -759,23 +741,7 @@ char my_name[] = "add_distances_to_track_vectors" ;
           printf("  ERROR.  Routine %s.  Unusual sector: flag1 = %i flag2 = %i\n",
                                     my_name, flag1, flag2) ;
         }
-#else
-        if((0 == flag1 && 1 == flag2) /*|| (2 == flag1 && 0 == flag2)*/){
-          v->length = ts->length ;
-          v->radius = ts->radius ;
-          v->angle  = ts->angle  ;
-        }else if((1 == flag1 && 0 == flag2) /*|| (0 == flag1 && 2 == flag2)*/){
-          v->length = ts->length ;
-          v->radius = ts->radius ;
-          v->angle  = -ts->angle  ;
-        }else{
-          v->length = ts->length ;
-          v->radius = ts->radius ;
-          v->angle  = -ts->angle  ;
-          if(ip || 0)printf(" Routine %s.  Unusual sector: flag1 = %i flag2 = %i\n",
-                                    my_name, flag1, flag2) ;
-        }
-#endif
+
         v->is_dynamic = 0 ;
         v->is_curved = (v->angle != 0.0) ;
         if(ip)printf("    NORMAL SECTION :: length = %f, radius = %f, angle = %f\n",
@@ -951,13 +917,13 @@ int set_track_items_posn(TrkDataBase *database){
 /*
  *  ... otherwise calculate position of track item from the track vectors
  */
-            global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+            global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                               trk_item->tile_east_x, trk_item->tile_north_z,
                               trk_item->east_x, trk_item->north_z, trk_item->height_y,
                               &ti_x, &ti_y, &ti_z) ;
             if(ip){
               printf("   Track Item    : %i  %i\n",trk_item_index, trk_item->type_of_node) ;
-              printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
+              printf("   Tile origin at: %i %i %8.2f\n",tile_xl, tile_yl, tile_h0) ;
               printf("   Track Item at :  %i %i :: %8.2f %8.2f %8.2f\n",
                                     trk_item->tile_east_x, trk_item->tile_north_z,
                                     trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
@@ -974,7 +940,7 @@ int set_track_items_posn(TrkDataBase *database){
   /*
   *  Calculate origin of vector
   */
-              global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+              global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                               trk_vect->tile_east_x, trk_vect->tile_north_z,
                               trk_vect->east_x, trk_vect->north_z, trk_vect->height_y,
                               &tv_x, &tv_y, &tv_z) ;
@@ -1134,7 +1100,7 @@ int set_track_items_posn(TrkDataBase *database){
               printf("\n") ;
               printf("   Track Item    : %i  %i  %s\n",trk_item_index,
                     trk_item->type_of_node, token_trackdb[trk_item->type_of_node]) ;
-              printf("   Tile origin at: %i %i %8.2f\n",tile_x0, tile_y0, tile_h0) ;
+              printf("   Tile origin at: %i %i %8.2f\n",tile_xl, tile_yl, tile_h0) ;
               printf("   Track Item at:  %i %i :: %8.2f %8.2f %8.2f\n",
                                     trk_item->tile_east_x, trk_item->tile_north_z,
                                     trk_item->east_x, trk_item->north_z, trk_item->height_y) ;
@@ -1191,8 +1157,8 @@ int set_track_items_posn(TrkDataBase *database){
  */
 static int cmp_dist(const void *p1, const void *p2){
 
-int     i1, i2 ;
-double  d1, d2 ;
+  int     i1, i2 ;
+  double  d1, d2 ;
 
       i1 = *(int *) p1 ;
       i2 = *(int *) p2 ;
@@ -1202,224 +1168,3 @@ double  d1, d2 ;
       if(d2>d1) return -1 ;
       return 0 ;
 }
-
-/*
- *  Routine to find potential world item matches when one corresponding
- *  to a section of track cannot be found.
- *    uid0 is the uid of target world item
- *    ix0, iy0 identify the tile where the item was not found.
- *  Assume success if solution found within 1 tile.
- */
-#if 0
-static int find_potential_world_items(TrkSector *tn0, int uid0,
-                                       int *ix0, int *iy0, int *ifound0){
-int   ifound = 0 ;
-int       ix, iy ;
-WorldNode *wnode ;
-WorldItem *witem ;
-
-
-char * my_name = "find_potential_world_items" ;
-
-      for(wnode = worldlist_beg; wnode != NULL; wnode=wnode->next){
-        ix = wnode->tile_x ;
-        iy = wnode->tile_y ;
-        for(witem = wnode->world_item; witem != NULL; witem=witem->next){
-          if(witem->uid != uid0)continue ;
-          if(0 == ifound){
-            printf("    Sector type = %s, Item = %i, Original tile = %i, %i.  Potential matches:\n",
-                   token_trackdb[tn0->type_of_node], uid0, *ix0, *iy0) ;
-            ifound = 1 ;
-          }
-          if(ix>*ix0-2 && ix<*ix0+2 && iy>*iy0-2 && iy<*iy0+2){
-            printf("  **  ") ;
-            *ifound0 = 1     ;
-          }else{
-            printf("      ") ;
-          }
-          printf("Tile = %i %i, uid = %i, X, Y, Z = %7.2f %7.2f %7.2f, type = %i, %s\n",
-                 ix, iy, uid0, witem->X, witem->Y, witem->Z,
-                 witem->worldtype, token_idc[witem->worldtype]) ;
-          if(1 == *ifound0){
-            printf("****  Missing world item found\n") ;
-            return 0 ;                                        //  Success
-          }
-        }
-      }
-      printf("####  Missing world item not found\n") ;
-      return 0 ;
-}
-#endif
-#if 0
-
-/*
- *  Find distance along vector *i_vec of track section *index
- *                        to the point closest to the track item 'id'
- */
-      item = &(database->trk_items_array[id]) ;
-/*
- *  Calculate location of track item - metres relative to tile origin
- */
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
-                         item->tile_east_x, item->tile_north_z,
-                         item->east_x, item->north_z, item->height_y,
-                         &ti_x, &ti_y, &ti_z) ;
-      if(ip){
-        printf("   Tile origin at: %i %i %f\n",tile_x0, tile_y0, tile_h0) ;
-        printf("   Track Item at:  %f %f %f\n",ti_x, ti_y, ti_z) ;
-      }
-/*
- *  Loop over section
- *  NOTE:  Track section with index "n" is specified in
- *         trk_sections_array[n-1];
- */
-
-      sect = &(database->trk_sections_array[*section_index-1]) ;
-      length_of_vector = sect->length_of_vector ;
-      vect = sect->vector ;
-      found = 0 ;
-      for(i=0;i<length_of_vector;i++){
-
-/*
- *  Calculate origin of vector
- */
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
-                         vect->tile_east_x, vect->tile_north_z,
-                         vect->east_x, vect->north_z, vect->height_y,
-                         &tv_x, &tv_y, &tv_z) ;
-        if(ip)printf("    Vector origin at:  %f %f %f :: %i :: %f %f %f :: %f\n",
-                                   tv_x, tv_y, tv_z,vect->is_curved,
-                                   vect->ax,vect->ay,vect->az,vect->ang);
-
-        trk_vector_length = vect->length ;
-        aa = degree*vect->a_east_x ;
-        bb = degree*vect->a_height_y ;
-        cc = degree*vect->a_north_z ;
-/*
- * Calculate unit normal and unit tangent
- */
-        mstswagon2local(0., 1., 0., 0., 0., 0., aa, bb, cc, 1.,
-                                    0., 0., 0., &nx, &ny, &nz) ;
-        mstswagon2local(0., 0., 1., 0., 0., 0., aa, bb, cc, 1.,
-                                    0., 0., 0., &tx, &ty, &tz) ;
-/*
- *  Straight section
- */
-        if(!(vect->is_curved)){
-          alpha = (ti_x-tv_x)*tx + (ti_y-tv_y)*ty + (ti_z-tv_z)*tz ;
-          if((alpha>=0.0 && alpha<=trk_vector_length) || ip){
-
-            c_x = tx*alpha  + tv_x ;
-            c_y = ty*alpha  + tv_y ;
-            c_z = tz*alpha  + tv_z ;
-
-            error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
-                                                + (ti_z-c_z)*(ti_z-c_z) ) ;
-            if(ip){
-              e_x = tx*trk_vector_length + tv_x ;
-              e_y = ty*trk_vector_length + tv_y ;
-              e_z = tz*trk_vector_length + tv_z ;
-
-              printf("    Straight track\n") ;
-              printf("    Length, Rotate  :  %f %f\n", trk_vector_length, vect->ang) ;
-              printf("    Normal          :  %f %f %f\n",nx, ny, nz) ;
-              printf("    Tangent         :  %f %f %f\n",tx, ty, tz) ;
-              printf("    Closest at      :  %f %f %f :: %f %f\n",
-                                                c_x, c_y, c_z, alpha, error);
-              printf("    Vector end at   :  %f %f %f :: %f\n",
-                                                e_x, e_y, e_z, trk_vector_length);
-            }
-          }
-/*
- *  Curved Section
- */
-        }else{
-          track_radius = vect->radius ;
-/*
- *  Calculate bi-normal - unit vector to right of track
- *                        = unit tangent vector X unit normal vector
- */
-
-          mstswagon2local(1., 0., 0., 0., 0., 0., aa, bb, cc, 1.,
-                                    0., 0., 0., &rx, &ry, &rz) ;
-
-          sa = (vect->angle > 0.0) ? 1.0 : -1.0 ;
-          o_x = tv_x + sa*rx*track_radius ;   //  Centre of arc
-          o_y = tv_y + sa*ry*track_radius ;
-          o_z = tv_z + sa*rz*track_radius ;
-
-          temp = nx*ti_x + ny*ti_y + nz*ti_z ;
-          vx = ti_x - temp*nx - o_x ;
-          vy = ti_y - temp*ny - o_y ;
-          vz = ti_z - temp*nz - o_z ;
-          temp = 1.0/sqrt(vx*vx + vy*vy + vz*vz) ;
-          vx = vx*temp ;             //  Unit vector from centre to track item
-          vy = vy*temp ;
-          vz = vz*temp ;
-
-          dott = vx*tx + vy*ty + vz*tz ;
-          dotr = vx*rx + vy*ry + vz*rz ;
-
-          alpha = atan2(dott,dotr)    ;  //  Angle (radian) between vx and rx
-          if(alpha > 0.5*pi)alpha = pi - alpha ;
-          alpha = alpha*sa ;
-          alpha = track_radius*alpha  ;  //  Distance along track
-          if((alpha>=0.0 && alpha<=trk_vector_length) || ip){
-
-            c_x = o_x + track_radius*vx ;
-            c_y = o_y + track_radius*vy ;
-            c_z = o_z + track_radius*vz ;
-
-            error = sqrt( (ti_x-c_x)*(ti_x-c_x) + (ti_y-c_y)*(ti_y-c_y)
-                                                + (ti_z-c_z)*(ti_z-c_z) ) ;
-            if(ip){
-              s = sin(vect->angle) ;
-              c = cos(vect->angle) ;
-              e_x = o_x - (c*rx - s*tx)*sa*track_radius ; // End position
-              e_y = o_y - (c*ry - s*ty)*sa*track_radius ;
-              e_z = o_z - (c*rz - s*tz)*sa*track_radius ;
-
-              printf("=+==Curved track\n") ;
-              printf("    Length, Rotate  :  %f %f\n", trk_vector_length, vect->ang) ;
-              printf("    Radius, Angle   :  %f %f :: %f %f %f\n",
-                                              vect->radius, vect->angle, c, s, sa) ;
-              printf("    Normal          :  %f %f %f\n",nx, ny, nz) ;
-              printf("    Tangent         :  %f %f %f\n",tx, ty, tz) ;
-              printf("    Bi-Normal       :  %f %f %f\n",rx, ry, rz) ;
-              printf("    Centre of Arc   :  %f %f %f\n",o_x,  o_y,  o_z)  ;
-              printf("    Track item      :  %f %f %f\n",ti_x, ti_y, ti_z) ;
-              printf("    Centre to t item:  %f %f %f\n",vx, vy, vz) ;
-              printf("    dott, dotr, atan:  %f %f %f\n",dott, dotr, atan2(dott,dotr)) ;
-              printf("    Closest at      :  %f %f %f :: %f %f\n",
-                                                c_x, c_y, c_z, alpha, error);
-              printf("    Vector end at   :  %f %f %f :: %f\n",
-                                                e_x, e_y, e_z, trk_vector_length);
-            }
-          }
-        }
-/*
- *  Save best match
- */
-        if(ip)printf("    Update          :  %f %f :: %f %f :: %i\n",
-                         alpha, trk_vector_length, error, last_error, found) ;
-        if(alpha>=0.0 && alpha<=trk_vector_length){
-          if(error<last_error){
-            *vector_index = i  ;
-            *distance  = alpha ;
-            last_error = error ;
-            found = 1          ;
-          }
-        }
-        vect++ ;       //  Move to next vector
-      }
-      if(!found){
-        printf("  Routine %s error:",my_name) ;
-        printf("  Unable to find vector containing track item\n") ;
-      }
-      if(ip)printf("   Track Item %i found at section %i, vector %i\n",
-                           id,*section_index,*vector_index);
-#endif
-
-
-
-#include "junction.c"

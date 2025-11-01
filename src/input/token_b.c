@@ -54,10 +54,10 @@
 
 uint  read_uint8(FILE *fp){
 
-union u_tag {
-  uint  m ;
-  char  ca[4] ;
-}  u ;
+  union u_tag {
+    uint  m ;
+    char  ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint8";
 
       u.m = 0 ;
@@ -67,11 +67,11 @@ union u_tag {
 
 int  read_int16(FILE *fp){
 
-int  i ;
-union u_tag {
-  int  m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    int  m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int16";
 
       u.m = 0 ;
@@ -83,11 +83,11 @@ union u_tag {
 
 uint  read_uint16(FILE *fp){
 
-int  i ;
-union u_tag {
-  uint  m ;
-  char  ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    uint  m ;
+    char  ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint16";
 
       u.m = 0 ;
@@ -101,11 +101,11 @@ union u_tag {
 
 int  read_int32(FILE *fp){
 
-int  i ;
-union u_tag {
-  int  m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    int  m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int32";
 
       u.m = 0 ;
@@ -117,11 +117,11 @@ union u_tag {
 
 uint  read_uint32(FILE *fp){
 
-int  i ;
-union u_tag {
-  uint m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    uint m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint32";
 
       u.m = 0 ;
@@ -134,11 +134,11 @@ union u_tag {
 
 int  read_int64(FILE *fp){
 
-int  i ;
-union u_tag {
-  uint m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    uint m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int64";
 
       u.m = 0 ;
@@ -151,11 +151,11 @@ union u_tag {
 
 float read_real32(FILE *fp){
 
-int  i ;
-union u_tag {
-  float m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  union u_tag {
+    float m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_real32";
 
       u.m = 0.0 ;
@@ -174,8 +174,8 @@ union u_tag {
 
 char * read_ucharz(FILE *fp){
 
-int  i, n  ;
-char  *string ;
+  int  i, n  ;
+  char  *string ;
 
       n = (int)read_uint16(fp) ;
       string = (char *)malloc(n+1);  //  generate a new string
@@ -194,7 +194,8 @@ char  *string ;
 
 void skip_to_bblock_end(FILE *fp, MSblock *block){
 
-int i ;
+  int i ;
+
       for(i=ftell(fp);i<block->byte_end;i++){
         fgetc(fp) ;
       }

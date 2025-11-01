@@ -3,7 +3,7 @@
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
  *   File:  zr.c
- *   Copyright 2021  David J. Webb
+ *   Copyright 2021, 2022, 2023, 2024, 2025  David J. Webb
  *
  *   ZR main program
  *
@@ -97,7 +97,10 @@ float d_reflect = -1.0  ;  // Default reflection value (-1,1)
 //char test_shape[]   = "rt3aspsig" ;   //           : MECoast
 //char test_shape[]   = "rifeathers" ;   //           : MECoast
 //char test_shape[]   = "ukfs_tt_42ft" ;   //           : Chiltern
-char test_shape[] = " " ;  //  Dummy
+//char test_shape[]   = "1905-EHO" ;   //           : Chiltern
+//char test_shape[]   = "Vduct_1Arch-1Track" ;   //
+char test_shape[]   = "a1t100mstrt" ;   //
+//char test_shape[] = " " ;  //  Dummy
 GLubyte *c_red, *c_green, *c_blue ;
 GLubyte *c_rgba ;
 int   c_width, c_height ;
@@ -369,6 +372,14 @@ int success = SDL_QueueAudio(deviceId, wavBuffer, wavLength);
  *  OpenGL
  */
     glPixelStorei(GL_PACK_ALIGNMENT, 1);
+#ifdef MOVIE
+//      main_window_width  = viewport_width  = svga_width  ;
+//      main_window_height = viewport_height = svga_height ;
+      main_window_width  = viewport_width  = xga_width  ;
+      main_window_height = viewport_height = xga_height ;
+#endif
+      printf("  viewport width and height = %i : %i\n",viewport_width, viewport_height) ;
+
 /*
  *  Use GLUT Interface
  */
@@ -468,6 +479,9 @@ int  ip = 1 ;
 int  i      ;
 char string[256] ;
 
+//      ORdir     = "/windows_d1/Open_Rails_Train_Simulator_-_ZZ" ;
+//      ORroutedir = "/windows_d1/Open_Rails_Train_Simulator_-_ZZ/Routes/au_great_zig_zag" ;
+
       if(argc < 2) return 0 ;
 
       string[0] = '\0';
@@ -477,9 +491,13 @@ char string[256] ;
         if(!strncmp(string,"-p",2)){
           l_plot = 1 ;
         }else if(!strncmp(string,"-t",2)){
-          ORdname = strdup(argv[++i]) ;
+          ORdir      = strdup(argv[++i]) ;
         }else if(!strncmp(string,"-r",2)){
-          ORroute = strdup(argv[++i]) ;
+          ORroutedir = strdup(argv[++i]) ;
+        }else if(!strncmp(string,"-c",2)){
+          ORconsist = strdup(argv[++i]) ;
+        }else if(!strncmp(string,"-s",2)){
+          ORplatform = strdup(argv[++i]) ;
 //  Display help message
         }else if(!strncmp(string,"-h",2) || !strncmp(string,"--h",3)){
           printf(" Program zr help\n") ;
@@ -509,11 +527,16 @@ char string[256] ;
       exit(1) ;
 #endif
 /*
+ *  Set Route
+ */
+      if(ORdir)ORroute = zr_basename(ORroutedir) ;
+/*
  *  Report
  */
       if(ip){
-        if(ORdname)printf("  process_args :: Top directory name = %s\n",ORdname) ;
-        if(ORroute)printf("  process_args :: Name of route      = %s\n",ORroute) ;
+        if(ORdir)     printf("  process_args :: Top directory name = %s\n",ORdir) ;
+        if(ORroutedir)printf("  process_args :: Name of route      = %s\n",ORroute) ;
+        if(ORroutedir)printf("  process_args :: Route directory    = %s\n",ORroutedir) ;
       }
       return 0 ;
 }
@@ -571,7 +594,6 @@ int  ip = 0 ;
 #include "shape_d.c"
 #include "signal_file.c"
 #include "setup_signals.c"
-#include "signal.c"
 #include "switch.c"
 #include "topog_dlist.c"
 #include "topog_cva.c"
@@ -612,6 +634,7 @@ int  ip = 0 ;
 #include "traveller2.c"
 #include "traveller3.c"
 #include "train_events.c"
+#include "junction.c"
 
 #ifdef SDL2
 #  include "keyboard_SDL.c"

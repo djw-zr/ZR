@@ -19,6 +19,8 @@ README.MOVIES
 
       ffmpeg -y -f x11grab -video_size xga -framerate 25 -i :0.0+100,100 -c:v mpeg1video -profile high movie.mpg
 
+      ffmpeg -y -f x11grab -video_size 1500x1000 -framerate 25 -i :0.0+100,100 -c:v mpeg1video -profile high movie.mpg
+
     The 0.0 is the display.screen number of your X11 server, the same as the DISPLAY environemnt variable.  The +100,100 is then the pixel offset to the origin of the ZR window.  The value of DISPLAY can be checked with the terminal command:
 
       echo $DISPLAY
@@ -34,6 +36,10 @@ README.MOVIES
     Better quality can be obtained with the later h264 codec and its variants.  The codec is still in copyright but can usually be used for home use.  The corresponding command is:
 
       ffmpeg -y -f x11grab -video_size xga -framerate 25 -i :0.0+100,100 -c:v libx264 -preset veryfast -crf 25 movie.mpg
+
+    Ffmpeg suggest using a constant rate factor (https://trac.ffmpeg.org/wiki/Encode/H.264).  This involves choosing a constant rate factor "-crf n", where n== is lossless.  A sane range is 17-28, 23 is the default, 17 or 18 is virtually lossless.
+
+    The presets provide a certain encoding speed to compression ratio.  A slower preset will provide better compression.
 
     The parameter '-crf 25' specifies  the final quality, smaller values being better but reauiring more processing of each frame. The parameter '-preset veryfast' also controls the effort processing each frame.  A value of 'slow' requires the program to take more case with each frame.  This results in a smaller file size but frames may be dropped.
 

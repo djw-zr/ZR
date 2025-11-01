@@ -1,0 +1,773 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Generated with glade 3.40.0 -->
+<interface>
+  <requires lib="gtk+" version="3.24"/>
+  <object class="GtkListStore" id="liststore1">
+    <columns>
+      <!-- column-name gchararray1 -->
+      <column type="gchararray"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Test 1</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Test 2</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Test 3</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkWindow" id="window">
+    <property name="can-focus">False</property>
+    <child>
+      <object class="GtkFixed" id="fixed1">
+        <property name="width-request">1321</property>
+        <property name="height-request">785</property>
+        <property name="visible">True</property>
+        <property name="can-focus">False</property>
+        <child>
+          <object class="GtkRadioButton" id="radio1">
+            <property name="label" translatable="yes">Activity</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">False</property>
+            <property name="active">True</property>
+            <property name="draw-indicator">True</property>
+            <signal name="toggled" handler="on_radio1_toggled" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">40</property>
+            <property name="y">170</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkRadioButton" id="radio2">
+            <property name="label" translatable="yes">Timetable</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="receives-default">False</property>
+            <property name="active">True</property>
+            <property name="draw-indicator">True</property>
+            <property name="group">radio1</property>
+            <signal name="toggled" handler="on_radio2_toggled" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">250</property>
+            <property name="y">170</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label1">
+            <property name="width-request">100</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">label1</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="x">10</property>
+            <property name="y">10</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="label2">
+            <property name="width-request">100</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">label2</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="x">200</property>
+            <property name="y">10</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="clabel1">
+            <property name="width-request">100</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Installation profile:</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="x">40</property>
+            <property name="y">50</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkComboBoxText" id="combo2">
+            <property name="width-request">300</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="active">0</property>
+            <items>
+              <item id="0" translatable="yes">Combo Box 2 list 0</item>
+            </items>
+            <signal name="changed" handler="on_combo2_changed" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">40</property>
+            <property name="y">130</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkLabel" id="clabel2">
+            <property name="width-request">100</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label" translatable="yes">Route:</property>
+            <property name="xalign">0</property>
+          </object>
+          <packing>
+            <property name="x">40</property>
+            <property name="y">110</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkComboBoxText" id="combo1">
+            <property name="width-request">300</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="active">1</property>
+            <items>
+              <item id="0" translatable="yes">No directory loaded</item>
+            </items>
+            <signal name="changed" handler="on_combo1_changed" swapped="no"/>
+          </object>
+          <packing>
+            <property name="x">40</property>
+            <property name="y">70</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkStack" id="stack1">
+            <property name="width-request">500</property>
+            <property name="height-request">500</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="transition-duration">0</property>
+            <child>
+              <object class="GtkFixed" id="stkfxd1">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkFrame" id="frame1">
+                    <property name="width-request">500</property>
+                    <property name="height-request">500</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label-xalign">0</property>
+                    <property name="label-yalign">0</property>
+                    <property name="shadow-type">none</property>
+                    <child>
+                      <object class="GtkAlignment" id="al1">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkFixed">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo3">
+                                <property name="width-request">400</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="0" translatable="yes">Activities not supported</item>
+                                </items>
+                                <signal name="changed" handler="on_combo3_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="y">20</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel3">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Activity:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo4">
+                                <property name="width-request">400</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="0" translatable="yes">Locomotoves not supported</item>
+                                </items>
+                                <signal name="changed" handler="on_combo4_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="y">80</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel4">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Locomotive:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">60</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo5">
+                                <property name="width-request">400</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="0" translatable="yes">Consists supported</item>
+                                </items>
+                                <signal name="changed" handler="on_combo5_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="y">140</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel5">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Consist:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">120</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo6">
+                                <property name="width-request">400</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <property name="popup-fixed-width">False</property>
+                                <items>
+                                  <item id="0" translatable="yes">Starting at - supported</item>
+                                </items>
+                                <signal name="changed" handler="on_combo6_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="y">200</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel6">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Starting at:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">180</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo7">
+                                <property name="width-request">400</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <items>
+                                  <item id="0" translatable="yes">Heading to - not supported</item>
+                                </items>
+                                <signal name="changed" handler="on_combo7_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="y">260</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel7">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Heading to:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">240</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo8">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">12</property>
+                                <property name="active-id">12</property>
+                                <items>
+                                  <item id="0" translatable="yes">0:00</item>
+                                  <item id="1" translatable="yes">1:00</item>
+                                  <item id="2" translatable="yes">2:00</item>
+                                  <item id="3" translatable="yes">3:00</item>
+                                  <item id="4" translatable="yes">4:00</item>
+                                  <item id="5" translatable="yes">5:00</item>
+                                  <item id="6" translatable="yes">6:00</item>
+                                  <item id="7" translatable="yes">7:00</item>
+                                  <item id="8" translatable="yes">8:00</item>
+                                  <item id="9" translatable="yes">9:00</item>
+                                  <item id="10" translatable="yes">10:00</item>
+                                  <item id="11" translatable="yes">11:00</item>
+                                  <item id="12" translatable="yes">12:00</item>
+                                  <item id="13" translatable="yes">13:00</item>
+                                  <item id="14" translatable="yes">14:00</item>
+                                  <item id="15" translatable="yes">15:00</item>
+                                  <item id="16" translatable="yes">16:00</item>
+                                  <item id="17" translatable="yes">17:00</item>
+                                  <item id="18" translatable="yes">18:00</item>
+                                  <item id="19" translatable="yes">19:00</item>
+                                  <item id="20" translatable="yes">20:00</item>
+                                  <item id="21" translatable="yes">21:00</item>
+                                  <item id="22" translatable="yes">22_00</item>
+                                  <item id="23" translatable="yes">23:00</item>
+                                </items>
+                                <signal name="changed" handler="on_combo8_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="x">60</property>
+                                <property name="y">320</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel8">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Time:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">320</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo9">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">1</property>
+                                <property name="active-id">1</property>
+                                <items>
+                                  <item id="0" translatable="yes">Spring</item>
+                                  <item id="1" translatable="yes">Summer</item>
+                                  <item id="2" translatable="yes">Autumn</item>
+                                  <item id="3" translatable="yes">Winter</item>
+                                </items>
+                                <signal name="changed" handler="on_combo9_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="x">60</property>
+                                <property name="y">370</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel9">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Season:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">370</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo10">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <property name="active-id">0</property>
+                                <items>
+                                  <item id="0" translatable="yes">Clear</item>
+                                  <item id="1" translatable="yes">Snow</item>
+                                  <item id="2" translatable="yes">Rain</item>
+                                </items>
+                                <signal name="changed" handler="on_combo10_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="x">60</property>
+                                <property name="y">420</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel10">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Weather:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="y">420</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo11">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <signal name="changed" handler="on_combo11_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="x">270</property>
+                                <property name="y">320</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel11">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Duration:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="x">200</property>
+                                <property name="y">320</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkComboBoxText" id="combo12">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="active">0</property>
+                                <signal name="changed" handler="on_combo12_changed" swapped="no"/>
+                              </object>
+                              <packing>
+                                <property name="x">270</property>
+                                <property name="y">370</property>
+                              </packing>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="clabel12">
+                                <property name="width-request">100</property>
+                                <property name="visible">True</property>
+                                <property name="can-focus">False</property>
+                                <property name="label" translatable="yes">Difficulty:</property>
+                                <property name="xalign">0</property>
+                              </object>
+                              <packing>
+                                <property name="x">200</property>
+                                <property name="y">370</property>
+                              </packing>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label_item">
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">11</property>
+                    <property name="y">11</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page0</property>
+                <property name="title" translatable="yes">Tab0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkFixed" id="stkfxd2">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkFrame" id="frame2">
+                    <property name="width-request">500</property>
+                    <property name="height-request">500</property>
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="label-xalign">0</property>
+                    <property name="shadow-type">none</property>
+                    <child>
+                      <object class="GtkAlignment" id="al2">
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="left-padding">12</property>
+                        <child>
+                          <object class="GtkFixed">
+                            <property name="visible">True</property>
+                            <property name="can-focus">False</property>
+                          </object>
+                        </child>
+                      </object>
+                    </child>
+                    <child type="label_item">
+                      <placeholder/>
+                    </child>
+                  </object>
+                  <packing>
+                    <property name="x">7</property>
+                    <property name="y">13</property>
+                  </packing>
+                </child>
+              </object>
+              <packing>
+                <property name="name">page1</property>
+                <property name="title" translatable="yes">Tab1</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="x">20</property>
+            <property name="y">190</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkFrame" id="frame4">
+            <property name="width-request">320</property>
+            <property name="height-request">250</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="label-xalign">0</property>
+            <property name="label-yalign">0</property>
+            <property name="shadow-type">none</property>
+            <child>
+              <object class="GtkAlignment">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="yalign">0</property>
+                <property name="left-padding">12</property>
+                <child>
+                  <object class="GtkFixed">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <child>
+                      <object class="GtkMenuButton" id="menu1">
+                        <property name="width-request">100</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="focus-on-click">False</property>
+                        <property name="receives-default">True</property>
+                        <child>
+                          <placeholder/>
+                        </child>
+                      </object>
+                      <packing>
+                        <property name="x">200</property>
+                        <property name="y">20</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkCheckButton" id="check1">
+                        <property name="label" translatable="yes">Logging</property>
+                        <property name="name">check1</property>
+                        <property name="width-request">100</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">False</property>
+                        <property name="draw-indicator">True</property>
+                      </object>
+                      <packing>
+                        <property name="x">200</property>
+                        <property name="y">70</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="combo14">
+                        <property name="width-request">150</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <property name="active-id">0</property>
+                        <items>
+                          <item translatable="yes">Documents</item>
+                          <item translatable="yes">Line2</item>
+                        </items>
+                      </object>
+                      <packing>
+                        <property name="y">70</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkComboBoxText" id="combo13">
+                        <property name="width-request">150</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">False</property>
+                        <items>
+                          <item translatable="yes">Tools</item>
+                        </items>
+                      </object>
+                      <packing>
+                        <property name="y">20</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel" id="Label3">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="x">450</property>
+            <property name="y">500</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkFrame" id="frame5">
+            <property name="name">frame5</property>
+            <property name="width-request">150</property>
+            <property name="height-request">250</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="border-width">5</property>
+            <property name="label-xalign">0</property>
+            <property name="shadow-type">none</property>
+            <child>
+              <object class="GtkAlignment" id="ali5">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="border-width">5</property>
+                <property name="left-padding">12</property>
+                <child>
+                  <object class="GtkFixed" id="fixed5">
+                    <property name="visible">True</property>
+                    <property name="can-focus">False</property>
+                    <property name="border-width">5</property>
+                    <child>
+                      <object class="GtkButton" id="button2">
+                        <property name="label" translatable="yes">Start</property>
+                        <property name="name">button2</property>
+                        <property name="width-request">100</property>
+                        <property name="height-request">80</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <signal name="clicked" handler="on_button2_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="x">10</property>
+                        <property name="y">20</property>
+                      </packing>
+                    </child>
+                    <child>
+                      <object class="GtkButton" id="button3">
+                        <property name="label" translatable="yes">Resume/
+Replay</property>
+                        <property name="width-request">100</property>
+                        <property name="height-request">30</property>
+                        <property name="visible">True</property>
+                        <property name="can-focus">True</property>
+                        <property name="receives-default">True</property>
+                        <signal name="clicked" handler="on_button3_clicked" swapped="no"/>
+                      </object>
+                      <packing>
+                        <property name="x">10</property>
+                        <property name="y">120</property>
+                      </packing>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel" id="Label4">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-start">8</property>
+                <property name="label" translatable="yes">Single Player</property>
+              </object>
+            </child>
+            <style>
+              <class name="border_dashed"/>
+            </style>
+          </object>
+          <packing>
+            <property name="x">780</property>
+            <property name="y">500</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkFrame" id="frame6">
+            <property name="width-request">350</property>
+            <property name="height-request">250</property>
+            <property name="visible">True</property>
+            <property name="can-focus">False</property>
+            <property name="border-width">5</property>
+            <property name="label-xalign">0</property>
+            <property name="shadow-type">none</property>
+            <child>
+              <object class="GtkAlignment">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="left-padding">12</property>
+                <child>
+                  <placeholder/>
+                </child>
+              </object>
+            </child>
+            <child type="label">
+              <object class="GtkLabel" id="Label5">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <property name="margin-start">6</property>
+                <property name="label" translatable="yes">Multiplayer</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="x">942</property>
+            <property name="y">500</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="ScrollWindow">
+            <property name="width-request">750</property>
+            <property name="height-request">420</property>
+            <property name="visible">True</property>
+            <property name="can-focus">True</property>
+            <property name="shadow-type">in</property>
+            <child>
+              <object class="GtkViewport" id="ViewPort">
+                <property name="visible">True</property>
+                <property name="can-focus">False</property>
+                <child>
+                  <object class="GtkTextView" id="TextView">
+                    <property name="visible">True</property>
+                    <property name="can-focus">True</property>
+                    <property name="wrap-mode">word</property>
+                    <property name="left-margin">5</property>
+                    <property name="right-margin">5</property>
+                    <property name="indent">10</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="x">540</property>
+            <property name="y">75</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>

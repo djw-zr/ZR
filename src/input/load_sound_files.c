@@ -2,7 +2,7 @@
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
- *   File:  load_consist.c
+ *   File:  load_sound_files.c
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
@@ -235,15 +235,14 @@ int load_sound_files(void){
  *==============================================================================
  */
 #ifdef OPENAL
-#if 1
-ALvoid  *wav_data = NULL  ;
-char    *cwav_data = NULL ;
-ALsizei z1, z2, z3, z4   ;
+  ALvoid  *wav_data = NULL  ;
+  char    *cwav_data = NULL ;
+  ALsizei z1, z2, z3, z4   ;
 
-ALenum  wav_format ;
-ALsizei wav_size   ;
-ALsizei i_wav_freq ;
-ALfloat wav_freq   ;
+  ALenum  wav_format ;
+  ALsizei wav_size   ;
+  ALsizei i_wav_freq ;
+  ALfloat wav_freq   ;
 
               if(ip)printf("  call load_wave_file :: Filename = %s\n",file_name) ;
               iret = load_wave_file(file_name, &cwav_data, &wav_format, &wav_size, &i_wav_freq) ;
@@ -267,14 +266,6 @@ ALfloat wav_freq   ;
                 printf("  buffer, data, format, size, freq = %i %p %i %i %f\n",
                        snd_file->buffer, (void *)wav_data, wav_format, wav_size, wav_freq) ;
               }
-
-
-#else
-              snd_file->buffer = alutCreateBufferFromFile(file_name) ;
-              iret = alutGetError() ;
-              if(iret || ip)printf("  Call alutCreateBufferFromFile."
-                             " Error return = %s\n", alutGetErrorString(iret)) ;
-#endif
 #endif
             }
           }
@@ -291,13 +282,13 @@ ALfloat wav_freq   ;
  *  Loop over all SMS files and setup SmsFilNode soundfile pointers
  *==============================================================================
  */
-int        j, k, l, m, nf;
-SMS_Node   *sms_list ;
-SmsStrNode *smsstr_node ;
-SmsGrpNode *smsgrp_node ;
-SmsTrgNode *smstrg_node ;
-SmsFilNode *smsfil_node ;
-char       *wav_file ;
+  int        j, k, l, m, nf;
+  SMS_Node   *sms_list ;
+  SmsStrNode *smsstr_node ;
+  SmsGrpNode *smsgrp_node ;
+  SmsTrgNode *smstrg_node ;
+  SmsFilNode *smsfil_node ;
+  char       *wav_file ;
 
       if(ip)printf("  ======  Initialise SmsFilNode soundfile pointers:\n") ;
       for(sms_list = sms_list_beg; sms_list != NULL; sms_list = sms_list->next){
@@ -343,12 +334,12 @@ char       *wav_file ;
  * n_streams and initialise the stream.
  *==============================================================================
  */
-WorldNode       *wnode ;
-SoundObjectNode *sndobj_node ;
-int             tile_x, tile_y ;
-int             n_sources ;
-int             tot_sources = 0 ;
-double          X, Y, Z ;
+  WorldNode       *wnode ;
+  SoundObjectNode *sndobj_node ;
+  int             tile_x, tile_y ;
+  int             n_sources ;
+  int             tot_sources = 0 ;
+  double          X, Y, Z ;
 
       if(ip)printf("  ======  Initialise world sound sources:\n") ;
       for(wnode = worldlist_beg; wnode != NULL; wnode = wnode->next){
@@ -360,8 +351,8 @@ double          X, Y, Z ;
                        "tile_y = %i, uid = %i,  file = %s\n",
                        my_name,tile_x, tile_y, sndobj_node->uid, sndobj_node->sms_file) ;
           sms_node = sndobj_node->sms_node ;
-          X = (tile_x - tile_x0 + 0.5)*tile_size + sndobj_node->X ;
-          Y = (tile_y - tile_y0 + 0.5)*tile_size + sndobj_node->Y ;
+          X = (tile_x - tile_xl + 0.5)*tile_size + sndobj_node->X ;
+          Y = (tile_y - tile_yl + 0.5)*tile_size + sndobj_node->Y ;
           Z = sndobj_node->Z;
           if(!sms_node){
             printf("  ERROR in routine: %s\n",my_name) ;
@@ -503,7 +494,6 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
 /*
  *   Level 0 : Train
  */
-#if 1
       for(;;){
         if(token1)free(token1) ;
         token1 = ctoken(msfile) ;
@@ -1395,7 +1385,7 @@ int  load_sound_sms_file(SMS_Node *sms_node, char *file_name){
         END
       }
       if(token1)free(token1) ; token1 = NULL ;
-#endif
+
       close_msfile(msfile) ;
       return 0 ;
 }
@@ -1424,6 +1414,7 @@ int initialise_sms_node(SMS_Node  *sms_node){
         smsgrp_node->loadall_waves = 0 ;
         smsgrp_node->n_streams     = 0 ;
       }
+
       return 0 ;
 }
 

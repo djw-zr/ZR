@@ -13,7 +13,6 @@
  *==============================================================================
  */
 
-
 int cameras_init(){
 
 CameraNode *camera ;
@@ -31,7 +30,6 @@ CameraNode *camera ;
       camera->offset_center_x = plot_scale*offset_center_x ;
       camera->offset_center_y = plot_scale*offset_center_y ;
       camera->offset_center_z = plot_scale*offset_center_z ;
-
 
       return 0 ;
 }
@@ -53,7 +51,7 @@ CameraNode *camera ;
 
 int camera_new_position(){
 
-  int         j ;
+  int         ii, j ;
   int         ip = 0 ;         //  Debug
   double      scalei=1.0/plot_scale ;
   GLdouble ea[4], et[4], ca[4], ct[4], mm[4][4]  ;
@@ -61,7 +59,7 @@ int camera_new_position(){
   GLfloat     v4[4]  ;
   TravellerNode *t   ;
   char        *my_name = "camera_new_position" ;
-      if(ip)printf(" Enter %s\n",my_name) ;
+      if(ip)printf(" Enter routine %s #################\n",my_name) ;
 /*
  *==============================================================================
  *  Code for normal preprocessor options (i.e. not Texture or Shapes)
@@ -73,6 +71,9 @@ int camera_new_position(){
         printf(" camera_changed =  %i\n",camera_changed) ;
         printf(" current_camera =  %i\n",current_camera) ;
         printf(" camera_last =  %i\n",camera_last) ;
+        printf(" camera_last =  %i\n",camera_last) ;
+        printf(" tile_x0, tile_y0 =  %i %i\n",tile_x0, tile_y0) ;
+        printf(" tile_xl, tile_yl =  %i %i\n",tile_xl, tile_yl) ;
       }
 
       if(!camera_changed && !camera_moved)return 0 ;
@@ -96,9 +97,6 @@ int camera_new_position(){
         offset_center_x = scalei*camera->offset_center_x ;
         offset_center_y = scalei*camera->offset_center_y ;
         offset_center_z = scalei*camera->offset_center_z ;
-//        printf("        eye = %f %f %f,  center = %f %f %f\n",
-//               offset_eye_x, offset_eye_x, offset_eye_x,
-//               offset_center_x, offset_center_y, offset_center_z) ;
 
 //  Other graphic variables
 
@@ -114,8 +112,7 @@ int camera_new_position(){
       }
 /*
  *==============================================================================
- *  If camera position is absolute copy offset coordinates to lookat
- *  otherwise calculate new lookat (absolute) values
+ *  If camera position is absolute copy offset coordinates to lookat ...
  *==============================================================================
  */
       if(current_camera == 0 || current_camera == 8){
@@ -125,6 +122,11 @@ int camera_new_position(){
         lookat_center_x = offset_center_x ;
         lookat_center_y = offset_center_y ;
         lookat_center_z = offset_center_z ;
+/*
+ *==============================================================================
+ *  ...  otherwise calculate new lookat (absolute) values
+ *==============================================================================
+ */
       }else{
         if(current_camera == 3){
           t     = player_train->last->traveller ;
@@ -141,6 +143,11 @@ int camera_new_position(){
  *   Todo:  Use extra parameter to skip this transform
  *==============================================================================
  */
+        if(ip){
+          printf("  tile_xl, tile_yl   = %i %i\n",tile_xl, tile_yl);
+          printf("  lookat_center_x, y = %f %f\n",lookat_center_x,lookat_center_y);
+          printf("  lookat_eye_x, y    = %f %f\n",lookat_eye_x,lookat_eye_y);
+        }
         traveller2modelview(t, &mm[0][0]) ;
 
         if(ip){
@@ -154,7 +161,6 @@ int camera_new_position(){
 /*
  *==============================================================================
  *  Calculate offsets in metres
- *
  *  Todo:  Modify this section and matrix_product routine to use pointers
  *==============================================================================
  */
@@ -217,6 +223,24 @@ int camera_new_position(){
       if(ip)printf(" Camera AA :: Tile %i %i :: Eye %f %f :: Last %i %i\n",
                   tile_eye_x0, tile_eye_y0, lookat_eye_x, lookat_eye_y,
                   last_eye_x0, last_eye_y0) ;
+/*
+ *==============================================================================
+ *  Update tile_xl and tile_yl
+ *  Object positions are relative to the centre of each time
+ *==============================================================================
+ */
+      ii = nint(lookat_center_x) ;
+      if(ii){
+        tile_xl         = tile_xl + ii ;
+        lookat_center_x = lookat_center_x - ii ;
+        lookat_eye_x    = lookat_eye_x    - ii ;
+      }
+      ii = nint(lookat_center_y) ;
+      if(ii){
+        tile_yl         = tile_yl + ii ;
+        lookat_center_y = lookat_center_y - ii ;
+        lookat_eye_y    = lookat_eye_y    - ii ;
+      }
 /*
  *==============================================================================
  *  If viewpoint tile has changed cull shapes etc.
@@ -312,13 +336,12 @@ int camera_new_position(){
       initialise_eye_vectors() ;
       initialise_clip_planes(clip_a) ;
       graphics_reset() ;
-
 #endif
 /*
  *  Exit
  */
       if(ip){
-        printf(" Exit %s\n",my_name) ;
+        printf(" Exit routine %s ===================\n",my_name) ;
         fflush(NULL) ;
       }
       return 0;
@@ -327,21 +350,28 @@ int camera_new_position(){
 /*
  *   Routine to open and read data from file ~/.zr/lookat.txt
  *   to set position of camera.
- *   The file gives the tile location and position of the lookat point
+ *   The file gives the tile location and position of the lookat point.
+ *   Comment lines start '#'
+ *   Data lines contain:
+ *     tile_x = 1024
+ *     tile_y = 2048
+ *     lookat_x =  0.1
+ *     lookat_y = -0.9
+ *     lookat_z =  0.5
  */
 
 int  read_lookat_file(){
 
-int  n ;
-int  tile_x, tile_y ;
-double lookat_x, lookat_y, lookat_z ;
-size_t slen, nread ;
-FILE *fp ;
-char *file_name ;
-char *look_name = "//lookat.txt" ;
-char *line = NULL ;
-char *token_a[3]   ;
-char *token        ;
+  int  n ;
+  int  tile_x, tile_y ;
+  double lookat_x, lookat_y, lookat_z ;
+  size_t slen, nread ;
+  FILE *fp ;
+  char *file_name ;
+  char *look_name = "//lookat.txt" ;
+  char *line = NULL ;
+  char *token_a[3]   ;
+  char *token        ;
 
 
       tile_x = tile_y = 9999 ;
@@ -422,11 +452,12 @@ char *token        ;
       cameras[0].offset_eye_y = cameras[0].offset_center_y + 30.0;
       cameras[0].offset_eye_z = cameras[0].offset_center_z + 30.0 ;
 
-//        printf(" AA camera eye = %f %f %f,  center = %f %f %f\n",
-//               cameras[0].offset_eye_x, cameras[0].offset_eye_x, cameras[0].offset_eye_x,
-//               cameras[0].offset_center_x, cameras[0].offset_center_y, cameras[0].offset_center_z) ;
-//      current_camera = 0 ;
+        printf(" AA camera eye = %f %f %f,  center = %f %f %f\n",
+               cameras[0].offset_eye_x, cameras[0].offset_eye_y, cameras[0].offset_eye_z,
+               cameras[0].offset_center_x, cameras[0].offset_center_y, cameras[0].offset_center_z) ;
+      current_camera = 0 ;
       camera_changed = 1 ;
+      cameras_init() ;
 
       fclose(fp) ;
 
@@ -443,14 +474,13 @@ char *token        ;
  *  may not be suitable for all engines.
  */
 
-
 int update_camera_offsets(TrainNode *player_train){
 
-WagonNode     *wagon      = player_train->motor   ;
-RawWagonNode  *raw_wagon  = wagon->raw_wagon      ;
-RawWagonNode  *first_wagon  = player_train->first->raw_wagon      ;
-RawEngineNode *raw_engine = raw_wagon->raw_engine ;
-double        *head_out   = raw_engine->head_out  ;
+  WagonNode     *wagon      = player_train->motor   ;
+  RawWagonNode  *raw_wagon  = wagon->raw_wagon      ;
+  RawWagonNode  *first_wagon  = player_train->first->raw_wagon      ;
+  RawEngineNode *raw_engine = raw_wagon->raw_engine ;
+  double        *head_out   = raw_engine->head_out  ;
 
 //  Driver view
       cameras[ 1].offset_eye_y    =  head_out[1] ;

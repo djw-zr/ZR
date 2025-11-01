@@ -10,7 +10,8 @@
  *
  *   Routine to make a texture resident
  *
- *   Note size with format 0x12 (https://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/)
+ *   Note size with format 0x12
+ *   (https://www.opengl-tutorial.org/beginners-tutorials/tutorial-5-a-textured-cube/)
  *   To uncompress see: www.gamedev.net/forums/topic616454-dxt1-decompression
  *
  *   gluBuild2DMipmaps :: If width or height are not an exact power of two the
@@ -20,18 +21,20 @@
  *==============================================================================
  */
 int make_texture_resident(TextureNode *tx_node){
-int   ip = 0 ;
-int   width, iret ;
-int   height ;
-int   size   ;
-int   n_tex  ;
-int   i      ;
-int   log_01 ;
-char  string[256] ;
-GLfloat anisot    ;
-char *my_name = "make_texture_resident" ;
+
+  int   ip = 0 ;
+  int   width, iret ;
+  int   height ;
+  int   size   ;
+  int   n_tex  ;
+  int   i      ;
+  int   log_01 ;
+  char  string[256] ;
+  GLfloat anisot    ;
+  char *my_name = "make_texture_resident" ;
 
       if(ip)printf("  Enter make_texture_resident\n") ;
+
       if(0 == tx_node->needed) return 0 ;
 
       width  = tx_node->width  ;
@@ -86,7 +89,6 @@ char *my_name = "make_texture_resident" ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) ;
-//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_NEAREST) ;
 /*
  *  If anisotropic filter supported initialise filter
  */

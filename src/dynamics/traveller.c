@@ -18,7 +18,6 @@
  *==============================================================================
  */
 
-//int  trv_position(TravellerNode *t) ;
 int  check_matrices(TravellerNode *t) ;
 
 /*
@@ -34,15 +33,11 @@ int   trv_move(TravellerNode *t, double distance){
   double        dn ;
   char          *my_name = "trv_move" ;
 
-//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
-
-      if(ip)printf("\n  Enter routine %s.  Name = %s\n",my_name,
-                               (t->wagon) ? t->wagon->train->name : "(null)") ;
-
       if(ip){
-        printf("^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n") ;
-        printf("  ENTER %s : idirect = %i,  distance = %f\n",
-                                                 my_name,t->idirect,distance) ;
+        printf("\n  Enter routine %s.  Name = %s\n",my_name,
+                               (t->wagon) ? t->wagon->train->name : "(null)") ;
+        printf("        idirect = %i,  distance = %f\n",
+                                                 t->idirect,distance) ;
       }
 
       for(;;){
@@ -133,12 +128,12 @@ int   trv_move(TravellerNode *t, double distance){
 
 int   trv_next(TravellerNode *t){
 
-int           ip   = 0 ;  //  Debug
-int           iret = 0 ;  //  Return code
-TravellerNode tc       ;  //  Copy
-TrkSector     *tn = t->tn      ;
-TrkVectorNode *vn = tn->vector ;
-char          my_name[] = "trv_next" ;
+  int           ip   = 0 ;  //  Debug
+  int           iret = 0 ;  //  Return code
+  TravellerNode tc       ;  //  Copy
+  TrkSector     *tn = t->tn      ;
+  TrkVectorNode *vn = tn->vector ;
+  char          my_name[] = "trv_next" ;
 
       if(!t->wagon) ip = 0 ;
 //      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
@@ -210,16 +205,13 @@ char          my_name[] = "trv_next" ;
 
 int   trv_prev(TravellerNode *t){
 
-int           ip = 0   ;  // DEBUG
-int           iret = 0 ;  // Return code
-int           ivector = t->ivector ;
-TravellerNode tc               ;  //  Copy of travelelr node
-TrkSector   *tn = t->tn      ;
-TrkVectorNode *vn = tn->vector ;
-char          my_name[] = "trv_prev" ;
-
-      if(!t->wagon) ip = 0 ;  // Skip dummy wagons
-//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
+  int           ip = 0   ;  // DEBUG
+  int           iret = 0 ;  // Return code
+  int           ivector = t->ivector ;
+  TravellerNode tc               ;  //  Copy of travelelr node
+  TrkSector   *tn = t->tn      ;
+  TrkVectorNode *vn = tn->vector ;
+  char          my_name[] = "trv_prev" ;
 
       if(ip){
         printf("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n") ;
@@ -264,35 +256,20 @@ char          my_name[] = "trv_prev" ;
  *    ... temporary fix - change direction
  */
       }else{
-        if(ip)printf("   MOVE to next section node  +++++++++++++++++++\n");
-        if(ip)printf("     Call trk_next(t,-1)      +++++++++++++++++++\n");
-#if 1
+        if(ip){
+          printf("   MOVE to next section node  +++++++++++++++++++\n") ;
+          printf("     Call trk_next(t,-1)      +++++++++++++++++++\n") ;
+        }
         tc = *t ;
         iret = trk_next(t,-1) ;
         if(iret){
           *t = tc ;
           t->ivector = ivector + 1 ;  // Reset vector
         }
-#else
-        if(-1 == trk_next(t,-1)){
-          if(ip)printf("   END of vector nodes ++++++++++++++++++++++++++\n");
-          t->wagon->train->speed = -t->wagon->train->speed ;
-
-//          t->idirect = !t->idirect ;
-/*          if(t->ivector<0){
-            t->ivector = 0 ;
-          }else{
-            t->ivector = t->ivector - 1 ;
-          }
-          printf("   SWAP Direction      ++++++++++++++++++++++++++\n");
- */
-        }
-#endif
       }
-      if(ip)trv_print(t) ;
       if(ip){
+        trv_print(t) ;
         printf("  EXIT  %s\n",my_name);
-        printf("<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n") ;
       }
       return iret ;
 }
@@ -321,10 +298,10 @@ int  init_trav(TravellerNode *tn){
 
 int   trv_print(TravellerNode *t){
 
-int           ip = 0  ;
-TrkSector   *tn = t->tn ;
-TrkVectorNode *vn = t->vn ;
-char  my_name[]="trv_print" ;
+  int           ip = 0  ;
+  TrkSector   *tn = t->tn ;
+  TrkVectorNode *vn = t->vn ;
+  char  my_name[]="trv_print" ;
 
       printf("    ENTER %s\n",my_name) ;
 
@@ -362,16 +339,15 @@ char  my_name[]="trv_print" ;
 
 int  trv_position(TravellerNode *t){
 
-TrkVectorNode  *vn  = t->vn       ;
-WagonNode      *wn  = t->wagon    ;
-ShapeNode      *sn  = t->shape    ;
-double         dist = t->vect_position ;
-double         a ;
+  TrkVectorNode  *vn  = t->vn       ;
+  WagonNode      *wn  = t->wagon    ;
+  ShapeNode      *sn  = t->shape    ;
+  double         dist = t->vect_position ;
+  double         a ;
 
-int            ip = 0 ;
-char           my_name[] = "trv_position" ;
+  int            ip = 0 ;
+  char           my_name[] = "trv_position" ;
 
-      if(!t->wagon) ip = 0 ;  // Skip dummy wagons
 /*
  *  Update distance relative to section origin
  */
@@ -443,7 +419,7 @@ int set_traveller_posn(WagonNode *w){
       b = degree*vn->a_height_y ;
       c = degree*vn->a_north_z  ;
 
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+      global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                          vn->tile_east_x, vn->tile_north_z,
                          vn->east_x, vn->north_z, vn->height_y+rail_height,
                          &(tv->x), &(tv->y), &(tv->z) ) ;
@@ -454,7 +430,7 @@ int set_traveller_posn(WagonNode *w){
 }
 
 /*
- *  Routine to check the matrices sued by the traveller.
+ *  Routine to check the matrices used by the traveller.
  *  This is left here in case it is ever useful again.
  */
 

@@ -48,7 +48,7 @@ int  enum_btree_init(void){
       printf("  Call dump_btree for enum_master\n") ;
       dump_btree(enum_master,0,"X") ;
 #endif
-#if 1
+#if 0
   long l1 ;
       printf("  Call find_btree for SIGNAL and TR_WORLDFILE\n") ;
       btree = find_btree(enum_master,"SIGNAL") ;
@@ -58,7 +58,6 @@ int  enum_btree_init(void){
       l1 = (long)btree->data ;
       printf("    Test btree = %p, TR_WORLDFILE data = %li\n",(void *)btree,l1) ;
 #endif
-
 
       return 0 ;
 }

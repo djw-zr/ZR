@@ -39,10 +39,10 @@ int print_sigscr_tree(nodeType *p);
 
 int  process_signal_script(SignalDB *signal){
 
-int        ip = 0 ;
-static int ierr = 0 ;
-nodeType   *sig_script, *n1, *n2, *n3 ;
-char       *my_name="process_signal_script" ;
+  int        ip = 0 ;
+  static int ierr = 0 ;
+  nodeType   *sig_script, *n1, *n2, *n3 ;
+  char       *my_name="process_signal_script" ;
 
       ip = (n_sig1 == signal->uid)  ;
 
@@ -69,8 +69,6 @@ char       *my_name="process_signal_script" ;
 
       n1 = sig_script ;
 
-//      printf("   ====  sTree = %p\n",(void *)sTree) ;
-//      if(ip)print_sigscr_tree(sTree) ;  // Everything
       if(ip)print_sigscr_tree(n1) ;
 
       for(;;){
@@ -134,17 +132,10 @@ int  process_signal_statement(nodeType *node){
   char *my_name="process_signal_statement" ;
 
 
-//      ip = strcmp("NSW_SemLQHome", signal0->sig_type->name) ;
-//      ip = (67 == signal0->uid) ;
-//      ip = (87 == signal0->uid) ;
       ip = (n_sig1 == signal0->uid)  ;
 
       if(ip)printf(" Routine %s.  Uid = %i, [%i].  Node = %s\n",my_name,
                                      signal0->uid, n_sig1, signal0->sig_type->name) ;
-//      if(ip)print_sigscr_tree(node) ;
-//      if(!ip)return 0 ;
-
-//      if(ip)printf(" AA Type = %i %i\n",node->type, typeOpr) ;
       if(node->type == typeOpr){
         if(ip)printf("  type = typeOpr.  Operation = %i '%s'\n",
                                   node->opr.oper, sigscr_token_string(node->opr.oper)) ;

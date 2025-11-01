@@ -17,17 +17,14 @@ int   ip_road_display = 0 ;
 
 int   make_road_display_lists(){
 
-uint  i ;
-uint  ip = 0 ;                        // Debug printing = 1
-TrkSector  *road_section    ;  // Track section needing shape
-//DynProfile      *road_profile    ;  // Track Profile to use
-char            my_name[]="make_road_display_lists" ;
-char            default_name[]="Default Road Profile" ;
+  uint  i ;
+  uint  ip = 0 ;                        // Debug printing = 1
+  TrkSector  *road_section    ;  // Track section needing shape
+  char            my_name[]="make_road_display_lists" ;
+  char            default_name[]="Default Road Profile" ;
 
       if(ip)printf("  Enter routine '%s'\n",my_name) ;
-//      for(road_profile = dyntracklist_beg ; road_profile!= NULL; road_profile=road_profile->next){
-//        if(!strcmp(road_profile->name,default_name)) break ;
-//      }
+
       if(zr_road_profile==NULL){
         printf("  Routine %s : Road profile set to NULL.\n",my_name) ;
         printf("  Program stopping ... \n") ;
@@ -43,6 +40,7 @@ char            default_name[]="Default Road Profile" ;
         if(ip)printf("    %s :  road_profile = %p\n",my_name,(void *)zr_road_profile) ;
         make_track_display_list(road_section, zr_road_profile) ;
       }
+
      return 0 ;
 }
 
@@ -56,33 +54,36 @@ char            default_name[]="Default Road Profile" ;
 
 int   make_road_display_list(TrkSector *track_section, DynProfile *road_profile){
 
-uint   i, n, j, k, l0, l1, m    ;
-uint            n_road_nodes   ;
-uint            gl_display_list ;
-uint            ip = 0          ;                    // debug printing
-double         xx0, yy0, xx1, yy1, xxn, yyn,
-               x0, y0, z0, xt, yt,
-               x, y, z, xn, yn, zn,
-               xl, yl, zl,
-               u0, v0, v1, xoff, yoff           ;
-char           my_name[]="make_road_display_list" ;
+  uint   i, n, j, k, l0, l1, m    ;
+  uint            n_road_nodes   ;
+  uint            gl_display_list ;
+  uint            ip = 0          ;                    // debug printing
+  double         xx0, yy0, xx1, yy1, xxn, yyn,
+                x0, y0, z0, xt, yt,
+                x, y, z, xn, yn, zn,
+                xl, yl, zl,
+                u0, v0, v1, xoff, yoff           ;
 
-TrackDistLevel *dist_level   ;
-TrackSubObject *sub_object   ;
-TrkVectorNode  *tv0          ;
-RailProfile    *rail_profile ;
-TextureNode    *tnode        ;
+  TrackDistLevel *dist_level   ;
+  TrackSubObject *sub_object   ;
+  TrkVectorNode  *tv0          ;
+  RailProfile    *rail_profile ;
+  TextureNode    *tnode        ;
 
-
+  char           my_name[]="make_road_display_list" ;
 
       ip = 0 < ip_road_display-- ;
+
       if(ip)printf("  Enter routine : %s\n",my_name) ;
 
       track_section->n_dist_levels = road_profile->n_dist_levels ;
       n_road_nodes          = track_section->length_of_vector ;
-      if(ip)printf("      road_profile  =  %s\n",road_profile->name) ;
-      if(ip)printf("      n_road_nodes  =  %i\n",n_road_nodes) ;
-      if(ip)printf("      n_dist_levels =  %i\n",road_profile->n_dist_levels) ;
+
+      if(ip){
+        printf("      road_profile  =  %s\n",road_profile->name) ;
+        printf("      n_road_nodes  =  %i\n",n_road_nodes) ;
+        printf("      n_dist_levels =  %i\n",road_profile->n_dist_levels) ;
+      }
 
 /*
  * Loop over distances
@@ -184,6 +185,7 @@ TextureNode    *tnode        ;
 }
 
 int  add_texture_pointers_to_road_profiles(DynProfile *dnode){
+
   uint  i, j    ;
   uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
   TrackDistLevel   *dist_level   ;
@@ -227,5 +229,6 @@ int  add_texture_pointers_to_road_profiles(DynProfile *dnode){
                                          dnode->name,sub_object->texture_name) ;
         }
       }
+
       return 0;
 }

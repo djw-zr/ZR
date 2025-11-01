@@ -52,26 +52,28 @@ static double   x_chk  =  5.597613,
 
 int make_tile_topog_display_list(TileListNode *tile_node, GLuint klist){
 
-int            i, j, k, l1, l2, n1, n2, n3, n4, i3, j3, m3 ;
-int            tile_x, tile_y ;
-int            ip = 0     ;  // Dbug printing
-int            nht        ;  // Number of tile heights in each direction
-double         dx_topog   ;  // Horizontal spacing in plot space units
-double         dm_topog   ;  // Horizontal spacing in metres
-double         dd_texture = 100 ;  // Size of texture in plot space units
-double         floor, scale, v1[3], v2[3], v3[3], vv, av ;
-GLdouble       tx1, ty1, ty2, x1, x2, y1, y2, h1, h3, h4 ;
-GLdouble       ttx1, ttx2, tty1, tty2 ; // Texture coordinates
-GLdouble       *normals, *heights ;
-int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
-unsigned short *elevations  ;
-char           my_name[] = "make_tile_topog_display_list" ;
+  int            ip = 0     ;  // Dbug printing
+  int            i, j, k, l1, l2, n1, n2, n3, n4, i3, j3, m3 ;
+  int            tile_x, tile_y ;
+  int            nht        ;  // Number of tile heights in each direction
+  double         dx_topog   ;  // Horizontal spacing in plot space units
+  double         dm_topog   ;  // Horizontal spacing in metres
+  double         dd_texture = 100 ;  // Size of texture in plot space units
+  double         floor, scale, v1[3], v2[3], v3[3], vv, av ;
+  GLdouble       tx1, ty1, ty2, x1, x2, y1, y2, h1, h3, h4 ;
+  GLdouble       ttx1, ttx2, tty1, tty2 ; // Texture coordinates
+  GLdouble       *normals, *heights ;
+  int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
+  unsigned short *elevations  ;
 
-GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
-GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
-GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
+  GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
+  GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
+
+  char           my_name[] = "make_tile_topog_display_list" ;
 
       if(ip)printf(" Enter routine %s\n",my_name) ;
+
       floor      = tile_node->terrain_data.terrain_sample_floor    ;
       scale      = tile_node->terrain_data.terrain_sample_scale    ;
       elevations = tile_node->terrain_data.elevations ;
@@ -158,13 +160,12 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
  *       based on the average slope between the nearest four vertices.
  *
  */
-int   i1a[8] = {  1,  1,  0,  0, -1, -1,  0,  0 };  // E,  E,  N,  N,  W,  W,  S,  S
-int   j1a[8] = {  0,  0, m3, m3,  0,  0,-m3,-m3 };
-int   i2a[8] = {  1,  1,  1, -1, -1, -1, -1,  1 };  // SE, NE, NE, NW, NW, SW, SW, SE
-int   j2a[8] = {-m3, m3, m3, m3, m3,-m3,-m3,-m3 };
-int   km ;
-double s1a[8], s2a[8], sab[8], sm, sign;
-
+  int   i1a[8] = {  1,  1,  0,  0, -1, -1,  0,  0 };  // E,  E,  N,  N,  W,  W,  S,  S
+  int   j1a[8] = {  0,  0, m3, m3,  0,  0,-m3,-m3 };
+  int   i2a[8] = {  1,  1,  1, -1, -1, -1, -1,  1 };  // SE, NE, NE, NW, NW, SW, SW, SE
+  int   j2a[8] = {-m3, m3, m3, m3, m3,-m3,-m3,-m3 };
+  int   km ;
+  double s1a[8], s2a[8], sab[8], sm, sign;
 
       for(j=0;j<nht+1;j++){            // Tile plus 2 row overlap
         for(i=0;i<nht+1;i++){          // Tile plus 2 column overlap
@@ -429,5 +430,6 @@ int ii, jj, kk ;
       free(normals) ;
       free(heights) ;
       free(flata) ;
+
       return 0 ;
 }

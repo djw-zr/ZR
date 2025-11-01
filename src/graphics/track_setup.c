@@ -30,17 +30,18 @@ static int ipp_track = 0 ;           //  Debug
 
 int  make_default_track_profile(){
 
-int            ip = 0          ;                    // Debug printing
-DynProfile     *dyn_track  ;
-TrackDistLevel *dist_level ;
-TrackSubObject *sub_object    ;
-RailProfile    *profile    ;
-char            my_name[]="make_default_track_profile" ;
+  int            ip = 0          ;                    // Debug printing
+  DynProfile     *dyn_track  ;
+  TrackDistLevel *dist_level ;
+  TrackSubObject *sub_object    ;
+  RailProfile    *profile    ;
+  char            *my_name = "make_default_track_profile" ;
 
 /*
  * Initialise new Dynamic Track Node
  */
       if(ip)printf(" Enter %s\n",my_name) ;
+
       dyn_track = (DynProfile *)malloc(sizeof(DynProfile)) ;
       if(zr_rail_profile != NULL){
         dyn_track->next = zr_rail_profile ;
@@ -366,10 +367,6 @@ char            my_name[]="make_default_track_profile" ;
       profile->normal[0].X     =  0.0 ;
       profile->normal[0].Y     =  1.0 ;                         //  Normal direction 'up'
       profile->normal[0].Z     =  0.0 ;
-//      profile->uvvector[0].U   =  0.126953 ;
-//      profile->uvvector[0].V   =  0.232067 ;
-//      profile->uvvector[0].U   =  0.0 ;
-//      profile->uvvector[0].V   =  1.0 ;
       profile->uvvector[0].U   =  0.0 ;
       profile->uvvector[0].V   =  0.0 ;
 
@@ -379,10 +376,6 @@ char            my_name[]="make_default_track_profile" ;
       profile->normal[1].X     =  0.0 ;
       profile->normal[1].Y     =  1.0 ;
       profile->normal[1].Z     =  0.0 ;
-//      profile->uvvector[1].U   =  0.224609 ;
-//      profile->uvvector[1].V   =  0.232067 ;
-//      profile->uvvector[1].U   =  0.0 ;
-//      profile->uvvector[1].V   =  0.3 ;
       profile->uvvector[1].U   =  0.725 ;
       profile->uvvector[1].V   =  0.0 ;
 
@@ -392,13 +385,15 @@ char            my_name[]="make_default_track_profile" ;
 }
 
 int  make_track_shapes(){
-uint i ;
-int  ip = 0, ipp = 0 ;                        // Debug printing = 1
-TrkSector  *track_node       ;  // Track section needing shape
-DynProfile      *track_profile    ;  // Track Profile to use
-char            my_name[]="make_track_shapes" ;
+
+  int  ip = 0, ipp = 0 ;                        // Debug printing = 1
+  uint i ;
+  TrkSector  *track_node       ;  // Track section needing shape
+  DynProfile *track_profile    ;  // Track Profile to use
+  char       *my_name = "make_track_shapes" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
+
       if(zr_rail_profile == NULL){
         printf(" ERROR zr_rail_profile set to NULL\n");
         exit(0) ;
@@ -417,6 +412,7 @@ char            my_name[]="make_track_shapes" ;
         add_sub_nodes_to_track(track_node, track_profile) ;
         make_track_shape(track_node, track_profile) ;
       }
+
       return 0 ;
 }
 
@@ -427,30 +423,30 @@ int       i_asntt = 20 ;      //  Used for debug printing
 
 int  add_sub_nodes_to_track(TrkSector *track_section, DynProfile *profile){
 
-uint          i, j, n                            ;
-int           ip = 0 ;                                // Debug printing = 1
-double        x2, y2, r0, r1, a, b, w0, w1,
-              da, xn, yn, tmp  ;
-uint          n_track_nodes   ;   //  Number of vector nodes in section
-uint          n_sub_nodes     ;   //  Number of sub nodes in track node
-int           last_node = 0   ;   //  =1 if last node of section
-double        x0, y0, z0,         //  Position of current node relative to tile
-              xt0, yt0,           //  Tangent vector
-              xn0, yn0,           //  Normal vector (left of track)
-              x1, y1, z1,         //  Position of next node relative to tile
-              xt1, yt1,           //  Tangent vector
-              xn1, yn1,           //  Normal vector (left of track)
-              a0,                 //  Tangent angle of current node
-              a1,                 //  Tangent angle of next node
-              xc, yc,             //  Weighted centre of circle
-              aa ;
-double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
-              xc0  = 0.0, yc0  = 0.0,  //  Centre of circles
-              xc1  = 0.1, yc1  = 0.0  ;
-TrkVectorNode *tv0,               //  Current track vector node
-              *tv1  ;             //  Next track vector
-TrkSector *ts1 = NULL ;      //  Next track section
-char          *my_name="add_sub_nodes_to_track" ;
+  int           ip = 0 ;            // Debug printing = 1
+  uint          i, j, n                            ;
+  double        x2, y2, r0, r1, a, b, w0, w1,
+                da, xn, yn, tmp  ;
+  uint          n_track_nodes   ;   //  Number of vector nodes in section
+  uint          n_sub_nodes     ;   //  Number of sub nodes in track node
+  int           last_node = 0   ;   //  =1 if last node of section
+  double        x0, y0, z0,         //  Position of current node relative to tile
+                xt0, yt0,           //  Tangent vector
+                xn0, yn0,           //  Normal vector (left of track)
+                x1, y1, z1,         //  Position of next node relative to tile
+                xt1, yt1,           //  Tangent vector
+                xn1, yn1,           //  Normal vector (left of track)
+                a0,                 //  Tangent angle of current node
+                a1,                 //  Tangent angle of next node
+                xc, yc,             //  Weighted centre of circle
+                aa ;
+  double        dcos = 1.0, dsin = 0.0,  //  Keep the optimising compiler happy
+                xc0  = 0.0, yc0  = 0.0,  //  Centre of circles
+                xc1  = 0.1, yc1  = 0.0  ;
+  TrkVectorNode *tv0,               //  Current track vector node
+                *tv1  ;             //  Next track vector
+  TrkSector *ts1 = NULL ;      //  Next track section
+  char          *my_name="add_sub_nodes_to_track" ;
 
       ip = ipp_track ;
       if(ip)printf("\n    Enter routine %s\n",my_name) ;
@@ -502,8 +498,6 @@ int ii, jj ;
 
         x1 = tv1->east_x   + ii * tile_size ;
         y1 = tv1->north_z  + jj * tile_size ;
-//        x1 = tv1->east_x   ;
-//        y1 = tv1->north_z  ;
         z1 = tv1->height_y ;
         a1 = tv1->a_height_y ;  // radians
 //        printf("  CC1  a0 = %f %f\n",a0,a0*degree) ;
@@ -662,6 +656,7 @@ int ii, jj ;
         }
         printf("\n") ;
       }
+
       return 0 ;
 }
 
@@ -672,10 +667,10 @@ int ii, jj ;
 
 TrkSector  *next_track_node(TrkSector *track_section){
 
-int             next_node_index, n ;
-int             ip = 0 ;                      // Dubug printing when ip == 1
-char            my_name[] = "next_track_node" ;
-TrkSector  *t              ;
+  int        ip = 0 ;                      // Dubug printing when ip == 1
+  int        next_node_index, n ;
+  TrkSector  *t              ;
+  char       *my_name = "next_track_node" ;
 
       if(ip){
         printf(" Enter routine %s\n",my_name) ;
@@ -683,6 +678,7 @@ TrkSector  *t              ;
         printf("  Index of Pin = %i %i %i\n",track_section->pin_to_section[0],
                                     track_section->pin_to_section[1],track_section->pin_to_section[2]);
       }
+
       n = track_section->type_of_pin[0] ;
 
       next_node_index = track_section->pin_to_section[n] ;
@@ -703,6 +699,7 @@ TrkSector  *t              ;
         printf("   Program stopping...\n")                             ;
         exit(1) ;
       }
+
       return t ;
 }
 
@@ -721,15 +718,15 @@ TrkSector  *t              ;
 
 int   make_track_shape(TrkSector *tracknode, DynProfile *profile){
 
-int        i, n           ;
-static int ipp = 0 ;
-int        n_dist_levels  ;
-ShapeNode  *shapenode     ;
-LodControl *lod_control   ;
-DistLevel  *dist_level    ;
-TrackDistLevel *profile_dist_level      ;
-char       string256[256] ;   //  Working string
-char       my_name[]="make_track_shape" ;
+  static int ipp = 0 ;
+  int        i, n           ;
+  int        n_dist_levels  ;
+  ShapeNode  *shapenode     ;
+  LodControl *lod_control   ;
+  DistLevel  *dist_level    ;
+  TrackDistLevel *profile_dist_level      ;
+  char       string256[256] ;   //  Working string
+  char       *my_name = "make_track_shape" ;
 
       if(ipp++ < 10)printf(" Enter make_track_shape\n") ;
 
@@ -834,5 +831,3 @@ int   initialise_track_shape(ShapeNode *shapenode){
 
       return 0;
 }
-
-

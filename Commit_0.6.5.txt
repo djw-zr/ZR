@@ -1,0 +1,15 @@
+Commit 0.6.5
+============
+
+     1.  The main change in "Commit 0.6.5" is the addition of program 'zm'.  This uses the GTK widget library to generate an initial menu which reflexts the start up menu used by OpenRails but without most of the options provided by openrails.  However it does allow:
+     1.  Choice of which top level directory to use.
+     2.  Choice of route.  This displays the route description.
+     3.  Choice of consist - only one can be chosen.
+     4.  Choice of starting station platform.
+     There is then a start button which starts the zr program.
+
+     2.  The program zm can be compiled using the enclosed makefile and the command 'make zm', but it does need the include files and libraries for "GTK+ toolkit library v3" to be installed.  The program may work with other versions of the library.  The makefile also makes use of the pkg-config program to retrieve information about the location of the include and library files.
+
+     3.  It is hoped to slowly imporve the options available in 'zm', but this is a long term project.
+
+     5.  The commit includes a number of other minor improvements and bug fixes.  This includes a clean up of the code, deleting many sections of old code which had been commented out.

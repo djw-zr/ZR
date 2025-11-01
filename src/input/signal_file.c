@@ -52,12 +52,13 @@ int read_signals_db(void){
   SigScriptFile *sig_scrfile, *sig_scrfile_prev = NULL  ;
 
   char *token1 = NULL,
-      *token2 = NULL,
-      *token3 = NULL,
-      *token4 = NULL,
-      *token5 = NULL,
-      *string = NULL, *string2;
+       *token2 = NULL,
+       *token3 = NULL,
+       *token4 = NULL,
+       *token5 = NULL,
+       *string = NULL, *string2;
   char *sigcfg  = "/sigcfg.dat"     ;
+
   char *my_name = "read_signals_db" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
@@ -132,12 +133,6 @@ int read_signals_db(void){
               SWITCH(token2)
                 CASE("LightTex")
                   skip_lbr(msfile) ;
-//                  if(m1>=n1){
-//                    printf("  ERROR in routine %s\n",my_name) ;
-//                    printf("  Too many Light Textures") ;
-//                    m1-- ;
-//                  }
-//                  light_tex = &(raw_signal_db->light_tex[m1++]);
                   light_tex = (LightTex *)malloc(sizeof(LightTex)) ;
                   if(raw_signal_db->light_tex == NULL){
                      raw_signal_db->light_tex = light_tex ;
@@ -831,10 +826,6 @@ int read_signals_db(void){
             break ;
           CASE("ScriptFiles")
             skip_lbr(msfile) ;
-
-//#ifdef ROUTE_AU_NSW_SW_SS
-//            return 0 ;   //  For the moment the signals are too complicated
-//#endif
 /*
  * Loop over script file entries
  */

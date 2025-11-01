@@ -16,18 +16,18 @@
 
 int   display_extra_data(){
 
-int        ip = 0  ;
-int        tx, ty  ;
-GLfloat    xc, yc, zc   ;
-GLfloat    xx, yy, zz   ;
-GLfloat    m2d = 1.0/plot_scale ;  // Convert from metres to display uints
-GLfloat    dist, dist0, height0  ;
+  int        ip = 0  ;
+  int        tx, ty  ;
+  GLfloat    xc, yc, zc   ;
+  GLfloat    xx, yy, zz   ;
+  GLfloat    m2d = 1.0/plot_scale ;  // Convert from metres to display uints
+  GLfloat    dist, dist0, height0  ;
 
-WorldNode   *wnode ;
-WorldItem   *witem ;
-SoundObjectNode *so_node ;
+  WorldNode   *wnode ;
+  WorldItem   *witem ;
+  SoundObjectNode *so_node ;
 
-char        string[2048] ;
+  char        string[2048] ;
 
       if(!display_info) return 0 ;
       xc = lookat_center_x ;
@@ -48,10 +48,10 @@ char        string[2048] ;
         glVertex3d(xc, yc, (GLfloat) 1.0) ;
       glEnd() ;
 #else
-      tx = tile_x0 + xc ;
-      ty = tile_y0 + yc ;
-      xx = (xc - ((int)xc) - 0.5)*tile_size ;
-      yy = (yc - ((int)yc) - 0.5)*tile_size ;
+      tx = tile_xl + xc ;
+      ty = tile_yl + yc ;
+      xx = (xc - ((int)xc) + 0.5)*tile_size ;
+      yy = (yc - ((int)yc) + 0.5)*tile_size ;
       zz = tile_h0 + zc*tile_size ;
 /*
  *  Display unit sphere with lighting
@@ -77,26 +77,36 @@ char        string[2048] ;
  *  else display crossed line at look-at point
  */
       }else{
+        glColor3f((GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0) ; //RED
         glBegin(GL_LINES) ;
-        glVertex3d(xc-1.0*m2d, yc, zc) ;
+        glVertex3d(xc-0.8*m2d, yc, zc) ;
         glVertex3d(xc+1.0*m2d, yc, zc) ;
-        glVertex3d(xc, yc-1.0*m2d, zc) ;
+        glEnd() ;
+        glColor3f((GLfloat) 0.0, (GLfloat) 1.0, (GLfloat) 0.0) ; //GREEN
+        glBegin(GL_LINES) ;
+        glVertex3d(xc, yc-0.8*m2d, zc) ;
         glVertex3d(xc, yc+1.0*m2d, zc) ;
-        glVertex3d(xc, yc, zc-1.0*m2d) ;
+        glEnd() ;
+        glColor3f((GLfloat) 0.0, (GLfloat) 0.0, (GLfloat) 1.0) ; //BLUE
+        glBegin(GL_LINES) ;
+        glVertex3d(xc, yc, zc-0.8*m2d) ;
         glVertex3d(xc, yc, zc+1.0*m2d) ;
         glEnd() ;
       }
 #endif
       glColor3f((GLfloat)1.0,(GLfloat)1.0,(GLfloat)1.0) ;
-      sprintf(string," - Lookat Point :: %f %f %f :: %i %i : %f %f %f\n",
+      sprintf(string," - Lookat Point :: %10f %10f %10f :: %i %i : %10.2f %10.2f %10.2f\n",
                             xc,yc,zc,tx,ty,xx,yy,zz);
       print_string_in_window2((GLfloat) xc, (GLfloat) yc, (GLfloat) zc, string);
+      sprintf(string," - Lookat Point :: %10.2f %10.2f %10.2f\n",
+                            xx-0.5*plot_scale,yy-0.5*plot_scale,zz);
+      print_string_in_window2((GLfloat) xc, (GLfloat) yc, (GLfloat) zc-0.5*m2d, string);
       glColor3f((GLfloat)1.0,(GLfloat)1.0,(GLfloat)1.0) ;
 
       for(wnode=worldlist_beg; wnode != NULL; wnode=wnode->next){
         if(0 == wnode->in_use) continue ;
-        tx = wnode->tile_x - tile_x0 ;
-        ty = wnode->tile_y - tile_y0 ;
+        tx = wnode->tile_x - tile_xl ;
+        ty = wnode->tile_y - tile_yl ;
 //        ip = wnode->tile_x == -6131 && wnode->tile_y == 14888 ;
 /*
  *  Plot world items
@@ -118,6 +128,23 @@ char        string[2048] ;
               zz = zz + height0      ;
               glVertex3d(xx, yy, zz) ;
             glEnd() ;
+/*
+ *  Add X (red) and Y (green) directions
+ */
+            glColor3d(1.0,0.0,0.0) ;
+            glBegin(GL_LINES) ;
+              glVertex3d(xx, yy, zz) ;
+              glVertex3d(xx+1.0*m2d, yy, zz) ;
+            glEnd() ;
+            glColor3d(0.0,1.0,0.0) ;
+            glBegin(GL_LINES) ;
+              glVertex3d(xx, yy, zz) ;
+              glVertex3d(xx, yy+1.0*m2d, zz) ;
+            glEnd() ;
+/*
+ *  Add light blue line to centre of sphere
+ */
+//
             if(witem->uid == 4485){
               glColor3d(1.0,1.0,0.0) ;
             }else{
@@ -147,6 +174,62 @@ char        string[2048] ;
                           witem->tr_item_db_id[2],witem->tr_item_db_id[3] );
             zz = zz - m2d ;
             print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
+
+#if 1
+            if(witem->snode){
+
+/*
+ *  Check the shape is in the scene - using only the first ShapeVolume (for the moment)
+ */
+ShapeVolume *shape_vol ;
+double      radius, sx, sy, sz, sxs, sys, szs, ssx, ssy, ssz, ttx, tty, ttz,
+            a, b, c, d ;
+
+              shape_vol = &witem->snode->shape_vol[0] ;
+
+              sx     = shape_vol->vec.X  ; sxs = sx*m2d ;
+              sz     = shape_vol->vec.Z  ; szs = sz*m2d ;  //  Transform MSTS to zr axes
+              sy     = shape_vol->vec.Y  ; sys = sy*m2d ;
+              radius = shape_vol->radius ; radius = radius*m2d ;
+/*
+ *  The position of the centre of the sphere needs to be rotated before
+ *  being added to the origin of the shape.
+ *
+ *  Should sx, sy, sz be added to the x, y, z before rotation?
+ */
+              a = witem->ANG ;
+              b = witem->AX ;
+              c = witem->AY ;
+              d = witem->AZ ;
+              if(a != 0.0 && (sz != 0.0 ||sx != 0.0 ||sy != 0.0) ){
+                if(ip)printf("  Rotate\n") ;
+//              zrRotateAxyz(a, b, c, d, sx, sy, sz, &ttx, &tty, &ttz) ;
+                zrRotateAxyz(a, b, d, c, sxs, sys, szs, &ttx, &tty, &ttz) ;
+                ssx = xx + ttx ;
+                ssy = yy + tty ;
+                ssz = zz + ttz ;
+              }else{
+                if(ip)printf("  No Rotation\n") ;
+                ssx = xx + sxs ;  ttx = 0.0 ;
+                ssy = yy + sys ;  tty = 0.0 ;
+                ssz = zz + szs ;  ttz = 0.0 ;
+              }
+
+              glColor3d(0.0,0.3,1.0) ;
+              glBegin(GL_LINES) ;
+                glVertex3d(xx, yy, zz) ;
+                glVertex3d(ssx,ssy, ssz) ;
+              glEnd() ;
+              glColor3d(1.0,1.0,1.0) ;
+
+              sprintf(string," - ROTATE :: %10.3f :: %10.3f %10.3f %10.3f :: %10.3f %10.3f %10.3f :: %10.3f %10.3f %10.3f",
+                            witem->ANG, witem->AX, witem->AY, witem->AZ,
+                            sx, sy, sz, ttx*plot_scale, tty*plot_scale, ttz*plot_scale
+                            ) ;
+              zz = zz - m2d ;
+              print_string_in_window2((GLfloat) xx, (GLfloat) yy, (GLfloat) zz, string);
+            }
+#endif
           }
         }
 /*
@@ -261,14 +344,14 @@ int  display_help(){
 
 int   display_track_info(TravellerNode *t){
 
-int           n, ip = 0 ;
-GLfloat       w = viewport_width ;
-GLfloat       h = viewport_height ;
-TrkSector   *tn = t->tn,
-              *tn1, *tn2            ;
-TrkVectorNode *vn = t->vn ;
-char          s1[1024],s2[1024],s3[1024],s4[1024] ;
-char         *my_name = "display_track_info" ;
+  int           n, ip = 0 ;
+  GLfloat       w = viewport_width ;
+  GLfloat       h = viewport_height ;
+  TrkSector   *tn = t->tn,
+                *tn1, *tn2            ;
+  TrkVectorNode *vn = t->vn ;
+  char          s1[1024],s2[1024],s3[1024],s4[1024] ;
+  char         *my_name = "display_track_info" ;
 
       if(ip)printf("Enter %s\n",my_name) ;
 
@@ -366,11 +449,11 @@ char         *my_name = "display_track_info" ;
 
 int plot_switch(float x1, float y1, int ii[7]){
 
-GLfloat r0 = 20.0,
-        x0 = x1 + 25.0,
-        y0 = y1 + 25.0,
-        r1 = r0*0.75,
-        r2 = r0*0.50   ;
+  GLfloat r0 = 20.0,
+          x0 = x1 + 25.0,
+          y0 = y1 + 25.0,
+          r1 = r0*0.75,
+          r2 = r0*0.50   ;
 /*
  *  If ii[6] != 0, plot end section
  */
@@ -524,20 +607,21 @@ GLfloat r0 = 20.0,
 
 int   display_switches(TrainNode *train){
 
-int           i, n, ii[7]  ;
-int           ip = 0       ;         //  Debug
-int           iret = 0     ;         //  Return code
-uint          index        ;         //  Index of section containing traveller
-TravellerNode *tff  = train->first->traveller,
-              *tbf  = train->last->traveller,
-              tf = *tff,             //  Copy front traveller
-              tb = *tbf ;            //  Copy back traveller
-TrkSector   *tfn = tf.tn,
-              *tbn = tb.tn,
-              *tfn1, *tfn2   ;        // Pointers to track sections
-TrkVectorNode *vn = tf.vn  ;         // Pointer to current track vector
-GLfloat       h = viewport_height ;  // Height of main viewport
-double        df, db ;               // lenght of end wagons
+  int           i, n, ii[7]  ;
+  int           ip = 0       ;         //  Debug
+  int           iret = 0     ;         //  Return code
+  uint          index        ;         //  Index of section containing traveller
+  TravellerNode *tff  = train->first->traveller,
+                *tbf  = train->last->traveller,
+                tf = *tff,             //  Copy front traveller
+                tb = *tbf ;            //  Copy back traveller
+  TrkSector   *tfn = tf.tn,
+                *tbn = tb.tn,
+                *tfn1 = NULL,
+                *tfn2 = NULL   ;        // Pointers to track sections
+  TrkVectorNode *vn = tf.vn  ;         // Pointer to current track vector
+  GLfloat       h = viewport_height ;  // Height of main viewport
+  double        df, db ;               // lenght of end wagons
 
 /*
  *  Find Junctions or Track Ends in front of and behind
@@ -556,20 +640,20 @@ double        df, db ;               // lenght of end wagons
 
       index = tfn->uid ;
 
-      if(ip && l_time_30s){
-             printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
-             index,
-             tfn->pin_to_section[tf.idirect ? 1 : 0],
-             tfn->pin_to_section[tf.idirect ? 0 : 1],
-             tfn1->pin_to_section[0], tfn1->pin_to_section[1],
-             tfn1->pin_to_section[2],
-             tfn2->pin_to_section[0], tfn2->pin_to_section[1],
-             tfn2->pin_to_section[2]);
-             printf("    front = %i : %i\n",tfn1->straight,tfn1->branch) ;
-             printf("    back  = %i : %i\n",tfn2->straight,tfn2->branch) ;
+      if(ip && l_time_30s ){
+        printf(" display_switches :: %i : %i %i : %i %i %i : %i %i %i\n",
+        index,
+        tfn->pin_to_section[tf.idirect ? 1 : 0],
+        tfn->pin_to_section[tf.idirect ? 0 : 1],
+        tfn1->pin_to_section[0], tfn1->pin_to_section[1],
+        tfn1->pin_to_section[2],
+        tfn2->pin_to_section[0], tfn2->pin_to_section[1],
+        tfn2->pin_to_section[2]);
+        printf("    front = %i : %i\n",tfn1->straight,tfn1->branch) ;
+        printf("    back  = %i : %i\n",tfn2->straight,tfn2->branch) ;
       }
-
-      if(tfn1->type_of_node == END_SECTION){
+// If the index is UINT_MAX, this is a rotating turntable - or similar.
+      if(UINT_MAX == index || tfn1->type_of_node == END_SECTION){
         ii[6] = 1 ;
 // Approaching base of points
       }else if(index == tfn1->pin_to_section[0]){
@@ -620,11 +704,11 @@ double        df, db ;               // lenght of end wagons
           }
         }
       }else{
-       for(i=0;i<6;i++)ii[i] = 1 ;
+        for(i=0;i<6;i++)ii[i] = 1 ;
       }
       if(ip && l_time_30s){
-             printf("       indices :: %i %i %i : %i %i %i : %i\n",
-               ii[0], ii[1], ii[2], ii[3], ii[4], ii[5], ii[6] ) ;
+            printf("       indices :: %i %i %i : %i %i %i : %i\n",
+              ii[0], ii[1], ii[2], ii[3], ii[4], ii[5], ii[6] ) ;
       }
 /*
  *  Call plotting routine for track in front.
@@ -646,7 +730,7 @@ double        df, db ;               // lenght of end wagons
 
       index = tbn->uid ;
 
-      if(tfn2->type_of_node == END_SECTION){
+      if(UINT_MAX == index || tfn2->type_of_node == END_SECTION){
         ii[6] = -1 ;
 // Leaving base of points
       }else if(index == tfn2->pin_to_section[0]){
@@ -697,7 +781,7 @@ double        df, db ;               // lenght of end wagons
           }
         }
       }else{
-       for(i=0;i<6;i++)ii[i] = 1 ;
+        for(i=0;i<6;i++)ii[i] = 1 ;
       }
 /*
  *  Call plotting routine for track behind.
@@ -728,11 +812,11 @@ double        df, db ;               // lenght of end wagons
 
 int   check_track(TrainNode *train, double dist){
 
-int           ip = 0       ;  // Debug
-int           iret = 0     ;  //  Set to 1 to stopping
-TravellerNode tf  ;           //  Copy back traveller
-double        df  ;           // lenght of end wagons
-char         *my_name="check_track" ;
+  int           ip = 0       ;  // Debug
+  int           iret = 0     ;  //  Set to 1 to stopping
+  TravellerNode tf  ;           //  Copy back traveller
+  double        df  ;           // lenght of end wagons
+  char         *my_name="check_track" ;
 
       if(0.0 == train->speed) return 0 ;
 
@@ -761,10 +845,10 @@ char         *my_name="check_track" ;
 
 void display_error(){
 
-GLenum  n = 0 ;
-GLfloat       w = viewport_width ;
-GLfloat       h = viewport_height ;
-char    string[256] = "GL error = ";
+  GLenum  n = 0 ;
+  GLfloat       w = viewport_width ;
+  GLfloat       h = viewport_height ;
+  char    string[256] = "GL error = ";
       n = glGetError() ;
       if(n != GL_NO_ERROR){
         gl_errorCode = n ;
@@ -789,11 +873,11 @@ char    string[256] = "GL error = ";
  */
 int display_platforms_and_sidings(){
 
-int         i, type_of_node ;
-double      scale = 1.0/plot_scale ;
-double      x, y, z, dist   ;
-TrkItem *trk_item       ;
-char        string[256]     ;
+  int         i, type_of_node ;
+  double      scale = 1.0/plot_scale ;
+  double      x, y, z, dist   ;
+  TrkItem *trk_item       ;
+  char        string[256]     ;
 
       glDisable(GL_BLEND)      ;
       glShadeModel(GL_FLAT)     ;
@@ -805,7 +889,7 @@ char        string[256]     ;
         if(PLATFORM == type_of_node && 2 == show_platforms_or_sidings)continue ;
         if(SIDING   == type_of_node && 1 == show_platforms_or_sidings)continue ;
 
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+        global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
               trk_item->tile_east_x, trk_item->tile_north_z,
               trk_item->east_x, trk_item->north_z, trk_item->height_y,
               &x, &y, &z );
@@ -983,26 +1067,12 @@ int display_train_operations(TrainNode *train){
  *  plot slider
  */
       if(n_wagons>6){
-#if 0
-        isx = f9_data.x2 + (f9_data.wagon_n0*(f9_data.x3 - f9_data.x2))/f9_data.n_wagons ;
-        isw = (6*(f9_data.x3 - f9_data.x2))/f9_data.n_wagons ;
-        glBegin(GL_QUADS) ;
-          glVertex2f(isx+1,   f9_data.y0+3) ;
-          glVertex2f(isx+isw, f9_data.y0+3) ;
-          glVertex2f(isx+isw, f9_data.y2-2) ;
-          glVertex2f(isx+2,   f9_data.y2-2) ;
-        glEnd() ;
-#else
-//        if(l_time_1s)printf("  Slider  %i %i :: %i %i\n",
-//                                   f9_data.x4,f9_data.x5,f9_data.y1,f9_data.y2) ;
         glBegin(GL_QUADS) ;
           glVertex2f(f9_data.x4+2, f9_data.y0+3) ;
           glVertex2f(f9_data.x5+4, f9_data.y0+3) ;
           glVertex2f(f9_data.x5+4, f9_data.y2-2) ;
           glVertex2f(f9_data.x4+2, f9_data.y2-2) ;
         glEnd() ;
-
-#endif
       }
 
 /*

@@ -22,36 +22,36 @@ static double     vnx, vny, vnz ;                //  mathcalls.h has a yn !!
 
 int make_dynamic_display_lists(){
 
-uint   i, j, k, l0, l1, n ;
-int    i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
-int    iflag           ;
-int    gl_display_list ;
-int    ip = 0          ;                // debug printing
-double xx0, yy0, xx1, yy1, xxn, yyn,
-       x0, y0, z0,
-       x, y, z, xt, yt, xn, yn, zn,
-       u0, v0, u1, v1, vtx0, vty0,
-       delta_a, aa, asign     ;
-double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
-int    tile_x,  tile_y ;
+  uint   i, j, k, l0, l1, n ;
+  int    i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
+  int    iflag           ;
+  int    gl_display_list ;
+  int    ip = 0          ;                // debug printing
+  double xx0, yy0, xx1, yy1, xxn, yyn,
+        x0, y0, z0,
+        x, y, z, xt, yt, xn, yn, zn,
+        u0, v0, u1, v1, vtx0, vty0,
+        delta_a, aa, asign     ;
+  double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
+  int    tile_x,  tile_y ;
 
-WorldNode      *wnode ;
-WorldItem      *witem ;
-DynTrackObj    *ditem ;
-DynTrackSect   *dsect ;
-DynProfile     *track_profile ;
-RailProfile    *rail_profile  ;
-TrackDistLevel *dist_level    ;
-TrackSubObject *sub_object    ;
-TextureNode    *tnode ;
-Vector3x3      *v3x3  ;
-Vector3x3      *v3x3_beg = NULL ;
-Vector3x3      *v3x3_end = NULL ;
+  WorldNode      *wnode ;
+  WorldItem      *witem ;
+  DynTrackObj    *ditem ;
+  DynTrackSect   *dsect ;
+  DynProfile     *track_profile ;
+  RailProfile    *rail_profile  ;
+  TrackDistLevel *dist_level    ;
+  TrackSubObject *sub_object    ;
+  TextureNode    *tnode ;
+  Vector3x3      *v3x3  ;
+  Vector3x3      *v3x3_beg = NULL ;
+  Vector3x3      *v3x3_end = NULL ;
 
-double        rx, ry     ;
-double        p1, p2, p3 ;
+  double        rx, ry     ;
+  double        p1, p2, p3 ;
 
-char   my_name[] = "make_dynamic_display_lists" ;
+  char   my_name[] = "make_dynamic_display_lists" ;
 
 
       if(ip)printf(" Enter routine %s\n",my_name) ;
@@ -257,20 +257,20 @@ char   my_name[] = "make_dynamic_display_lists" ;
                     x  = x0 + yt*xx0 ;
                     y  = y0 - xt*xx0 ;
                     z  = z0 + yy0    ;
-                    if(ip)printf(" x  = %10.4f, y  = %10.4f, z  = %10.4f, xt = %10.4f, yt = %10.4f\n",
-                                 (double)x , (double)y , (double)z , (double)xt, (double)yt) ;
-//                    x = x/plot_scale ; y = y/plot_scale ; z = (0.01 +z)/plot_scale ;
                     zn = yyn         ;
-                    if(ip)printf(" x  = %10.4f, y  = %10.4f, z  = %10.4f, xt = %10.4f, yt = %10.4f\n",
+                    if(ip){
+                      printf(" x  = %10.4f, y  = %10.4f, z  = %10.4f, xt = %10.4f, yt = %10.4f\n",
                                  (double)x , (double)y , (double)z , (double)xt, (double)yt) ;
-                    if(ip)printf("  Posn AA : i = %i %.3f  %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f \n",i, x0, y0, z0,  xt, yt,   x, y, z,  xx0, yy0,  xxn, yyn, xn, yn, u0, v0) ;
+                      printf(" x  = %10.4f, y  = %10.4f, z  = %10.4f, xt = %10.4f, yt = %10.4f\n",
+                                 (double)x , (double)y , (double)z , (double)xt, (double)yt) ;
+                      printf("  Posn AA : i = %i %.3f  %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f  :: %.3f  %.3f \n",i, x0, y0, z0,  xt, yt,   x, y, z,  xx0, yy0,  xxn, yyn, xn, yn, u0, v0) ;
 
-                    if(ip)printf("  Posn BBN : i = %i  :: %.5f  %.5f  %.5f\n",i, xn, yn, zn) ;
-                    if(ip)printf("  Posn BB1 : i = %i  :: %.5f  %.5f  %.5f   :: %.5f  %.5f \n",
+                      printf("  Posn BBN : i = %i  :: %.5f  %.5f  %.5f\n",i, xn, yn, zn) ;
+                      printf("  Posn BB1 : i = %i  :: %.5f  %.5f  %.5f   :: %.5f  %.5f \n",
                                                                          i,x, y, z, u0, v0) ;
+                    }
                     glTexCoord2f((GLfloat)u0,(GLfloat)v0)    ;
                     glNormal3f((GLfloat)xn,(GLfloat)yn,(GLfloat)zn) ;
-//                    glNormal3f((GLfloat)0.0,(GLfloat)0.0,(GLfloat)-1.0) ;
                     glVertex3f((GLfloat)x, (GLfloat)y,(GLfloat) z)  ;
 
                     x  = x0 + yt*xx1     ;
@@ -314,5 +314,3 @@ Vector3x3  *v3x3 ;
       v3x3->vnx = vnx ; v3x3->vny = vny ; v3x3->vnz = vnz ;
       return v3x3 ;
 }
-
-

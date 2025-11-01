@@ -9,7 +9,7 @@
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
  *   Routine for finding the height of topography.
- *   Routines providing a mask for yjr placing of forest trees.
+ *   Routines providing a mask for the placing of forest trees.
  *
  *==============================================================================
  */
@@ -160,12 +160,13 @@ int find_height(int tile_x1, int tile_y1, double x1, double y1, double *height){
 
       return 0 ;
 }
+
+
 /*
  *  Routine to check (tree) positions against rail and road track mask
- *   tile_x1, ile_y1 are MST global tile indices
+ *   tile_x1, tile_y1 are MSTS global tile indices
  *   x1, y1 are distances in m relative to centre of tile.
  */
-
 
 
 int check_tile_mask(int tile_x1, int tile_y1, double x1, double y1){
@@ -352,27 +353,29 @@ int  tile_mask_init(void){
  *  differ.
  */
 #if 0
-            global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+            global2local(tile_x1, tile_y1, tile_h0, tile_size, plot_scale,
                                           tile_x, tile_y, xx, yy, zz, &x, &y, &z) ;
 #else
             x = xx/tile_size + 0.5 ;
             y = yy/tile_size + 0.5 ;
             r = radius/tile_size ;
 #endif
-            if(ip)printf(" : %f : %f %f ",r, x, y) ;
-            if(ip)printf(" : %3i %3i",nint(256*x), nint(256*y) ) ;
+            if(ip){
+              printf(" : %f : %f %f ",r, x, y) ;
+              printf(" : %3i %3i",nint(256*x), nint(256*y) ) ;
+            }
 
 /*
  *  Mark all topography points within 'radius' of the above point
  *  Variables in units of tile size
  */
-            set_mask_around_item(tile_x-tile_x0, tile_y-tile_y0, x, y, r) ;
+            set_mask_around_item(tile_x-tile_xl, tile_y-tile_yl, x, y, r) ;
           }
           if(ip)printf(" : %s\n",witem->snode->name) ;
         }
         if(ip){
-int   i, j, k, m ;
-char  *mask_array ;
+  int   i, j, k, m ;
+  char  *mask_array ;
           m = tile_x + tile_y*tile_array_nx ;
           mask_array = tile_mask_array[m]  ;
           if(mask_array){
@@ -402,7 +405,7 @@ char  *mask_array ;
 
 /*
  *   Set mask around each object
- *   tile_x1, tile_y1  :  tile index relative to local origin tile_x0, tile_y0
+ *   tile_x1, tile_y1  :  tile index relative to local origin tile_xl, tile_yl
  *   x1, y1            :  position relative to SW corner of tile (units of tile size)
  *   radius            ;  radius of circle (units of tile size)
  */
@@ -426,7 +429,7 @@ int  set_mask_around_item(int tile_x1, int tile_y1,
       x = x1 ;
       y = y1 ;
 
-//      ip = (tile_x1+tile_x0 == 1451) && (tile_y1+tile_y0 == 10331) ;
+//      ip = (tile_x1+tile_xl == 1451) && (tile_y1+tile_yl == 10331) ;
 
       if(ip){
         printf("  Enter routine %s\n", my_name) ;
@@ -480,15 +483,16 @@ int  set_mask_around_item(int tile_x1, int tile_y1,
       return 0 ;
 }
 
-int  set_mask_at_point(int tile_x0, int tile_y0, int ix0, int iy0, int nsamples){
+int  set_mask_at_point(int tile_xx, int tile_yy, int ix0, int iy0, int nsamples){
 
   int  ip = 0 ;
-  int  tile_x = tile_x0,
-       tile_y = tile_y0,
+  int  tile_x = tile_xx,
+       tile_y = tile_yy,
        ix     = ix0,
        iy     = iy0,
        k     ;
   char  *mask_array ;
+
   char *my_name = "set_mask_at_point" ;
 
       if(ip){
@@ -520,8 +524,8 @@ int  set_mask_at_point(int tile_x0, int tile_y0, int ix0, int iy0, int nsamples)
           printf("   Tile indices out of range\n") ;
           printf("   Indices are %i %i, Limits are 0:%i and 0:%i\n",
                       tile_x, tile_y, tile_array_nx-1, tile_array_ny-1) ;
-          printf("   tile_x0 = %i, tile_y0 = %i, tile_east = %i, tile_south = %i\n",
-                     tile_x0, tile_y0, tile_east, tile_north) ;
+          printf("   tile_xx = %i, tile_yy = %i, tile_east = %i, tile_south = %i\n",
+                     tile_xx, tile_yy, tile_east, tile_north) ;
           printf("   ix0 = %4i, y0 = %4i\n", ix0, iy0) ;
         }
         return 0 ;                         //  Stray out of supported tile region

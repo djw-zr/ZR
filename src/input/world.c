@@ -59,7 +59,7 @@ int load_world_filenames() {
       strcpy(wdir_name,ORroutedir)     ;
       strcat(wdir_name,world1_dir)     ;
       if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
-#if 1
+
       iret = zr_find_msfile2(&wdir_name);
       if(iret){
         printf(" Unable to find world directory\n") ;
@@ -72,23 +72,9 @@ int load_world_filenames() {
         printf(" Program stopping ... \n") ;
         exit(1) ;
       }
-#else
-      wdir = opendir(wdir_name) ;
-      if(wdir == NULL){
-        strcpy(wdir_name,ORroutedir)    ;
-        strcat(wdir_name,world2_dir)      ;
-        if(ip)printf(" Trying directory world = %s\n",wdir_name) ;
-        wdir = opendir(wdir_name) ;
-        if(wdir == NULL){
-          printf(" Unable to find world directory\n") ;
-          printf(" Program stopping ... \n") ;
-          exit(1) ;
-        }
-      }
-#endif
- /*
-  *  2.  Loop through files
-  */
+/*
+ *  2.  Loop through files
+ */
       while ((f_entry = readdir(wdir)) != NULL) {
         len2 = strlen(f_entry->d_name) ;
         if(len2 != 17 || strcmp(".w",&(f_entry->d_name[15]))!= 0) continue ;
@@ -172,6 +158,7 @@ int  load_world(WorldNode *wnode){
   char    *tmp_name   ;
   char    *parent_dir ;
   char    *full_parent_dir ;
+
   char    my_name[] = "load_world" ;
 
 
@@ -561,6 +548,7 @@ int  load_world(WorldNode *wnode){
                 printf("       Filename2  = %s\n", world_item->filename2)     ;
 #endif
               }
+              free(ext) ;
               tmp_name = NULL ;
 //              if(ip)dump_btree(wnode->shape_tree,0,"X") ;
             }else if(POSITION == itoken2){
@@ -969,7 +957,7 @@ DynTrackSect *dyn_trk_sect ;
 
 int world_item_init(WorldItem *world_item){
 
-int i ;
+  int i ;
 
       world_item->uid           = -1   ;
       world_item->next          = NULL ;
@@ -1006,6 +994,7 @@ int i ;
         world_item->tr_item_db[i]    = 0  ;
         world_item->tr_item_db_id[i] = 0  ;
       }
+
       return 0;
 }
 
@@ -1022,6 +1011,7 @@ int add_shape_pointers_to_world_items(){
   char         *wname,
                *sname,
                *tname ;
+
   char         my_name[] = "add_shape_pointers_to_world_items" ;
 
         if(ip)printf(" Enter routine %s\n",my_name) ;
@@ -1063,7 +1053,6 @@ int add_shape_pointers_to_world_items(){
               }
 //  Gives errors !!!!
 // This may be because the btree only relates to one tile.
-#if 1
   BTree *btree = NULL ;
 //              printf("============================================\n") ;
 //              printf(" Calling find_btree\n") ;
@@ -1085,28 +1074,10 @@ int add_shape_pointers_to_world_items(){
                 if(ip)printf(" Active list : wnode = %p, witem = %p, add shape: %s\n",
                            (void *)wnode, (void *)witem, witem->snode->name) ;
               }
-#else
-              witem->snode = NULL ;
-              for(snode = shapelist_beg; NULL != snode; snode=snode->next ){
-                sname = strdup(snode->name) ;
-                for(k=0;k<(int)strlen(sname);k++)sname[k] = tolower(sname[k]) ;
-                if(ip)printf("  sname = %s\n",sname) ;
-                if(0 == strcmp(wname,sname)){
-                  witem->snode  = snode ;
-                  snode->basic  = 0     ;
-                  snode->needed = 0     ;
-                  snode->loaded = 0     ;
-                  if(ip)printf("     active list : wnode = %p, witem = %p, add shape: %s  ::  %s \n",(void *)wnode, (void *)witem, sname, witem->snode->name) ;
-                  free(sname) ;
-                  break ;
-                }
-                free(sname) ;
-              }
-#endif
 /*
  *  TODO
  *  If shape not found, look for shape file
- *     If successful and to shapelist and load shape
+ *     If successful add to shapelist and load shape
  */
               if(witem->snode == NULL){
                 printf("  Routine %s error.  Unable to find shape %s\n",
@@ -1180,14 +1151,14 @@ int  list_wfile_item(WorldItem *wi){
       printf("    WorldItem     shape name   = %s \n",wi->filename) ;
       printf("    WorldItem     type         = %i %s\n",wi->worldtype, token_idc[wi->worldtype]) ;
       printf("    WorldItem     static flags = %8x \n",wi->static_flags) ;
-      if(wi->static_flags & SF_RoundShadow)printf("                   Round Shadow\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Rectangular Shadow\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Treeline Shadow\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Dynamic Shadow\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Any Shadow\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Terrain\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Animate\n");
-      if(wi->static_flags & SF_RoundShadow)printf("                   Global\n");
+      if(wi->static_flags & SF_RoundShadow)      printf("                   Round Shadow\n");
+      if(wi->static_flags & SF_RectangularShadow)printf("                   Rectangular Shadow\n");
+      if(wi->static_flags & SF_TreelineShadow)   printf("                   Treeline Shadow\n");
+      if(wi->static_flags & SF_DynamicShadow)    printf("                   Dynamic Shadow\n");
+      if(wi->static_flags & SF_AnyShadow)        printf("                   Any Shadow\n");
+      if(wi->static_flags & SF_Terrain)          printf("                   Terrain\n");
+      if(wi->static_flags & SF_Animate)          printf("                   Animate\n");
+      if(wi->static_flags & SF_Global)           printf("                   Global\n");
       printf("    WorldItem     position     = %f %f %f\n",wi->X,wi->Y,wi->Z) ;
       printf("    WorldItem     rotation     = %f %f %f %f\n",wi->AX,wi->AY,wi->AZ,wi->ANG) ;
       printf("    WorldItem     n_tr_item    = %i\n",wi->n_tr_item) ;
@@ -1214,12 +1185,13 @@ int  list_wfile_item(WorldItem *wi){
 
 void  add_shape_name_to_world_btree(WorldNode *wnode, WorldItem *world_item){
 
-uint   i ;
-char   *name = NULL ;
-BTree  *n =  wnode->shape_tree ;
-BTree  *btree_node   ;
-ShapeNode *shape     ;
-char   *my_name = "add_shape_name_to_world_btree" ;
+  uint   i ;
+  char   *name = NULL ;
+  BTree  *n =  wnode->shape_tree ;
+  BTree  *btree_node   ;
+  ShapeNode *shape     ;
+
+  char   *my_name = "add_shape_name_to_world_btree" ;
 
 /*  Generate shape name.  This is the filename without directories
  *  and extension, converted to lower case.
@@ -1273,6 +1245,7 @@ char   *my_name = "add_shape_name_to_world_btree" ;
  */
       shape_master      = insert_node(shape_master,     name,(void *)shape) ;
       wnode->shape_tree = insert_node(wnode->shape_tree,name,(void *)shape) ;
+
       return ;
 }
 
@@ -1283,12 +1256,13 @@ char   *my_name = "add_shape_name_to_world_btree" ;
 
 void add_world_shapes_to_master(void *b){
 
-BTree *bb = (BTree *)b ;
+  BTree *bb = (BTree *)b ;
 
       if(shape_master){
         if(find_btree(shape_master, bb->index)) return  ;
       }
       shape_master = insert_node(shape_master, bb->index, NULL) ;
+
       return ;
 }
 
@@ -1535,36 +1509,11 @@ int  load_world_soundfile(WorldNode *w){
       if(token2)free(token2) ;
       if(token1)free(token1) ;
       close_msfile(msfile) ;
+
       return 0 ;
 }
 #endif
 
-#if 0
-/data1/djw/Hobbies/OR/Open_Rails_Train_Simulator_-_ZZ/Routes/au_great_zig_zag/world/w+001451+010331.ws
-	Soundregion (
-		SoundregionRoty ( 1.76021 )
-		SoundregionTrackType ( 0 )
-		TrItemId ( 0 571 )
-		UiD ( 100005 )
-		FileName ( IMRegionPoint.s )
-		StaticFlags ( 00100000 )
-		Position ( 841.457 1035.81 575.188 )
-		QDirection ( 0.00845778 -0.77076 -0.008369 0.637014 )
-		VDbId ( 4294967295 )
-	)
-	Soundregion (
-		SoundregionRoty ( -1.37112 )
-		SoundregionTrackType ( 12 )
-		TrItemId ( 0 572 )
-		UiD ( 100006 )
-		FileName ( IMRegionPoint.s )
-		StaticFlags ( 00100000 )
-		Position ( 836.461 1035.69 576.17 )
-		QDirection ( -0.00753009 0.633062 -0.00921261 0.77401 )
-		VDbId ( 4294967295 )
-	)
-
-#endif
 /*
  *  Routine to print information about a given world item defined
  *  by tile and uid
@@ -1572,14 +1521,14 @@ int  load_world_soundfile(WorldNode *w){
 
 int  print_world_item_data(int tile_x, int tile_y, int uid){
 
-int       ip = 0 ;
-int       item_found = 0 ;
-int       i ;
-WorldNode *wnode ;
-WorldItem *witem ;
-SignalObj *sigobj ;
+  int       ip = 0 ;
+  int       item_found = 0 ;
+  int       i ;
+  WorldNode *wnode ;
+  WorldItem *witem ;
+  SignalObj *sigobj ;
 
-char *my_name = "print_world_item_data" ;
+  char *my_name = "print_world_item_data" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
       for(wnode = worldlist_beg; wnode != NULL ; wnode = wnode->next){

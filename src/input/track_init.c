@@ -19,21 +19,19 @@
  *   Routine to determine position of track items
  */
 
-
-
 int find_track_item_positions(){
 
-uint        i, j, k, ip = 0 ;
-uint        trk_item_tile_e, trk_item_tile_n ;   //  Should these be int ????
-uint        trk_vect_tile_e, trk_vect_tile_n ;
-double      trk_item_e, trk_item_n ;
-double      trk_vect_e, trk_vect_n, trk_vect_len, dist ;
+  uint    i, j, k, ip = 0 ;
+  uint    trk_item_tile_e, trk_item_tile_n ;   //  Should these be int ????
+  uint    trk_vect_tile_e, trk_vect_tile_n ;
+  double  trk_item_e, trk_item_n ;
+  double  trk_vect_e, trk_vect_n, trk_vect_len, dist ;
 
+  TrkItem       *trk_item ;
+  TrkSector     *trk_sect ;
+  TrkVectorNode *trk_vect ;
 
-TrkItem   *trk_item ;
-TrkSector   *trk_sect ;
-TrkVectorNode *trk_vect ;
-char          *my_name = "find_track_item_positions" ;
+  char          *my_name = "find_track_item_positions" ;
 
       if(ip)printf(" Enter %s\n",my_name) ;
 /*
@@ -70,22 +68,23 @@ char          *my_name = "find_track_item_positions" ;
           }
         }
       }
-
       if(ip)printf(" Exit  %s\n",my_name) ;
+
       return 0 ;
 }
 
 
 int sketch_track_items(){
 
-int      i, j, k, ip = 0   ;
-double  scale = 1.0/plot_scale ;
-double  x = 0., y=0.0 , z=0.0, dist ;
+  int      i, j, k, ip = 0   ;
+  double  scale = 1.0/plot_scale ;
+  double  x = 0., y=0.0 , z=0.0, dist ;
 
-TrkItem     *trk_item  ;
-WorldItem       *w ;
-char     string[256] ;
-char     *my_name = "sketch_track_items" ;
+  TrkItem     *trk_item  ;
+  WorldItem       *w ;
+  char     string[256] ;
+
+  char     *my_name = "sketch_track_items" ;
 
       if(ip)printf("Enter %s\n",my_name) ;
 
@@ -96,7 +95,7 @@ char     *my_name = "sketch_track_items" ;
       for(i=0;i<(int)track_db.trk_items_array_size;i++){
         trk_item = &track_db.trk_items_array[i] ;
 
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+        global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                 trk_item->tile_east_x, trk_item->tile_north_z,
                 trk_item->east_x, trk_item->north_z, trk_item->height_y,
                 &x, &y, &z );

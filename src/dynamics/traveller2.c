@@ -28,11 +28,10 @@ uint  find_mainline_section(TrkSector *tn, int pin_1, int pin_2) ;
 
 int  trv_initv(TravellerNode *t, int itrack, int ivector, int idirect){
 
-int           ip = 0 ;  // Debug
-TrkSector   *tn  ;
-TrkVectorNode *vn  ;
-
-char          my_name[] = "trv_initv" ;
+  int           ip = 0 ;  // Debug
+  TrkSector     *tn  ;
+  TrkVectorNode *vn  ;
+  char          my_name[] = "trv_initv" ;
 
       if(!t->wagon) ip = 0 ;  // Skip dummy wagons
 
@@ -88,59 +87,6 @@ char          my_name[] = "trv_initv" ;
 }
 
 /*
- *  Routine to print the 3D location of the traveller origin
- *    May be used to check the smooth motion when progressing
- *    from one piece of track to the next.
- */
-
-#if 0
-int  trv_ploc(TravellerNode *tn){
-
-float   x, y, z ;
-float   v1[4], v2[4] ;
-GLfloat modelview[16]  ;
-char    my_name[] = "trv_ploc" ;
-
-
-      glMatrixMode(GL_MODELVIEW) ;
-      glPushMatrix() ;
-
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
-                       tn->itile_x, tn->itile_y,
-                       tn->tile_x , tn->tile_y, tn->tile_z,
-                       &x, &y, &z) ;
-      a = degree*tn->trk_net_node->vector[tn->ivector].a_east_x   ;
-      b = degree*tn->trk_net_node->vector[tn->ivector].a_height_y ;
-      c = degree*tn->trk_net_node->vector[tn->ivector].a_north_z  ;
-
-      glRotatef((GLfloat) 90.0, (GLfloat) 1.0, (GLfloat) 0.0, (GLfloat) 0.0 ) ;
-      glScalef(scale,scale,-scale) ;
-
-      glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z) ;
-
-      glRotatef((GLfloat)b,(GLfloat)0.0,(GLfloat)1.0,(GLfloat)0.0) ; // Direction - Yaw
-      glRotatef((GLfloat)a,(GLfloat)1.0,(GLfloat)0.0,(GLfloat)0.0) ; // Slope - Pitch
-      glRotatef((GLfloat)c,(GLfloat)0.0,(GLfloat)0.0,(GLfloat)1.0) ; // Camber - Roll
-
-      glTranslatef((GLfloat)(t->x),(GLfloat)(t->y),(GLfloat)(t->z)) ;
-      glGetFloatv(GL_MODELVIEW_MATRIX, modelview)  ;
-/*
- *  Matrix (i,j) = matrix( (i-1) + 4*(j-1))
- */
-      v1[0] = 0.0; v1[1] = 0.0;  v1[2] = 0.0;  v1[3] = 1.0;
-      for(i=0;i<4;i++){
-        v2(i) = 0.0 ;
-        for(j=0;j<4;j++)
-
-
-      glPopMatrix() ;
-
-      return 0 ;
-}
-#endif
-
-
-/*
  *  Routine to move from the end of a track node section, via a junction,
  *  to the next track node section
  *
@@ -155,25 +101,22 @@ char    my_name[] = "trv_ploc" ;
  */
 int   trk_next(TravellerNode *t, int inext){
 
-int             ip = 0           ;  //  Debug
+  int             ip = 0           ;  //  Debug
 
-uint            i                ;
-int             j                ;
-int             idirect = t->idirect ;
-int             fromj_old,          //  True if new/old track section
-                fromj_new        ;  //  increased away from the junction
-TrkSector       *tn = t->tn, *tn2 ;
-TrkVectorNode   *vn = tn->vector ;
-char             my_name[] = "trk_next" ;
+  uint            i                ;
+  int             j                ;
+  int             idirect = t->idirect ;
+  int             fromj_old,          //  True if new/old track section
+                  fromj_new        ;  //  increased away from the junction
+  TrkSector       *tn = t->tn, *tn2 ;
+  TrkVectorNode   *vn = tn->vector ;
+  char             my_name[] = "trk_next" ;
 
-uint    my_sect   = tn->uid  ;  // Old section number
-uint    n_in_pins = tn->type_of_pin[0] ;  // Number of in pins
-uint    n_ot_pins = tn->type_of_pin[1] ;  // Number of out pins
-uint    j_sect                         ;  // Junction section
-uint    n_sect                         ;  // new section
-
-      if(!t->wagon) ip = 0 ;  // Skip dummy wagons
-//      ip =  t->wagon && i_zrt ;     //  Wagon exists and toggle (Alt-9) set
+  uint    my_sect   = tn->uid  ;  // Old section number
+  uint    n_in_pins = tn->type_of_pin[0] ;  // Number of in pins
+  uint    n_ot_pins = tn->type_of_pin[1] ;  // Number of out pins
+  uint    j_sect                         ;  // Junction section
+  uint    n_sect                         ;  // new section
 
       if(ip){
         printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") ;
@@ -221,10 +164,6 @@ uint    n_sect                         ;  // new section
       }
 
 //  Moving
-
-//      tn = &track_db.trk_sections_array[j_sect-1] ;      //  Remember '-1'!
-
-//      printf("  Test tn = %p, tn2 = %p\n",(void *)tn, (void *)tn2) ;
 
       n_in_pins = tn->type_of_pin[0] ;
       n_ot_pins = tn->type_of_pin[1] ;
@@ -318,7 +257,6 @@ uint    n_sect                         ;  // new section
       }
       if(ip)printf("  Routine %s, new section = %i\n", my_name, n_sect) ;
 
-//      tn = &track_db.trk_sections_array[n_sect-1] ;
       if(tn->type_of_node != VECTOR_SECTION){
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : New track section %i is not VECTOR_SECTION\n",
@@ -376,23 +314,21 @@ uint    n_sect                         ;  // new section
 
 int   trk_next_p(TravellerNode *t, int inext){
 
-uint            i                ;
-int             j                ;
-int             ip = 0           ;  //  Debug
-int             idirect = t->idirect ;
-int             fromj_old,          //  True if new/old track section
-                fromj_new        ;  //  increased away from the junction
-TrkSector     *tn = t->tn      ;
-TrkVectorNode   *vn = tn->vector ;
-char             my_name[] = "trk_next_p" ;
+  int             ip = 0           ;  //  Debug
+  uint            i                ;
+  int             j                ;
+  int             idirect = t->idirect ;
+  int             fromj_old,          //  True if new/old track section
+                  fromj_new        ;  //  increased away from the junction
+  TrkSector     *tn = t->tn      ;
+  TrkVectorNode   *vn = tn->vector ;
+  char             my_name[] = "trk_next_p" ;
 
-uint    my_sect   = tn->uid  ;  // Old section number
-uint    n_in_pins = tn->type_of_pin[0] ;  // Number of in pins
-uint    n_ot_pins = tn->type_of_pin[1] ;  // Number of out pins
-uint    j_sect                         ;  // Junction section
-uint    n_sect                         ;  // new section
-
-      if(!t->wagon) ip = 0 ;  // Skip dummy wagons
+  uint    my_sect   = tn->uid  ;  // Old section number
+  uint    n_in_pins = tn->type_of_pin[0] ;  // Number of in pins
+  uint    n_ot_pins = tn->type_of_pin[1] ;  // Number of out pins
+  uint    j_sect                         ;  // Junction section
+  uint    n_sect                         ;  // new section
 
       if(ip){
         printf("\n++++++++++++++++++++++++++++++++++++++++++++++++++++++++++\n") ;
@@ -440,7 +376,6 @@ uint    n_sect                         ;  // new section
 
 //  Moving
 
-//      tn = &track_db.trk_sections_array[j_sect-1] ;      //  Remember '-1'!
       n_in_pins = tn->type_of_pin[0] ;
       n_ot_pins = tn->type_of_pin[1] ;
       if(n_in_pins+n_ot_pins>3){
@@ -509,7 +444,6 @@ uint    n_sect                         ;  // new section
         n_sect = tn->pin_to_section[tn->branch] ;
         tn = tn->trk_sector[tn->branch] ;
       }
-//      if(n_sect == -1){
       if(n_sect <= 0){
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : New track section %i is not a VECTOR_SECTION"
@@ -518,7 +452,6 @@ uint    n_sect                         ;  // new section
       }
       if(ip)printf("    Routine %s, new section = %i\n", my_name, n_sect) ;
 
-//      tn = &track_db.trk_sections_array[n_sect-1] ;
       if(tn->type_of_node != VECTOR_SECTION){
         printf("  ERROR in routine %s\n",my_name) ;
         printf("  ERROR : New track section %i is not VECTOR_SECTION\n",

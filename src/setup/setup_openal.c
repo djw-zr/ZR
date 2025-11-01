@@ -30,7 +30,7 @@ static void list_audio_devices(const ALCchar *devices) ;
  */
 int  setup_openal(int argc, char **argv){
 
-  int  ip = 0 ;
+  int  ip = 1 ;
   ALboolean enumeration;
   const ALCchar *devices;
   const ALCchar *defaultDeviceName = NULL ;
@@ -69,8 +69,10 @@ int  setup_openal(int argc, char **argv){
 /*
  *  Create context
  *  In practice the maximum number of sources appears to be fixed at 256
+ *
+ *  Sound attribute 9 may be the number of sources
  */
-ALCint attributes[] = { ALC_MONO_SOURCES, 512, ALC_STEREO_SOURCES, 512 /* end of list */ } ;
+  ALCint attributes[] = { ALC_MONO_SOURCES, 1024, ALC_STEREO_SOURCES, 1024, 0 /* end of list */ } ;
 
       al_context = alcCreateContext(al_device, attributes) ;
       if (!alcMakeContextCurrent(al_context)) {
@@ -80,12 +82,26 @@ ALCint attributes[] = { ALC_MONO_SOURCES, 512, ALC_STEREO_SOURCES, 512 /* end of
       if(ip){
         printf("***********************************************************\n") ;
         printf("  OpenAL sound system initialised\n") ;
+
+        int  i, iatta[16] ;
+        char string[1024] ;
+
+        for(i=0;i<16;i++) iatta[i] = 0 ;
+        alcGetIntegerv(al_device, ALC_ALL_ATTRIBUTES, 16, iatta) ;
+        for(i=0;i<16;i++) printf("  Sound attribute %i  = %i\n", i, iatta[i]) ;
+
+        for(i=1;i<16;i++) iatta[i] = 0 ;
+        alcGetIntegerv(al_device, ALC_ATTRIBUTES_SIZE, 16, iatta) ;
+        for(i=0;i<16;i++) printf("  Sound attribute %i  = %i\n", i, iatta[i]) ;
+
+        printf("  ALC Extensions = %s\n",alcGetString(al_device, ALC_EXTENSIONS) ) ;
       }
+
       return 0 ;
 }
 
-static void list_audio_devices(const ALCchar *devices)
-{
+static void list_audio_devices(const ALCchar *devices){
+
   const ALCchar *device = devices, *next = devices + 1;
   size_t len = 0;
 
@@ -98,5 +114,6 @@ static void list_audio_devices(const ALCchar *devices)
         next += (len + 2);
       }
       fprintf(stdout, "  ----------\n");
-}
 
+      return ;
+}

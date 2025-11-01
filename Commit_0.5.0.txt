@@ -1,0 +1,13 @@
+Version 0.5.0
+=============
+
+1.  This version now works with the seven standard MSTS routes as well 
+    as the Australian "au_great_zig_zag" route.
+
+2.  The program can be compiled and run on 64-bit Windows computers
+    using the SDL2 interface and the MinGW64 package. This contains a 
+    Windows compatable set of GNU compilers, include files and
+    libraries. Instructions on installing the required software is 
+    given in the document "README.WINDOWS".
+    
+3.  A large number of other small improvements have also been made.

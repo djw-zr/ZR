@@ -34,10 +34,11 @@ int load_shape_d(ShapeNode *snode){
   char    *snode_shape_file  ;
   char    myname[] = "load_shape_d" ;
 
-      if(ip)printf("\n  Enter routine : %s\n",myname);
-      if(ip)printf("  File = %s\n",snode->sd_file);
+      if(ip){
+        printf("\n  Enter routine : %s\n",myname);
+        printf("  File = %s\n",snode->sd_file);
+      }
       ip = ip && !strcmp(snode->name,test_shape) ;
-
 /*
  *  Initialise  ESD variables
  */
@@ -258,4 +259,3 @@ int load_shape_d(ShapeNode *snode){
       close_msfile(msfile);
       return 0;
 }
-

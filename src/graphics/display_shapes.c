@@ -59,66 +59,17 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
         return 0 ;
       }
 
-//         ip = witem->world_node->tile_x == 1455 &&
-//              witem->world_node->tile_y == 10329 &&
-//              strcmp(snode->name,"Forest") == 0 ;
-
-//       ip = !strcmp(snode->name,"ashphaltplat20m500r") ;
-//       ip = !strcmp(snode->name,"NSW_SemLQHome") ;
-//       ip = !strcmp(snode->name,"A1tPnt6dLft")
-//          || !strcmp(snode->name,"UKCrossGate_fix");
-//     ip = !strcmp(snode->name,"A1tPnt6dLft");
-//       ip = !strcmp(snode->name,"UKCrossGate_fix");
-//       ip = !strcmp(snode->name,"JP1CarCrossing");
-//     ipp = !strcmp(snode->name,"UKCrossGate_fix");
-//     ip = !strcmp(snode->name,"Vduct_1Arch-1Track");
-//     ip = !strcmp(snode->name,"AU_Cedar_20m");
-//      ip = !strcmp(snode->name,"AU_Ash_20m");
-//      ip = !strcmp(snode->name,"underground_marker");
-//      ip = !strcmp(snode->name,"1905-KL");
-//     ip = !strcmp(snode->name,"BBS-HomesteadC");
-//      if(strcmp(snode->name,name_control)== 0){      //  Allow control over items plotted
-//       printf(" New dlist for %s\n",snode->name) ;
-//      }
-//      ip = l_time_1s && witem && (340 == witem->uid) ;
-//      ip = !strcmp_ic(snode->name,"Dock");
-//      ip = !strcmp_ic(snode->name,"lymtownstabldg");
-//      ip = !strcmp_ic(snode->name,"ctn_point_indication") ;
-/*
- *  Triple semaphore at entrance to Lymington Harbour, New Forest Route
- */
-//      ip =  l_time_5s && 1930 == witem->uid
-//         &&   -6141 == witem->world_node->tile_x && 14888 == witem->world_node->tile_y ;
 /*
  *  Three light signal at York 440  MECoast route
  */
 //      ip =  l_time_5s && 590 == witem->uid
 //         &&   -6073 == witem->world_node->tile_x && 15048 == witem->world_node->tile_y ;
 /*
- *  Platform signal at Mount Victoria - Zig-Zag Route
- */
-//      ip =  410 == witem->uid
-//                &&  1454 == witem->world_node->tile_x
-//                && 10325 == witem->world_node->tile_y ;
-/*
- *  Approach signal at Mount Victoria - Zig-Zag Route
- */
-//           ip =  (414 == witem->uid || 415 == witem->uid)
-//                 &&  1454 == witem->world_node->tile_x
-//                 && 10325 == witem->world_node->tile_y ;
-/*
  *  Signal outside Philidelphia :  Route USA1
  */
 //           ip =  4353 == witem->uid
 //                 && -11009 == witem->world_node->tile_x
 //                 &&  14317 == witem->world_node->tile_y ;
-/*
- *  Points at Lymington pier :  New Forest Route
- */
-//           ip =  202 == witem->uid
-//           ip =  180 == witem->uid
-//                 && -6141 == witem->world_node->tile_x
-//                 && 14888 == witem->world_node->tile_y ;
 /*
  *  Turntable at Oxford :  New Forest Route
  *           Number of animation nodes < number of matrices
@@ -276,16 +227,6 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  */
         for(l=0;l<sub_object->n_tri_lists;l++){
           tri_list = &(sub_object->tri_list[l]) ;
-#if 0
-              icc = icc+1 ;
-              if(ic && icc>=n_control) break ;  //  n_control (zr.h) limits printing
-              if(ic){
-                printf("********************************************************************\n");
-                printf("  icc = %i,  i_control1 = %i, i_control2 = %i\n",
-                                              icc,i_control1[icc],i_control2[icc]) ;
-              }
-//              if(ic && i_control1[icc]==0)continue ;   // Only plot when == 1
-#endif
           if(ip){
             printf("   ===================================================\n") ;
             printf("    Tri_list:  l = %i,  tri_list = %p,  n_vertex_idxs = %i\n",
@@ -300,8 +241,6 @@ int display_shape(WorldItem *witem, ShapeNode *snode, DistLevel *dist_level){
  */
           prim_state_idx = tri_list->prim_state_trilist     ;
           prim_state = &(snode->prim_state[prim_state_idx]) ;
-//          if(!strcmp(prim_state->name,"TRANS"))continue ;
-//          if(340 == witem->uid && 3 != prim_state_idx)continue ;
 /*
  *==============================================================================
  *  Each prim state has a texture if n_tex_idxs > 0
@@ -510,27 +449,16 @@ uint ii ;
               anim_node = NULL  ;
               n_controllers = 0 ;
               if(ip)printf("            n_controllers = %i\n",n_controllers) ;
-            }if(ip)
+            }
             if(ip){
               printf("       ---------------------------------------------------------\n") ;
               printf("       Hierarchy  im = %i, ima[im] = %i,  Name = %s\n",
                         im,ima[im],matrix4x3->name) ;
-#if 1
               printf("         shape = %s, sub_object = %i, tri_list = %i\n"
                        "                prim_state = %i, prim_state->name = %s,\n"
                        "                vertex_state = %i, matrix_type = %i, %s\n",
                           snode->name, k, l, prim_state_idx, prim_state->name,
                           ivtx_state, matrix4x3->type, token_mat_type[matrix4x3->type]) ;
-#else
-              printf("         shape = %s, sub_object = %i, tri_list = %i\n",
-                          snode->name, k, l ) ;
-              printf("                prim_state = %i, prim_state->name = %s,\n",
-                                      prim_state_idx, prim_state->name) ;
-              printf("                vertex_state = %i,\n", ivtx_state) ;
-              printf("                hierarchy[vs] = %i\n",
-                         dist_level->hierarchy[ivtx_state]) ;
-              printf("                matrix_type   = %i\n", matrix4x3->type) ;
-#endif
                 printf("         Matrix    name = %s\n",matrix4x3->name) ;
                 printf("         PrimState name = %s\n",prim_state->name) ;
                 printf("         Animation  n_controllers = %i\n",n_controllers) ;
@@ -578,7 +506,6 @@ uint ii ;
  *  DEBUG
  */
           if(ip && witem && witem->worldtype == SIGNAL_ALT
-//            && (witem->uid == 415 )
             && (!strncmp_ic(witem->snode->matrix[ima[0]].name,"Head",4) ) ) {
             printf("  World item uid  = %i\n",witem->uid) ;
             printf("  n_controllers   = %i\n",n_controllers) ;
@@ -710,7 +637,6 @@ uint ii ;
 
               if(ip)printf("   i0 = %i, i1 = %i, w0 = %f, w1 = %f\n",i0,i1,w0,w1) ;
 
-#if 1
               if(cc->type == LINEAR_POS){
 double x, y, z ;
                 x = w0*a0[i0].X + w1*a0[i1].X ;
@@ -777,7 +703,6 @@ double qx, qy, qz, qw ;
                                                       a, x, y, z) ;
                 }
               }           //  End logic over type of Controller
-#endif
             }             //  End of loop over Controllers
           }               //  End of logic - No animations/Animations
         }                 //  End of loop over Hierarchies
@@ -845,12 +770,7 @@ double qx, qy, qz, qw ;
             col[0] = (col1 >> 16) & 0xff ;   //  Red ??
 //            col[3] = ((col1 >> 24) & 0xff) ;  // Alpha channel
             glColor3ubv(col)     ;
-#if 0
-            printf(" GL_CURRENT_COLOR (RGB)  = %x  %x  %x \n", col[0], col[1], col[2]) ;
-            glGetFloatv(GL_CURRENT_COLOR,cof) ;    //   In order R, G, B, A
-            printf(" GL_CURRENT_COLOR (RGBA) = %f  %f  %f  %f\n",(double) cof[0],
-                                (double) cof[1],(double) cof[2],(double) cof[3]) ;
-#endif
+
             glBegin(GL_TRIANGLES)    ;
             for(m=0;m<tri_list->n_vertex_idxs;m++){
               va[0] =    tri_list->vertex_idx[m].a ;     //  Index in
@@ -860,7 +780,6 @@ double qx, qy, qz, qw ;
               for(n=0;n<3;n++){
                 ipoint    = vtx_list[va[n]].ipoint    ;
                 inormal   = vtx_list[va[n]].inormal   ;
-                vertex_uv = vtx_list[va[n]].vertex_uv[0] ;  // There may be more than one texture
                 x  = snode->point[ipoint].X ;
                 y  = snode->point[ipoint].Y ;
                 z  = snode->point[ipoint].Z ;
@@ -893,11 +812,7 @@ uint  k;
             }
           }
           if(witem && witem->worldtype == SIGNAL_ALT
-//            && 1  && 0 == n_controllers
              && witem->u.signal_obj.sm_signal[ima[0]] ){
-//            && (!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head1")
-//            || !strcmp_ic(witem->snode->matrix[ima[0]].name,"Head2") ) ) {
-//            && (!strncmp_ic(witem->snode->matrix[ima[0]].name,"Head",4) ) ) {
 
   int      k, n, m, it, il ;
   double   radius ;
@@ -911,10 +826,6 @@ uint  k;
   char      string[2048] ;
 
            signal   = witem->u.signal_obj.sm_signal[ima[0]] ;
-//            ip = 0;
-#if 1
-//            ip = ip && l_time_1s && (witem->uid == 87) ;
-//            ip = l_time_1s && (witem->uid == 340) ;
             if(ip){
               printf(" ++++++++  Display Light ++++++++++\n") ;
               printf(" World item uid = %i, type = %i  %s\n",
@@ -931,29 +842,6 @@ uint  k;
                     witem->u.signal_obj.tr_item[m])  ;
               }
             }
-#if 0
-            if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head1")) m = 0 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head2")) m = 1 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head3")) m = 2 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head4")) m = 3 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head5")) m = 4 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head6")) m = 5 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head7")) m = 6 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head8")) m = 7 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head9")) m = 8 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head10")) m = 9 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head11")) m = 10 ;
-            else if(!strcmp_ic(witem->snode->matrix[ima[0]].name,"Head12")) m = 11 ;
-            else{
-              printf("  Head name 1/2/3.../9 not found.  Name = %s\n",
-                                          witem->snode->matrix[ima[0]].name) ;
-              m = 0 ;
-            }
-#endif
-//            it = witem->u.signal_obj.tr_item[m] ;
-//            trk_item = &(track_db.trk_items_array[it]) ;
-#endif
-//            if(signal){
               if(ip){
                 printf("  Routine %s.  Signal uid = %i, :: names :  shape %s, type %s, world %s\n",
                         my_name, signal->uid,signal->shape_name,signal->type_name,signal->world_name) ;
@@ -964,8 +852,6 @@ uint  k;
               sig_type = signal->sig_type ;
               sig_draw = &sig_type->sig_draw[signal->draw_state] ;
               texture  = raw_signal_db->light_tex[0].tnode;
-
-//            ip = 0 ;
 
               if(ip){
                 printf("   Signal %i  :: names :  shape %s, type %s, world %s\n",
@@ -1018,9 +904,6 @@ uint  k;
   //                          (GLfloat) -sig_light->posn[2]-0.003);
                             (GLfloat) -sig_light->posn[2]-0.005);
 
-  //              glDisable(GL_BLEND) ;
-  //              glDisable(GL_ALPHA_TEST);
-  //              glDisable(GL_TEXTURE_2D) ;
                 glDisable(GL_LIGHTING) ;
   //  GL_DECAL    - outer decal region is colourde green - rest as texture
   //  GL_REPLACE  - white texture
@@ -1031,16 +914,6 @@ uint  k;
 
                 glTexEnvi(GL_TEXTURE_ENV,GL_TEXTURE_ENV_MODE,GL_MODULATE) ;
                 glColor4fv(light_tab->colour) ;   //  Red, Green, Blue, Alpha
-  #if 0
-                glBegin(GL_TRIANGLE_FAN) ;
-                  glVertex3f(0.0,0.0,0.0) ;
-                  glVertex3f(0.0,radius,0.0) ;
-                  glVertex3f(radius,0.0,0.0) ;
-                  glVertex3f(0.0,-radius,0.0) ;
-                  glVertex3f(-radius,0.0,0.0) ;
-                  glVertex3f(0.0,radius,0.0) ;
-                glEnd() ;
-  #else
                 glBegin(GL_QUADS) ;
                   glTexCoord2f(0.0,0.0) ;
                   glVertex3f(-radius,-radius,0.0) ;
@@ -1052,7 +925,6 @@ uint  k;
                   glVertex3f( radius,-radius,0.0) ;
                 glEnd() ;
 
-  #endif
   /*
   *  Code to identify active signal lights
   */
@@ -1092,4 +964,3 @@ uint  k;
 
       return 0 ;
 }
-

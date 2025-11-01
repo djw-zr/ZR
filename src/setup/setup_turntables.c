@@ -25,8 +25,8 @@ int setup_turntables(void){
   WorldNode  *wn ;
   WorldItem  *wi ;
   TT_Path    *path, *path0 ;
-  char      *my_name = "setup_turntables" ;
 
+  char      *my_name = "setup_turntables" ;
 
       if(ip ){
         printf("\n  Enter routine %s\n",my_name);
@@ -46,8 +46,8 @@ int setup_turntables(void){
             if(tt->w_uid == wi->uid && tt->tile_x == wn->tile_x
                                     && tt->tile_y == wn->tile_y ){
               tt->witem  = wi      ;
-              tt->tile_x0 = wi->world_node->tile_x ;
-              tt->tile_y0 = wi->world_node->tile_y ;
+              tt->tile_xw = wi->world_node->tile_x ;
+              tt->tile_yw = wi->world_node->tile_y ;
               tt->x0      = wi->X ; // Convert MSTS to ZR (physics) coordinates
               tt->y0      = wi->Z ;
               tt->z0      = wi->Y ;
@@ -59,8 +59,8 @@ int setup_turntables(void){
               tt->i_dirn  = 0    ;
               tt->tt_list = NULL ;
 
-              tt->trk_vector0.tile_east_x  = tt->tile_x0 ;
-              tt->trk_vector0.tile_north_z = tt->tile_y0 ;
+              tt->trk_vector0.tile_east_x  = tt->tile_xw ;
+              tt->trk_vector0.tile_north_z = tt->tile_yw ;
 
               tt->trk_vector0.distance0    = 0.0 ;
 
@@ -162,7 +162,6 @@ int setup_turntables(void){
           printf("    Turntable.\n") ;
           printf("    World item :: tile = %i %i :: uid = %i, tt angle0 = %f\n",
                  tt->tile_x, tt->tile_y, tt->w_uid, tt->angle0) ;
-#if 1
           for(path = tt->path; path!= NULL; path=path->next){
             printf("      Path angle = %7.2f\n", path->angle) ;
 
@@ -173,7 +172,6 @@ int setup_turntables(void){
                  i, tv->ang, tv->east_x, tv->height_y, tv->north_z,
                  tv->a_height_y*180/pi, tv->length) ;
             }
-#endif
           }
           printf("\n") ;
         }

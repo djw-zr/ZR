@@ -39,31 +39,25 @@
  *==============================================================================
 */
 
+/*
+ *   The default is to use vertex arrays
+ */
+
 #ifndef no_vertex_arrays
 
 int make_tile_vertex_arrays(){
 
-int          ip = 0 ;  // Debug
-int          ix, iy ;
-TileListNode *tl_node ;
-char         my_name[] = "make_tile_vertex_arrays" ;
+  int          ip = 0 ;  // Debug
+  int          ix, iy ;
+  TileListNode *tl_node ;
+  char         my_name[] = "make_tile_vertex_arrays" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
       for(tl_node=tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
         ix = tl_node->tilex ;
         iy = tl_node->tiley ;
         tl_node->needed = use_tile(ix,iy) ;
-#if 0
-        if(tl_node->needed && tile_cull_r>0){
-int i1, j1 ;
-          i1 = ix-tile_x0-tile_eye_x0 ; if(i1<0) i1 = -i1 ;
-          j1 = iy-tile_y0-tile_eye_y0 ; if(j1<0) j1 = -j1 ;
-          printf("  Tile %s :: %i %i %i :: %i : %i %i :: %i : %i %i\n",
-            tl_node->name, i1,j1,tl_node->needed,
-            ix,  tile_x0, tile_eye_x0,
-            iy,  tile_y0, tile_eye_y0 ) ;
-        }
-#endif
+
         if(tl_node->needed){
           if(ip)printf("  Routine %s.  Make tile vertex array for tile ::  %i  %i\n",
                        my_name, ix, iy) ;
@@ -76,27 +70,27 @@ int i1, j1 ;
 
 int make_tile_vertex_array(TileListNode *tl_node){
 
-int            i, j, k, l, n3, i3, j3, m3 ;
-int            tile_x, tile_y ;
-int            ip = 0     ;  // Debug printing
-int            nht        ;  // Number of tile heights in each direction
-double         dx_topog   ;  // Horizontal spacing in plot space units
-double         dm_topog   ;  // Horizontal spacing in metres
-double         dd_texture ;  // Texture repeats per topographic sample
-double         floor, scale, v1[3], v2[3], v3[3], vv ;
-double         x1, y1 ;
-GLdouble       tx1, ty1 ;
-GLdouble       *normals, *heights ;
-int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
-unsigned short *elevations  ;
-char           my_name[] = "make_tile_vertex_array" ;
+  int            ip = 0     ;  // Debug printing
+  int            i, j, k, l, n3, i3, j3, m3 ;
+  int            tile_x, tile_y ;
+  int            nht        ;  // Number of tile heights in each direction
+  double         dx_topog   ;  // Horizontal spacing in plot space units
+  double         dm_topog   ;  // Horizontal spacing in metres
+  double         dd_texture ;  // Texture repeats per topographic sample
+  double         floor, scale, v1[3], v2[3], v3[3], vv ;
+  double         x1, y1 ;
+  GLdouble       tx1, ty1 ;
+  GLdouble       *normals, *heights ;
+  int            *flata, flat ;         // = 1 if adjacent to a flat(ish) area
+  unsigned short *elevations  ;
+  char           my_name[] = "make_tile_vertex_array" ;
 
-int            max_i, max_v ;
-int            nbx, nby, ncx, ncy, ib, jb, nvt, ii, jj, ij;
-VANode         *va_node ;
+  int            max_i, max_v ;
+  int            nbx, nby, ncx, ncy, ib, jb, nvt, ii, jj, ij;
+  VANode         *va_node ;
 
-TerrainData    *terrain = &(tl_node->terrain_data) ;
-GLfloat        *vertex ;
+  TerrainData    *terrain = &(tl_node->terrain_data) ;
+  GLfloat        *vertex ;
 #ifdef normal_byte
   GLbyte         *normal  ;
 #else
@@ -107,17 +101,15 @@ GLfloat        *vertex ;
 #else
   GLfloat        *texture ;
 #endif
-GLuint         *index ;
-GLfloat        xa[2],ya[2],za[2] ;
-GLdouble       scalei = 1.0/plot_scale ;
+  GLuint         *index ;
+  GLfloat        xa[2],ya[2],za[2] ;
+  GLdouble       scalei = 1.0/plot_scale ;
 
-GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
-GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
-GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
-
+  GLfloat  mat_amb_land[] = {0.2, 0.2, 0.2, 1.0};
+  GLfloat  mat_dif_land[] = {0.9, 0.9, 0.9, 1.0};
+  GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
 
       if(ip)printf(" Enter routine %s\n",my_name) ;
-
 
       floor      = tl_node->terrain_data.terrain_sample_floor ;
       scale      = tl_node->terrain_data.terrain_sample_scale ;
@@ -137,7 +129,7 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
       tile_x = tl_node->tilex ;
       tile_y = tl_node->tiley ;
       if(ip)printf("  Tile_x = %i %i, tile_y = %i %i :: %i :: %s\n",
-                      tile_x,tile_x0,tile_y,tile_y0,tl_node->needed, tl_node->name) ;
+                      tile_x,tile_xl,tile_y,tile_yl,tl_node->needed, tl_node->name) ;
       if(ip)printf("  plot_scale = %f %f\n",(double)plot_scale,(double)scalei) ;
 /*
  *  Define material properties of land.
@@ -211,12 +203,12 @@ GLfloat  mat_spc_land[] = {0.5, 0.5, 0.5, 1.0};
  *       based on the average slope between the nearest four vertices.
  *
  */
-int   i1a[8] = {  1,  1,  0,  0, -1, -1,  0,  0 };  // E,  E,  N,  N,  W,  W,  S,  S
-int   j1a[8] = {  0,  0, m3, m3,  0,  0,-m3,-m3 };
-int   i2a[8] = {  1,  1,  1, -1, -1, -1, -1,  1 };  // SE, NE, NE, NW, NW, SW, SW, SE
-int   j2a[8] = {-m3, m3, m3, m3, m3,-m3,-m3,-m3 };
-int   km ;
-double s1a[8], s2a[8], sab[8], sm, sign;
+  int   i1a[8] = {  1,  1,  0,  0, -1, -1,  0,  0 };  // E,  E,  N,  N,  W,  W,  S,  S
+  int   j1a[8] = {  0,  0, m3, m3,  0,  0,-m3,-m3 };
+  int   i2a[8] = {  1,  1,  1, -1, -1, -1, -1,  1 };  // SE, NE, NE, NW, NW, SW, SW, SE
+  int   j2a[8] = {-m3, m3, m3, m3, m3,-m3,-m3,-m3 };
+  int   km ;
+  double s1a[8], s2a[8], sab[8], sm, sign;
 
 
       for(j=0;j<nht+1;j++){            // Tile plus 2 row overlap
@@ -390,9 +382,13 @@ int ii, jj, kk ;
             for(i=0;i<ncx+1;i++,k+=3,l+=2){
               ii = ib*ncx + i ;
               ij = (jj+1)*m3 + ii + 1 ;
-
+#if 0
               vertex[k  ] = (tile_x - tile_x0)     +  dx_topog*ii ;
               vertex[k+1] = (tile_y - tile_y0 + 1) -  dx_topog*jj ;
+#else
+              vertex[k  ] =        dx_topog*ii ;
+              vertex[k+1] =  1.0 - dx_topog*jj ;
+#endif
               vertex[k+2] = (heights[ij]-tile_h0)*scalei ;
 //  Track limits
               if(0==k){
@@ -449,8 +445,7 @@ int ii, jj, kk ;
           va_node->ya[0] = ya[0] ; va_node->ya[1] = ya[1] ;
           va_node->za[0] = za[0] ; va_node->za[1] = za[1] ;
 #pragma GCC diagnostic pop
-          va_node->in_use = 1 ;    //  Tests not availale at this stage
-
+//          va_node->in_use = 1 ;    //  Tests not available at this stage
 
           if(ip>1 && tile_x==1448 && tile_y == 10331){
             printf("  Vertex Array  tile_x, tile_y = %i %i\n",tile_x,tile_y) ;
@@ -480,19 +475,21 @@ int ii, jj, kk ;
       free(normals) ;
       free(heights) ;
       free(flata) ;
+
       return 0 ;
 }
 #endif
 
 int check_topographic_blocks(){
 
-int          ip = 0   ;  // Debug
-int          n, k, ix, iy   ;
-TileListNode *tl_node ;
-VANode       *va_node ;
-char         my_name[] = "check_topographic_blocks" ;
+  int          ip = 0   ;  // Debug
+  int          n, k, ix, iy   ;
+  TileListNode *tl_node ;
+  VANode       *va_node ;
+  char         my_name[] = "check_topographic_blocks" ;
 
       if(ip)printf(" Enter: %s\n",my_name) ;
+
       for(tl_node=tilelist_head;tl_node!=NULL;tl_node=tl_node->next){
         ix = tl_node->tilex ;
         iy = tl_node->tiley ;
@@ -511,7 +508,8 @@ char         my_name[] = "check_topographic_blocks" ;
         for(k=0;k<n;k++){
           if(ip)printf(" %i",k) ;
           va_node = &(tl_node->terrain_data.va_node[k]) ;
-          va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
+          va_node->in_use = check_topog_in_scene2(tl_node,
+                                   va_node->xa,va_node->ya,va_node->za);
         }
         if(ip)printf("\n") ;
 #endif

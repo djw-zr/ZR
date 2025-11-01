@@ -2,7 +2,7 @@
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
- *   File:  core.h
+ *   File:  btree.h
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License

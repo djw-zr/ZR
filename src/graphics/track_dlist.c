@@ -16,13 +16,14 @@ int   make_track_display_list(TrkSector *section, DynProfile *profile) ;
 
 int   make_track_display_lists(){
 
-uint  i ;
-uint  ip = 0 ;                        // Debug printing = 1
-TrkSector  *track_node       ;  // Track section needing shape
-DynProfile      *profile          ;  // Profile to use
-char            my_name[]="make_track_display_lists" ;
+  uint  ip = 0 ;                        // Debug printing = 1
+  uint  i ;
+  TrkSector  *track_node       ;  // Track section needing shape
+  DynProfile      *profile          ;  // Profile to use
+  char            my_name[]="make_track_display_lists" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
+
       profile = zr_rail_profile ;
       if(profile == NULL){
         printf(" ERROR.  Routine %s.  Track profile set to NULL\n",my_name);
@@ -37,6 +38,7 @@ char            my_name[]="make_track_display_lists" ;
         if(ip)printf("    %s :  profile    = %p\n",my_name,(void *)profile) ;
         make_track_display_list(track_node, profile) ;
       }
+
      return 0 ;
 }
 
@@ -51,33 +53,31 @@ char            my_name[]="make_track_display_lists" ;
 int   make_track_display_list(TrkSector *track_section,
                               DynProfile  *track_profile){
 
-uint   i, j, k, l0, l1, m, n ;
-uint   n_track_nodes   ;
-uint   i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
-uint   gl_display_list ;
-uint   ip = 0          ;                // debug printing
-double xx0, yy0, xx1, yy1, xxn, yyn,
-       x0, y0, z0, xt, yt,
-       x, y, z, xn, yn, zn,
-       u0, v0, u1, v1, xoff, yoff       ;
-double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
-char   my_name[] = "make_track_display_list" ;
+  uint   ip = 0          ;                // debug printing
+  uint   i, j, k, l0, l1, m, n ;
+  uint   n_track_nodes   ;
+  uint   i_tex_dirn      ;   // = 1 texture direction increases in '1' direction
+  uint   gl_display_list ;
+  double xx0, yy0, xx1, yy1, xxn, yyn,
+        x0, y0, z0, xt, yt,
+        x, y, z, xn, yn, zn,
+        u0, v0, u1, v1, xoff, yoff       ;
+  double xl = 0.0, yl = 0.0, zl = 0.0 ;   // Keep compiler happy when optimising
 
-TrackDistLevel *dist_level   ;
-TrackSubObject *sub_object   ;
-TrkVectorNode  *tv0          ;
-RailProfile    *rail_profile ;
-TextureNode    *tnode        ;
+  TrackDistLevel *dist_level   ;
+  TrackSubObject *sub_object   ;
+  TrkVectorNode  *tv0          ;
+  RailProfile    *rail_profile ;
+  TextureNode    *tnode        ;
 
+  char   my_name[] = "make_track_display_list" ;
 
       if(track_profile == NULL){
         printf(" ERROR.  Routine %s.  Profile is unset (NULL) \n",my_name);
         exit(0) ;
       }
 
-
-      ip = (123 == track_section->uid) ;
-       ip = 0 ;
+//      ip = (123 == track_section->uid) ;
       if(ip){
         printf("  Enter routine %s\n",my_name) ;
         printf("  Index of node = %i\n",track_section->uid) ;
@@ -193,10 +193,12 @@ TextureNode    *tnode        ;
         }
         glEndList() ;
       }
+
       return 0 ;
 }
 
 int  add_texture_pointers_to_track_profiles(DynProfile *dnode){
+
   uint  i, j    ;
   uint  ip = 0  ;   // 0 = no printing, 1 = error printing only
   TrackDistLevel   *dist_level   ;
@@ -246,25 +248,6 @@ int  add_texture_pointers_to_track_profiles(DynProfile *dnode){
         }
       }
       if(NULL != name)free(name) ;
+
       return 0;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

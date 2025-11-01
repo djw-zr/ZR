@@ -123,11 +123,9 @@ GLsizei  fwxga_height    =  768 ;   // = main_window_height
 GLsizei  full_hd_width   = 1920 ;   // = main_window_width
 GLsizei  full_hd_height  = 1080 ;   // = main_window_height
 
-
 GLdouble viewport_fovy   = 30.0 ;
 GLdouble viewport_aspect =  1.0 ;
 GLdouble viewport_near_m =  1.0 ;    // Nearest point displayed 1 m(m)
-//GLdouble viewport_far_m  = 10240.0 ; // Furthest point displayed
 #ifdef sketch_tracks_and_roads
 GLdouble viewport_far_m  = 20480.0 ; // Furthest point displayed
 #else
@@ -148,6 +146,8 @@ GLdouble screen_hw_y               ;  // Screen half height at distance 1.0
 int      tile_x0                ;  // Local x-origin (east) for plotting
 int      tile_y0                ;  // Local y-origin (north) for plotting
 double   tile_h0                ;  // Local height origin for plotting
+int      tile_xl                ;  // Even more local origin use to reduce
+int      tile_yl                ;  // rounding errors is large systems.
 
 int      tile_eye_x0            ;  // Tile containing viewpoint
 int      tile_eye_y0            ;
@@ -160,7 +160,8 @@ GLdouble viewport_far           ;
 #ifdef full_topog
   int tile_cull_r = 0           ;  // Plot all topography
 #else
-  int tile_cull_r = 2           ;  // Limit to 3x3 tiles around eye point.
+  int tile_cull_r = 2           ;  // Limit to 5x5 tiles around eye
+                                   //      at tile_xl, tile_yl.
 #endif
 
 /*
@@ -434,7 +435,15 @@ GLdouble offset_center_z =   0.056594  ;
 #endif
 
 /*
- *   Position of eye in model coordinates
+ *   Positions of the eye and the point looked at after the camera
+ *   routines have set up the viewpoint.  The value are in tile units
+ *   relative to the tile origin (tile_x0, tile z0) and to the height
+ *   origin.
+ *
+ *   The 'offset' variables defined above are the intended positions.
+ *   They are usually equal to the 'lookat' variables but will differ
+ *   between being changed by the keyboard routine and the viewpoint
+ *   being updated by the camera routine.
  */
 GLdouble lookat_eye_x    ;
 GLdouble lookat_eye_y    ;
@@ -443,12 +452,23 @@ GLdouble lookat_center_x ;
 GLdouble lookat_center_y ;
 GLdouble lookat_center_z ;
 
+int      ilookat_eye_x    ;  // Integer parts of the 'lookat' variables
+int      ilookat_eye_y    ;  // Used in an attempt to reduce flickering
+int      ilookat_eye_z    ;  // due to rounding errors at large distances
+int      ilookat_center_x ;  // from the tile origin is large systems
+int      ilookat_center_y ;
+int      ilookat_center_z ;
+
+int      ioffset_eye_x    ;  // Integer parts of the 'offset' variables
+int      ioffset_eye_y    ;  // Used in an attempt to reduce flickering
+int      ioffset_eye_z    ;  // due to rounding errors in large rail
+int      ioffset_center_x ;  // systems
+int      ioffset_center_y ;
+int      ioffset_center_z ;
+
 GLdouble camera_origin_x  = 0.0   ;   //  Origin of current camera coordinate
 GLdouble camera_origin_y  = 0.0   ;   //  relative to tile origin
 GLdouble camera_origin_z  = 0.0   ;   //  i.e wagon position or zero
-GLdouble lookat_eye_x             ;   //  Location of eye relative to tile origin
-GLdouble lookat_eye_y             ;   //  (tile_x0, tile_y0, tile_z0)
-GLdouble lookat_eye_z             ;
 
 GLdouble radian_to_north          ;  //  Offset directions relative to north
 GLdouble angle_to_north           ;  //  and up.  For wagon based cameras
@@ -462,7 +482,8 @@ GLdouble lookat_up_z     =  1.0  ;
 
 GLfloat clip_a[6][4]    ;  //  Clip planes in display units
 int   initialise_clip_planes(GLfloat clipa[6][4]) ;
-int   check_topog_in_scene2(GLfloat xa[2], GLfloat ya[2], GLfloat za[2]) ;
+int   check_topog_in_scene2(TileListNode *tnode,
+                            GLfloat xa[2], GLfloat ya[2], GLfloat za[2]) ;
 int   check_topographic_blocks() ;
 
 /** Variables for Orthographic projection                **/
@@ -536,6 +557,8 @@ int    ipp = 0 ;
 time_t time_now, time_last = 0, time_inc ;
 int    fps   = 0 ;              // Frames per second when set
 int    l_fps = 0 ;              // When set print frames per second
+double fps_delay = 0. ;         // Percentage of elapsed time used to display
+double delay_seconds ;
 
 /*
  *==============================================================================
@@ -614,7 +637,7 @@ int   make_tile_topog_display_list(TileListNode *tnode, GLuint klist) ;
 int   make_dynamic_display_lists() ;
 void  makeCheckImages(void) ;
 int   initialise_eye_vectors() ;
-int   check_in_scene(GLdouble x,GLdouble y,GLdouble z,GLdouble r) ;
+int   check_in_scene(GLdouble x,GLdouble y,GLdouble z,GLdouble r, int ip) ;
 
 // Utilities
 

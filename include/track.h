@@ -151,11 +151,11 @@ struct tt_list{
 
 
 struct turntable{
-  TurnTable       *next  ;
-  WorldItem       *witem ;
-  int             w_uid  ;
-  int             tile_x ;
-  int             tile_y ;
+  TurnTable       *next    ;
+  WorldItem       *witem   ;
+  int             w_uid    ;
+  int             tile_x   ;  //  Tile coordinate in turntables.dat
+  int             tile_y   ;  //    .. ditto ..
   double          x_offset ;
   double          y_offset ;
   double          z_offset ;
@@ -169,8 +169,8 @@ struct turntable{
  *   to the same coordinate system as the angles in each path structure -
  *   The path structure angles are copies of those in the track vectors.
  */
-  int             tile_x0 ;
-  int             tile_y0 ;
+  int             tile_xw ;  //  Tile coordinate in world file
+  int             tile_yw ;  //    .. ditto ..
   double          x0      ;  //  Coordinates of central point
   double          y0      ;  //  ZR (physics) coordinates
   double          z0      ;

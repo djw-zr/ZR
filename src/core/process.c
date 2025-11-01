@@ -20,42 +20,46 @@
  */
 void process_defaults(){
 
-int    i, n, n_dirs  ;
-int    ip = 0        ;     // 0 = no printing
-size_t slen, nread, ll=128 ;
-char   *home       = NULL  ;     // Full name of user's home directory
-char   *dotdir     = NULL  ;     // Full name of .zr directory
-char   *config     = NULL  ;     // Full name of config file
-char   *fonts      = NULL  ;     // Full name of fonts file
-char   *routes_dir = NULL  ;
-char   *line       = NULL  ;
-char   *token_a[3] ;
-char   *token      = NULL  ;
-char   *string1    = NULL  ;
-char   *string2    = NULL  ;
-FILE   *fptr       = NULL  ;     // Pointer to config file
-DIR    *dotzr      = NULL  ;     // DIR pointer to .zr directory
-DIR    *fontdir    = NULL  ;     // DIR pointer to fonts directory
-BTree  *ORdirs     = NULL  ;    // BTree with list of directories
-BTree  *bt_node    = NULL  ;
-BTree  *bt_dirs    = NULL  ;
-char   *routes = "/Routes"    ;
-char *my_name = "process_defaults" ;
+  int    i, n, n_dirs  ;
+  int    ip = 0        ;     // 0 = no printing
+  size_t slen, nread, ll=128 ;
+  char   *home       = NULL  ;     // Full name of user's home directory
+  char   *dotdir     = NULL  ;     // Full name of .zr directory
+  char   *config     = NULL  ;     // Full name of config file
+  char   *fonts      = NULL  ;     // Full name of fonts file
+  char   *routes_dir = NULL  ;
+  char   *line       = NULL  ;
+  char   *token_a[3] ;
+  char   *token      = NULL  ;
+  char   *string1    = NULL  ;
+  char   *string2    = NULL  ;
+  char   *ordir      = NULL  ;     // Local version or ORdir
+  char   *orroutedir = NULL  ;     // Local version or ORroutedir
+
+  FILE   *fptr       = NULL  ;     // Pointer to config file
+  DIR    *dotzr      = NULL  ;     // DIR pointer to .zr directory
+  DIR    *fontdir    = NULL  ;     // DIR pointer to fonts directory
+  BTree  *ORdirs     = NULL  ;    // BTree with list of directories
+  BTree  *bt_node    = NULL  ;
+  BTree  *bt_dirs    = NULL  ;
+  char   *routes = "/Routes"    ;
+  char *my_name = "process_defaults" ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
       token_a[0] = token_a[1] = token_a[2] = NULL ;
       reset_bt_count() ;           //  Reset counter of ORdirs
 
-//  Find users home directory
+/*
+ * 1.  Find users home directory
+ * 2.  Search for .zr directory
+ * 3.  If .zr/fonts durectory exists load fonts
+ */
 #ifdef WINDOWS
       home = getenv("HOMEPATH") ;
 #else
       home = getenv("HOME") ; // Pointer to string "HOME" in program address space
 #endif
-      if(ip)printf("  AA\n") ;
-      if(ip)printf("  BB ::%s:: \n",home) ;
       slen = strlen(home) ;
-      if(ip)printf("  BB ::%i:: \n",(int)slen) ;
       if(slen==0){
         printf(" Unable to determine users HOME directory\n");
         printf(" Program stopping ...\n");
@@ -65,35 +69,23 @@ char *my_name = "process_defaults" ;
 
 //  Does $HOME/.zr exist?  If not create it.
 
-      slen = strlen(home) + strlen("/.zr");
-      dotdir = (char *)malloc((slen+1)*sizeof(char));
+      slen = strlen(home) + strlen("/.zr")+ 1;
+      dotdir = (char *)malloc((slen)*sizeof(char));
       strcpy(dotdir,home)         ;
       strcat(dotdir,"/.zr")   ;
 
       dotzr = opendir(dotdir) ;
-      if(dotzr == NULL){
-        printf(" Creating new .zr directory in users home folder\n");
-#ifdef WINDOWS
-        mkdir(dotdir);
-#else
-        mkdir(dotdir, 0777);
-#endif
-      }else{
-        if(ip)printf(" Users .zr directory exists.\n");
+
+// Open fonts file if it exists
+
+      if(dotzr){
+        slen = strlen(dotdir) + strlen("/fonts");
+        fonts = (char *)malloc((slen+1)*sizeof(char));
+        strcpy(fonts,dotdir)     ;
+        strcat(fonts,"/fonts")  ;
+        fontdir = opendir(fonts) ;
+        if(ip)printf(" Testing for fonts directory: %s %p\n",fonts,(void *)fontdir);
       }
-      closedir(dotzr) ;
-      ZRdotdir = strdup(dotdir) ;
-      printf(" ZRdotdir = %s\n",ZRdotdir) ;
-
-//  Does fonts directory exist?
-
-      slen = strlen(dotdir) + strlen("/fonts");
-      fonts = (char *)malloc((slen+1)*sizeof(char));
-      strcpy(fonts,dotdir)     ;
-      strcat(fonts,"/fonts")  ;
-
-      fontdir = opendir(fonts) ;
-      if(ip)printf(" Testing for fonts directory: %s %p\n",fonts,(void *)fontdir);
       if(fontdir == NULL){
 // Look for webcore fonts in system fonts directory
         free(fonts) ;
@@ -110,6 +102,26 @@ char *my_name = "process_defaults" ;
         closedir(fontdir) ;
         ZRfonts = fonts ;
         if(ip)printf(" Fonts (WebFonts) directory exists.\n");
+      }
+/*
+ *  If the $HOME/.zr directory does not exist and either ORdir
+ *  or ORroutedir have not been passed as parameters
+ *  the create $HOME/.zr
+ */
+      if(dotzr == NULL && !ORdir && !ORroutedir){
+        printf(" Creating new .zr directory in users home folder\n");
+#ifdef WINDOWS
+        mkdir(dotdir);
+#else
+        mkdir(dotdir, 0777);
+#endif
+      }else{
+        if(ip && dotzr)printf(" Users .zr directory exists.\n");
+      }
+      if(dotzr){
+        closedir(dotzr) ;
+        ZRdotdir = strdup(dotdir) ;
+        printf(" ZRdotdir = %s\n",ZRdotdir) ;
       }
 
 //  Does config file exist?  If not create it
@@ -151,6 +163,8 @@ char *my_name = "process_defaults" ;
       }
 /*
  *  If configure file exists use it to initialise directories.
+ *  If ORdir and ORroutedir are defined via the command line
+ *  this is only done to find any MSTS directory
  */
       if(ip)printf(" File .zr/config exists.\n\n");
       for(i=0;i<3;i++)token_a[i] =(char *)malloc(ll+1);
@@ -190,7 +204,7 @@ char *my_name = "process_defaults" ;
 
         if(!strcmp(token_a[0],"MSTSdir")){
 #if 1
-          free(MSTSdir);
+          if(MSTSdir)free(MSTSdir);
           MSTSdir = token_a[2];
           token_a[2] = NULL ;               //  Leave string for MSTSdir
 #else
@@ -198,16 +212,16 @@ char *my_name = "process_defaults" ;
           printf("  Token MSTSdir no longer used\n") ;
 #endif
         }else if(!strcmp(token_a[0],"ORdir")){
-          free(ORdir);
-          ORdir = token_a[2];
+          if(ordir)free(ordir);
+          ordir = token_a[2];
           token_a[2] = NULL ;               //  Remove link to string
 /*
  *  Find Basename of Directory
  */
-          string1 = strdup(ORdir) ;
+          string1 = strdup(ordir) ;
           string2 = zr_basename(string1) ;
           if(0 == strlen(string2)){
-            printf("  ORdir name not recognised.  Full name = %s\n",ORdir);
+            printf("  ORdir name not recognised.  Full name = %s\n",ordir);
             continue ;
           }
 /*
@@ -215,15 +229,15 @@ char *my_name = "process_defaults" ;
  *  The Basenames are stored in alphabetical order
  */
           if(!find_btree(ORdirs,string2)){
-            ORdirs = insert_node(ORdirs,strdup(string2),strdup(ORdir)) ;
+            ORdirs = insert_node(ORdirs,strdup(string2),strdup(ordir)) ;
             increment_bt_count((void *)ORdirs) ;
           }
           free(string1) ;  string1 = NULL ;
           free(string2) ;  string2 = NULL ;
         }else if(!strcmp(token_a[0],"ORroutedir")){
-          free(ORroutedir);
-          ORroutedir = token_a[2];
-          printf("  Token ORroutedir no longer used\n") ;
+          if(orroutedir)free(orroutedir);
+          orroutedir = token_a[2];
+//          printf("  Token ORroutedir no longer used\n") ;
           token_a[2] = NULL ;               //  Remove link to string
         }else if(!strcmp(token_a[0],"ORroute")){
           if(ORroute){
@@ -234,89 +248,95 @@ char *my_name = "process_defaults" ;
           token_a[2] = NULL ;
         }
       }
+
 /*
- *  If number of directories in top level lisy is greater than one
+ *  If ORdir and ORroutedir are not set vis command line
+ *  Use simple menus to set the values
+ */
+      if(!ORdir || !ORroutedir){
+/*
+ *  If number of directories in top level is greater than one
  *     ask user to choose:
  */
-      n_dirs = return_bt_count() ;
-      printf("  Number of ORdir directories = %i\n",n_dirs) ;
-      printf("    List of directories:\n") ;
-      print_bt_nodes_with_count_and_index(ORdirs) ;
+        n_dirs = return_bt_count() ;
+        printf("  Number of ORdir directories = %i\n",n_dirs) ;
+        printf("    List of directories:\n") ;
+        print_bt_nodes_with_count_and_index(ORdirs) ;
 
-      if(n_dirs > 1){
-#if ! defined Basic_Test && ! defined DEBUG1
-        n = 0 ;
-        while(n<1 || n>n_dirs){
-          printf("  Enter index of top level directory to use (0 to exit):\n") ;
-          scanf("%i",&n) ;
-          if(n<1) exit(0) ;
-        }
-#else
-        n = 9 ;
-#endif
-      }else if(1==n_dirs){
-        n = 1 ;
-      }else{
-        printf("  Error:  Configuration file contains no 'ORdir'.\n") ;
-        printf("          Program stopping ... \n") ;
-        exit(0) ;
-      }
-      bt_node = find_bt_node_with_index(ORdirs,n) ;
-      printf("  Found  t_node = %p\n",(void *) bt_node) ;
-      if(bt_node)printf("    index = %s\n    name = %s\n",
-            (char *)bt_node->index, (char *)bt_node->data) ;
-      ORdir = (char *)bt_node->data ;
-/*
- *  If ORroute is not defined ask user to choose:
- */
-      if(ORdir && !ORroute){
-        reset_bt_count() ;
-        n = strlen(ORdir) + strlen(routes) + 2 ;
-        routes_dir = malloc(n*sizeof(char)) ;
-        strcpy(routes_dir,ORdir)  ;
-        strcat(routes_dir,routes) ;
-        zr_find_msfile2(&routes_dir) ;
-        bt_dirs = bt_subdirectory_list(routes_dir) ;
-        n_dirs  = return_bt_count() ;
-
-        printf("  Number of routes = %i\n",n_dirs) ;
-        printf("    List of routes:\n") ;
-        print_bt_nodes_with_count_and_index(bt_dirs) ;
         if(n_dirs > 1){
 #if ! defined Basic_Test && ! defined DEBUG1
           n = 0 ;
           while(n<1 || n>n_dirs){
-            printf("  Enter index of route to use (0 to exit):\n") ;
+            printf("  Enter index of top level directory to use (0 to exit):\n") ;
             scanf("%i",&n) ;
             if(n<1) exit(0) ;
           }
 #else
-          n = 2 ;
+          n = 9 ;
 #endif
-          bt_node = find_bt_node_with_index(bt_dirs,n) ;
-        }else if(n_dirs == 1){
-          bt_node = find_bt_node_with_index(bt_dirs,1) ;
+        }else if(1==n_dirs){
+          n = 1 ;
         }else{
-          printf("  ERROR:  No routes found.\n") ;
+          printf("  Error:  Configuration file contains no 'ORdir'.\n") ;
           printf("          Program stopping ... \n") ;
           exit(0) ;
         }
-        ORroute = strdup(bt_node->index) ;
-        ORroutedir = (char *)bt_node->data ;
+        bt_node = find_bt_node_with_index(ORdirs,n) ;
         printf("  Found  t_node = %p\n",(void *) bt_node) ;
-        printf("    ORroute = %s\n    ORroutedir = %s\n",
-                     ORroute, ORroutedir) ;
+        if(bt_node)printf("    index = %s\n    name = %s\n",
+              (char *)bt_node->index, (char *)bt_node->data) ;
+        ORdir = (char *)bt_node->data ;
+/*
+ *  If ORroute is not defined ask user to choose:
+ */
+        if(ORdir && !ORroute){
+          reset_bt_count() ;
+          n = strlen(ORdir) + strlen(routes) + 2 ;
+          routes_dir = malloc(n*sizeof(char)) ;
+          strcpy(routes_dir,ORdir)  ;
+          strcat(routes_dir,routes) ;
+          zr_find_msfile2(&routes_dir) ;
+          bt_dirs = bt_subdirectory_list(routes_dir) ;
+          n_dirs  = return_bt_count() ;
 
+          printf("  Number of routes = %i\n",n_dirs) ;
+          printf("    List of routes:\n") ;
+          print_bt_nodes_with_count_and_index(bt_dirs) ;
+          if(n_dirs > 1){
+#if ! defined Basic_Test && ! defined DEBUG1
+            n = 0 ;
+            while(n<1 || n>n_dirs){
+              printf("  Enter index of route to use (0 to exit):\n") ;
+              scanf("%i",&n) ;
+              if(n<1) exit(0) ;
+            }
+#else
+            n = 2 ;
+#endif
+            bt_node = find_bt_node_with_index(bt_dirs,n) ;
+          }else if(n_dirs == 1){
+            bt_node = find_bt_node_with_index(bt_dirs,1) ;
+          }else{
+            printf("  ERROR:  No routes found.\n") ;
+            printf("          Program stopping ... \n") ;
+            exit(0) ;
+          }
+          ORroute = strdup(bt_node->index) ;
+          ORroutedir = (char *)bt_node->data ;
+          printf("  Found  t_node = %p\n",(void *) bt_node) ;
+          printf("    ORroute = %s\n    ORroutedir = %s\n",
+                      ORroute, ORroutedir) ;
 /*
  *  If only one ORdir and ORroute specified construct Route directory
  */
-      }else if(!ORroutedir && ORdir && ORroute){
-        n = strlen(ORdir) + strlen(routes) + strlen(ORroute) + 1 ;
-        if(ORroutedir)free(ORroutedir) ;
-        ORroutedir = (char *)malloc(n) ;
-        strcpy(ORroutedir,ORdir) ;
-        strcat(ORroutedir,routes)   ;
-        strcat(ORroutedir,ORroute) ;
+        }else if(!ORroutedir && ORdir && ORroute){
+          n = strlen(ORdir) + strlen(routes) + strlen(ORroute) + 1 ;
+          if(ORroutedir)free(ORroutedir) ;
+          ORroutedir = (char *)malloc(n) ;
+          strcpy(ORroutedir,ORdir) ;
+          strcat(ORroutedir,routes)   ;
+          strcat(ORroutedir,ORroute) ;
+        }
       }
 /*
  *  Check for error
@@ -328,39 +348,20 @@ char *my_name = "process_defaults" ;
         printf("    Program stopping ... \n") ;
         exit(0) ;
       }
-      printf("  ORdir      = %s\n",ORdir) ;
-      printf("  ORroute    = %s\n",ORroute) ;
-      printf("  ORroutedir = %s\n",ORroutedir) ;
 /*
- *  Free malloc storage
+ *  Finish up
  */
-#if 0
-//      if(home)   free(home)   ;
-      if(dotdir) free(dotdir) ;
-      if(config) free(config) ;
-      if(fonts)  free(fonts)  ;
-      if(routes_dir) free(routes_dir) ;
-      if(line)   free(line)   ;
-      for(i=0;i<3;i++)if(token_a[i])free(token_a[i]);
-//      if(token)  free(token)  ;
-      if(string1) free(string1) ;
-      if(string2) free(string2) ;
-#endif
-
       gclose(fptr) ;
 
-      printf("  AA ORdir   = %s\n",ORdir) ;
-      printf("  ORroute    = %s\n",ORroute) ;
-      printf("  ORroutedir = %s\n",ORroutedir) ;
-      if(ip){
-        printf("   ORdir      = %s\n",ORdir);
-        printf("   ORroutedir = %s\n",ORroutedir);
-      }
+      printf("  Routine process_Defaults():\n") ;
+      printf("    ORdir      = %s\n",ORdir) ;
+      printf("    ORroute    = %s\n",ORroute) ;
+      printf("    ORroutedir = %s\n",ORroutedir) ;
+      printf("    MSTSdir    = %s\n",MSTSdir) ;
 /*
  *  Free Btree
  */
       bt_walk_b2t(ORdirs,free) ;
-//      if(ORdirs)free(ORdirs) ;
 
 /*
  *  The original MSTS compiler flags, i.e. -DROUTE_USA2 can be used
@@ -383,7 +384,7 @@ char *my_name = "process_defaults" ;
       printf("   Home directory is:   %s\n",ORdir);
       printf("   Route directory is:  %s\n",ORroutedir);
 #else
-      printf("   ROUTE_MSTS not defined.\n") ;
+      printf("   Compiler flag ROUTE_MSTS not defined.\n") ;
 #endif
 
       return ;

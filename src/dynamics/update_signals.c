@@ -16,7 +16,6 @@
 int    update_signal(SignalDB *signal, int icount);
 extern nodeType *sTree ;                             //  Defined in zr.h
 
-
 /*
  *  Routine 'update_signals()' is called by routine display() before
  *  redrawing the main display screen.  Once every second it checks each
@@ -87,10 +86,6 @@ int update_signal(SignalDB *signal, int icount){
       witem = signal->witem ;
       wuid  = witem->uid ;
 
-//      ip = (1570 == signal->uid) ;
-//      ip = (n_sig1 == uid)  ;   // n_sig defined in zr.c
-//      ip = (n_sig1 == uid) && l_time_5s  ;   // n_sig defined in zr.c
-//      ip =  wuid == 696 || wuid == 699 ;
       if(ip){
         printf("====================================================\n") ;
         printf("  Enter routine %s.  Signal = %i\n",my_name,signal->uid) ;
@@ -146,37 +141,6 @@ int update_signal(SignalDB *signal, int icount){
           sig_type->sig_aspect_ia[k] = -2 ;
         }
       }
-#if 0
-      if(sig_type->sig_draw_ia[k] == -1 && ecount++ < 4){
-        printf("  ++++++++++++++++++ SIGNAL ERROR ++++++++++++++++++++++\n") ;
-        printf("  Routine %s entered.  Signal = %i %s.  State = %i\n",
-                 my_name, signal->uid, signal->sig_type->name, signal->state) ;
-        printf("    state = %i, sig_draw_ia[state] = %i\n",
-                  k, sig_type->sig_draw_ia[k]) ;
-        printf("    Signal draw array   = ") ;
-        for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_draw_ia[j],
-                                  (void *)sig_type->sig_draw_a[j] ) ;
-        printf("\n") ;
-        printf("    Signal aspect array = ") ;
-        for(j=0;j<8;j++)printf("  %2i %p",sig_type->sig_aspect_ia[j],
-                                  (void *)sig_type->sig_aspect_a[j] ) ;
-        printf("\n") ;
-        for(i=0;i<8;i++){
-          if(sig_type->sig_draw_ia[i] != -1){
-            ifound = 1 ;
-            signal->state = i ;
-            break ;
-          }
-        }
-        if(!ifound){
-          printf("  Routine %s unable to find draw_state\n", my_name) ;
-          printf("    Signal = %i %s\n",
-                 signal->uid, signal->sig_type->name) ;
-          return 0 ;
-        }
-        printf("  Routine %s : state set to %i\n", my_name, signal->state) ;
-      }
-#endif
 /*
  * Debug print statements
  */

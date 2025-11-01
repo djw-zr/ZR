@@ -243,12 +243,39 @@ int init_turntable(TurnTable *tt){
       tv = &tt->trk_vector0 ;
 
       ts->next = NULL ;
-      ts->uid  = 0 ;
+      ts->uid  = UINT_MAX ;
       ts->type_of_node = END_SECTION ;
-      ts->type_of_pin[0] = 2 ;
-      ts->type_of_pin[1] = 0 ;
-      ts->trk_sector[0] = &end_sector0;
-      ts->trk_sector[1] = &end_sector0;
+      ts->jn[0] = ts->jn[1] = ts->jn[2] = 0 ;
+      ts->en   = 0 ;
+      ts->length_of_vector = 1;
+      ts->vector           = NULL ;
+      ts->trk_item_number  = 0 ;
+      ts->trk_item_list    = NULL ;
+      ts->type_of_pin[0]   = 2 ;
+      ts->type_of_pin[1]   = 2 ;
+      ts->pin_to_section[0] = 0 ;
+      ts->pin_to_section[1] = 0 ;
+      ts->pin_to_section[2] = 0 ;
+      ts->pin_info[0]       = 0;
+      ts->pin_info[1]       = 0;
+      ts->pin_info[2]       = 0;
+      ts->trk_sector[0]     = NULL ;
+      ts->trk_sector[1]     = NULL ;
+      ts->trk_sector[2]     = NULL ;
+      ts->straight          = 0 ;
+      ts->branch            = 0 ;
+      ts->mainline          = 0 ;
+      ts->profile           = NULL ;
+      ts->n_dist_levels     = 0 ;
+      ts->distance[0]       = 0.0 ;
+      ts->distance[1]       = 0.0 ;
+      ts->distance[2]       = 0.0 ;
+      ts->opengl_display_list[0] = 0 ;
+      ts->opengl_display_list[1] = 0 ;
+      ts->opengl_display_list[2] = 0 ;
+      ts->lod_method        = 0 ;
+      ts->length            = 0.0 ;
+
 
       tv->next         = NULL ;
       tv->flag1        = 0    ;

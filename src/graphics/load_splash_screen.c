@@ -2,28 +2,13 @@
  *==============================================================================
  *345678901234567890123456789012345678901234567890123456789012345678901234567890
  *
- *   File:  graphics_init.c
+ *   File:  load_splash_screen.c
  *
  *   This file is part of ZR. Released under licence GPL-3.0-or-later.
  *   You should have received a copy of the GNU General Public License
  *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
  *
- *   Routines to initialise graphics and to control the amount of data
- *     held by the graphics card.
- *
- *   If the graphics card is loaded with too many textures and/or display lists
- *     it can result in objects being generated without their required textures.
- *   OpenRails appear to overcome this problem by minimising the amount of data
- *     stored on the graphics card.  It also appears to minimise the data kept
- *     in main memory - probably because some computers are memory limited.
- *   ZR presently assumes that main memory is not a problem, so all shapes and
- *     textures found are loaded into memory ready for use.
- *   Here the loading and culling of data is controlled by routine graphics_reset.
- *     Routine mark_shapes is used to identify which shapes are needed for
- *     the current viewpoint.  Routine mark_textures then identifies which
- *     textures are needed.  Textures and display lists not longer required
- *     are the culled after which any new textures and display lists are
- *     generated and loaded.
+ *   Routines to load the splash screen - while zr is being set up.
  *
  *==============================================================================
  */

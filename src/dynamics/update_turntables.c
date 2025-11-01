@@ -298,7 +298,7 @@ double find_witem_in_scene(WorldItem *witem){
      wnode = witem->world_node ;
      scalei = 1.0/plot_scale   ;
 
-     global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+     global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                     wnode->tile_x, wnode->tile_y,
                     witem->X, witem->Y, witem->Z, &x, &y, &z) ;
       a = witem->ANG ;
@@ -329,7 +329,7 @@ double find_witem_in_scene(WorldItem *witem){
  *  Is the shape in the current scene?
  */
       iret = check_in_scene( (GLdouble) ssx,  (GLdouble) ssy, (GLdouble) ssz,
-                              (GLdouble) 2.0*radius) ;
+                              (GLdouble) 2.0*radius, 0) ;
       if(ip) printf("    Routine %s.  check_in_scene returns %i\n",my_name, iret) ;
       if(iret == 0) return 0.0 ;
 /*
@@ -345,10 +345,10 @@ double find_witem_in_scene(WorldItem *witem){
  *  Routine to check truntable and if possible move trains from
  *    normal fixed track to rotating turntable track
  *  1. Check for trains on turntable.
- *  2.  If none : return 0.
- *  3.  Otherwise :
- *  4.    If train(s) overlapping edge of turntable : return 1
- *  5.    Otherwise : Transfer trains to turntable track
+ *  2. If none : return 0.
+ *  3. Otherwise :
+ *  4.   If train(s) overlapping edge of turntable : return 1
+ *  5.   Otherwise : Transfer trains to turntable track
  *
  *    REMEMBER TO ADD DUMMY TRAIN COVERING TURNTABLE VECTOR
  */

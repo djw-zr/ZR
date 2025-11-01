@@ -70,10 +70,10 @@ int update_sounds(void){
   int tile_x, tile_y ;
   int action ;
   int looping ;
-  double   X, Y, Z, x, y, z ;
+  double   X, Y, Z, x, y, z, xx, yy, zz ;
   double   distance ;
   double   delay, dd, d1, d2 ;
-  ALfloat  s_x[3], t_x[3] ;
+  ALfloat  s_x[3], t_x[3], look_atup[6] ;
 
   WorldNode *wnode ;
   SoundObjectNode *sndobj_node ;
@@ -99,7 +99,20 @@ int update_sounds(void){
       y = lookat_eye_y*tile_size ;
       z = lookat_eye_z*tile_size + tile_h0 ;
 
+      xx = lookat_center_x*tile_size ;
+      yy = lookat_center_y*tile_size ;
+      zz = lookat_center_z*tile_size + tile_h0 ;
+
+      look_atup[0] = xx - x  ;
+      look_atup[1] = yy - y  ;
+      look_atup[2] = zz - z  ;
+      look_atup[3] = 0.0 ;
+      look_atup[4] = 0.0 ;
+      look_atup[5] = 1.0 ;
+
       alListener3f(AL_POSITION, (float) x, (float) y, (float) z) ;
+      alListenerfv(AL_ORIENTATION, look_atup) ;
+
 /*
  *  Listener velocity is usually the same as wagon velocity
  *  The exception are camera 0 and 8
@@ -137,8 +150,8 @@ int update_sounds(void){
 
         for(sndobj_node = wnode->sound_source; sndobj_node != NULL;
                                                sndobj_node = sndobj_node->next){
-          X = (tile_x - tile_x0 + 0.5)*tile_size + sndobj_node->X ;
-          Y = (tile_y - tile_y0 + 0.5)*tile_size + sndobj_node->Y ;
+          X = (tile_x - tile_xl + 0.5)*tile_size + sndobj_node->X ;
+          Y = (tile_y - tile_yl + 0.5)*tile_size + sndobj_node->Y ;
           Z = sndobj_node->Z;
           distance = sqrt( (x-X)*(x-X) + (y-Y)*(y-Y) +(z-Z)*(z-Z)) ;
           sndobj_node->distance_on = (distance <= 2000.0) ;
@@ -176,10 +189,10 @@ int update_sounds(void){
  *  Loop over streams
  *==============================================================================
  */
-int        stream_status ;
-SmsTrgNode *smstrg_node ;
-ALint      source_state ;
-ALuint     source ;
+  int        stream_status ;
+  SmsTrgNode *smstrg_node ;
+  ALint      source_state ;
+  ALuint     source ;
 
           n_streams = smsgrp_node->n_streams ;
           if(ip1){
@@ -188,11 +201,8 @@ ALuint     source ;
           }
           for(i_stream = 0 ; i_stream < n_streams; i_stream++){
 
- //           if(i_stream != 2) continue ;
- //           ip1 = ip1 && (i_stream == 2) ;
 
             smsstr_node   = &(smsgrp_node->snd_stream[i_stream]) ;
-//            stream_status = sndobj_node->stream_status[i_stream] ;
             source = sndobj_node->source[i_stream] ;
             alGetSourcei(source, AL_SOURCE_STATE, &source_state);
             alGetSourcei(source, AL_LOOPING, &looping);
@@ -339,21 +349,12 @@ ALuint     source ;
 
 //  Fix up case of no sound
                 if(smsfil_node->buffer == 0){
-#if 0
-
-                  smsfil_node->buffer = alutCreateBufferHelloWorld() ;
-                  source = sndobj_node->source[i_stream]
-                                               = smsfil_node->buffer ;
-                  if(ip1)printf("    Create buffer %i using alutCreateBufferHelloWorld."
-                         "Alut Error = %s\n", source, alutGetErrorString(alutGetError())) ;
-#else
                   if(snd_buf_errors<30){
                     snd_buf_errors++ ;;
                     printf("  Routine %s.  Buffer missing for SMS %s, Stream %i, Trigger %i, wav file %s\n",
                          my_name, sndobj_node->sms_file, i_stream, i, smsfil_node->wav_file) ;
                   }
                   continue ;
-#endif
                 }
 
 /*
@@ -416,13 +417,17 @@ ALuint     source ;
  *   End of Main Loops
  *==============================================================================
  */
+
+/*
+ *  Debug section
+ */
             if(l_time_5s && 0){
-ALfloat  gain ;
-ALfloat  min_gain ;
-ALfloat  max_gain ;
-ALfloat  max_dist ;
-ALfloat  ref_dist ;
-ALfloat  rolloff  ;
+  ALfloat  gain ;
+  ALfloat  min_gain ;
+  ALfloat  max_gain ;
+  ALfloat  max_dist ;
+  ALfloat  ref_dist ;
+  ALfloat  rolloff  ;
               alGetSourcei(source, AL_SOURCE_STATE, &source_state);
               if(source_state == AL_PLAYING){
                 alGetSourcef(source, AL_GAIN, &gain);

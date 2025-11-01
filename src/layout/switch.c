@@ -20,13 +20,14 @@
 
 int change_forward_switch_for_player_train(){
 
-int           ip = 0 ;
-int           n          ;
-double        df         ;  // length of end wagons
-TravellerNode *tff, tf   ;
-TrkSector   *tn1, *tfn ;
-WorldItem     *witem = NULL ;  // World item describing junction
-char          *my_name = "change_forward_switch_for_player_train" ;
+  int           ip = 0 ;
+  int           n          ;
+  double        df         ;  // length of end wagons
+  TravellerNode *tff, tf   ;
+  TrkSector     *tn1, *tfn ;
+  WorldItem     *witem = NULL ;  // World item describing junction
+
+  char          *my_name = "change_forward_switch_for_player_train" ;
 
       if(!player_train) return 1 ;
       tff = player_train->first->traveller ;
@@ -50,6 +51,7 @@ char          *my_name = "change_forward_switch_for_player_train" ;
           printf("    Animation value     = %f\n",witem->anim_value) ;
         }
       }
+
       return 0 ;
 }
 
@@ -59,13 +61,14 @@ char          *my_name = "change_forward_switch_for_player_train" ;
 
 int change_rearward_switch_for_player_train(){
 
-int           ip = 0 ;
-int           n          ;
-double        df         ;  // lenght of end wagons
-TravellerNode *tbf, tb   ;
-TrkSector   *tn2, *tbn ;
-WorldItem     *witem = NULL ;  // World item describing junction
-char          *my_name = "change_rearward_switch_for_player_train" ;
+  int           ip = 0 ;
+  int           n          ;
+  double        df         ;  // lenght of end wagons
+  TravellerNode *tbf, tb   ;
+  TrkSector     *tn2, *tbn ;
+  WorldItem     *witem = NULL ;  // World item describing junction
+
+  char          *my_name = "change_rearward_switch_for_player_train" ;
 
       if(!player_train) return 1;
       tbf = player_train->last->traveller ;
@@ -99,18 +102,16 @@ char          *my_name = "change_rearward_switch_for_player_train" ;
 
 int clear_track_beyond_next_switch(){
 
-int           i, n, m, iret, idirect, sig_direct, back_facing ;
-int           ip = 0 ;
-double        df         ;  // length of end wagons
-//double        clear_dist  =   0.0 ;   //  Distance cleared
-//double        clear_dist0 = 200.0 ;   //  Distance to clear
-//double        sect_distance       ;   //  Length of section
-TravellerNode *tff, tf   ;
-TrkSector   *tn1, *tfn ;
-TrkItem   *ti        ;
-WorldItem     *witem     ;  // World item describing junction
-SignalDB      *signal    ;
-char          *my_name = "clear_track_beyond_next_switch" ;
+  int           i, n, m, iret, idirect, sig_direct, back_facing ;
+  int           ip = 0 ;
+  double        df         ;  // length of end wagons
+  TravellerNode *tff, tf   ;
+  TrkSector     *tn1, *tfn ;
+  TrkItem       *ti        ;
+  WorldItem     *witem     ;  // World item describing junction
+  SignalDB      *signal    ;
+
+  char          *my_name = "clear_track_beyond_next_switch" ;
 
       if(!player_train) return 1 ;       //  No player train
       tff = player_train->first->traveller ;
@@ -278,23 +279,22 @@ char          *my_name = "clear_track_beyond_next_switch" ;
 //        if(clear_dist > clear_dist0) return 0 ;
         idirect = tf.idirect ;
       }
+
       return 0 ;
 }
 
 int clear_track_beyond_previous_switch(){
 
-int           i, n, m, iret, idirect, sig_direct, back_facing ;
-int           ip = 0 ;
-double        df         ;  // lenght of end wagons
-//double        clear_dist  =   0.0 ;   //  Distance cleared
-//double        clear_dist0 = 200.0 ;   //  Distance to clear
-//double        sect_distance       ;   //  Length of section
-TravellerNode *tff, tf   ;
-TrkSector   *tn1, *tfn ;
-TrkItem   *ti        ;
-WorldItem     *witem     ;  // World item describing junction
-SignalDB      *signal    ;
-char          *my_name = "clear_track_beyond_next_switch" ;
+  int           i, n, m, iret, idirect, sig_direct, back_facing ;
+  int           ip = 0 ;
+  double        df         ;  // lenght of end wagons
+  TravellerNode *tff, tf   ;
+  TrkSector     *tn1, *tfn ;
+  TrkItem       *ti        ;
+  WorldItem     *witem     ;  // World item describing junction
+  SignalDB      *signal    ;
+
+  char          *my_name = "clear_track_beyond_next_switch" ;
 
       if(!player_train) return 1 ;       //  No player train
       tff = player_train->last->traveller ;

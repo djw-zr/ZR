@@ -26,8 +26,8 @@
  */
 int create_dynamic_track_node(WorldItem *witem){
 
-int          i      ;
-TrkSector  *pnode ;
+  int          i      ;
+  TrkSector  *pnode ;
 
 /*
  *  Generate initialise track section node

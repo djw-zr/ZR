@@ -16,8 +16,8 @@
 
 int read_road_item(TrkItem *road_item, MSfile *msfile)
 {
-char   myname[] = "read_road_item" ;
-char *token = NULL ;
+  char *token = NULL ;
+  char   myname[] = "read_road_item" ;
 
 /*
  * ***********************************************************************
@@ -89,5 +89,6 @@ char *token = NULL ;
         END
 
       }
+
       return 0;
 }

@@ -19,6 +19,10 @@ Introduction
     The program has been developed using the "Great Zig Zag Railway" route available from:
        https://www.zigzag.coalstonewcastle.com.au/
        
+Version 0.6.5
+=============
+
+    The program now include program 'zm'.  This uses the GTK toolkit to generate a start up screen similar to the one used by OpenRails, but with a reduced set of options.  See the file "Commit_0.6.5" in the documents directory for details.       
        
 Version 0.6.4
 =============

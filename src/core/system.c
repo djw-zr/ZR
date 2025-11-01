@@ -72,7 +72,7 @@
  *   Initialise system variables and those not initialised elsewhere
  */
 int init_system(void){
-int i, j ;
+  int i, j ;
 /*
  *  Initialise clocks
  */
@@ -92,7 +92,7 @@ int i, j ;
 
 int   nint(double d){
 
-int i ;
+  int i ;
 
      if(d >= 0.0){
        i = d + 0.5 ;
@@ -102,13 +102,12 @@ int i ;
      return -i ;
 }
 
-
 /*
  *   Function to convert string to lower case
  */
 void str2lc(char *string){
 
-unsigned int i ;
+  unsigned int i ;
 
       if(!string) return ;
       for(i=0;i<strlen(string);i++)string[i]=tolower((unsigned char)string[i]) ;
@@ -121,8 +120,8 @@ unsigned int i ;
  */
 int strcmp_ic(const char *s1, const char *s2){
 
-unsigned int i, l1  ;
-char         c1, c2 ;
+  unsigned int i, l1  ;
+  char         c1, c2 ;
 
      l1 = strlen(s1) ;
      if(strlen(s2) != l1) return 1 ;   //  No match - lengths different
@@ -138,8 +137,8 @@ char         c1, c2 ;
 
 int strncmp_ic(const char *s1, const char *s2, int nn){
 
-unsigned int i, l1, l2, n ;
-char         c1, c2 ;
+  unsigned int i, l1, l2, n ;
+  char         c1, c2 ;
 
      l1 = strlen(s1) ;
      l2 = strlen(s2) ;
@@ -164,9 +163,9 @@ char         c1, c2 ;
 
 char *convert_dir_markers(char *string1){
 
-unsigned int n, i, j ;
-int          c ;
-char         *string2 ;
+  unsigned int n, i, j ;
+  int          c ;
+  char         *string2 ;
 
       n = strlen(string1) ;
       string2 = (char *)malloc(n+1) ;
@@ -191,8 +190,8 @@ char         *string2 ;
 
 char *strip_quotes(char *string1){
 
-unsigned int n, i ;
-char         *string2 ;
+  unsigned int n, i ;
+  char         *string2 ;
 
       n = strlen(string1) ;
       if(string1[0] != '"' || string1[n-1] != '"') return string1 ;
@@ -207,9 +206,9 @@ char         *string2 ;
 
 int strcmp_nq(char *s1a, char *s2a){
 
-int  iret ;
-char *s1 = strdup(s1a) ;
-char *s2 = strdup(s2a) ;
+  int  iret ;
+  char *s1 = strdup(s1a) ;
+  char *s2 = strdup(s2a) ;
 
       s1 = strip_quotes(s1);
       s2 = strip_quotes(s2);
@@ -224,9 +223,9 @@ char *s2 = strdup(s2a) ;
 
 int strcmp_nqic(char *s1a, char *s2a){
 
-int  iret ;
-char *s1 = strdup(s1a) ;
-char *s2 = strdup(s2a) ;
+  int  iret ;
+  char *s1 = strdup(s1a) ;
+  char *s2 = strdup(s2a) ;
 
       s1 = strip_quotes(s1);
       s2 = strip_quotes(s2);
@@ -246,6 +245,7 @@ char *s2 = strdup(s2a) ;
 void  zr_str2lcnqne(char *string){
 
   int i, j, n ;
+
       n = strlen(string) ;
       for(i=0,j=0;i<n;i++){
         if(string[i] == '"')  ;
@@ -273,7 +273,8 @@ void  zr_str2lcnqne(char *string){
 
 char *zr_basename(char *fname){
 
-char  *pz ;
+  char  *pz ;
+
       if(fname == NULL) return strdup("") ;
       pz = strrchr(fname,'/') ;
       if(pz == NULL) return strdup(fname) ;
@@ -296,7 +297,8 @@ char  *pz ;
 
 char *zr_basename2(char *fname){
 
-char  *pz, *string1, *string2 ;
+  char  *pz, *string1, *string2 ;
+
       if(fname == NULL) return strdup("") ;
       pz = strrchr(fname,'/') ;
       if(pz == NULL){
@@ -321,7 +323,8 @@ char  *pz, *string1, *string2 ;
 
 char *zr_extension(char *fname){
 
-char *pz ;
+  char *pz ;
+
       if(fname == NULL) return strdup("") ;
       pz = strrchr(fname,'.') ;
       if(pz == NULL) return strdup("") ;
@@ -333,7 +336,8 @@ char *pz ;
  */
 char *zr_extension_lc(char *fname){
 
-char *pz ;
+  char *pz ;
+
       pz = zr_extension(fname) ;
       str2lc(pz) ;
       return pz ;         // malloc
@@ -347,14 +351,13 @@ char *pz ;
 
 char *zr_corename(char *fname){
 
-int  n   ;
-char *pz, *corename ;
+  int  n   ;
+  char *pz, *corename ;
+
       if(fname == NULL) return strdup("")   ;   // malloc
       pz = strrchr(fname,'.')               ;
       if(pz == NULL) return strdup(fname)   ;   // malloc
       n = strlen(fname) - strlen(pz)        ;
-//      printf(" zr_corename  strlen(fname) = %i\n",(int)strlen(fname)) ;
-//      printf(" zr_corename  strlen(pz)    = %i\n",(int)strlen(pz)) ;
       corename = (char *)malloc((n+1)*sizeof(char)) ;
       strncpy(corename,fname,n) ;
       corename[n] = '\0' ;
@@ -385,8 +388,6 @@ char *zr_parentdir(char *fname){
       if(pz==NULL){free(string1); return NULL ;}
       pz++ ;
       string2 = strdup(pz) ;                    // malloc
-//      printf(" zr_parentdir : string1 = %s\n",string1) ;
-//      printf(" zr_parentdir : string2 = %s\n",string2) ;
       free(string1) ;
       return string2 ;
 }
@@ -420,123 +421,6 @@ char *zr_full_parentdir(char *fname){
       *pz = '\0'     ;
       return string ;
 }
-
-
-
-/**
- *  char *zr_find_msfile(char *fname)
- *
- *  In Microsoft style filenames, either uppercase or lowercase characters
- *  may be used to represent the same filename.  This routine first checks
- *  to see if a file exists.  If the file does not exist it checks for the
- *  parent directory and then searches the current directory for a matching
- *  filename, ignoring differences between upped and lower case.
- *
- */
-
-#if 0
-char *zr_find_msfile(char *fname){
-
-unsigned int  i, j, n, m, ok  ;
-unsigned int  ip = 0          ;  // Debug
-char *base,             //  File name in last directory
-     *parent,           //  Full pathname of parent directory
-     *string      ;
-DIR  *dp          ;
-FILE *fp          ;
-struct dirent *di ;
-char *my_name = "zr_find_msfile" ;
-/*
- *  Check if file exists
- */
-      if(ip)printf(" Enter routine %s, File = %s\n",my_name,fname) ;
-      fp = fopen(fname,"r") ;
-      if(fp!=NULL){  // File exists
-        fclose(fp) ;
-        return strdup(fname)   ;
-      }
-/*
- *  If not search for parent  [Use "stat(filename)" to check it exists]
- */
-      parent = zr_full_parentdir(fname) ;  // malloc
-      if(ip)printf(" Routine %s, AA parent = %s\n",my_name,parent) ;
-      if(parent==NULL){
-        parent = strdup(".") ;
-      }else if(!strcmp(parent,"/")){
-        *parent = '\0'       ;
-      }else{
-        fp = fopen(parent,"r") ;
-        if(fp == NULL){
-          string = zr_find_msfile(parent) ;
-          free(parent) ;
-          if(string == NULL) return NULL ; // Error return
-          parent = string ;
-        }else{
-          fclose(fp) ;
-        }
-      }
-      if(ip)printf(" Routine %s, BB parent = %s\n",my_name,parent) ;
-/*
- * Check again for file
- */
-      base = zr_basename(fname)        ;  // malloc
-      n      = strlen(base) + strlen(parent) + 2 ;
-      string = (char *)malloc(n*sizeof(char))    ;
-      strcpy(string,parent) ;
-      strcat(string,"/")    ;
-      strcat(string,base)   ;
-      if(ip)printf(" Routine %s, CC file = %s\n",my_name,string) ;
-      fp = fopen(string,"r") ;
-      if(fp!=NULL){  // Fle exists
-        fclose(fp)   ;
-        free(parent) ;
-        free(base)   ;
-        return string   ;
-      }
-/*
- *  Search parent directory for matching file
- */
-      n = strlen(base) ;
-      for(i=0;i<n;i++) base[i]=tolower(base[i]) ;
-
-      dp = opendir(parent) ;
-      ok = 0 ;
-      while((di=readdir(dp))!= NULL){
-        free(string) ;
-        string = strdup(di->d_name) ;
-        for(i=0;i<strlen(string);i++) string[i] = tolower(string[i]) ;
-        ok = !strcmp(string,base) ;
-        if(ok)break ;
-      }
-      free(string) ;
-      string = strdup(di->d_name) ;
-      closedir(dp) ;
-/*
- *  Success ??
- */
-      if(ok){
-        if(ip)printf("  Routine %s, AA File found.  File = %s\n",
-                                                     my_name,string) ;
-        free(base)    ;
-        base = string ;
-        n    = strlen(base) + strlen(parent) + 2 ;
-        string = (char *)malloc(n*sizeof(char))  ;
-        strcpy(string,parent) ;
-        strcat(string,"/")    ;
-        strcat(string,base)   ;
-        if(ip)printf("  Routine %s, BB File found.  File = %s\n",
-                                                     my_name,string) ;
-      }else{
-        if(ip)printf("  Routine %s, File not found.  File = %s\n",
-                                                     my_name,fname) ;
-        free(string)  ;
-        string = NULL ;
-      }
-      free(base)   ;
-      free(parent) ;
-      return string  ;
-}
-#endif
 
 /*
  *   Locate files and directories with matching Microsoft style
@@ -585,11 +469,8 @@ char *my_name = "zr_find_msfile2" ;
       }
 /*
  *  If path not recognised:
- *    1. Clean up pathname
- */
-//      zr_filename_MS2L(pname) ;
-/*
- *    2. Check parent exists
+ *
+ *    1. Check parent exists
  */
       parent = zr_full_parentdir(*pname) ;  // malloc parent
       if(ip){
@@ -597,7 +478,7 @@ char *my_name = "zr_find_msfile2" ;
         printf("    Parent = %s\n",parent) ;
       }
 /*
- *    3. Handle special cases and check that parent exists
+ *    2. Handle special cases and check that parent exists
  */
 
       if(parent==NULL){
@@ -605,7 +486,6 @@ char *my_name = "zr_find_msfile2" ;
       }else if(!strcmp(parent,"/")){
         *parent = '\0'       ;
       }else{
-//        iret = zr_find_msfile2(&parent) ;
         iret = zr_find_msdir(&parent) ;
         if(iret){
           printf("    Parent does not exist\n") ;
@@ -613,19 +493,21 @@ char *my_name = "zr_find_msfile2" ;
           free(parent) ;
           return 1 ;  // Parent does not exist
         }
-        if(ip)printf("  ZZ pname  :: address %p\n",
+        if(ip){
+          printf("  ZZ pname  :: address %p\n",
                         (void *)&parent)  ;
-        if(ip)printf("  ZZ pname  :: address %p, value %p\n",
+          printf("  ZZ pname  :: address %p, value %p\n",
                         (void *)&parent,  (void *)parent)  ;
-        if(ip)printf("  ZZ pname  :: address %p, value %p, string = %s\n",
+          printf("  ZZ pname  :: address %p, value %p, string = %s\n",
                         (void *)&parent,  (void *)parent, parent)  ;
+        }
       }
       if(ip){
         printf("\n    %s Parent found = %s\n",my_name,parent) ;
         fflush(NULL) ;
       }
 /*
- *    4.  Regenerate filename (pnams2) from parent and base
+ *    3.  Regenerate filename (pnams2) from parent and base
  */
       base = zr_basename(*pname)        ;  // malloc
       if(ip)printf("    base = %s\n",base) ;
@@ -644,7 +526,7 @@ char *my_name = "zr_find_msfile2" ;
       strcat(pname2,base)   ;
       if(ip)printf("    New pname = %s\n",pname2) ;
 /*
- *    5.  Check if new filename  exists
+ *    4.  Check if new filename  exists
  */
       iret = stat(pname2,&sb) ;
 /*
@@ -723,12 +605,14 @@ char *my_name = "zr_find_msfile2" ;
 /*
  *  File found.  Copy pname2 to pname if memory available
  *               Otherwise malloc space for new pname.
- *               This will cause an arror if pname is not a malloc variable
+ *               This will cause an error if pname is not a malloc variable
  */
-      if(ip)printf("  Routine %s, l= %i, %i, n= %i %i\n",
+      if(ip){
+        printf("  Routine %s, l= %i, %i, n= %i %i\n",
                         my_name,l,(int)strlen(*pname),n,(int)strlen(pname2)) ;
-      if(ip)printf("  AA pname  :: address %p, value %p\n",(void *)&pname,  (void *)pname)  ;
-      if(ip)printf("  AA pname2 :: address %p, value %p\n",(void *)&pname2, (void *)pname2) ;
+        printf("  AA pname  :: address %p, value %p\n",(void *)&pname,  (void *)pname)  ;
+        printf("  AA pname2 :: address %p, value %p\n",(void *)&pname2, (void *)pname2) ;
+      }
       if(l >= n){
         strcpy(*pname,pname2) ;
         free(pname2) ;
@@ -1296,17 +1180,24 @@ char my_name[] = "scandir (zr version)" ;
  * Function to return an estimate of the number of times it is
  * called each second - averaged over the last 5 seconds.
  * It is used to estimate the frames per second
+ *
+ * It also calculates the percentage of time in the display
+ * loop that the CPU is not sleeping.
  */
 
 int calls_per_second(){
 
-int  fps, i, time_now ;
+int    fps, i, time_now ;
+double sum ;
 static int icount = 0 ;
 static int lasta  = -1 ;
 static int time_last = 0 ;
 static int icounta[] = {0, 0, 0, 0, 0} ;
+static int delaya[]  = {0., 0., 0., 0., 0.} ;
+static double delay = 0. ;
 
       icount++ ;
+      delay = delay + delay_seconds ;
       time_now = time(NULL);
       if(time_last == 0)time_last = time_now ;
       if(time_last != time_now){
@@ -1314,9 +1205,16 @@ static int icounta[] = {0, 0, 0, 0, 0} ;
         if(lasta>=5)lasta = 0 ;
         icounta[lasta] = icount ;
         icount = 0 ;
+        delaya[lasta] = delay ;
+        delay = 0 ;
         time_last = time_now ;
         fps = 0 ;
-        for(i=0;i<5;i++) fps = fps + icounta[i];
+        sum = 0.0 ;
+        for(i=0;i<5;i++){
+          fps = fps + icounta[i];
+          sum = sum + delaya[i];
+        }
+        fps_delay = 100.0 - 20*sum ;
         return fps/5;
       }
       return 0 ;
@@ -1385,11 +1283,12 @@ int msts4x3_to_opengl4x4(float m[16], Matrix4x3 *m1){
  *    rx, ry, rz  :  Rotated vector
  */
 
-int  zrRotateAxyz( double ang, double  ax, double  ay, double  az,
+int  zrRotateAxyz( double ang1, double  ax, double  ay, double  az,
                                double   x, double   y, double   z,
                                double *rx, double *ry, double *rz){
 
 double cc, ss, c1 ;
+double ang = ang1 ;
 
       cc = cos(ang*radian) ;  c1 = 1.0 - cc ;
       ss = sin(ang*radian) ;
@@ -1397,6 +1296,10 @@ double cc, ss, c1 ;
       *rx = (ax*ax*c1 +    cc)*x + (ax*ay*c1 - az*ss)*y + (ax*az*c1 + ay*ss)*z ;
       *ry = (ax*ay*c1 + az*ss)*x + (ay*ay*c1 +    cc)*y + (ay*az*c1 - ax*ss)*z ;
       *rz = (ax*az*c1 - ay*ss)*x + (ay*az*c1 + ax*ss)*y + (az*az*c1 +    cc)*z ;
+
+       c1 = *ry ;
+      *ry = *rx ;
+      *rx = -c1 ;
 
       return 0 ;
 }

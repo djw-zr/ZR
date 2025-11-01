@@ -300,7 +300,7 @@ int update_trains(void){
  *  Current train in final position ;  Process any train collision.
  */
         if(i_collide != 0){
-          printf("  TRAINS COLLIDE   Speed = %f\n", t0->speed) ;
+          printf("  TRAINS COLLIDE   Speed = %.2f m/s\n", fabs(t0->speed) ) ;
           if(!t1){
             printf("  Routine %s error."
                    "  Train pointer t1 set to NULL after crash.\n",my_name) ;
@@ -346,7 +346,7 @@ int update_trains(void){
           b = degree*vn->a_height_y ;
           c = degree*vn->a_north_z  ;
 
-          global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+          global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                              vn->tile_east_x, vn->tile_north_z,
                              vn->east_x, vn->north_z, vn->height_y+rail_height,
                              &xx, &yy, &zz ) ;

@@ -19,21 +19,28 @@
  *==============================================================================
  */
 
+/*
+ *   CHECK using single engine at BELL
+ *   Sound drops off slowly to left of engine
+ *   ... drops off rapidly to the right
+ *   Check position of sound and viewpoint in OpenAL
+ *   See update_train_sounds.c
+ */
 
 #ifdef OPENAL
-
-
 
 int update_train_sounds(void){
 
   int  ip = 0;
   int  ip1 = 0,
        ip2 = 0;          //  Print summary of changes
-  int  i, j, k, iret, idata ;
+  int  i, j, k, iret, idata, nn ;
   static int   first_pass = 1;
   static int   sms_error  = 0;
   int          n_sources  = 0 ,
                n_triggers = 0 ;
+  int          samp_off, byte_off ;
+  int          i_size, i_freq, i_bits = 0, i_chan, i_bytes, n_samp ;
   int          action     = 0 ;
   ALuint       source     = 0 ;
   ALint        source_state ;
@@ -41,6 +48,7 @@ int update_train_sounds(void){
   WagonNode    *w  = NULL ;
   RawWagonNode *rw = NULL ;
   SMS_Node     *sms_node = NULL ;
+  TrgLstNode   *tl ;
   BTree        *btree = NULL ;
   SmsStrNode   *snd_stream = NULL ;
   SmsTrgNode   *trg = NULL ;
@@ -48,12 +56,16 @@ int update_train_sounds(void){
   SmsVolNode   *smsvol_node = NULL ;
   SmsFrqNode   *smsfrq_node = NULL ;
   ALuint       buffer = 0 ;
+  ALfloat      pitch ;
   ALfloat      gain ;
+  ALfloat      sec_off ;
+  ALfloat xa[3], da[6], *xp, *dp ;
 
   double       dd = 0.0f,
                d1 = 0.0f,
                d2 = 0.0f ;
-  double       x, y, z, X, Y, Z, U, V, W ;
+  double       x, y, z, xx, yy, zz, X, Y, Z, U, V, W ;
+  ALfloat      look_atup[6] ;
   double       distance, speed, speed_l ;
   char         *trigger_string = NULL ;
   char         *action_string = NULL ;
@@ -68,6 +80,20 @@ int update_train_sounds(void){
       x = lookat_eye_x*tile_size ;
       y = lookat_eye_y*tile_size ;
       z = lookat_eye_z*tile_size + tile_h0 ;
+
+      xx = lookat_center_x*tile_size ;
+      yy = lookat_center_y*tile_size ;
+      zz = lookat_center_z*tile_size + tile_h0 ;
+
+      look_atup[0] = xx - x  ;
+      look_atup[1] = yy - y  ;
+      look_atup[2] = zz - z  ;
+      look_atup[3] = 0.0 ;
+      look_atup[4] = 0.0 ;
+      look_atup[5] = 1.0 ;
+
+      alListener3f(AL_POSITION, (float) x, (float) y, (float) z) ;
+      alListenerfv(AL_ORIENTATION, look_atup) ;
 
       for(t=trainlist_beg; t!=NULL; t=t->next){
 
@@ -121,7 +147,6 @@ int update_train_sounds(void){
  *==============================================================================
  */
               switch(trg->trigger_type) {
-  TrgLstNode *tl ;
                 case SND_TRG_INITIAL:
                   trigger_string = "InitialTrigger" ;
                   action = first_pass ;
@@ -207,7 +232,9 @@ int update_train_sounds(void){
               iret = alGetError() ;  // Clear errors
               alSourcef(source, AL_GAIN, gain) ;
               iret = alGetError() ;
-              if(iret != AL_NO_ERROR){
+              if(iret != AL_NO_ERROR && sms_error < 20){
+                sms_error++ ;
+                printf("  AA sms_error = %i\n",sms_error++) ;
                 printf("  ERROR AL_GAIN in routine %s\n",my_name) ;
                 printf("    Train = %s\n",t->name) ;
                 printf("    Wagon = %s\n",w->name) ;
@@ -244,7 +271,6 @@ int update_train_sounds(void){
                   }
                   smsfil_node = &(trg->smsfil_node[0]) ;
                 }else if(trg->random){
-int nn ;
                   if(trg->n_files < 2 && 0){
                     printf("  Routine %s ERROR.  Train %s, Wagon %s\n",my_name, t->name, w->name) ;
                     printf("    Random selection but number of files = %i\n",trg->n_files) ;
@@ -325,7 +351,6 @@ int nn ;
  *  Handle start_loop_release
  */
                 if(trg->start_loop_release){
-int i_size, i_freq, i_bits = 0, i_chan, i_bytes, n_samp ;
 
                   alGetBufferi(buffer, AL_FREQUENCY, &i_freq ) ;
                   alGetBufferi(buffer, AL_SIZE, &i_size ) ;
@@ -409,8 +434,6 @@ int i_size, i_freq, i_bits = 0, i_chan, i_bytes, n_samp ;
  *==============================================================================
  */
             if(w->cue_points[i] && 0){
-  ALfloat sec_off ;
-  int     samp_off, byte_off ;
               alGetSourcef(source,AL_SEC_OFFSET,&sec_off) ;
               if(ip)printf("    AL_SEC_OFFSET = %f\n",(double)sec_off) ;
               alGetSourcei(source,AL_SAMPLE_OFFSET,&samp_off) ;
@@ -446,7 +469,8 @@ int i_size, i_freq, i_bits = 0, i_chan, i_bytes, n_samp ;
                   alSourcef(source, AL_GAIN, gain) ;
                   iret = alGetError() ;
 
-                  if(iret != AL_NO_ERROR){
+                  if(iret != AL_NO_ERROR && sms_error < 20){
+                    sms_error++ ;
                     printf("  ERROR AL_GAIN in routine %s\n",my_name) ;
                     printf("    Train = %s\n",t->name) ;
                     printf("    Wagon = %s\n",w->name) ;
@@ -470,7 +494,6 @@ int i_size, i_freq, i_bits = 0, i_chan, i_bytes, n_samp ;
  *==============================================================================
  */
                 if(smsfrq_node && smsfrq_node->speed_control && 0){
-ALfloat pitch ;
                   pitch = interpolate_array(smsfrq_node->n_points,t->speed,
                          smsfrq_node->xxx_array, smsfrq_node->frq_array);
                   pitch = pitch/11025.0 ;
@@ -503,12 +526,12 @@ ALfloat pitch ;
  *==============================================================================
  */
             if(l_time_5s && ip){
-ALfloat  gain ;
-ALfloat  min_gain ;
-ALfloat  max_gain ;
-ALfloat  max_dist ;
-ALfloat  ref_dist ;
-ALfloat  rolloff  ;
+  ALfloat  gain ;
+  ALfloat  min_gain ;
+  ALfloat  max_gain ;
+  ALfloat  max_dist ;
+  ALfloat  ref_dist ;
+  ALfloat  rolloff  ;
               alGetSourcei(source, AL_SOURCE_STATE, &source_state);
               if(source_state == AL_PLAYING || 1){
                 sms_node = rw->sms_node ;
@@ -532,7 +555,7 @@ ALfloat  rolloff  ;
 /*
  *   End Loop over Sources
  */
-          }       //  End of 'i' loop over sources
+          }  //  End of 'i' loop over sources
 /*
  *==============================================================================
  *  Set wagon position and velocity
@@ -544,8 +567,16 @@ ALfloat  rolloff  ;
           distance = sqrt( (x-X)*(x-X) + (y-Y)*(y-Y) +(z-Z)*(z-Z)) ;
           w->distance_on = (distance < 2000.0) ;
 
-          if(ip1)printf("  ###@### x,y,z %f %f %f  X,Y,Z %f %f %f dist %f :: %i\n",
-                                 x,y,z,X,Y,Z,distance, w->distance_on) ;
+          if(ip1){
+            printf("\n");
+            printf("  ###@### x,y,z %7.2f %7.2f %7.2f  X,Y,Z %7.2f %7.2f %7.2f dist %7.2f :: %i\n", x,y,z,X,Y,Z,distance, w->distance_on) ;
+            xp = &xa[0] ; dp = &da[0] ;
+            alGetListenerfv(AL_POSITION,xp) ;
+            alGetListenerfv(AL_ORIENTATION,dp) ;
+            printf("          x,y,z %7.2f %7.2f %7.2f  X,Y,Z %7.2f %7.2f %7.2f look at  %7.2f %7.2f %7.2f  up %7.2f %7.2f %7.2f \n",
+             x,y,z,xa[0],xa[1],xa[2],da[0],da[1],da[2],da[3],da[4],da[5])   ;
+            printf("\n");
+          }
 
           if(w->distance_on){
             U = w->traveller->vx ;
@@ -627,18 +658,8 @@ ALfloat  rolloff  ;
 
           }
         }
-#if 0
-        printf("  Complete Sound List\n") ;
-        for(i=0; i<200; i++){
-          alGetSourcei(i,AL_SOURCE_STATE,&source_state) ;
-int       iret = alGetError() ;
-          printf("Source %i, State %s,  Error %s\n",
-                 i,alStateMessage(source_state),al_error_code(iret)) ;
-        }
-#endif
       }
       first_pass = 0 ;
-      if(sms_error)sms_error = 10 ;  //  Only list missing sms on first entry
 
       return 0 ;
 }

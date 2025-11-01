@@ -25,13 +25,14 @@ int traveller2local(TravellerNode *t, double *x, double *y, double *z){
           av = vn->a_east_x, bv = vn->a_height_y, cv = vn->a_north_z,
           xv, yv, zv, cc, ss,
           x1, y1, z1, x2, y2, z2 ;
+
   char *my_name = "traveller2local" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
  *  Convert vector origin to final model position (m)
  */
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+      global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                             vn->tile_east_x, vn->tile_north_z,
                             vn->east_x, vn->north_z, vn->height_y,
                             &xv, &yv, &zv) ;
@@ -39,7 +40,7 @@ int traveller2local(TravellerNode *t, double *x, double *y, double *z){
         printf("    Train: %s,  Wagon: %s %i\n",t->wagon->train->name,
                                                 t->wagon->name, t->wagon->index) ;
         printf("    %i, %i, %f :: %f, %f :: %i, %i :: %f %f %f\n",
-                            tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+                            tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                             vn->wfname_east_x, vn->wfname_north_z,
                             vn->east_x, vn->north_z, vn->height_y  ) ;
         printf("    Vector origin at  : %10.2f %10.2f %10.2f\n", xv, yv, zv) ;
@@ -75,8 +76,6 @@ int traveller2local(TravellerNode *t, double *x, double *y, double *z){
 }
 
 
-
-
 /*
  *   Routine to return modelview matrix corresponding to a
  *   given traveller.  Note: the returned 4x4 matrix is of the
@@ -98,7 +97,7 @@ int traveller2modelview(TravellerNode *t, GLdouble *mview){
 /*
  *  Find start of track vector section
  */
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
+      global2local(tile_xl, tile_yl, tile_h0, tile_size, plot_scale,
                          vn->tile_east_x, vn->tile_north_z,
                          vn->east_x , vn->north_z, vn->height_y+rail_height,
                          &x, &y, &z) ;
@@ -217,4 +216,3 @@ int rotate_axis_angle_010( double ax, double ay, double az, double ang,
 
       return 0 ;
 }
-

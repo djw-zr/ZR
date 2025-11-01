@@ -184,6 +184,10 @@ char    *ORdir      = NULL ;       // Top directory for OR routes (if any)
 char    *ORdname    = NULL ;       // Shortened name of top directory
 char    *ORroute    = NULL ;       // Name of route
 char    *ORroutedir = NULL ;       // Full name of route directory
+char    *ORconsist  = NULL ;       // Name of consist
+char    *ORconsistdir = NULL ;     // Full name of consist directory
+char    *ORplatform = NULL ;       // Name of platform
+
 char    *ZRdotdir   = NULL ;       // Location of users .zr file
 char    *ZRconfig   = NULL ;       // Location of user config file ($Home/.zr/config)
 char    *ZRfonts           ;       // Location of user font file ($Home/.zr/fonts)

@@ -162,4 +162,3 @@ void  change_train_operations_view(int x, int y){
       return ;
       if(1) ix = y ;   //  Dummy use of 'y' - keep the compiler happy
 }
-

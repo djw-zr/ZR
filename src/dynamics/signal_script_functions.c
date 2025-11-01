@@ -14,6 +14,7 @@
  */
 
 double sc_pop_stack(void) {
+
   double  z  ;
   int     ip ;
 
@@ -24,7 +25,9 @@ double sc_pop_stack(void) {
       if(ip)printf("  sc_pop_stack :: i_stack = %i\n",i_stack) ;
       return z ;
 }
+
 int sc_push_stack(double x){
+
   int     ip ;
 
       ip = (n_sig1 == signal0->uid) ;
@@ -74,13 +77,7 @@ double block_state(SignalDB *signal){
 
   char        *my_name  = "block_state" ;
 
-//      ip = (67 == signal->uid) || (87 == signal->uid) ;
-//      ip = (97 == signal->uid) ;
-//      ip = (67 == signal->uid) ;
-//      ip = (90 == signal->uid) || (91 == signal->uid) ;
-//      ip = (69 == signal->uid) || (74 == signal->uid) ;
       ip = (n_sig1 == signal0->uid) ;
-//      if(!ip) return 0.0 ;
 
       trk_item = signal->trk_item           ;
       sig_subobj = signal->sig_subobj ;
@@ -110,13 +107,9 @@ double block_state(SignalDB *signal){
       if(track_section == 0)return (double) SIG_OCCUPIED ;
 
       trk_sect   = &(track_db.trk_sections_array[track_section]) ;
-//      printf(" trk_sect                = %p\n",(void *)trk_sect) ;
-//      printf(" trk_sect->trk_item_list = %p\n",(void *)trk_sect->trk_item_list) ;
       if(!(trk_sect->trk_item_list)) exit(0) ;
       i          = trk_sect->trk_item_list[track_item_index] ;
-//      printf(" i = %i\n", i) ;
       trk_item2  = &(track_db.trk_items_array[i]) ;
-//      printf(" trk_item2               = %p\n",(void *)trk_item2) ;
 
       if(ip){
         printf("  Check :: Index of node = %i,"
@@ -128,6 +121,7 @@ double block_state(SignalDB *signal){
  *  with a direction of travel towards the next signal
  */
       init_trav(&t) ;
+
       t.tn            = &track_db.trk_sections_array[trk_item->track_section] ;
       t.sect_distance = trk_item->sect_distance ;
       t.idirect       = trk_item->signal_direction ;  // 0 facing lower values
@@ -242,7 +236,7 @@ double block_state(SignalDB *signal){
         }
       }
 /*
- *  Search over trains to see if they are passing track position
+ *  Search over trains to see if they are passing the track position
  *  This is to check for trains that are so long that the two signals
  *  are both within the length of the train.
  */
@@ -270,7 +264,7 @@ int route_set(SignalDB *signal){
   uint   i       ;
   uint   icount  = 0 ;
   TrkSector   *trk_sect ;
-  TrkItem   *trk_item ;
+  TrkItem     *trk_item ;
 
   uint          idirect ;
   uint          trk_branch ;
@@ -288,8 +282,6 @@ int route_set(SignalDB *signal){
 /*
  *  If there is no junction link - return TRUE
  */
-//      ip = (90 == signal->uid) || (91 == signal->uid) ;
-//      ip = (69 == signal->uid) || (74 == signal->uid) ;
       ip = (n_sig1 == signal0->uid) ;
 /*
  *  Track items store the track section index - not the uid
@@ -501,6 +493,7 @@ double next_sig_mr(double type){
       type = type  ;
       return (double) SIG_STOP ;
 }
+
 /*
  *  Return least restrictive state
  *
@@ -525,6 +518,7 @@ double opp_sig_mr(double type){
       type = type  ;
       return 0 ;
 }
+
 /*
  *  Return least restrictive state
  */
@@ -562,6 +556,7 @@ char    *my_name  = "this_sig_mr"  ;
       }
       return (double) i ;
 }
+
 /*
  *  Return least restrictive state
  */
@@ -643,8 +638,6 @@ SigType *sig_type = signal0->sig_type ;
 char    *my_name  = "def_draw_state"  ;
 
 
-//     ip = ip && (97 == signal0->uid) ;
-//      ip = (n_sig1 == signal0->uid) ;
       if(k<0 || k>8){
         printf("  Routine %s called with state index out of range\n",my_name) ;
         printf("    Index       = %i\n",k) ;
@@ -987,5 +980,3 @@ int sc_var(char *name){
       }
       return 0 ;
 }
-
-

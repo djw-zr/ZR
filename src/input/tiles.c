@@ -77,6 +77,7 @@ int tilelist_init(int tile_w, int tile_e, int tile_s, int tile_n)
           }
         }
       }
+
       return 0;
 }
 
@@ -165,8 +166,8 @@ static TileListNode *tiledata_new(int i, int j)
  * *****************************************************************************
  */
 
-char *TileToFileName(int tilex, int tiley, int zoom)
-{
+char *TileToFileName(int tilex, int tiley, int zoom){
+
   int  i  ;                   // Loop index for sub-divisions
   int  ic    =  0     ;       // Character count for name
   int  rectx = -16384 ;       // Southern limit of test region
@@ -203,6 +204,7 @@ char *TileToFileName(int tilex, int tiley, int zoom)
 }
 
 int FileNameToTile(char *file, int *tile_x, int *tile_y, int *zoo_m){
+
   int  i, j, n ;
   int  tilex   ;
   int  tiley   ;
@@ -258,6 +260,7 @@ int FileNameToTile(char *file, int *tile_x, int *tile_y, int *zoo_m){
       *tile_x = tilex ;
       *tile_y = tiley ;
       *zoo_m  = zoom ;
+
       return 0;
 }
 
@@ -359,6 +362,8 @@ int tilelist_init2(){
       printf("    tile_north   = %i\n", tile_north) ;
       tile_x0 = tile_west  ;
       tile_y0 = tile_south ;
+      tile_xl = tile_x0 ;
+      tile_yl = tile_y0 ;
 /*
  *  Fill tile array
  */
@@ -376,5 +381,6 @@ int tilelist_init2(){
 
       free(tdir_name) ;
       closedir(tdir) ;
+
       return 0 ;
 }

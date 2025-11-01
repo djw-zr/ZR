@@ -46,7 +46,6 @@ int  load_splash_screen(void) ;
 int  init_texture_node(TextureNode *texture) ;
 int  init_system(void) ;
 int  init_data_structures(void) ;
-int  init_pdb(char *filename) ;
 FILE *gopen(char* fname, char *ftype) ;
 int  gclose(FILE *f) ;
 int  close_system(void) ;
@@ -55,8 +54,9 @@ int   check_glerror(void) ;
 int   check_glerror2(char *string) ;
 void  display_error(void) ;
 
-int   pdb_init(PdbNode *pdb) ;          // Read project database file (*.trk)
-int   pdb_print(PdbNode *pdb) ;         // Print project data base structure
+int   init_pdb(char *filename) ;       // Read project database file (*.trk)
+int   pdb_node_init(PdbNode *pdb) ;
+int   pdb_print(PdbNode *pdb) ;        // Print project data base structure
 
 void  error1(char *routine, char *file, char *datafile);
 void  error2(char *routine, char *file, char *datafile, char*string);

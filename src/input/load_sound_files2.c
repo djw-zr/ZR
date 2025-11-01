@@ -1,12 +1,27 @@
+/*
+ *==============================================================================
+ *345678901234567890123456789012345678901234567890123456789012345678901234567890
+ *
+ *   File:  load_sound_files2.c
+ *
+ *   This file is part of ZR. Released under licence GPL-3.0-or-later.
+ *   You should have received a copy of the GNU General Public License
+ *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ *   Routines for reading the sound management (.sms) and sound files
+ *
+ *==============================================================================
+ */
+
 int read_files_section(SmsTrgNode  *smstrg_node,  MSfile *msfile){
 
-int  ip = 0 ;
-int  i, n ;
-SmsFilNode  *smsfil_node ;
-char  *token8 = NULL,
-      *token9 = NULL,
-      *string = NULL ;
-char  *my_name = "read_files_section";
+  int  ip = 0 ;
+  int  i, n ;
+  SmsFilNode  *smsfil_node ;
+  char  *token8 = NULL,
+        *token9 = NULL,
+        *string = NULL ;
+  char  *my_name = "read_files_section";
 
       if(ip)printf("  Enter Routine %s\n",my_name) ;
       skip_lbr(msfile) ;

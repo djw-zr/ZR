@@ -36,7 +36,7 @@
  *  4)  A 2-byte label_length - so far always zero but see Terrain.c
  *  Processing is straightforward when a block contains known data or a known
  *  number of sub-blocks of a known type.  There are problems when the types
- *  and number of sub-blocks is unknow.  The C# code handles this by keeping
+ *  and number of sub-blocks is unknown.  The C# code handles this by keeping
  *  track of every byte read and cycling at each level until the required
  *  number have been read or the end of file reached.
  *
@@ -565,10 +565,6 @@ int read_ms_terrain(TileListNode *tile)
 //                        printf(" FF itoken6 = %i, flags6 = %i, remaining_bytes6 = %i, label_length6 = %i\n",
 //                                  itoken6, flags6, remaining_bytes6, label_length6) ;
 //                        printf(" FF token_idc[%i] 0x%x = %s\n\n",itoken6,itoken6,token_idc[itoken6]) ;
-#if 0
-                        for(;0<remaining_bytes6;remaining_bytes6--)getc(fp);
-
-#else
 
                         tile_patch->flags     = read_uint32(fp);
                         tile_patch->centre_x  = read_real32(fp);
@@ -587,7 +583,6 @@ int read_ms_terrain(TileListNode *tile)
                         tile_patch->error_bias = read_real32(fp);
 
                         remaining_bytes6 = remaining_bytes6 - 60 ;
-#endif
 //                        printf(  " GG  remaining_bytes6 = %i\n",remaining_bytes6);
 //                        printf(  " GG  remaining_bytes5 = %i\n",remaining_bytes5);
 #if 0
@@ -661,6 +656,7 @@ int read_ms_terrain(TileListNode *tile)
 }
 
 int read_elevations(TileListNode *tlnode){
+
   int    len, len2, i, j, k, iret;
   int    ip = 0 ;    // 0 = no printing
   size_t isize ;
@@ -668,10 +664,12 @@ int read_elevations(TileListNode *tlnode){
   char   *name = NULL,
          *full_name ;
   char   *tiles_dir = "/TILES/"        ;
-  char   *myname    = "read_elevations" ;
   FILE   *fp = NULL ;
 
+  char   *myname    = "read_elevations" ;
+
       if(ip)printf("\n  Enter routine : %s\n",myname);
+
       name = tlnode->terrain_data.ybuffer;
       if(ip)printf("  Name = %s\n",name);
       len = strlen(ORroutedir) + strlen(tiles_dir) +  strlen(name) + 1 ;

@@ -34,11 +34,13 @@ int init_signal_db(SignalDB *s) ;
  */
 
 nodeType  *find_signal_script(char *signal_type_name){
+
   int      ip = 0 ;
   int      ifound = 0 ;
   int      itry, iret ;
   nodeType *n1, *n2, *n3, *n4 ;
   char     *name ;
+
   char     *my_name = "find_signal_script" ;
 
       if(ip){
@@ -145,6 +147,7 @@ nodeType  *find_signal_script(char *signal_type_name){
                   my_name, signal_type_name) ;
         return NULL ;
       }
+
       return n2 ;
 }
 
@@ -176,6 +179,7 @@ int print_signal_data(SignalDB *signal){
   char      *head_name ;
   char      *sm_name   ;            //  Name of shape matrix
   char      *name      ;
+
   char      *my_name = "print_signal_data";
 
       witem = signal->witem ;
@@ -316,6 +320,7 @@ int print_signal_data(SignalDB *signal){
                                     k,(void *)witem->animations[k]) ; ;
       }
       printf("****************************************************\n\n") ;
+
       return 0 ;
 }
 
@@ -692,7 +697,7 @@ int setup_signals(void){
             printf("\n  INITIALISE MATRIX AND ANIMATION\n\n") ;
             printf("  n_matrices = %i\n",n_matrices) ;
           }
-#if 1
+
 /*
  *  Revised HEAD processing
  *
@@ -824,84 +829,6 @@ char *tail = NULL, head[8] ;
                    sig_object->sm_skip[i] = 0;
             }
           }
-#else
-/*
- *   Loop over matrices in world item looking for heads
- */
-          for(i=0;i<n_matrices;i++){                 //  Loop over matrices
-            sm_name = snode->matrix[i].name ;
-            if(ip)printf(" JJJ Matrix %i, name = %s\n",i,sm_name) ;
-/*
- *  Check name is of format HEADXX where X is a number
- */
-            if(strncmp_ic(sm_name,"HEAD",4)) continue ;
-            n = strlen(sm_name) ;
-            m = strcspn(sm_name,"0123456789") ;
-            if(m != 4) continue ;
-/*
- *  Search shape sub-objects looking for a matching HEAD
- */
-            im = -1 ;
-            m = sig_shape->n_sig_subobjs ;
-            for(j=0;j<m;j++){
-              if(ip)printf("  SEARCH  matrix (i) = %i,  head (j) = %i, name = %s :: %s\n",
-                     i, j, sig_shape->sig_subobj[j].name, sm_name) ;
-              if(!strcmp_nqic(sig_shape->sig_subobj[j].name, sm_name)){
-                im = j;
-                break ;
-              }
-            }
-/*
- *  Sometimes the shape (*.s) file includes possible HEADs which are not used
- *  in the Signal Shape (sigcfg.data) definitions.  In this case the HEAD is
- *  ignored.
- */
-            if(-1==im){
-//              printf("  ERROR. Routine %s\n",my_name) ;
-//              printf("  Unable to find head '%s' for signal %s\n",
-//                     sm_name, sig_shape->name) ;
-//              exit(0) ;
-              continue ;         //  DEBUG !!  Solution to Japan1 problem??
-            }
-/*
- *  Check with heads defined by world item.  Is the head associated
- *  with the current matrix needed?  If it is not-needed set
- *      WorldItem->sig_object->sm_skip to '1'.
- *  Otherwise set it to '0' and initialise:
- *      WorldItem->sig_object->sm_signal
- *      WorldItem->animations[i]
- */
-            sig_object->sm_skip[i] = 1 ;   //  Set default to skip
-            m = sig_object->n_signal_units ;
-            for(j=0;j<m;j++){
-              if(im == sig_object->sub_object[j]){
-                signal = sig_object->signal[j] ;
-                sig_object->sm_signal[i] = signal ;
-                sig_object->sm_skip[i]   = 0      ;
-                witem->animations[i]     = &(signal->semaphore_pos) ;
-                break ;
-              }
-            }
-          }
-/*
- *  Set skip flag for child matrices not used when displaying this shape
- */
-          k = 1;
-          dist_level = snode->lod_control->dist_level;
-          hierarchy  = dist_level->hierarchy ;
-
-          while(k){
-            k = 0 ;
-            for(i=1;i<n_matrices;i++){
-              if(sig_object->sm_skip[i]) continue ;
-              j = hierarchy[i] ;
-              if(sig_object->sm_skip[j]){
-                sig_object->sm_skip[i] = 1 ;
-                k++ ;
-              }
-            }
-          }
-#endif
 /*
  *  Print matrix summary
  */
@@ -936,199 +863,6 @@ char *tail = NULL, head[8] ;
       if(ip)printf("   Exit routine %s\n",my_name) ;
       return 0 ;
 }
-#if 0
-#if 0
-/*
- *  Find the shape matrix corresponding to the sub-object name (HEAD1, HEAD2 etc)
- */
-            head_name = strdup(sig_subobj->name) ;
-            head_name = strip_quotes(head_name) ;
-            printf("\n  Find shape matrix matching head name %s\n",head_name) ;
-            printf("  Full name  = %s\n",sig_subobj->full_name) ;
-            printf("       name  = %s\n",sig_subobj->name) ;
-            snode     = witem->snode ;
-            m = -1 ;
-            for(j=0;j<(int)snode->nmatrices;j++){
-              if(ip)printf(" +++ Shape %s, head_name = '%s', j = %i, matrix name = '%s'\n",
-                       snode->name, head_name, j, snode->matrix[j].name) ;
-              if(!strcmp_ic(head_name,snode->matrix[j].name)){
-                m = j;
-                break ;
-              }
-            }
-            if(m < 0){
-              printf("  Routine %s, unable to find shape matrix\n",my_name) ;
-              printf("  World item uid = %i\n", witem->uid) ;
-              printf("  Shape name     = %s\n", snode->name) ;
-              printf("  Signal object  = %i\n", i) ;
-              printf("  Head name      = %s\n", head_name) ;
-              for(j=0;j<(int)snode->nmatrices;j++){
-                printf(" Matrix %i, name = '%s'\n", j, snode->matrix[j].name) ;
-              }
-              printf("  Program stopping ...\n\n") ;
-              exit(0) ;
-            }
-            witem->u.signal_obj.signal[m] = signal ;
-            signal->sig_subobj = NULL ;
-            for(j=0;j<sig_shape->n_sig_subobjs;j++){
-              printf("  AAA j = %i :: %i\n",j,sig_shape->n_sig_subobjs) ;
-              printf("  AAA sig_shape->sig_subobj = %p\n", (void *)sig_shape->sig_subobj ) ;
-              printf("  AAA sig_shape->sig_subobj[j].sig_script_type = %s\n",
-                              sig_shape->sig_subobj[j].sig_script_type) ;
-              string1 =  sig_shape->sig_subobj[j].sig_script_type ;
-              if(ip)printf("  Compare %s :: %s\n", sig_type->name,string1) ;
-              if(string1 && !strcmp(sig_type->name, string1)){
-                printf(" AA\n") ;
-                signal->sig_subobj_i = j ;
-                signal->sig_subobj = &(sig_shape->sig_subobj[j]) ;
-                break ;
-              }
-                printf(" CC\n") ;
-            }
-            printf(" DD\n") ;
-            if(!signal->sig_subobj){
-              printf("  ERROR  Signal Shape Sub-object not found\n") ;
-            }
-/*
- *  For each world item, set up the animation variables
- */
-            printf("\n  SETUP ANIMATION\n") ;
-            head_name = strdup(signal->sig_subobj->name) ;
-            head_name = strip_quotes(head_name) ;
-            printf("\n  Find shape matrix matching head name %s\n",head_name) ;
-            snode     = witem->snode ;
-            m = -1 ;
-            for(j=0;j<(int)snode->nmatrices;j++){
-              if(ip)printf(" +++ Shape %s, head_name = '%s', j = %i, matrix name = '%s'\n",
-                       snode->name, head_name, j, snode->matrix[j].name) ;
-              if(!strcmp_ic(head_name,snode->matrix[j].name)){
-                m = j;
-                break ;
-              }
-            }
-/*
- *   Use hierarchy array to find dependent matrices
- */
-            printf("\n  FIND DEPENDENT MATRICES\n") ;
-            if(m == -1){
-              printf("  Unable to find head '%s' for signal in shape '%s'\n",
-                                                     head_name,snode->name) ;
-            }else{
-              dist_level = snode->lod_control->dist_level;
-              if(ip)printf("  Size of hierarchy array = %i\n",dist_level->n_hierarchy );
-              for(j=0;j<(int)dist_level->n_hierarchy;j++){
-                if(ip)printf("  hierarchy %i = %i\n", j,dist_level->hierarchy[j] );
-                if(dist_level->hierarchy[j] == m){
-                  witem->animations[j]=&(signal->semaphore_pos) ;
-                  if(ip)printf("  Pointer set for matrix %s\n",snode->matrix[j].name) ;
-                }
-              }
-            }
-            free(head_name) ;
-#endif
-/*
- *  Find root of signal script
- */
-            printf("\n  FIND ENTRY TO SIGNAL SCRIPT\n") ;
-
-            if(sig_type->sig_script){
-              signal->sig_script = sig_type->sig_script ;
-            }else{
-int      ip = 0 ;
-nodeType *n1, *n2, *n3, *n4 ;
-char     *name ;
-              if(ip){
-                printf("\n===============================================\n") ;
-                printf("\n    Signal %s \n",sig_type_name) ;
-              }
-              name = NULL ;
-              n1 = sTree ;
-              n1 = n1->opr.op[0] ;
-              for(;;){
-                if(!n1)break ;
-                if(ip){
-                  printf("\n================================================\n") ;
-                  printf("   n1 = %p\n", (void *)n1 ) ;
-                  printf("   n1  type = %i\n",
-                            n1->type) ;
-                  printf("   n1  type = %i, oper = %i \n",
-                            n1->type, n1->opr.oper) ;
-                  printf("   n1  %p type = %i, oper = %i %s\n", (void *) n1,
-                            n1->type, n1->opr.oper, sigscr_token_string(n1->opr.oper)) ;
-                }
-                if(n1->type == typeOpr && n1->opr.oper == SC_SCRIPT_LIST){
-                  n2 = n1->opr.op[1] ;
-                }else if(n1->type == typeOpr && n1->opr.oper == SC_SCRIPT){
-                  n2 = n1 ;
-                }else{
-                  printf("  Routine %s. Search for SC-SCRIPT or SC-SCRIPT_LIST failed\n",
-                            my_name) ;
-                  n1 = NULL ; break ;
-                }
-
-                if(ip)printf("     n2  %p type = %i, oper = %i %s\n", (void *) n2,
-                                  n2->type, n2->opr.oper, sigscr_token_string(n2->opr.oper)) ;
-                if(n2->type == typeOpr && n2->opr.oper == SC_SCRIPT){
-                  n3 = n2->opr.op[0] ;
-                }else{
-                  printf("  Routine %s. Search for SC-SCRIPT failed\n",
-                            my_name) ;
-                  n1 = NULL ; break ;
-                }
-
-                if(ip)printf("     n3  %p type = %i, name = %s\n", (void *) n3,
-                                  n3->type, n3->str.name) ;
-                if(n3->type == typeStr){
-                  name = n3->str.name ;
-                  if(ip)printf("  n3 name = %s\n",name) ;
-                }else{
-                  printf("  Routine %s. Search for 'name' failed.\n",
-                            my_name) ;
-                  printf("  Pointers: n1 = %p, n2 = %p, n3 = %p\n",
-                                    (void *)n1, (void *)n2, (void *)n3) ;
-                  printf("  Types n1 = %i, n2 = %i, n3 = %i\n",
-                                    n1->type, n2->type, n3->type) ;
-                  printf("  Oper n1 = %i, n2 = %i\n",
-                                    n1->opr.oper, n2->opr.oper) ;
-                  n1 = NULL ; break ;
-                }
-
-                if(!strcmp(name,sig_type_name)){
-                  if(ip || 0)printf("  Routine %s.  Script for '%s' found\n",
-                                  my_name,sig_type_name) ;
-                  signal->sig_script   = n2 ;
-                  sig_type->sig_script = n2 ;
-                  break ;
-                }
-                if(ip)printf("  Loop n1 = %p, n2 = %p\n",(void *)n1, (void *)n2) ;
-                if(n1 != n2){
-                  n1 = n1->opr.op[0] ;
-                }else{
-                  break ;
-                }
-              }
-              if(!n1){
-                printf("  Routine '%s', failed to find script for signal '%s'\n",
-                          my_name, sig_type_name) ;
-              }
-            }
-/*
- *  Print the signal information
- */
-//            ips = (witem->uid == 503) ;
-//            ips = (90 == signal->uid) || (91 == signal->uid) ;
-//            ips = 1;
-
-            if(ip | ips){
-            }
-            printf("  New Loop i = %i, n = %i\n",i,n) ;
-          }
-            printf("  Loop ended\n") ;
-        }
-        printf("  New world node\n");
-      }
-#endif
-
 
 
 /*
@@ -1161,33 +895,7 @@ int setup_raw_signals(void){
   char      *my_name = "setup_raw_signals" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
-#if 0
-/*
- *  Locate the texture structures containing the textures
- */
-      if(ip)printf("  n_light_tex = %i\n",raw_signal_db->n_light_tex) ;
-//      for(i=0;i<raw_signal_db->n_light_tex;i++){
-//        light_tex = &(raw_signal_db->light_tex[i]) ;
-      for(light_tex=raw_signal_db->light_tex; light_tex!=NULL; light_tex=light_tex->next){
-        string2   = strdup(light_tex->ace_file) ;
-        string2   = strip_quotes(string2) ;
-        string1   = zr_corename(string2)  ;
-        if(string2)free(string2) ;
-        light_tex->tnode = NULL ;
-        for(tnode=texturelist_beg; tnode!=NULL; tnode=tnode->next){
-          string2 = tnode->name ;
-          if(ip)printf(" Routine %s, AA :: string1 = %s, string2 = %s\n",my_name,string1,string2) ;
-          if(!strcmp_ic(string1,string2)){
-            light_tex->tnode = tnode;
-            break ;
-          }
-        }
-        if(!light_tex->tnode){
-          printf("  Routine %s.  Unable to find light texture %s\n",my_name,light_tex->ace_file) ;
-        }
-        free(string1) ;
-      }
-#endif
+
 /*
  * Loop over Signal Types (SigType)
  */
@@ -1372,7 +1080,7 @@ int setup_raw_signals(void){
  *  Double integers are ignored.  This is because 'Arm12', may refer to 'Head1'
  *  or 'Head12'.    (See:  Creation of a Complex Shape.doc).  Such cases could
  *  be allowed for, but if the shape file has been so badly set up, this is
- *  likely to lead to furtehr errors.
+ *  likely to lead to further errors.
  *
  *  NOTE:  Added.  The scheme worked but in the test case (New Forest Route,
  *  signal SRJct-BS-MS-BS.s), but the vertical offset of the balance arms above

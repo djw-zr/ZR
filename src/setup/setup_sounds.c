@@ -27,6 +27,7 @@ int link_world_sounds_to_sms_nodes(void){
   SoundObjectNode *so_node ;
   SoundRegionNode *sr_node ;
   SMS_Node        *sms_node ;
+
   char            *my_name = "link_world_sounds_to_sms_nodes" ;
 
       if(ip)printf("  Enter routine '%s'\n",my_name) ;
@@ -120,8 +121,6 @@ SMS_Node *smsnode_init(char *sms_file){
       sms_list_end = sms_node ;
       sms_master = insert_node(sms_master, name, (void *)sms_node) ;
       if(ip)printf("  SMS_MASTER - ADD NAME %s\n",name) ;
+
       return sms_node ;
 }
-
-
-

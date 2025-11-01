@@ -24,20 +24,20 @@ void display_topog_water(TileListNode *tl_node){
   int          ip = 0 ;
   double       ti = 1.0/tile_size ;
   GLfloat      h_sw, h_se, h_ne, h_nw ;
-  GLfloat      tile_x, tile_y ;
+  GLfloat      tile_x,    //  Tile origin relative to ...
+               tile_y ;   //   ... current display origin
   TerrainData  *t_data ;
 
       if(!tl_node ) return ;
 
       t_data = &(tl_node->terrain_data) ;
-      tile_x = tl_node->tilex - tile_x0 ;
-      tile_y = tl_node->tiley - tile_y0 ;
+      tile_x = tl_node->tilex - tile_xl ;
+      tile_y = tl_node->tiley - tile_yl ;
       h_sw = (t_data->terrain_water_height_offset_SW - tile_h0)*ti ;
       h_se = (t_data->terrain_water_height_offset_SE - tile_h0)*ti ;
       h_ne = (t_data->terrain_water_height_offset_NE - tile_h0)*ti ;
       h_nw = (t_data->terrain_water_height_offset_NW - tile_h0)*ti ;
 
-      ip = (tl_node->tilex == -6074 && tl_node->tiley==14921) ;
 //      ip = (tl_node->tilex == 1450 && tl_node->tiley==10331) ;
       if(ip){
         printf("  Water :: %i %i :: %f %f :: %f %f %f %f :: %f\n",
@@ -64,5 +64,3 @@ void display_topog_water(TileListNode *tl_node){
 
       return ;
 }
-
-

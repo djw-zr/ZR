@@ -27,22 +27,22 @@ static double key_release_seconds = 0.0 ;
  */
 void keyboard(unsigned char key, int x, int y){
 
-int  ip = 0                       ;  //  0 = no printing
-int  isign = 1                    ;  //  1 or -1
-int  imod, l_shift, l_ctrl, l_alt ;
-int  i, n, iret     ;
-int  new_camera = 0 ;
-double        df ;               // lenght of end wagons
-TravellerNode *tff = NULL ,
-              *tbf = NULL ,
-              tf, tb           ;
-TrkSector   *tn1 = NULL,
-              *tn2 = NULL,
-              *tfn = NULL,
-              *tbn = NULL      ;
-WorldItem     *witem           ; // World item for junctions
-GLfloat v4[4] ;
-char    *my_name="keyboard" ;
+  int  ip = 0                       ;  //  0 = no printing
+  int  isign = 1                    ;  //  1 or -1
+  int  imod, l_shift, l_ctrl, l_alt ;
+  int  i, n, iret     ;
+  int  new_camera = 0 ;
+  double        df ;               // lenght of end wagons
+  TravellerNode *tff = NULL ,
+                *tbf = NULL ,
+                tf, tb           ;
+  TrkSector   *tn1 = NULL,
+                *tn2 = NULL,
+                *tfn = NULL,
+                *tbn = NULL      ;
+  WorldItem     *witem           ; // World item for junctions
+  GLfloat v4[4] ;
+  char    *my_name="keyboard" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 
@@ -166,9 +166,8 @@ char    *my_name="keyboard" ;
             }else if(run_seconds-key_release_seconds < 0.2){
               break ;
             }
-            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
-//          printf(" glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) \n") ;
             turntable_rotating = rotate_tt_clockwise() ;
+            if(turntable_rotating)glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
             break ;
           case 'C':
             if(key_release_seconds == 0.0){
@@ -176,9 +175,9 @@ char    *my_name="keyboard" ;
             }else if(run_seconds-key_release_seconds < 0.2){
               break ;
             }
-            glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
 //          printf(" glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) \n") ;
             turntable_rotating = rotate_tt_anticlockwise() ;
+            if(turntable_rotating)glutSetKeyRepeat(GLUT_KEY_REPEAT_OFF) ;
             break ;
 /*
  *==============================================================================
@@ -229,6 +228,9 @@ char    *my_name="keyboard" ;
  *==============================================================================
  */
       }else{
+//  Allow key repeat (in case it has been switched off and not reset)
+        glutSetKeyRepeat(GLUT_KEY_REPEAT_ON) ;
+
         switch (key) {
 //  Brake or Increase speed backwards
           case 'a':
@@ -423,10 +425,10 @@ char    *my_name="keyboard" ;
 
 void keyboard_up(unsigned char key, int x, int y){
 
-int  ip = 0                       ;  //  0 = no printing
-int  i                            ;
-int  imod, l_shift, l_ctrl, l_alt ;
-char *my_name="keyboard_up" ;
+  int  ip = 0                       ;  //  0 = no printing
+  int  i                            ;
+  int  imod, l_shift, l_ctrl, l_alt ;
+  char *my_name="keyboard_up" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 
@@ -652,11 +654,12 @@ void  specialkey(int key, int ixm, int iym)
           }
         }while(!player_train->motor) ; //  Skip 'trains' without engines
         update_camera_offsets(player_train) ;
-
         current_camera = 1    ;
         camera_changed = 1    ;
+        camera_last    = -1   ;
         camera_new_position() ;
         new_viewpoint = 1     ;
+        glutPostRedisplay()   ;  //  Is this needed ??
         return ;
       }else if(key == GLUT_KEY_F8){
         display_switches_on = !display_switches_on ;
@@ -719,7 +722,8 @@ void  specialkey(int key, int ixm, int iym)
  */
   int     tile_e, tile_n ;
   double  e, n, h        ;
-       if(display_info || ip){
+//       if(display_info || ip){
+       if(ip){
          local2msts(tile_x0, tile_y0, tile_h0, tile_size, plot_scale,
                    offset_center_x, offset_center_y, offset_center_z,
                    &tile_e, &tile_n, &e, &n, &h );

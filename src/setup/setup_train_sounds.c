@@ -34,6 +34,7 @@ int setup_train_sms_nodes(void){
   char         *string1, *string2, *string3 ;
   char         *sms_name ;
   BTree        *btree ;
+
   char         *my_name = "setup_train_sms_nodes" ;
 
 //      ip1 = ip + l_time_5s ;
@@ -153,6 +154,7 @@ int set_sms_group(RawWagonNode *rw){
   int         i, ierr ;
   SMS_Node    *sms_node ;
   SmsGrpNode  *smsgrp_node ;
+
   char        *my_name="set_sms_group" ;
 
       ierr = 1 ;
@@ -196,7 +198,6 @@ int print_sms_node(RawWagonNode *rw){
         printf("        stream %i, n_triggers = %i\n",i,n_triggers) ;
       }
 
-
       return 0;
 
 }
@@ -216,7 +217,6 @@ int add_sound_pointers_to_wagon(RawWagonNode *rw){
   BTree        *btree ;
   SoundFile    *snd_file ;
 
-
   char         *wav_file ;
   char         *wav_name ;
   char         *sound_dir = "/Sound/" ;  //
@@ -224,11 +224,11 @@ int add_sound_pointers_to_wagon(RawWagonNode *rw){
   char         *train_dir  = "/Trains/Trainset/" ;
   char         *filename ;
 
-
   TrainNode    *t  ;
   WagonNode    *w  ;
   char         *string1, *string2, *string3 ;
   char         *sms_name ;
+
   char         *my_name = "add_sound_pointers_to_wagon" ;
 
       if(ip)printf("  ENTER routine %s\n",my_name) ;
@@ -369,14 +369,14 @@ int add_sound_pointers_to_wagon(RawWagonNode *rw){
  *  Load wave file :: filename
  *==============================================================================
  */
-ALvoid  *wav_data = NULL  ;
-char    *cwav_data = NULL ;
-ALsizei z1, z2, z3, z4   ;
+  ALvoid  *wav_data = NULL  ;
+  char    *cwav_data = NULL ;
+  ALsizei z1, z2, z3, z4   ;
 
-ALenum  wav_format ;
-ALsizei wav_size   ;
-ALsizei i_wav_freq ;
-ALfloat wav_freq   ;
+  ALenum  wav_format ;
+  ALsizei wav_size   ;
+  ALsizei i_wav_freq ;
+  ALfloat wav_freq   ;
 
               alGenBuffers(1,&(snd_file->buffer)) ;
               iret = alGetError() ;
@@ -431,7 +431,8 @@ ALfloat wav_freq   ;
               }
 
               if(ip){
-int i_size, i_freq, i_bits, i_chan;
+
+  int i_size, i_freq, i_bits, i_chan;
 
                 alGetBufferi(snd_file->buffer, AL_FREQUENCY, &i_freq ) ;
                 alGetBufferi(snd_file->buffer, AL_SIZE, &i_size ) ;
@@ -461,8 +462,8 @@ int i_size, i_freq, i_bits, i_chan;
         }
       }
       if(parentdir) free(parentdir) ;
-
       if(ip)printf("  EXIT routine %s\n",my_name) ;
+
       return 0;
 }
 
@@ -475,6 +476,7 @@ int initialise_wagon_openal_variables(){
   RawWagonNode  *rw = NULL  ;
   SMS_Node      *sms_node ;
   SmsGrpNode    *smsgrp_node ;
+
   char          *my_name = "initialise_wagon_openal_variables" ;
 
       if(ip)printf("  ENTER routine my_name %s\n",my_name) ;
@@ -553,7 +555,8 @@ int initialise_wagon_openal_variables(){
           }
         }
       }
-      if(ip)printf("  EXIT routine my_name %s\n",my_name) ;
+      if(ip)printf("  EXIT routine %s\n",my_name) ;
+
       return 0 ;
 }
 
@@ -774,12 +777,12 @@ int initial_train_sounds(void){
               }
             }
             if(0){
-ALfloat  gain ;
-ALfloat  min_gain ;
-ALfloat  max_gain ;
-ALfloat  max_dist ;
-ALfloat  ref_dist ;
-ALfloat  rolloff  ;
+  ALfloat  gain ;
+  ALfloat  min_gain ;
+  ALfloat  max_gain ;
+  ALfloat  max_dist ;
+  ALfloat  ref_dist ;
+  ALfloat  rolloff  ;
               alGetSourcei(source, AL_SOURCE_STATE, &source_state);
               if(source_state == AL_PLAYING){
                 alGetSourcef(source, AL_GAIN, &gain);
@@ -801,7 +804,7 @@ ALfloat  rolloff  ;
 }
 
 
-#endif
+#endif   //  ifdef OpenAL
 
 /*
  *==============================================================================

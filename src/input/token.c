@@ -50,8 +50,8 @@ void  init_token(){
  */
 int is_string_int(char *s){
 
-int i, l;
-char c;
+  int i, l;
+  char c;
 
       l = strlen(s) ;
       c = s[0] ;
@@ -82,8 +82,8 @@ char c;
  */
 int is_string_decimal(char *s){
 
-int i, k = 0, l;
-char c;
+  int i, k = 0, l;
+  char c;
 
       l = strlen(s) ;
       c = s[0] ;
@@ -117,7 +117,7 @@ char c;
  */
 int is_string_alnum(char *s){
 
-int i ;
+  int i ;
 
       for(i=0;i<(int)strlen(s);i++){
         if(!isalnum(s[i]))return 1 ;
@@ -397,6 +397,7 @@ char *ctoken(MSfile *msfile){
  * *****************************************************************************
  */
 int  itoken(MSfile *msfile){
+
   char *token  = new_token(msfile) ;
 
       if(0 == strcmp(token,")")){
@@ -411,6 +412,7 @@ int  itoken(MSfile *msfile){
  * *****************************************************************************
  */
 unsigned int  uitoken(MSfile *msfile){
+
   char *token  = new_token(msfile) ;
 
       if(0 == strcmp(token,")")){
@@ -440,6 +442,7 @@ long long lltoken_16(MSfile *msfile){
  *  Routine to read a token and return an integer containing 1-bit flags
  */
 uint flagtoken(MSfile *msfile){
+
   uint  ui = 0 ;
   uint  i, n   ;
   char *token ;
@@ -469,67 +472,40 @@ uint flagtoken(MSfile *msfile){
 double dtoken(MSfile *msfile){
        return atof(new_token(msfile)) ;
 }
-#if 0
-/*
- * *****************************************************************************
- *  Return multi-line text with errors
- *
- *  Normal text should be enclodes with quotes '"' and if there are
- *  continuaiton lines the final quite on a line should be followed by a '+'.
- *  Unfortunately this is sometimes written as +" instead of "+.  To allow
- *  for this txt_token checks the token following text.  If it starts with a
- *  '"' the code assumes that it is a continuation line an adds it to the
- *  original text.  If not it returns the last token and exits
- * *****************************************************************************
- */
-char *txt_token(MSfile *msfile){
-  char *token1 ;
-  char *token2 ;
-  char *token3 ;
-       token1 = strdup(new_token(msfile)) ;
-       for(;;){
-         token2 = new_token(msfile) ;
-         if(token2[0] != '"'){
-           return_token(token2,msfile) ;
-           return token1 ;
-         }
-         token3 = (char *)malloc(strlen(token1)+strlen(token2)+1) ;
-         strcpy(token3,token1) ;
-         strcat(token3,token2) ;
-         free(token1) ;
-         token1 = token3 ;
-       }
-}
-#endif
+
+
 /*
  * *****************************************************************************
  * Search for left bracket and skip
  * *****************************************************************************
  */
 int  skip_lbr(MSfile *msfile){
+
   int  i, n ;
   char *token ;
 
-    token = new_token(msfile);
-    if( 0 == strcmp(token,eof_mark) ) return(-1) ;
-    if(token[0] == '('){
-      if((n=strlen(token)==1))return 0 ;
-      printf("  routine new token error - token starts with '(')\n");
-      printf("  Token = %s\n",token);
-      for(i=0;i<n;i++)printf(" %c :: ",token[i]) ;
-      printf("\n") ;
-      for(i=1;i<n;i++){
-        token[i-1] = token[i] ;
+      token = new_token(msfile);
+      if( 0 == strcmp(token,eof_mark) ) return(-1) ;
+      if(token[0] == '('){
+        if((n=strlen(token)==1))return 0 ;
+        printf("  routine new token error - token starts with '(')\n");
+        printf("  Token = %s\n",token);
+        for(i=0;i<n;i++)printf(" %c :: ",token[i]) ;
+        printf("\n") ;
+        for(i=1;i<n;i++){
+          token[i-1] = token[i] ;
+        }
+        return_token(token,msfile) ;
+      }else{
+        printf("  Routine skip_lbr.  Left bracket not found\n");
+        printf("    Token returned is %s\n", token);
+        printf("  Program stopping ... \n\n");
+        exit(1);
       }
-      return_token(token,msfile) ;
-    }else{
-      printf("  Routine skip_lbr.  Left bracket not found\n");
-      printf("    Token returned is %s\n", token);
-      printf("  Program stopping ... \n\n");
-      exit(1);
-    }
-    return 0;
+
+      return 0;
 }
+
 /*
  * *****************************************************************************
  * Search for right bracket and skip
@@ -537,17 +513,18 @@ int  skip_lbr(MSfile *msfile){
  * *****************************************************************************
  */
 int  skip_rbr(MSfile *msfile){
+
   char *token ;
 
-    token = new_token(msfile);
-    if(0 == strcmp(token,eof_mark)) return(-1) ;
-    if(0 != strcmp(token,")")){
-      printf("  Routine skip_rbr.  Right bracket not found\n");
-      printf("    Token returned is %s\n", token);
-      printf("  Program stopping ... \n\n");
-      exit(1);
-    }
-    return 0;
+      token = new_token(msfile);
+      if(0 == strcmp(token,eof_mark)) return(-1) ;
+      if(0 != strcmp(token,")")){
+        printf("  Routine skip_rbr.  Right bracket not found\n");
+        printf("    Token returned is %s\n", token);
+        printf("  Program stopping ... \n\n");
+        exit(1);
+      }
+      return 0;
 }
 /*
  *   Version returns '1', if right bracket not immediately found
@@ -555,13 +532,14 @@ int  skip_rbr(MSfile *msfile){
 int  skip_rbr_1(MSfile *msfile){
   char *token ;
 
-    token = new_token(msfile);
-    if(0 == strcmp(token,eof_mark)) return(-1) ;
-    if(0 != strcmp(token,")")){
-      return_token(token,msfile) ;
-      return 1;
-    }
-    return 0;
+      token = new_token(msfile);
+      if(0 == strcmp(token,eof_mark)) return(-1) ;
+      if(0 != strcmp(token,")")){
+        return_token(token,msfile) ;
+        return 1;
+      }
+
+      return 0;
 }
 /*
  * Skip any intermediate tokens as well
@@ -571,6 +549,7 @@ int  skippast_rbr(MSfile *msfile){
 
   int  n, ip = 0 ;
   char *token    ;
+
   char *myname = "skippast_rbr" ;
 
       if(ip)printf("  Enter routine %s\n",myname) ;
@@ -583,6 +562,7 @@ int  skippast_rbr(MSfile *msfile){
         if(!strcmp(token,"("))n++ ;     // Left bracket
       }
       if(ip)printf("  Exit routine %s\n",myname) ;
+
       return 0;
 }
 /*
@@ -609,9 +589,10 @@ int  is_rbr(char *token){
 
 int  skip_underscore_token(MSfile *msfile){
 
-int   n  ;
-int32_t   c  ;
-char  my_name[] = "skip_underscore_token" ;
+  int   n  ;
+  int32_t   c  ;
+
+  char  my_name[] = "skip_underscore_token" ;
 
 // Skip rest of name
       while((c=fgetu(msfile)) != EOF &&  c != ' '  && c != '\t'
@@ -655,8 +636,10 @@ char  my_name[] = "skip_underscore_token" ;
  */
 
 int return_token(char *token, MSfile *msfile){
+
       free(msfile->token_unused) ;
       msfile->token_unused = strdup(token) ;
+
       return 0 ;
 }
 
@@ -669,12 +652,12 @@ int return_token(char *token, MSfile *msfile){
 
 double convert_unit(char *token0, char *unit){
 
-int    ip = 0 ;         // Debug
-uint   i, j ;
-char   string[32]= "" ; // storage for units
-char   *token ;
-size_t lt, ls ;
-float  value = 1.0e9 ;        //  Something really large
+  int    ip = 0 ;         // Debug
+  uint   i, j ;
+  char   string[32]= "" ; // storage for units
+  char   *token ;
+  size_t lt, ls ;
+  float  value = 1.0e9 ;        //  Something really large
 
       token = strdup(token0) ;
       token = strip_quotes(token) ;
@@ -884,8 +867,8 @@ void zerr(int ret)
  * *****************************************************************************
  */
 
-int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip)
-{
+int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip){
+
   int   iret ;
   char  tmp_file[] = "unzlib.tmp"    ;
   char  myname[] = "zlib_uncompress" ;
@@ -942,8 +925,10 @@ int zlib_uncompress(MSfile *msfile, int uncompressed_size, int ip)
 }
 
 void init_msfile(MSfile *msfile){
+
   int      k ;
   MSblock  *block ;
+
       msfile->fp        = NULL ;
       msfile->filename  = NULL ;
       msfile->utf16le   = 0    ;
@@ -966,6 +951,7 @@ void init_msfile(MSfile *msfile){
         block->length     = 0    ;
         block->byte_end   = 0    ;
       }
+
       return ;
 }
 
@@ -1204,9 +1190,10 @@ int open_msfile(char *filename, MSfile *msfile, int texture, int iprint){
  *
  * *****************************************************************************
  */
-int close_msfile(MSfile *msfile)
-{
+int close_msfile(MSfile *msfile){
+
   int i ;
+
       for(i=0;i<20;i++){
         if(NULL != msfile->level[i].token_name)
                                  free(msfile->level[i].token_name) ;
@@ -1216,15 +1203,16 @@ int close_msfile(MSfile *msfile)
       if(msfile->token_unused)free(msfile->token_unused) ;
       if(msfile->filename)free(msfile->filename) ;
       gclose(msfile->fp) ;
+
       return 0;
 }
 
 char * read_ucharz_a(MSfile *msfile){
 
-int     i, n, l ;
-int32_t c ;
-FILE    *fp  = msfile->fp     ;
-int     fbin = msfile->binary ;
+  int     i, n, l ;
+  int32_t c ;
+  FILE    *fp  = msfile->fp     ;
+  int     fbin = msfile->binary ;
 
       if(fbin){
         utf_char_temp = 0 ;

@@ -24,20 +24,20 @@
 
 void glut_idle( void )
 {
-int ip = 0                ;  // = 1 for debug printing
-int        tile_eye_x = lookat_eye_x ;  //  Integer value of lookat_eye_x
-int        tile_eye_y = lookat_eye_y ;
-static int last_eye_x = 0 ;
-static int last_eye_y = 0 ;
-static double dist_tot = 0.0 ;
-char        my_name[] = "glut_idle" ;
+  int ip = 0                ;  // = 1 for debug printing
+  int        tile_eye_x = lookat_eye_x ;  //  Integer value of lookat_eye_x
+  int        tile_eye_y = lookat_eye_y ;
+  static int last_eye_x = 0 ;
+  static int last_eye_y = 0 ;
+  static double dist_tot = 0.0 ;
+  char        my_name[] = "glut_idle" ;
 
       if(ip)printf("  Enter %s\n",my_name) ;
 
 /*
  * According to the GLUT specification, the current window is
  * undefined during an idle callback.  So we need to explicitly change
- *it if necessary
+ * it if necessary
  */
         glutPostRedisplay();
         if(ip>1)printf(" Exit myGlutIdle\n");

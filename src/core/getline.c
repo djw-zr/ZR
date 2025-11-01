@@ -1,16 +1,21 @@
-
 /*
+ *==============================================================================
+ *345678901234567890123456789012345678901234567890123456789012345678901234567890
+ *
+ *   File:  enum.c
+ *
+ *   This file is part of ZR. Released under licence GPL-3.0-or-later.
+ *   You should have received a copy of the GNU General Public License
+ *   along with ZR.  If not, see <https://www.gnu.org/licenses/>.
+ *
  *   Rewrite of getline for systems where the routine is missing.
  *   Note:  The routine never adds a terminating null byte.
+ *
+ *   size_t  : integer large enough for the full address space
+ *   ssize_t : signed integer large enough to include -1 and full address space
+ *
+ *==============================================================================
  */
-
-//#include "file.h"
-//#include <stdlib.h>
-//#include <stdio.h>
-//#include <unistd.h>
-//#include <errno.h>
-//#include <string.h>
-
 
 ssize_t getline1(char **lineptr, size_t *n, FILE *fp){
 
@@ -74,4 +79,3 @@ ssize_t nc  ;  // Number of characters in buffer
         }
       }
 }
-

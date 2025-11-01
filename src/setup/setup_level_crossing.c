@@ -132,6 +132,7 @@ int init_levelxs_node(void){
  *  Print summary of 'LevelXSNode' snode
  */
       }     //  End of loop over tiles
+
       return 0;
 }
 
@@ -218,12 +219,12 @@ int find_track_item_posn(TrkDataBase *database, int item_uid,
 /*
  *  Calculate location of track item - metres relative to tile origin
  */
-      global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+      global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                          item->tile_east_x, item->tile_north_z,
                          item->east_x, item->north_z, item->height_y,
                          &ti_x, &ti_y, &ti_z) ;
       if(ip){
-        printf("   Tile origin at: %i %i %f\n",tile_x0, tile_y0, tile_h0) ;
+        printf("   Tile origin at: %i %i %f\n",tile_xl, tile_yl, tile_h0) ;
         printf("   Track Item at:  %f %f %f\n",ti_x, ti_y, ti_z) ;
       }
 /*
@@ -241,7 +242,7 @@ int find_track_item_posn(TrkDataBase *database, int item_uid,
 /*
  *  Calculate origin of vector
  */
-        global2local(tile_x0, tile_y0, tile_h0, tile_size, 1.0,
+        global2local(tile_xl, tile_yl, tile_h0, tile_size, 1.0,
                          vect->tile_east_x, vect->tile_north_z,
                          vect->east_x, vect->north_z, vect->height_y,
                          &tv_x, &tv_y, &tv_z) ;

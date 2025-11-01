@@ -21,6 +21,7 @@ void  split_train_at_wagon(TrainNode *train, int wagon_number){
   int        n, m ;
   TrainNode  *new_train, new_train_node, *t ;
   WagonNode  *wagon, *last_wagon, *first_wagon ;
+
   char       *my_name = "split_train_at_wagon" ;
 
       if(ip)printf("  Routine %s.  Train = %s, wagon = %i. n_wagons = %i\n",
@@ -324,4 +325,3 @@ void join_trains(TrainNode *t0, TrainNode *t1, int i_collide) {
 
       return ;
 }
-

@@ -45,7 +45,6 @@ char *find_wagon_wave_file(RawWagonNode *rw, char *wav_file){
   struct dirent *di ;
   struct stat   sb  ;
 
-
       if(ip)printf("  Enter routine %s\n",my_name) ;
       if(ip)printf("    Wagon       = %s\n",rw->name) ;
       if(ip)printf("    Wagon File  = %s\n",rw->file) ;
@@ -184,6 +183,10 @@ int check_nftw_file(const char *fpath,
 
 #endif
 
+/*
+ *  Make filename routines for names with 3 or 5 components
+ */
+
 char *make_filename_3(char *name1, char *name2, char *name3){
 
   int  ip = 0 ;
@@ -208,6 +211,7 @@ char *make_filename_3(char *name1, char *name2, char *name3){
       }
       return name ;
 }
+
 char *make_filename_5(char *name1, char *name2, char *name3, char *name4, char *name5){
 
   int  n ;
@@ -222,5 +226,3 @@ char *make_filename_5(char *name1, char *name2, char *name3, char *name4, char *
       strcat(name,name5) ;
       return name ;
 }
-
-

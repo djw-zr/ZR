@@ -74,8 +74,9 @@
 
 int read_route_tsection_dat(MSfile *msfile) ;
 
-TrackSection *new_track_section(){
-TrackSection *track_section ;
+  TrackSection *new_track_section(){
+  TrackSection *track_section ;
+
       track_section = (TrackSection *)malloc(sizeof(TrackSection)) ;
       track_section->next       = NULL ;
       track_section->index      = -1   ;
@@ -113,8 +114,9 @@ int   init_section_idx(SectionIdx *section_idx){
       return 0 ;
 }
 
-TrackShape *new_track_shape(){
-TrackShape *track_shape ;
+  TrackShape *new_track_shape(){
+  TrackShape *track_shape ;
+
       track_shape = (TrackShape *)malloc(sizeof(TrackShape)) ;
       track_shape->next          = NULL ;
       track_shape->filename      = NULL ;
@@ -133,6 +135,7 @@ TrackShape *track_shape ;
         track_shape_end->next = track_shape ;
       }
       track_shape_end = track_shape ;
+
       return track_shape ;
 }
 
@@ -144,25 +147,26 @@ TrackShape *track_shape ;
 
 int  init_tsec_db(){
 
-int     ip = 0              ;     // Debug printing
-int     idir, i, l, n, iret ;
-int     ts_error = 0        ;     // TrackSection/TrackShape error
-FILE    *fp                 ;
-MSfile  msfile0             ;
-MSfile  *msfile = &msfile0  ;
-char    base_name[] = "tsection.dat" ;
-char    my_name[]   = "init_tsec_db" ;
-char    *token1 = NULL,
-        *token2 = NULL,
-        *token3 = NULL,
-        *string = NULL      ;
-char    *global = "/Global/" ;
-char    *open_r = "/OpenRails/" ;
-TrackSection *track_section = NULL ;
-TrackShape   *track_shape   = NULL ;
-SectionIdx   *section_idx   = NULL ;
-Vector3      *xover         = NULL ;
-int          *section       = NULL ;
+  int     ip = 0              ;     // Debug printing
+  int     idir, i, l, n, iret ;
+  int     ts_error = 0        ;     // TrackSection/TrackShape error
+  FILE    *fp                 ;
+  MSfile  msfile0             ;
+  MSfile  *msfile = &msfile0  ;
+  char    base_name[] = "tsection.dat" ;
+  char    *token1 = NULL,
+          *token2 = NULL,
+          *token3 = NULL,
+          *string = NULL      ;
+  char    *global = "/Global/" ;
+  char    *open_r = "/OpenRails/" ;
+  TrackSection *track_section = NULL ;
+  TrackShape   *track_shape   = NULL ;
+  SectionIdx   *section_idx   = NULL ;
+  Vector3      *xover         = NULL ;
+  int          *section       = NULL ;
+
+  char    my_name[]   = "init_tsec_db" ;
 
       if(ip)printf("  Enter routine %s\n",my_name) ;
 /*
@@ -488,18 +492,19 @@ int          *section       = NULL ;
 
 int read_route_tsection_dat(MSfile *msfile){
 
-int     ip = 0              ;     // Debug printing
-int     idir, i, l, n, iret ;
-char    *token1 = NULL,
-        *token2 = NULL,
-        *token3 = NULL,
-        *string = NULL      ;
-TrackSection *track_section = NULL ;
-TrackShape   *track_shape   = NULL ;
-SectionIdx   *section_idx   = NULL ;
-Vector3      *xover         = NULL ;
-int          *section       = NULL ;
-char    my_name[]   = "read_route_tsection_dat" ;
+  int     ip = 0              ;     // Debug printing
+  int     idir, i, l, n, iret ;
+  char    *token1 = NULL,
+          *token2 = NULL,
+          *token3 = NULL,
+          *string = NULL      ;
+  TrackSection *track_section = NULL ;
+  TrackShape   *track_shape   = NULL ;
+  SectionIdx   *section_idx   = NULL ;
+  Vector3      *xover         = NULL ;
+  int          *section       = NULL ;
+
+  char    my_name[]   = "read_route_tsection_dat" ;
 
       if(ip)printf(" Enter routine %s\n",my_name) ;
 /*
@@ -601,8 +606,8 @@ char    my_name[]   = "read_route_tsection_dat" ;
 
 int print_tsec_section(int section_index){
 
-int          found = 0 ;
-TrackSection *t ;
+  int          found = 0 ;
+  TrackSection *t ;
 
       for(t = track_section_beg; t!=NULL;t=t->next){
         if(section_index != (int)t->index)continue ;
@@ -616,14 +621,15 @@ TrackSection *t ;
       if(0 == found){
         printf("    TrkSection:  Shape index %i, not found.\n",section_index);
       }
+
       return 0 ;
 }
 
 int print_tsec_shape(int shape_index){
 
-uint          i, found = 0 ;
-TrackShape *t ;
-SectionIdx *s ;
+  uint          i, found = 0 ;
+  TrackShape *t ;
+  SectionIdx *s ;
 
       for(t = track_shape_beg; t!=NULL;t=t->next){
         if(shape_index != t->index)continue ;
@@ -650,6 +656,6 @@ SectionIdx *s ;
       if(0 == found){
         printf("    TrkShape:    Shape index %i, not found.\n",shape_index);
       }
+
       return 0 ;
 }
-

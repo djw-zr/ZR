@@ -155,44 +155,21 @@ GLuint fontOffset ;
 
 void makeRasterFont(void)
 {
-GLuint i, j;
-glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
-fontOffset = glGenLists (128);
+  GLuint i, j ;
 
-for (i=0,j='!'-1; i <128; i++,j++) {
-glNewList(fontOffset + j, GL_COMPILE);
-glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, ascii[i]);
-glEndList();
+      glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+      fontOffset = glGenLists (128);
+
+      for (i=0,j='!'-1; i <128; i++,j++) {
+        glNewList(fontOffset + j, GL_COMPILE);
+        glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, ascii[i]);
+        glEndList();
+      }
 }
-/*
-for (i = 0,j = 'A'; i < 26; i++,j++) {
-glNewList(fontOffset + j, GL_COMPILE);
-glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, letters[i]);
-glEndList();
-}
-for (i = 0,j = '0'; i < 10; i++,j++) {
-glNewList(fontOffset + j, GL_COMPILE);
-glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, numbers[i]);
-glEndList();
-}
-glNewList(fontOffset + ' ', GL_COMPILE);
-glBitmap(8, 13, 0.0, 2.0, 10.0, 0.0, space);
-glEndList();
-*/
-}
-/*
-void init(void)
-{
-glShadeModel (GL_FLAT);
-makeRasterFont();
-}
-*/
 void printString(char *s)
 {
-glPushAttrib (GL_LIST_BIT);
-glListBase(fontOffset);
-glCallLists(strlen(s), GL_UNSIGNED_BYTE, (GLubyte *) s);
-glPopAttrib ();
+      glPushAttrib (GL_LIST_BIT);
+      glListBase(fontOffset);
+      glCallLists(strlen(s), GL_UNSIGNED_BYTE, (GLubyte *) s);
+      glPopAttrib ();
 }
-
-//GLuint fontOffset;

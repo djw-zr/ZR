@@ -21,30 +21,31 @@
 
 int display_tile_vertex_array(TileListNode *tnode){
 
-int            ip = 0    ;  // Debug printing
-char           my_name[] = "display_tile_vertex_arrays" ;
+  int            ip = 0    ;  // Debug printing
+  int            nv, iv ;
 
-GLfloat        *vertex  ;
+  GLfloat        *vertex  ;
 #ifdef normal_byte
-GLbyte         *normal  ;
+  GLbyte         *normal  ;
 #else
-GLfloat        *normal  ;
+  GLfloat        *normal  ;
 #endif
 #ifdef texture_short
   GLshort        *texture, *texture0 = NULL ;
 #else
   GLfloat        *texture, *texture0 = NULL ;
 #endif
-GLuint         *index1, nindex1;
+  GLuint         *index1, nindex1;
+  GLdouble       xx, yy, zz ;
 
-int            nv, iv ;
-VANode         *va_node ;
-TerrainData    *terrain ;
+  VANode         *va_node ;
+  TerrainData    *terrain ;
 
-GLfloat  mat_amb_land[] = {0.5, 0.5, 0.5, 1.0};
-GLfloat  mat_dif_land[] = {0.7, 0.7, 0.7, 1.0};
-GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
+  GLfloat  mat_amb_land[] = {0.5, 0.5, 0.5, 1.0};
+  GLfloat  mat_dif_land[] = {0.7, 0.7, 0.7, 1.0};
+  GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
 
+  char           my_name[] = "display_tile_vertex_arrays" ;
 
       if(ip)printf(" Enter routine %s : %i %i : %i \n",
         my_name,tnode->tilex,tnode->tiley,tnode->needed) ;
@@ -52,7 +53,6 @@ GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
       if(tnode == NULL) return 0 ;
       terrain = &(tnode->terrain_data) ;
 
-//      if(tnode->needed == 0) return 0;
       if(!land_texture->gl_tex_ref_no){
         printf("  ERROR.  Routine %s called when land_texture not installed\n",
                                                                        my_name);
@@ -73,16 +73,18 @@ GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
 
       glBindTexture(GL_TEXTURE_2D, land_texture->gl_tex_ref_no) ;
       glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE) ;
-#if 0
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST) ;
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR) ;
-#endif
+/*
+ *  Translate
+ */
+      glMatrixMode(GL_MODELVIEW) ;
+      glPushMatrix() ;
+      xx = tnode->tilex - tile_xl ;
+      yy = tnode->tiley - tile_yl ;
+      zz = 0.0 ;
+      glTranslated(xx, yy, zz) ;
 /*
  *  Main Loop
  */
-
       nv = terrain->nbx * terrain->nby ;
       if(ip)printf("  Dimensions %i %i : %i\n",
              tnode->terrain_data.nbx,tnode->terrain_data.nby,nv) ;
@@ -92,7 +94,8 @@ GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
 /*
  *  Check clip planes
  */
-//        if(!check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za))continue ;
+        if(!check_topog_in_scene2(tnode,
+                  va_node->xa,va_node->ya,va_node->za))continue ;
 
         vertex  = va_node->va_vertex  ;
         normal  = va_node->va_normal  ;
@@ -137,6 +140,11 @@ GLfloat  mat_spc_land[] = {0.1, 0.1, 0.1, 1.0};
         n_vanodes_d++ ;
         glDrawElements(GL_TRIANGLES,nindex1,GL_UNSIGNED_INT,index1) ;
       }
+/*
+ *  Reset translation
+ */
+      glPopMatrix() ;
+
       return 0 ;
 }
 

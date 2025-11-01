@@ -14,8 +14,8 @@
  *==============================================================================
  */
 
-void  init_levels(MSfile *msfile)
-{
+void  init_levels(MSfile *msfile){
+
   int      i      ;
   MSblock  *block_level ;
 
@@ -30,6 +30,7 @@ void  init_levels(MSfile *msfile)
         block_level->byte_end = -1 ;
       }
       current_block_level = -1 ;
+
       return ;
 }
 
@@ -38,14 +39,16 @@ void  init_levels(MSfile *msfile)
  */
 
 int  open_block(MSfile *msfile, int i_level){
-  long     tell ;
+
+  int      ip = 0 ;   // DEBUG
   int      i    ;
   unsigned int k, n ;
-  int      ip = 0 ;   //  1 for printing
+  long     tell ;
   FILE     *fp = msfile->fp ;
   MSblock  *block ;
-  char     *token  = NULL;
+  char     *token  = NULL ;
   char     *string = NULL ;
+
   char     my_name[] = "open_block" ;
 
       if(current_block_level != i_level-1){
@@ -91,7 +94,6 @@ int  open_block(MSfile *msfile, int i_level){
 /*
  *  Search enum tokens
  */
-#if 1
 {
   BTree *btree ;
   long  l ;
@@ -108,40 +110,6 @@ int  open_block(MSfile *msfile, int i_level){
         k = (int) l  ;
 }
 
-#else
-  int   token_found = 0 ;
-
-        for(k=0;k<1552;k++){
-          if(!strcmp(token,token_idc[k])){
-            token_found = 1 ;
-            break ;
-          }
-        }
-/*
- *  If not found try adding "_ALT"
- *  In some cases this was added to enum names to prevent conflict
- */
-        if(!token_found){
-          string = (char *)malloc(n+5) ;
-          strcpy(string,token) ;
-          strcat(string,"_ALT") ;
-          for(k=0;k<1552;k++){
-            if(strcmp(string,token_idc[k])==0){
-              token_found = 1 ;
-              break ;
-            }
-          }
-          free(string) ;
-        }
-
-        if(!token_found){
-          printf(" Routine %s.  Unable to determine token name\n",my_name);
-          printf("    Data file = %s\n",msfile->filename);
-          printf("    Token     = %s\n",token);
-          printf("    Program stopping ... \n\n") ;
-          exit(1) ;
-        }
-#endif
         block->itoken = k ;
         free(token) ;
 /*
@@ -156,7 +124,7 @@ int  open_block(MSfile *msfile, int i_level){
           skip_lbr(msfile) ;
         }
  /*
- *  Check for end of file ;
+ *  Binary file
  */
       }else if(msfile->binary){
         i = fgetc(fp) ;              // Needed to trigger EOF
@@ -208,8 +176,8 @@ int  open_block(MSfile *msfile, int i_level){
 
 int  open_named_block(MSfile *msfile, int i_level, int itoken){
 
-int  ifound ;
-char my_name[] = "open_named_block" ;
+  int  ifound ;
+  char my_name[] = "open_named_block" ;
 
       ifound = open_block(msfile, i_level);
 /*
@@ -239,6 +207,7 @@ char my_name[] = "open_named_block" ;
 }
 
 int   is_block_end(MSfile *msfile, int i_level, int i_print){
+
   FILE     *fp = msfile->fp ;
   MSblock  *block ;
   char     *token ;
@@ -268,12 +237,13 @@ int   is_block_end(MSfile *msfile, int i_level, int i_print){
       free(msfile->token_unused) ;
       msfile->token_unused = strdup(token) ;             // Save a new copy
       if(strcmp(token,")") == 0) return 1   ;
+
       return 0 ;
 }
 
 void end_block(MSfile *msfile, int i_level){
 
-int ip = 0 ;
+  int ip = 0 ;
 
       if(msfile->text){
         skip_rbr(msfile) ;
@@ -302,12 +272,13 @@ int ip = 0 ;
  */
 
 uint  read_uint8_a(MSfile *msfile){
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  uint  m ;
-  char  ca[4] ;
-}  u ;
+
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    uint  m ;
+    char  ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint8";
 
       if(fbin){
@@ -319,13 +290,14 @@ union u_tag {
 }
 
 int  read_int16_a(MSfile *msfile){
-int  i ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  int  m ;
-  char ca[4] ;
-}  u ;
+
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    int  m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int16";
 
       if(fbin){
@@ -339,13 +311,14 @@ union u_tag {
 }
 
 uint  read_uint16_a(MSfile *msfile){
-int  i ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  uint  m ;
-  char  ca[4] ;
-}  u ;
+
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    uint  m ;
+    char  ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint16";
 
       if(fbin){
@@ -361,13 +334,13 @@ union u_tag {
 
 int  read_int32_a(MSfile *msfile){
 
-int  i ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  int  m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    int  m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int32";
 
       if(fbin){
@@ -383,13 +356,13 @@ union u_tag {
 
 uint  read_uint32_a(MSfile *msfile){
 
-int  i ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  uint m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    uint m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_uint32";
 
       if(fbin){
@@ -405,15 +378,16 @@ union u_tag {
 
  long  read_lint32_a(MSfile *msfile){
 
-int   i, ip = 0 ;
-long  l ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  uint m ;
-  char ca[4] ;
-}  u ;
-char  my_name[] = "read_lint32";
+  int   i, ip = 0 ;
+  long  l ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    uint m ;
+    char ca[4] ;
+  }  u ;
+
+  char  my_name[] = "read_lint32";
 
       if(fbin){
         u.m = 0 ;
@@ -431,12 +405,12 @@ char  my_name[] = "read_lint32";
 
 int  read_int64_a(MSfile *msfile){
 
-int  i ;
-FILE  *fp = msfile->fp ;
-union u_tag {
-  uint m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  union u_tag {
+    uint m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_int64";
 
       u.m = 0 ;
@@ -449,13 +423,13 @@ union u_tag {
 
 float read_real32_a(MSfile *msfile){
 
-int  i ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-union u_tag {
-  float m ;
-  char ca[4] ;
-}  u ;
+  int  i ;
+  FILE  *fp = msfile->fp ;
+  int   fbin = msfile->binary ;
+  union u_tag {
+    float m ;
+    char ca[4] ;
+  }  u ;
 //char  myname[] = "read_real32";
 
       if(fbin){
@@ -472,42 +446,9 @@ union u_tag {
 }
 
 /*
- *   read_ucarz
- *   This is a byte reading routine designed to read the special unicode text
- *   in the *.t files and possibly others.  The string consists of int16 giving
- *   n, the number of characrters, followed by n unicode UTF16LE characters.
- *   These are read and converted to UTF8 for linux
- *
- *   NOTE the corrected form of this routine has been moved to token.c
- *        where it can use array 'token' and the routines fgetu and ut_utf8
- */
-#if 0
-char * read_ucharz_a(MSfile *msfile){
-
-int  i, n  ;
-char  *string ;
-FILE  *fp = msfile->fp ;
-int   fbin = msfile->binary ;
-
-      if(fbin){
-        n = (int)read_uint16(fp) ;
-        string = (char *)malloc(n+1);  //  generate a new string
-        for(i=0;i<n;i++){
-          string[i] = getc(fp) ;
-          getc(fp) ;
-        }
-        string[n] = '\0' ;
-        return string ;
-      }
-      return ctoken(msfile) ;
-}
-#endif
-/*
  *  Routine to skip to the end of a block
  *  for both ascii and binary  MSTS files
  */
-
-
 void skip_to_bblock_end_a(MSfile *msfile, MSblock *block){
 
 int i ;
@@ -523,4 +464,3 @@ int is_binary = msfile->binary ;
       }
       return ;
 }
-

@@ -1,0 +1,8 @@
+Version 0.5.1
+=============
+
+    A start has been made on adding more animations.  
+    
+    This version adds level crossings that open as a 
+    train approaches and junction rails that move as 
+    the direction is changed. 

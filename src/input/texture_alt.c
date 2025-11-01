@@ -34,23 +34,24 @@ int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja) ;
 
 int convert_texture(TextureNode *tnode){
 
-int           ip = 0,  // DEBUG
-              ii, jj,  // indices of pixel block
-              iz, jz,  // sub-indices
-              w4,
-              m, n,
-              width  ,
-              height ,
-              n_textures ;
-GLubyte       *t1 = NULL,   //  Initial texture array
-              *t2 = NULL,   //  Final texture array
-              *tp ;
-int      r, g, b, a ;
-GLubyte  r0, g0, b0, a0 ;
-unsigned int  *uip ;
-unsigned char  uc[64],
-              *ucp ;
-char          my_name[] = "convert_texture" ;
+  int           ip = 0,  // DEBUG
+                ii, jj,  // indices of pixel block
+                iz, jz,  // sub-indices
+                w4,
+                m, n,
+                width  ,
+                height ,
+                n_textures ;
+  GLubyte       *t1 = NULL,   //  Initial texture array
+                *t2 = NULL,   //  Final texture array
+                *tp ;
+  int      r, g, b, a ;
+  GLubyte  r0, g0, b0, a0 ;
+  unsigned int  *uip ;
+  unsigned char  uc[64],
+                *ucp ;
+
+  char          my_name[] = "convert_texture" ;
 
       if(ip)printf("  Enter routine %s  %p\n",my_name,(void *)tnode) ;
       r0 = g0 = b0 = a0 = 0xFF ;
@@ -163,8 +164,8 @@ int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja){
   unsigned int  c0, c1, kk, ll ;
   unsigned int  r[4], g[4], b[4], a[4] ;
 
-        c0 = ia[0] & 0xFFFF ;          // First 2 bytes
-        c1 = (ia[0]>>16) & 0xFFFF ;    // Next 2 bytes
+      c0 = ia[0] & 0xFFFF ;          // First 2 bytes
+      c1 = (ia[0]>>16) & 0xFFFF ;    // Next 2 bytes
 
 /*
  *  In the dtx1 format, the first two 16-bit integers contain red, green
@@ -174,61 +175,62 @@ int  dxt1_2_rgba(unsigned int ia[2], unsigned char *ja){
  *  rgb bytes but with the loss of the low order bits dropped by the dxt1
  *  scheme.
  */
-        b[0] = c0 &   0x1f ; b[0] = b[0] << 3 ;
-        g[0] = c0 &  0x7e0 ; g[0] = g[0] >> 3 ;
-        r[0] = c0 & 0xf800 ; r[0] = r[0] >> 8 ;
-        a[0] = 0xffff ;
+      b[0] = c0 &   0x1f ; b[0] = b[0] << 3 ;
+      g[0] = c0 &  0x7e0 ; g[0] = g[0] >> 3 ;
+      r[0] = c0 & 0xf800 ; r[0] = r[0] >> 8 ;
+      a[0] = 0xffff ;
 
-        b[1] = c1 &   0x1f ; b[1] = b[1] << 3 ;
-        g[1] = c1 &  0x7e0 ; g[1] = g[1] >> 3 ;
-        r[1] = c1 & 0xf800 ; r[1] = r[1] >> 8 ;
-        a[1] = 0xffff ;
+      b[1] = c1 &   0x1f ; b[1] = b[1] << 3 ;
+      g[1] = c1 &  0x7e0 ; g[1] = g[1] >> 3 ;
+      r[1] = c1 & 0xf800 ; r[1] = r[1] >> 8 ;
+      a[1] = 0xffff ;
 /*
  *  Two sets of equations are then used to define a third and fourth colours
  *  used by the dxt1 scheme.  The + 1 in the equations is included to round
  *  up the fraction 2/3, when it occurs, to the next highest integer.
  */
-        if(c0>c1){
-          r[2] = (r[0]*2 + r[1] + 1)/3 ;
-          g[2] = (g[0]*2 + g[1] + 1)/3 ;
-          b[2] = (b[0]*2 + b[1] + 1)/3 ;
-          a[2] = 0xffff ;
-          r[3] = (r[0] + 2*r[1] + 1)/3 ;
-          g[3] = (g[0] + 2*g[1] + 1)/3 ;
-          b[3] = (b[0] + 2*b[1] + 1)/3 ;
-          a[3] = 0xffff ;
-        }else{
-          r[2] = (r[0] + r[1])/2 ;
-          g[2] = (g[0] + g[1])/2 ;
-          b[2] = (b[0] + b[1])/2 ;
-          a[2] = 0xffff ;
-          r[3] = 0 ;               // Transparent - no colour
-          g[3] = 0 ;
-          b[3] = 0 ;
-          a[3] = 0x0000 ;
-        }
+      if(c0>c1){
+        r[2] = (r[0]*2 + r[1] + 1)/3 ;
+        g[2] = (g[0]*2 + g[1] + 1)/3 ;
+        b[2] = (b[0]*2 + b[1] + 1)/3 ;
+        a[2] = 0xffff ;
+        r[3] = (r[0] + 2*r[1] + 1)/3 ;
+        g[3] = (g[0] + 2*g[1] + 1)/3 ;
+        b[3] = (b[0] + 2*b[1] + 1)/3 ;
+        a[3] = 0xffff ;
+      }else{
+        r[2] = (r[0] + r[1])/2 ;
+        g[2] = (g[0] + g[1])/2 ;
+        b[2] = (b[0] + b[1])/2 ;
+        a[2] = 0xffff ;
+        r[3] = 0 ;               // Transparent - no colour
+        g[3] = 0 ;
+        b[3] = 0 ;
+        a[3] = 0x0000 ;
+      }
 /*
  *   Finally use the array of 2-bit indices in the second pair of 16-bit
  *   words to define the rgba values of a 4 by 4 block of pixels.
  */
-        for(i=0;i<4;i++){
-          for(j=0;j<4;j++){
-            kk = ia[1] & 0x3 ;     // Extract lowest two bits
-            ll = (i*4 + j)*4 ;
-            if(1){
-            ja[ll  ] = r[kk] ;
-            ja[ll+1] = g[kk] ;
-            ja[ll+2] = b[kk] ;
-            ja[ll+3] = a[kk] ;
-            }else{
-            ja[ll  ] = a[kk] ;
-            ja[ll+1] = b[kk] ;
-            ja[ll+2] = g[kk] ;
-            ja[ll+3] = r[kk] ;
-            }
-            ia[1]    = ia[1]>>2 ;  // Shift down two bits
+      for(i=0;i<4;i++){
+        for(j=0;j<4;j++){
+          kk = ia[1] & 0x3 ;     // Extract lowest two bits
+          ll = (i*4 + j)*4 ;
+          if(1){
+          ja[ll  ] = r[kk] ;
+          ja[ll+1] = g[kk] ;
+          ja[ll+2] = b[kk] ;
+          ja[ll+3] = a[kk] ;
+          }else{
+          ja[ll  ] = a[kk] ;
+          ja[ll+1] = b[kk] ;
+          ja[ll+2] = g[kk] ;
+          ja[ll+3] = r[kk] ;
           }
+          ia[1]    = ia[1]>>2 ;  // Shift down two bits
         }
-        return 0 ;
+      }
+
+      return 0 ;
 }
 

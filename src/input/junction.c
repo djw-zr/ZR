@@ -31,17 +31,23 @@ double branch_curve(TrkSector *tn, int pin_1);
 
 int   set_junction_path(TrkSector *tn){
 
-uint   ip = 0 ,          // DEBUG
-       n_in_pins,
-       n_ot_pins,
-       n, n1, i0, i1 ;
-double c1, c2, c0  ;
-TrkSector     *tn1 ;
-TrkVectorNode *vn1 ;
-char  my_name[] = "set_junction_path" ;
+  uint   ip = 0 ,          // DEBUG
+        n_in_pins,
+        n_ot_pins,
+        n, n1, i0, i1 ;
+  double c1, c2, c0  ;
+  double        length = 0.0 ;
 
+  TrkSector     *tn1 ;
+  TrkVectorNode *vn1 ;
+  TrkSector   *tsn ;
+  TrkVectorNode *vec ;
+  WorldItem     *wit ;
+
+  char  *my_name = "set_junction_path" ;
 
 //      ip = ( (int)tn->uid == 481 ) || ( (int)tn->uid == 540 )  ;
+
       if(ip){
         printf("\n******************************\n") ;
         printf("  Enter routine %s.  Track Sector = %i\n",
@@ -165,10 +171,6 @@ char  my_name[] = "set_junction_path" ;
  */
       i0 = tn->uid ;
       i1 = tn->pin_to_section[tn->straight] ;  // index of TrkSecNode
-TrkSector   *tsn ;
-TrkVectorNode *vec ;
-WorldItem     *wit ;
-double        length = 0.0 ;
       tsn = &track_db.trk_sections_array[i1-1] ;
       if(i0 == tsn->pin_to_section[0]){
         for(n=1;n<tsn->length_of_vector;n++){
@@ -212,9 +214,10 @@ uint          n0, n1 ;
 TrkSector     *tn1 ;
 TrkVectorNode *vn1 ;
 double        c1 ;
-char  my_name[] = "branch_curve" ;
+char  *my_name = "branch_curve" ;
 
 //      ip = ( (int)tn->uid == 481 ) || ( (int)tn->uid == 540 )  ;
+
       if(ip)printf("    Routine %s :: Node index = %i\n",my_name,(int)tn->uid) ;
 
       if(tn->type_of_node != JUNCTION){
@@ -286,5 +289,6 @@ char  my_name[] = "branch_curve" ;
         printf("  ERROR : Pin 1 : Unable to find matching section %i\n", n1) ;
         exit(1) ;
       }
+
       return c1 ;
 }

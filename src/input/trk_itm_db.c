@@ -14,12 +14,13 @@
 
 int init_track_item(TrkItem *trk_item) ;
 
-int read_track_item(TrkItem *trk_item, MSfile *msfile)
-{
-int  j, k   ;
-int  ip = 0 ;                                    // Debug printing
-char my_name[] = "read_track_item" ;
-char *token = NULL ;
+int read_track_item(TrkItem *trk_item, MSfile *msfile){
+
+  int  j, k   ;
+  int  ip = 0 ;                                    // Debug printing
+  char *token = NULL ;
+
+  char my_name[] = "read_track_item" ;
 /*
  * ***********************************************************************
  *  Initialise Item Type
@@ -272,6 +273,7 @@ char *token = NULL ;
 
       }
       if(ip)printf("  Exit routine %s\n\n",my_name) ;
+
       return 0;
 }
 
@@ -325,9 +327,9 @@ int init_track_item(TrkItem *trk_item){
 
 int list_platforms_and_sidings(){
 
-int     i ;
-int     type_of_node ;
-TrkItem *trk_item    ;
+  int     i ;
+  int     type_of_node ;
+  TrkItem *trk_item    ;
 
       printf("  Number of items = %i\n",(int)track_db.trk_items_array_size) ;
       for(i=0;i<(int)track_db.trk_items_array_size;i++){
@@ -340,5 +342,6 @@ TrkItem *trk_item    ;
         }
       }
       printf("  End of List\n") ;
+
       return 0 ;
 }

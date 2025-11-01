@@ -31,7 +31,7 @@ int add_wagon_to_consist(ConsistNode *consist, char *filename, char *directory) 
 
 static int  compare_consist_names(const void *p1, const void *p2){
 
-ConsistNode **s1, **s2, *t1, *t2 ;
+  ConsistNode **s1, **s2, *t1, *t2 ;
 
       s1 = (ConsistNode **)p1 ;
       s2 = (ConsistNode **)p2 ;

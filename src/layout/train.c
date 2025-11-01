@@ -21,6 +21,7 @@ int position_train2(char *location, int iswap, double idirect) ;
 int add_wagon_to_train2(char *wagon, RawWagonNode *rw0, int idirn) ;
 int add_consist_to_train(char* consist_name) ;
 int trains_setup_by_user(void) ;
+int trains_setup_by_command(void) ;
 
 /*
  *  Routine to initialise the trains and thei positions.  The composition of
@@ -39,10 +40,17 @@ int   trains_init(void){
  *  Initialise one or more trains
  */
 #if defined NO_ROUTE_DEF
-      printf("***************************************\n") ;
-      printf(" Call trains_setup_by_user\n") ;
-      printf("***************************************\n") ;
-      trains_setup_by_user() ;
+      if(ORconsist && ORplatform){
+        printf("***************************************\n") ;
+        printf(" Call trains_setup_by_command line parameters\n") ;
+        printf("***************************************\n") ;
+        trains_setup_by_command() ;
+      }else{
+        printf("***************************************\n") ;
+        printf(" Call trains_setup_by_user\n") ;
+        printf("***************************************\n") ;
+        trains_setup_by_user() ;
+      }
 #elif defined ROUTE_USA1
 
 #if 1
@@ -1032,6 +1040,7 @@ int *consist_add_wagon(TrainNode *c, WagonNode *w){
       if(c->motor == NULL){
         if(new->is_engine) c->motor = new ;
       }
+
       return 0;
 }
 
@@ -1045,9 +1054,9 @@ int *consist_add_wagon(TrainNode *c, WagonNode *w){
 
 int  add_new_train(char *name){
 
-int ip   = 0 ;  // Debug
-TrainNode *t ;
-char      *my_name = "add_new_train" ;
+  int ip   = 0 ;  // Debug
+  TrainNode *t ;
+  char      *my_name = "add_new_train" ;
 
       t = (TrainNode *)malloc(sizeof(TrainNode)) ;
       t->name       = strdup(name) ;
@@ -1100,6 +1109,7 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
   ShapeNode     *s  = NULL ;
   TravellerNode *z1 = NULL ;
   char          *wagon = wagon0 ;
+
   char          *my_name = "add_wagon_to_train2" ;
 
 //      ip = ip && (rw0 != NULL) ;
@@ -1251,10 +1261,10 @@ int   add_wagon_to_train2(char *wagon0, RawWagonNode *rw0, int idirn){
 /*
  *  Check raw wagon for wipers
  */
-ShapeNode *shape  ;
-Matrix4x3 *matrix ;
-char      *m_name ;
-int       i       ;
+  ShapeNode *shape  ;
+  Matrix4x3 *matrix ;
+  char      *m_name ;
+  int       i       ;
 
         shape = rw->shape      ;
         matrix = shape->matrix ;
@@ -1325,6 +1335,7 @@ int position_train(int itrack, int ivector, int idirect, double distance){
   WagonNode     *w  = NULL ;
   TravellerNode *z1 = NULL ;
   double       dist = distance ;
+
   char         *my_name = "position_train" ;
 
       if(ip)printf("  Routine %s\n",my_name) ;
@@ -1373,7 +1384,7 @@ int position_train(int itrack, int ivector, int idirect, double distance){
 
 int position_train2(char *location, int l_dir, double distance){
 
-  int           ip = 0     ;  //  Debug
+  int           ip = 1     ;  //  Debug
   uint          i, k, n    ;
   uint          itrack     ;  //  Track section uid
   uint          l_trk      ;
@@ -1384,6 +1395,7 @@ int position_train2(char *location, int l_dir, double distance){
   TravellerNode *z1 = NULL ;
   TrkItem       *ti, *ti0 = NULL, *ti1 = NULL ;
   TrkSector     *ts0, *ts1 ;
+
   char         *my_name = "position_train2" ;
 
       if(ip)printf("  Enter routine %s.\n",my_name) ;
@@ -1510,6 +1522,7 @@ int position_train2(char *location, int l_dir, double distance){
       trv_move(&(t->back), -0.5*t->last->raw_wagon->length) ;
 
       build_train = NULL ;
+
       return 0 ;
 }
 
@@ -1537,56 +1550,8 @@ int  copy_traveller_position(TravellerNode *z1, TravellerNode *z0) {
 }
 
 
-#if 0
-/*
- *   Routine to check whether a train is due to hit the end of the
- *   line or to enter a junction from the closed branch.
- *   In both cases the train should derail - however for the moment
- *   the train is only stopped and can be reversed.
- */
-
-int check_train_movement(TrainNode *t){
-
-  int           iret  ;
-  double        dist  ;
-  WagonNode     *w    ;
-  TravellerNode *tn   ;
-  TravellerNode tc    ;  //  Tempory traveller
-  char          *my_name = "check_wagon_movement" ;
-
-      if(t->speed == 0.0) return 0 ;
-      junction_error = 0 ;
-      if(t->speed > 0.0){
-        w = t->first           ;    //  Front of train
-        if(w == NULL) return 0 ;
-        tn = w->traveller      ;
-        tc = *tn               ;    //  Make temporary traveller
-        dist = 1.0 + 0.1*t->speed + 0.5*w->raw_wagon->length ;
-        iret = trv_move(&tc,dist) ; //  Move temporary traveller
-      }else{
-        w = t->last            ;    //  Back of train
-        if(w == NULL) return 0 ;
-        tn = w->traveller      ;
-        tc = *tn               ;     //  Make temporary traveller
-        dist = 1.0 + 0.1*t->speed + 0.5*w->raw_wagon->length ;
-        iret = trv_move(&tc,-dist) ; //  Move temporary traveller
-      }
-      if(iret || junction_error){    //  Check for errors
-        t->speed = 0.0 ;             //  Stop train
-        if(iret)printf("  Train %s reached end of line\n",t->name) ;
-        if(junction_error){
-          printf("  Train %s derailed at junction.  Switch incorrectly set.\n",
-                                                                      t->name) ;
-          iret           = 1 ;
-          junction_error = 0 ;
-        }
-      }
-
-      return iret ;
-}
-#endif
-
 int print_train_data(void){
+
   int       ip = 0 ;
   TrainNode *t     ;
   WagonNode *w     ;
@@ -1651,38 +1616,56 @@ int print_wagon_data_to_file(char *filename){
  *   Routine to allow user to set up trains
  */
 
+int trains_setup_by_command(){
+
+  int  ip = 0 ;
+
+      printf("  PROCESS CONSISTS\n") ;
+      printf("  Consist = %s.  Platform = %s\n",
+                                       ORconsist, ORplatform) ;
+      add_new_train("T00") ;
+      add_consist_to_train(ORconsist) ;
+      printf("AA") ;
+      position_train2(ORplatform,0,0.0) ;
+      printf("  Consist added.  Name = %s.  Platform = %s\n",
+                                       ORconsist, ORplatform) ;
+
+      return 0 ;
+}
+
+/*
+ *   Routine to allow user to set up trains
+ */
 
 int trains_setup_by_user(){
 
-int  ip = 0 ;
-int  i, n, m, itrain, idirn, iret ;
-#if ! defined Basic_Test && ! defined DEBUG1
-int    n_engines   ;
-int    n_tenders   ;
-int    n_carriages ;
-int    n_wagons    ;
-#endif
-int    n_consists  ;
-int    n_platforms ;
-int    n_sidings   ;
+  int  ip = 0 ;
+  int  i, n, m, itrain, idirn, iret ;
+  #if ! defined Basic_Test && ! defined DEBUG1
+  int    n_engines   ;
+  int    n_tenders   ;
+  int    n_carriages ;
+  int    n_wagons    ;
+  #endif
+  int    n_consists  ;
+  int    n_platforms ;
+  int    n_sidings   ;
 
-BTree  *engines   = NULL ;
-BTree  *tenders   = NULL ;
-BTree  *carriages = NULL ;
-BTree  *wagons    = NULL ;
-BTree  *consists  = NULL ;
-BTree  *platform_list = NULL ;
-BTree  *siding_list   = NULL ;
-BTree  *found     = NULL ;
-RawWagonNode *rw ;
-ConsistNode  *consist ;
-TrkItem      *ti ;
-char         tname[12] ;
+  BTree  *engines   = NULL ;
+  BTree  *tenders   = NULL ;
+  BTree  *carriages = NULL ;
+  BTree  *wagons    = NULL ;
+  BTree  *consists  = NULL ;
+  BTree  *platform_list = NULL ;
+  BTree  *siding_list   = NULL ;
+  BTree  *found     = NULL ;
+  RawWagonNode *rw ;
+  ConsistNode  *consist ;
+  TrkItem      *ti ;
+  char         tname[12] ;
 
+  char  *my_name = "trains_setup_by_user" ;
 
-
-
-char  *my_name = "trains_setup_by_user" ;
 /*
  *  Create Btrees containing engiens wagons, consists, Platforms, Sidings
  */

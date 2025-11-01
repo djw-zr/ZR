@@ -47,23 +47,24 @@ int load_wave_file(char* filename, char **data, ALenum *format,
                    ALsizei *size, ALsizei *frequency) {
 
   int     ip = 0 ;
-  FILE* infile ;
-
-  WaveFormatNode  wfn ;
-
-  size_t nin ;
+  int    i, j, n, m, c, iret ;
   int    iposn = 0 ;
-  fpos_t old_fpos    ;
   int    offset = 0 ;
   int    file_size ;
   int    chunk_size ;
   int    n_cues, n_char, index;
-  CueNode *cues ;
   char   cue_string[32] ;
-  int    i, j, n, m, c, iret ;
   char   string4[5], last_string4[5] ;
   char   *base_name ;
   char   *filename2 ;
+
+  size_t nin ;
+  fpos_t old_fpos    ;
+  FILE* infile ;
+
+  WaveFormatNode  wfn ;
+  CueNode *cues ;
+
   char   *my_name = "load_wave_file" ;
 
       if(ip){
@@ -298,12 +299,12 @@ int load_wave_file(char* filename, char **data, ALenum *format,
         printf("    data              = %p\n",(void *)data) ;
       }
 
-    short int wave_format;
-    short int num_channels;
-    int sample_rate;
-    int av_byte_rate;
-    short int block_align;  // Number of bytes per block
-    short int bits_per_sample ;
+  short int wave_format;
+  short int num_channels;
+  int sample_rate;
+  int av_byte_rate;
+  short int block_align;  // Number of bytes per block
+  short int bits_per_sample ;
 /*
  *   Calculate
  */
@@ -320,7 +321,7 @@ int load_wave_file(char* filename, char **data, ALenum *format,
         return 1 ;
       }
 
-int byte_per_value = wfn.av_byte_rate/
+  int byte_per_value = wfn.av_byte_rate/
                  (wfn.sample_rate*wfn.num_channels);
 
       if(byte_per_value != 1  && byte_per_value != 2){
@@ -345,7 +346,6 @@ int byte_per_value = wfn.av_byte_rate/
           *format = AL_FORMAT_STEREO16 ;
         }
       }
+
       return 0;
 }
-
-

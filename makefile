@@ -22,32 +22,47 @@
 # Define interface: SDL2 or (default) GLUT
 # This does not work if # follows SDL2
 #IFACE=SDL2
+#  Specify Sound option (OpenAL)
 SOUND=OPENAL
-#SOUND=
+#  Specify Movie options (FFMPEG or LIBPNG or PPM)
+MOVIE=FFMPEG
+#MOVIE=LIBPNG
+#MOVIE=PPM
+#
 
 #  Specify include and source directories relative to this directory
 INC_DIR   := include
-SRC_DIR   := src/core src/graphics src/input src/dynamics src/layout src/setup
+SRC_DIR   := src/core src/graphics src/input src/dynamics
+SRC_DIR   += src/layout src/setup src/zm_system
 
 #  Specify Compiler and Compiler Options
 CC       = gcc
 LD       = gcc
 CFLAGS   = -m64 -march=native -mcmodel=medium
 #CFLAGS  += -O3 #         Level 3 compiler optimisation
-CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
+#CFLAGS  += -g -Og #    For valgrind use -g and -Og optimisation
+CFLAGS  += -g -O0  #    or use -g and -Og optimisation
+CFLAGS  += $(foreach dir, $(INC_DIR), $(addprefix -I, $(dir)))
+CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
+
+MCFLAGS  := $(CFLAGS)
+MCFLAGS  += `pkg-config --cflags gtk+-3.0` -lm
+MCFLAGS  += -Wno-deprecated-declarations
+
+CFLAGS  += -I/usr/include/freetype2
 CFLAGS  += -Wall -pedantic
 CFLAGS  += -Wextra
 CFLAGS  += -Wno-unused-variable
-CFLAGS  += -I/usr/include/freetype2
-CFLAGS  += $(foreach dir, $(INC_DIR), $(addprefix -I, $(dir)))
-CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
+
+MLDFLAGS  = `pkg-config --libs gtk+-3.0` -lm
+MLDFLAGS += -export-dynamic
 
 #  Specify pre-processor options
 #CFLAGS += -DBasic_Test # Set default test values for route, consists etc.
 #CFLAGS  += -Dsketch_tracks_and_roads #  Plot outline of roads/tracks
-#CFLAGS  += -Dgrid_lines #          Outline tiles
-#CFLAGS  += -Dfull_topog #          Plot all topography
-#CFLAGS  += -Dgeo_coord #           Use x=east, y=north, z=up for shapes
+#CFLAGS  += -Dgrid_lines #        Outline tiles
+#CFLAGS  += -Dfull_topog #        Plot all topography : slow for large routes
+#CFLAGS  += -Dgeo_coord #         Use x=east, y=north, z=up for shapes
 #CFLAGS  += -D_Display_Shapes #
 #CFLAGS  += -D_Display_Wagons  #
 #CFLAGS  += -D_Display_Textures #
@@ -58,7 +73,6 @@ CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 #CFLAGS += -D_NoMultiSample #  MultiSampling turned off
 #CFLAGS += -Dzr_freetype #     -Dfreetype would rename directory
 #CFLAGS += -DMinGW #           Use system_alt.c routines
-#CFLAGS += -DOPENAL #          Setup OpenAL system (in development)
 #CFLAGS += -DROUTE_USA1 #      Northeast Corridor
 #CFLAGS += -DROUTE_USA2 #      Marias Pass
 #CFLAGS += -DROUTE_EUROPE1 #   Settle line
@@ -69,17 +83,13 @@ CFLAGS  += $(foreach dir, $(SRC_DIR), $(addprefix -I, $(dir)))
 #CFLAGS += -DROUTE_AU_NSW_SW_SS
 #CFLAGS += -DROUTE_NEW_FOREST
 CFLAGS += -DNO_ROUTE_DEF
-#CFLAGS += -DSHADERS
+CFLAGS += -DSHADERS
 #CFLAGS += -DDISPLAY_5_SECONDS # Used for remote tests over a slow network
 #
 #   Option to circumvent linker error with OpenAL functions.  See:
 # https://maskray.me/blog/2021-01-09-copy-relocations-canonical-plt-entries-and-protected
 
 CFLAGS += -fpie -fopenmp
-
-#  Movie Options  FFMPEG or LIBPNG or PPM
-#MOVIE = FFMPEG
-#
 
 #  Conditionals
 
@@ -91,7 +101,6 @@ else
 endif
 ifeq ($(SOUND),OPENAL)
   CFLAGS  += -DOPENAL
-#  LIBGL   += -lopenal -lalut
   LIBGL   += -lopenal
 endif
 ifeq ($(MOVIE),FFMPEG)
@@ -101,6 +110,9 @@ endif
 ifeq ($(MOVIE),LIBPNG)
   CFLAGS += -DLIBPNG
   LIBGL += -lpng
+endif
+ifeq ($(MOVIE),PPM)
+  CFLAGS += -DPPM
 endif
 
 LIBGL   += -lfreetype
@@ -121,8 +133,13 @@ CFILES := $(shell find $(SRC_DIR) -name "*.c")
 
 #  Targets that are not the name of a file
 .PHONEY: clean cleaner paths echo
+target:  zm  zr
 
 #  Makefile targets:
+
+zm: zm.c makefile $(HFILES) $(CFILES)
+	$(CC) zm.c -c $(MCFLAGS)
+	$(LD) zm.o -o $@ $(MCFLAGS) $(MLDFLAGS) -export-dynamic
 
 zr: zr.c $(HFILES) $(CFILES) makefile load_sigscr_file.o y.tab.o lex.yy.o
 	$(CC) zr.c -c $(CFLAGS)

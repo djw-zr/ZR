@@ -37,14 +37,14 @@
 void graphics_init(void)
 {
 
-int      ip = 2  ;  //  0 = no printing  1, 2 = printing
-int      i, j ;
-int      ivec[10] ;
-GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
-GLfloat  l0_dif[]  = {light0_diff, light0_diff, light0_diff, 1.0} ;  //  Value lighted
-GLfloat  l0_spc[]  = {light0_spec, light0_spec, light0_spec, 1.0} ;  //  Highlights
-float    v4[4] ;
-char     my_name[] = "graphics_init" ;
+  int      ip = 2  ;  //  0 = no printing  1, 2 = printing
+  int      i, j ;
+  int      ivec[10] ;
+  GLfloat  l0_amb[]  = {light0_ambi, light0_ambi, light0_ambi, 1.0} ;  //  Value in shadow
+  GLfloat  l0_dif[]  = {light0_diff, light0_diff, light0_diff, 1.0} ;  //  Value lighted
+  GLfloat  l0_spc[]  = {light0_spec, light0_spec, light0_spec, 1.0} ;  //  Highlights
+  float    v4[4] ;
+  char     my_name[] = "graphics_init" ;
 
       if(ip){
         printf("***********************************************************\n") ;
@@ -81,10 +81,12 @@ char     my_name[] = "graphics_init" ;
  */
       tile_x0 = tile_west  ;
       tile_y0 = tile_south ;
+      tile_xl = tile_x0    ;
+      tile_yl = tile_y0    ;
       tile_h0 = 100.0*floor(trk_min_height/100.0) ;
       if(tile_h0 < 0.0)tile_h0 = 0.0 ;
       if(ip)printf("   Origin for 3D graphics:  Tile = %i, %i.  Height = %.2f m.\n",
-                                          tile_x0, tile_y0, tile_h0) ;
+                                          tile_xl, tile_yl, tile_h0) ;
 /*
  *  Initialise display sub-windows
  */
@@ -106,8 +108,8 @@ char     my_name[] = "graphics_init" ;
       if(player_train){
         current_camera = 1 ;
       }else{
-        offset_center_x = project_db.RouteStart[0] - tile_x0 + project_db.RouteStart[2]/plot_scale ;
-        offset_center_y = project_db.RouteStart[1] - tile_y0 + project_db.RouteStart[3]/plot_scale ;
+        offset_center_x = project_db.RouteStart[0] - tile_xl + project_db.RouteStart[2]/plot_scale ;
+        offset_center_y = project_db.RouteStart[1] - tile_yl + project_db.RouteStart[3]/plot_scale ;
         offset_center_z = 0.15 ;
         offset_eye_x    = offset_center_x - 0.1 ;
         offset_eye_y    = offset_center_y - 0.1 ;
@@ -149,7 +151,7 @@ char     my_name[] = "graphics_init" ;
       glEnable(GL_DEPTH_TEST);
       glShadeModel(GL_SMOOTH) ;
 //      glShadeModel(GL_FLAT) ;
-#if  defined _Display_Normal && !defined sketch_tracks_and_roads
+#if  defined _Display_Normal && !defined sketch_tracks_and_roads && !defined full_topog
 GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
 
       glEnable(GL_FOG) ;
@@ -161,27 +163,6 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
       glFogf(GL_FOG_END,1.0)     ;
 #endif
 
-#if 0
-/*
- *  Initialise shapes and textures
- *
- *   Not required - the same calls are made by the camera routine
- *                  camera_new_position which calls graphics_reset.
- */
-      if(ip)printf("   Load required shapes and textures\n") ;
-      if(ip>1)printf("   Call clear_needed_flags\n") ;
-      clear_needed_flags()     ;
-#ifndef _Display_Textures
-      if(ip>1)printf(" Call mark_shapes\n") ;
-      mark_shapes()            ;
-#endif
-      if(ip>1)printf(" Call mark_textures\n") ;
-      mark_textures()          ;
-      if(ip>1)printf(" Call load_needed_textures\n") ;
-      load_needed_textures()   ;
-      if(ip>1)printf(" Call load_needed_display_lists\n") ;
-//      load_needed_display_lists() ;
-#endif
 /*
  *  Generate Topography Display List for each Tile
  */
@@ -235,14 +216,12 @@ GLfloat fogColor[4] = {0.8, 0.9, 1.0, 1.0} ;  // Slight blue grey?
  */
 void graphics_reset(void) {
 
-int  ip = 0 ;                       //  = 0 for no debug printing
-char *my_name = "graphics_reset" ;
+  int  ip = 0 ;                       //  = 0 for no debug printing
+  char *my_name = "graphics_reset" ;
 
       if(ip)printf("  ===================================================\n");
       if(ip)printf("  Enter %s\n",my_name);
 #if defined _Display_Normal
-//      tile_eye_x0 = tile_x0 + lookat_eye_x ;
-//      tile_eye_y0 = tile_y0 + lookat_eye_y ;
       if(ip)printf("   Routine  %s : Call clear_needed_flags\n",my_name) ;
       clear_needed_flags()     ;
       if(ip)printf("   Routine  %s : Call mark_shapes\n",my_name) ;
@@ -289,9 +268,9 @@ char *my_name = "graphics_reset" ;
  */
 void clear_needed_flags(void)
 {
-int            ip = 0 ;
-ShapeNode      *snode  ;
-TextureNode    *tx_node  ;
+  int            ip = 0 ;
+  ShapeNode      *snode  ;
+  TextureNode    *tx_node  ;
 
       if(ip)printf("   Enter clear_needed_flags\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
@@ -317,20 +296,20 @@ TextureNode    *tx_node  ;
 
 void mark_shapes(void)
 {
-int         ip = 0 ;
-int         idw = 0,
-            idi = 0 ;
-WorldNode   *wnode ;
-WorldItem   *witem ;
-ShapeNode   *snode ;
-char        my_name[] = "mark_shapes" ;
+  int         ip = 0 ;
+  int         idw = 0,
+              idi = 0 ;
+  WorldNode   *wnode ;
+  WorldItem   *witem ;
+  ShapeNode   *snode ;
+  char        my_name[] = "mark_shapes" ;
 
       if(ip){
         printf("   Enter mark_shapes\n");
-        printf("     tile_x = %i %i %.3f %i\n",tile_eye_x0 - tile_x0,
-                                      tile_x0, lookat_eye_x, tile_eye_x0) ;
-        printf("     tile_y = %i %i %.3f %i\n",tile_eye_y0 - tile_y0,
-                                      tile_y0, lookat_eye_y, tile_eye_y0) ;
+        printf("     tile_x = %i %i %.3f %i\n",tile_eye_x0 - tile_xl,
+                                      tile_xl, lookat_eye_x, tile_eye_x0) ;
+        printf("     tile_y = %i %i %.3f %i\n",tile_eye_y0 - tile_yl,
+                                      tile_yl, lookat_eye_y, tile_eye_y0) ;
       }
 #if defined _Display_Normal
       if(ip)printf(" Display Normal\n") ;
@@ -390,11 +369,11 @@ char        my_name[] = "mark_shapes" ;
 
 void mark_textures(void)
 {
-ShapeNode   *snode  ;
-TextureNode *tx_node  ;
-int         i, n    ;
-int         ip = 0  ;    // Debug printing - see Reset
-char        *my_name = "mark_textures" ;
+  int         ip = 0  ;    // Debug printing - see Reset
+  int         i, n    ;
+  ShapeNode   *snode  ;
+  TextureNode *tx_node  ;
+  char        *my_name = "mark_textures" ;
 
 #ifndef _Display_Textures
       if(ip)printf("   Enter mark_textures\n");
@@ -448,8 +427,8 @@ char        *my_name = "mark_textures" ;
  */
 void cull_textures(void)
 {
-TextureNode *tx_node ;
-int         ip = 0 ;
+  int         ip = 0 ;
+  TextureNode *tx_node ;
 
       if(ip)printf("   Enter cull_textures\n");
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
@@ -463,15 +442,7 @@ int         ip = 0 ;
         tx_node->gl_tex_ref_no = 0 ;
         tx_node->loaded = 0 ;
       }
-#if 0
-      for(tx_node=wtexturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
-        if(1 == tx_node->needed || 0 == tx_node->loaded) continue ;
-        if(ip>1)printf("     Cull texture BB %i  %s\n",
-                                           tx_node->gl_tex_ref_no,tx_node->name) ;
-        glDeleteTextures((GLsizei) 1, &(tx_node->gl_tex_ref_no) ) ;
-        tx_node->loaded = 0 ;
-      }
-#endif
+
       return ;
 }
 /*
@@ -484,11 +455,11 @@ int         ip = 0 ;
  */
 void cull_display_lists(void)
 {
-ShapeNode      *snode        ;
-LodControl     *lod_control  ;
-DistLevel      *dist_level   ;
-uint           i, j          ;
-int            ip = 0        ;
+  ShapeNode      *snode        ;
+  LodControl     *lod_control  ;
+  DistLevel      *dist_level   ;
+  uint           i, j          ;
+  int            ip = 0        ;
 
       if(ip)printf("   Enter cull_display_lists\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next){
@@ -504,21 +475,7 @@ int            ip = 0        ;
         }
         snode->loaded = 0 ;
       }
-#if 0
-      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        if(1 == snode->needed || 0 == snode->loaded) continue ;
-        if(ip>1)printf("     Cull wagon display list %s\n",snode->name) ;
-        for(i=0; i < snode->n_lod_controls; i++){
-          lod_control = &(snode->lod_control[i]) ;
-          for(j=0; i < lod_control->n_dist_levels; i++){
-            dist_level = &(lod_control->dist_level[j]) ;
-            glDeleteLists(dist_level->gl_display_list, (GLsizei) 1)  ;
-            dist_level->gl_display_list = 0        ;
-          }
-        }
-        snode->loaded = 0 ;
-      }
-#endif
+
       return ;
 }
 /*
@@ -531,10 +488,10 @@ int            ip = 0        ;
  */
 void cull_topography_display_lists(void){
 
-int           ix, iy ;
-int           ip = 0 ;
-TileListNode *tl_node ;
-TerrainData  *tl_data ;
+  int           ip = 0 ;
+  int           ix, iy ;
+  TileListNode *tl_node ;
+  TerrainData  *tl_data ;
 
       if(ip)printf("   Enter cull_topography_display_lists\n");
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
@@ -577,13 +534,15 @@ TerrainData  *tl_data ;
  */
 void load_topography_display_lists(void){
 
-int          k, n, ix, iy, klist ;
-int          ip = 0 ;
-TileListNode *tl_node ;
-VANode       * va_node ;
+  int          ip = 0 ;
+  int          k, n, ix, iy, klist ;
+  TileListNode *tl_node ;
+  VANode       * va_node ;
 
-      if(ip)printf("   Enter load_topography_display_lists\n");
-      if(ip)printf("     land_texture = %p\n",(void *)land_texture) ;
+      if(ip){
+        printf("   Enter load_topography_display_lists\n");
+        printf("     land_texture = %p\n",(void *)land_texture) ;
+      }
       for(tl_node = tilelist_head; tl_node != NULL; tl_node=tl_node->next){
         ix = tl_node->tilex ;
         iy = tl_node->tiley ;
@@ -598,7 +557,8 @@ VANode       * va_node ;
           n = tl_node->terrain_data.nbx*tl_node->terrain_data.nby ;
           for(k=0;k<n;k++){
             va_node = &(tl_node->terrain_data.va_node[k]) ;
-            va_node->in_use = check_topog_in_scene2(va_node->xa,va_node->ya,va_node->za);
+            va_node->in_use = check_topog_in_scene2(tl_node,
+                                     va_node->xa,va_node->ya,va_node->za);
           }
         }
 #else
@@ -620,9 +580,9 @@ VANode       * va_node ;
  */
 void load_needed_textures(void)
 {
-TextureNode *tx_node  ;
-int         ipp = 0,
-            ip  = 0  ;
+  int         ip  = 0,
+              ipp = 0  ;
+  TextureNode *tx_node  ;
 
       if(ipp)printf("   Enter load_needed_textures\n");
       for(tx_node=texturelist_beg; tx_node!=NULL; tx_node=tx_node->next){
@@ -656,6 +616,7 @@ int         ipp = 0,
         if(ip)printf("       Texture name = %s, needed = %i, loaded = %i, pointer = %p\n",
                         tx_node->name,tx_node->needed, tx_node->loaded, (void *)tx_node );
       }
+
       return ;
 }
 /*
@@ -666,11 +627,11 @@ int         ipp = 0,
 
 void load_needed_display_lists(void)
 {
-ShapeNode  *snode ;
-LodControl *lod_control ;
-int        ip = 0 ;
-uint       i, j   ;
-int        ic = 0, id = 0, ie = 0 ;
+  int        ip = 0 ;
+  uint       i, j   ;
+  int        ic = 0, id = 0, ie = 0 ;
+  ShapeNode  *snode ;
+  LodControl *lod_control ;
 
       if(ip)printf("   Enter load_needed_display_lists\n");
       for(snode=shapelist_beg; snode!=NULL; snode=snode->next, ic++){
@@ -709,25 +670,14 @@ int        ic = 0, id = 0, ie = 0 ;
         }
       }
       printf("  DISPLAY LISTS ic = %i,  id = %i, ie = %i\n",ic,id,ie) ;
-/*
- *  Wagons no longer use display lists
- */
-#if 0
-      for(snode=wshapelist_beg; snode!=NULL; snode=snode->next){
-        if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
-        if(0 == snode->needed || 1 == snode->loaded) continue ;
-        generate_shape_display_list(snode) ;
-        snode->loaded = 1 ;
-        if(ip>1)printf("     Install wagon : %s\n",snode->name) ;
-        if(ip)printf("  Shape name = %s, needed = %i, loaded = %i\n",snode->name,snode->needed, snode->loaded);
-      }
-#endif
+
       return ;
 }
+
 /*
  *   Function use_tile() returns 1 if a tile and its contents
  *     are to be used.  This occurs if tile_cull_r (graphics.h)
- *     is zero of if the distance from the eye tile is less than
+ *     is zero or if the distance from the eye tile is less than
  *     tile_cull_r.
  *
  *     ix, iy  absolute tile indices
@@ -735,19 +685,20 @@ int        ic = 0, id = 0, ie = 0 ;
 
 int use_tile(int ix, int iy){
 
-int  i1, j1 ;
+  int  ip = 0 ;
+  int  i1, j1 ;
+  char *my_name = "use_tile" ;
 
+      if(ip)printf("  Enter routine %s.\n",my_name) ;
       if(0 == tile_cull_r) return 1 ;
-#if 0
-      printf("  tile_x, tile_y = %i %i   :: %i %i :: %i %i :: %i :: %i %i :: %i %i\n",
-        ix,iy, tile_eye_x0, tile_x0, tile_eye_y0, tile_y0, tile_cull_r,
-        (abs(ix-tile_eye_x0-tile_x0)),(abs(ix-tile_eye_x0-tile_x0)<tile_cull_r),
-        (abs(iy-tile_eye_y0-tile_y0)),(abs(iy-tile_eye_y0-tile_y0)<tile_cull_r)
+      if(ip)printf("  tile_x, tile_y = %i %i :: %i %i %i ::  %i %i :: %i %i\n",
+        ix,iy, tile_xl, tile_yl, tile_cull_r,
+        (abs(ix-tile_xl)),(abs(ix-tile_xl)<tile_cull_r),
+        (abs(iy-tile_yl)),(abs(iy-tile_yl)<tile_cull_r)
         );
-#endif
-
-      i1 = ix-tile_x0-tile_eye_x0 ; if(i1<0) i1 = -i1 ;
-      j1 = iy-tile_y0-tile_eye_y0 ; if(j1<0) j1 = -j1 ;
+      i1 = ix-tile_xl ; if(i1<0) i1 = -i1 ;
+      j1 = iy-tile_yl ; if(j1<0) j1 = -j1 ;
       if ( (i1 < tile_cull_r) && (j1 < tile_cull_r) )return 1 ;
+
       return 0 ;
 }

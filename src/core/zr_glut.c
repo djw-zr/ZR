@@ -263,9 +263,9 @@ int glutBitmapHeight(void *fontID){
  */
 void glWindowPos4ff( GLfloat x, GLfloat y, GLfloat z, GLfloat w ){
 
-int     ip = 0 ;
-static int icount = 0;
-GLfloat fx, fy;
+  int     ip = 0 ;
+  static int icount = 0;
+  GLfloat fx, fy;
 
       if(ip && icount < 100){
         printf(" Using glWindowPos4ff\n") ;
